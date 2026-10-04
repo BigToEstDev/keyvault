@@ -41,8 +41,10 @@ data class KeyFileBackupState(
  *
  * A new one is saved before the database is created, so that an app closed on this screen does not leave a
  * database with no key anywhere; it cannot be skipped. An existing file is never written to - it is only
- * checked to be there and not too large, right away rather than after "save as" for the database. Then
- * "save as" for the database and `create` from here, with the 2.5 s wait. An existing file is never
+ * checked to be there and not too large, right away rather than after "save as" for the database. Then the
+ * screen says the key file is ready and waits for "next" - "save as" for the database is not launched on
+ * its own, two system dialogs in a row flicker (pass-docs, Step 34, item 9) - and `create` from here, with
+ * the 2.5 s wait. An existing file is never
  * written over without asking: as a key file it may be the key of another database.
  */
 @HiltViewModel(assistedFactory = KeyFileBackupProcessor.Factory::class)
@@ -103,7 +105,6 @@ class KeyFileBackupProcessor @AssistedInject constructor(
             draft.keyFileSaved(uri)
             val name = steps.displayName(uri)
             reduce { state.copy(keyFile = KeyFileChoice.Picked(name), stage = CreateStage()) }
-            postSideEffect(KeyFileBackupSideEffect.PickDatabase(CreateFileNames.DATABASE))
         } catch (failure: WelcomeFailure) {
             reduce { state.copy(stage = CreateStage(problem = steps.problemOf(failure, TAG))) }
         }
@@ -135,8 +136,6 @@ class KeyFileBackupProcessor @AssistedInject constructor(
                     steps.writeNewKeyFile(file.uri)
                     draft.keyFileSaved(file.uri)
                     reduce { state.copy(keyFile = KeyFileChoice.Created, stage = CreateStage()) }
-                    // Straight on: the database is the only thing left
-                    postSideEffect(KeyFileBackupSideEffect.PickDatabase(CreateFileNames.DATABASE))
                 }
 
                 PickedFile.Database -> steps.create(file.uri, password, draft.keyFileUri)

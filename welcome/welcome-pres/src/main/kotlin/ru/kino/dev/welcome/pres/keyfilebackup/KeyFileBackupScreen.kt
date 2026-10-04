@@ -128,9 +128,15 @@ private fun KeyFileBackupContent(state: KeyFileBackupState, onContinue: () -> Un
                 )
             } else {
                 PrimaryButton(
-                    text = stringResource(R.string.key_file_choose_database),
+                    text = stringResource(R.string.action_next),
                     onClick = onContinue,
                     loading = state.stage.busy,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.key_file_next_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

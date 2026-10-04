@@ -47,6 +47,9 @@ class KeyFileBackupProcessorTest {
             containerHost.action(KeyFileBackupAction.KeyFilePicked(KEY))
             expectInternalState { copy(stage = CreateStage(busy = true)) }
             expectInternalState { copy(keyFile = KeyFileChoice.Created, stage = CreateStage()) }
+
+            // No second dialog on its own - only on "next"
+            containerHost.action(KeyFileBackupAction.Continue)
             expectSideEffect(KeyFileBackupSideEffect.PickDatabase("kdbxvault.kdbx"))
 
             containerHost.action(KeyFileBackupAction.DatabasePicked(DB)).join()
@@ -106,6 +109,8 @@ class KeyFileBackupProcessorTest {
                 containerHost.action(KeyFileBackupAction.ExistingPicked(EXISTING))
                 expectInternalState { copy(stage = CreateStage(busy = true)) }
                 expectInternalState { copy(keyFile = KeyFileChoice.Picked("photo.jpg"), stage = CreateStage()) }
+
+                containerHost.action(KeyFileBackupAction.Continue)
                 expectSideEffect(KeyFileBackupSideEffect.PickDatabase("kdbxvault.kdbx"))
 
                 containerHost.action(KeyFileBackupAction.DatabasePicked(DB)).join()

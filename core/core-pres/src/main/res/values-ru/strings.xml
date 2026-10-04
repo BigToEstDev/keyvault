@@ -75,7 +75,7 @@
     <string name="key_file_saved">Key-файл сохранён</string>
     <string name="key_file_picked">Key-файл: %1$s</string>
     <string name="key_file_picked_unnamed">Key-файл выбран</string>
-    <string name="key_file_choose_database">Выбрать, куда сохранить базу</string>
+    <string name="key_file_next_hint">Дальше выберите, куда сохранить базу</string>
 
     <!-- Creating: biometrics -->
     <string name="biometric_title">Вход по биометрии</string>

@@ -2,7 +2,7 @@ package ru.kino.dev.welcome.pres.keyfilebackup
 
 sealed interface KeyFileBackupAction {
 
-    /** The main button: create a new key file, or - once there is one - choose where the database goes. */
+    /** The main button: create a new key file, or - once there is one - "next", where the database goes. */
     data object Continue : KeyFileBackupAction
 
     /** Use a file already on the device as the key file - one from the desktop, or shared by databases. */
