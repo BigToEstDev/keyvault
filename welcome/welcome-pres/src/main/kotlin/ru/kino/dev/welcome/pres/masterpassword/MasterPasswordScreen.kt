@@ -110,29 +110,28 @@ private fun MasterPasswordContent(state: MasterPasswordState, onAction: (MasterP
                     null
                 },
                 enabled = enabled,
-                imeAction = if (state.passwordVisible) ImeAction.Done else ImeAction.Next,
-                onImeAction = { if (state.passwordVisible) onAction(MasterPasswordAction.Next) },
+                imeAction = ImeAction.Next,
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focus),
             )
-            // A visible password needs no confirmation
-            if (!state.passwordVisible) {
-                Spacer(Modifier.height(8.dp))
-                PasswordField(
-                    value = state.confirm,
-                    onValueChange = { onAction(MasterPasswordAction.ConfirmChanged(it)) },
-                    label = stringResource(R.string.create_password_confirm),
-                    visible = false,
-                    onToggleVisible = null,
-                    error = if (state.mismatch) stringResource(R.string.create_password_mismatch) else null,
-                    enabled = enabled,
-                    onImeAction = { onAction(MasterPasswordAction.Next) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusChanged { if (!it.isFocused && state.confirm.isNotEmpty()) onAction(MasterPasswordAction.ConfirmLeft) },
-                )
-            }
+            Spacer(Modifier.height(8.dp))
+            // Always there, shown or hidden together with the password: one toggle for both fields
+            PasswordField(
+                value = state.confirm,
+                onValueChange = { onAction(MasterPasswordAction.ConfirmChanged(it)) },
+                label = stringResource(R.string.create_password_confirm),
+                visible = state.passwordVisible,
+                onToggleVisible = null,
+                error = if (state.mismatch) stringResource(R.string.create_password_mismatch) else null,
+                enabled = enabled,
+                onImeAction = { onAction(MasterPasswordAction.Next) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged {
+                        if (!it.isFocused && state.confirm.isNotEmpty()) onAction(MasterPasswordAction.ConfirmLeft)
+                    },
+            )
 
             Spacer(Modifier.height(16.dp))
             KeyFileSwitch(

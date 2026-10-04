@@ -48,10 +48,16 @@ class MasterPasswordProcessorTest {
     }
 
     @Test
-    fun `a visible password needs no confirmation`() {
+    fun `a visible password still needs the confirmation`() {
         val visible = MasterPasswordState(password = "pw", passwordVisible = true, confirmLeft = true)
-        assertTrue(visible.canGoOn)
+        assertFalse(visible.canGoOn)
         assertFalse(visible.mismatch)
+
+        val mistyped = visible.copy(confirm = "pv")
+        assertFalse(mistyped.canGoOn)
+        assertTrue(mistyped.mismatch)
+
+        assertTrue(visible.copy(confirm = "pw").canGoOn)
     }
 
     @Test

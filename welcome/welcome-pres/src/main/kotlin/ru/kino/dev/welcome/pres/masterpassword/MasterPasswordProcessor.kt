@@ -35,12 +35,15 @@ data class MasterPasswordState(
     val stage: CreateStage = CreateStage(),
 ) {
 
-    /** A visible password needs no confirmation - the field is hidden then. */
+    /**
+     * The confirmation is required whether the password is shown or not: looking at a password and
+     * confirming it are different things.
+     */
     val canGoOn: Boolean
-        get() = password.isNotEmpty() && (passwordVisible || password == confirm) && !stage.busy
+        get() = password.isNotEmpty() && password == confirm && !stage.busy
 
     val mismatch: Boolean
-        get() = !passwordVisible && confirmLeft && confirm.isNotEmpty() && confirm != password
+        get() = confirmLeft && confirm.isNotEmpty() && confirm != password
 }
 
 /**
