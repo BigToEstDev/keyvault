@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import ru.kino.dev.vault.pres.navigation.vaultGraph
 import ru.kino.dev.welcome.pres.navigation.welcomeGraph
 import ru.kino.dev.welcome.pres.start.WelcomeStart
 
@@ -34,6 +35,7 @@ fun AppNavHost(navigator: Navigator, start: WelcomeStart) {
         popExitTransition = { slideOutOfContainer(SlideDirection.End, tween(SLIDE_MILLIS)) },
     ) {
         welcomeGraph(navController, start)
+        vaultGraph()
     }
 }
 
