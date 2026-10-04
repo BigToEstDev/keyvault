@@ -37,12 +37,16 @@ data class MasterPasswordState(
     val stage: CreateStage = CreateStage(),
 ) {
 
+    /** Shorter than the minimum - said under the field while it is, and "next" stays off. */
+    val tooShort: Boolean
+        get() = CredentialLimits.isPasswordTooShort(password)
+
     /**
      * The confirmation is required whether the password is shown or not: looking at a password and
      * confirming it are different things.
      */
     val canGoOn: Boolean
-        get() = password.isNotEmpty() && password == confirm && !stage.busy
+        get() = !tooShort && password == confirm && !stage.busy
 
     val mismatch: Boolean
         get() = confirmLeft && confirm.isNotEmpty() && confirm != password
@@ -56,7 +60,8 @@ data class MasterPasswordState(
  * created from there (pass-docs, `decisions.md`, "Создание базы").
  *
  * The password is limited when it is set, as the core limits it - in code points, not chars - so that the
- * core never has to refuse it. Opening has no such limit: a database made elsewhere may have a longer one.
+ * core never has to refuse it; and it has a minimum length of the app's own. Opening has neither: a
+ * database made elsewhere may have any password.
  */
 @HiltViewModel(assistedFactory = MasterPasswordProcessor.Factory::class)
 class MasterPasswordProcessor @AssistedInject constructor(

@@ -109,6 +109,12 @@ private fun MasterPasswordContent(state: MasterPasswordState, onAction: (MasterP
                 } else {
                     null
                 },
+                hint = if (state.tooShort) {
+                    val min = CredentialLimits.PASSWORD_MIN_CHARS
+                    pluralStringResource(R.plurals.create_password_too_short, min, min)
+                } else {
+                    null
+                },
                 enabled = enabled,
                 imeAction = ImeAction.Next,
                 modifier = Modifier

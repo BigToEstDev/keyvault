@@ -43,25 +43,36 @@ class MasterPasswordProcessorTest {
 
     @Test
     fun `next is off until both fields match, and a hidden mismatch shows only after leaving the field`() {
-        val typed = MasterPasswordState(password = "pw", confirm = "p")
+        val typed = MasterPasswordState(password = PW, confirm = PW.dropLast(1))
         assertFalse(typed.canGoOn)
         assertFalse(typed.mismatch)
         assertTrue(typed.copy(confirmLeft = true).mismatch)
-        assertTrue(typed.copy(confirm = "pw").canGoOn)
+        assertTrue(typed.copy(confirm = PW).canGoOn)
         assertFalse(MasterPasswordState().canGoOn)
     }
 
     @Test
     fun `a visible password still needs the confirmation`() {
-        val visible = MasterPasswordState(password = "pw", passwordVisible = true, confirmLeft = true)
+        val visible = MasterPasswordState(password = PW, passwordVisible = true, confirmLeft = true)
         assertFalse(visible.canGoOn)
         assertFalse(visible.mismatch)
 
-        val mistyped = visible.copy(confirm = "pv")
+        val mistyped = visible.copy(confirm = PW.dropLast(1) + "x")
         assertFalse(mistyped.canGoOn)
         assertTrue(mistyped.mismatch)
 
-        assertTrue(visible.copy(confirm = "pw").canGoOn)
+        assertTrue(visible.copy(confirm = PW).canGoOn)
+    }
+
+    @Test
+    fun `next is off below twelve characters, matching or not, and the screen says why`() {
+        val short = "x".repeat(CredentialLimits.PASSWORD_MIN_CHARS - 1)
+        val atMinimum = "x".repeat(CredentialLimits.PASSWORD_MIN_CHARS)
+
+        assertTrue(MasterPasswordState(password = short, confirm = short).tooShort)
+        assertFalse(MasterPasswordState(password = short, confirm = short).canGoOn)
+        assertFalse(MasterPasswordState(password = atMinimum, confirm = atMinimum).tooShort)
+        assertTrue(MasterPasswordState(password = atMinimum, confirm = atMinimum).canGoOn)
     }
 
     @Test
@@ -114,7 +125,7 @@ class MasterPasswordProcessorTest {
             expectSideEffect(MasterPasswordSideEffect.PickDatabase("kdbxvault.kdbx"))
         }
 
-        assertEquals("pw", draft.password)
+        assertEquals(PW, draft.password)
     }
 
     @Test
@@ -225,9 +236,12 @@ class MasterPasswordProcessorTest {
         assertTrue(journal.isEmpty())
     }
 
-    private fun ready() = MasterPasswordState(password = "pw", confirm = "pw")
+    private fun ready() = MasterPasswordState(password = PW, confirm = PW)
 
     private companion object {
         const val DB = "content://docs/kdbxvault.kdbx"
+
+        /** Long enough for the minimum. */
+        const val PW = "correct horse"
     }
 }

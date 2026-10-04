@@ -44,6 +44,12 @@
     <string name="create_password_text">Им открывается база. Восстановить его нельзя — запомните его.</string>
     <string name="create_password_confirm">Повторите пароль</string>
     <string name="create_password_mismatch">Пароли не совпадают</string>
+    <plurals name="create_password_too_short">
+        <item quantity="one">Не короче %1$d символа</item>
+        <item quantity="few">Не короче %1$d символов</item>
+        <item quantity="many">Не короче %1$d символов</item>
+        <item quantity="other">Не короче %1$d символа</item>
+    </plurals>
     <plurals name="create_password_too_long">
         <item quantity="one">Не длиннее %1$d символа</item>
         <item quantity="few">Не длиннее %1$d символов</item>
