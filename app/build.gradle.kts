@@ -32,6 +32,8 @@ dependencies {
     compileOnly(libs.errorprone.annotations)
     // The system splash stays up while the start route is read
     implementation(libs.androidx.core.splashscreen)
+    // FragmentActivity for BiometricPrompt
+    implementation(libs.androidx.biometric)
 
     implementation(projects.core.coreDomain)
     implementation(projects.core.corePres)
