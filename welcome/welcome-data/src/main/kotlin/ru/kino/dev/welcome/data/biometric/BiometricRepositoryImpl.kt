@@ -47,7 +47,7 @@ internal class BiometricRepositoryImpl @Inject constructor(
             BiometricSession(keys.decryptCipher(stored.iv))
         } catch (e: BiometricFailure.KeyInvalidated) {
             // The key will never open again: what it encrypted is of no use
-            forgetAll()
+            forgetStoredAndKey()
             throw e
         }
     }
@@ -62,18 +62,20 @@ internal class BiometricRepositoryImpl @Inject constructor(
     }
 
     override suspend fun forget(dbUri: String) = biometricCall {
-        if (store.read()?.dbUri == dbUri) forgetAll()
+        if (store.read()?.dbUri == dbUri) forgetStoredAndKey()
     }
 
     override suspend fun forgetOtherThan(dbUri: String) = biometricCall {
         val stored = store.read() ?: return@biometricCall
-        if (stored.dbUri != dbUri) forgetAll()
+        if (stored.dbUri != dbUri) forgetStoredAndKey()
     }
 
     private suspend fun storedFor(dbUri: String): StoredPassword =
         store.read()?.takeIf { it.dbUri == dbUri } ?: throw BiometricFailure.NotAvailable()
 
-    private suspend fun forgetAll() {
+    override suspend fun forgetAll() = biometricCall { forgetStoredAndKey() }
+
+    private suspend fun forgetStoredAndKey() {
         store.clear()
         keys.deleteKey()
     }

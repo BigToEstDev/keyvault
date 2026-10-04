@@ -33,6 +33,16 @@ interface WelcomeFilesRepository {
     suspend fun wouldOverwrite(uri: String, file: PickedFile): Boolean
 
     /**
+     * Checks an existing file picked as the key file of a new database - before "save as" for the database,
+     * so that a video picked by mistake is said right away, not after an empty database file was made.
+     * Asks the provider for the size, does not read the file.
+     *
+     * @throws WelcomeFailure.KeyFileTooLarge over [ru.kino.dev.core.CredentialLimits.KEY_FILE_MAX_SIZE]
+     * @throws WelcomeFailure.FileUnreachable when the file is not there
+     */
+    suspend fun checkKeyFile(uri: String)
+
+    /**
      * Generates a new key file and writes it into [uri], the file "save as" handed back - the key file
      * backup screen, before the database is created.
      *

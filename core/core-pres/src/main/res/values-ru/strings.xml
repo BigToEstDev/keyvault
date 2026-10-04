@@ -44,6 +44,12 @@
     <string name="create_password_text">Им открывается база. Восстановить его нельзя — запомните его.</string>
     <string name="create_password_confirm">Повторите пароль</string>
     <string name="create_password_mismatch">Пароли не совпадают</string>
+    <plurals name="create_password_too_short">
+        <item quantity="one">Не короче %1$d символа</item>
+        <item quantity="few">Не короче %1$d символов</item>
+        <item quantity="many">Не короче %1$d символов</item>
+        <item quantity="other">Не короче %1$d символа</item>
+    </plurals>
     <plurals name="create_password_too_long">
         <item quantity="one">Не длиннее %1$d символа</item>
         <item quantity="few">Не длиннее %1$d символов</item>
@@ -61,11 +67,15 @@
     <string name="overwrite_confirm">Заменить</string>
 
     <!-- Creating: key file -->
-    <string name="key_file_title">Сохраните key-файл</string>
+    <string name="key_file_title">Key-файл</string>
     <string name="key_file_text">База открывается только паролем и этим файлом вместе. Без файла один пароль её не откроет. Храните его отдельно от базы, не в той же папке.</string>
-    <string name="key_file_save">Сохранить key-файл</string>
+    <string name="key_file_create">Создать новый key-файл</string>
+    <string name="key_file_pick_existing">Выбрать существующий файл</string>
+    <string name="key_file_existing_warning">Ключом может быть любой файл, но он не должен меняться: изменится хоть на байт — фото пересохранят, поправят его свойства — и база не откроется.</string>
     <string name="key_file_saved">Key-файл сохранён</string>
-    <string name="key_file_choose_database">Выбрать, куда сохранить базу</string>
+    <string name="key_file_picked">Key-файл: %1$s</string>
+    <string name="key_file_picked_unnamed">Key-файл выбран</string>
+    <string name="key_file_next_hint">Дальше выберите, куда сохранить базу</string>
 
     <!-- Creating: biometrics -->
     <string name="biometric_title">Вход по биометрии</string>

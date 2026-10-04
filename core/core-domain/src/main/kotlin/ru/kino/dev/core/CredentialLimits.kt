@@ -23,6 +23,14 @@ object CredentialLimits {
      */
     const val PASSWORD_MAX_CHARS: Int = 256
 
+    /**
+     * The shortest password that can be **set**, in characters - the app's own rule, **not** the core's:
+     * the core takes any password, and a database made elsewhere opens with whatever it has. Length only,
+     * no rules on what the characters are: a master password is attacked offline, where length counts and
+     * "a digit and a letter" does not (pass-docs, Step 34, item 4).
+     */
+    const val PASSWORD_MIN_CHARS: Int = 12
+
     const val KIND_KEY_FILE_TOO_LARGE = "KeyFileTooLarge"
     const val KIND_PASSWORD_TOO_LONG = "PasswordTooLong"
 
@@ -41,6 +49,10 @@ object CredentialLimits {
      * Counted in code points, as the core counts characters. Not [String.length]: that is utf-16 units,
      * an emoji is two of them, and the two sides would disagree right at the limit.
      */
-    fun isPasswordTooLong(password: String): Boolean =
-        password.codePointCount(0, password.length) > PASSWORD_MAX_CHARS
+    fun isPasswordTooLong(password: String): Boolean = password.characters() > PASSWORD_MAX_CHARS
+
+    /** Counted as [isPasswordTooLong] counts. */
+    fun isPasswordTooShort(password: String): Boolean = password.characters() < PASSWORD_MIN_CHARS
+
+    private fun String.characters(): Int = codePointCount(0, length)
 }

@@ -31,6 +31,25 @@ class CredentialLimitsTest {
         assertTrue(CredentialLimits.isPasswordTooLong("a".repeat(CredentialLimits.PASSWORD_MAX_CHARS + 1)))
     }
 
+    @Test
+    fun `a password of the minimum is accepted and one character less is not`() {
+        assertEquals(12, CredentialLimits.PASSWORD_MIN_CHARS)
+        assertFalse(CredentialLimits.isPasswordTooShort("a".repeat(CredentialLimits.PASSWORD_MIN_CHARS)))
+        assertTrue(CredentialLimits.isPasswordTooShort("a".repeat(CredentialLimits.PASSWORD_MIN_CHARS - 1)))
+    }
+
+    @Test
+    fun `the minimum is length alone - no rule on letters or digits`() {
+        assertFalse(CredentialLimits.isPasswordTooShort("correct horse battery"))
+        assertFalse(CredentialLimits.isPasswordTooShort("123456789012"))
+    }
+
+    @Test
+    fun `the minimum counts code points too - twelve emoji are twelve characters`() {
+        assertFalse(CredentialLimits.isPasswordTooShort("😀".repeat(CredentialLimits.PASSWORD_MIN_CHARS)))
+        assertTrue(CredentialLimits.isPasswordTooShort("😀".repeat(CredentialLimits.PASSWORD_MIN_CHARS - 1)))
+    }
+
     // An emoji is two utf-16 units: counted by String.length, 256 of them would look like 512 characters
     // and be refused here while the core accepts them
     @Test

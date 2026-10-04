@@ -122,9 +122,12 @@ internal fun PasswordEntryContent(
                 )
                 onCreateDatabase?.let {
                     Spacer(Modifier.height(24.dp))
-                    TextButton(onClick = it, enabled = !entry.busy) {
-                        Text(stringResource(R.string.entry_create_database))
-                    }
+                    // A button, not a link: it is the way out when the remembered database is gone
+                    SecondaryButton(
+                        text = stringResource(R.string.entry_create_database),
+                        onClick = it,
+                        enabled = !entry.busy,
+                    )
                 }
             }
         }

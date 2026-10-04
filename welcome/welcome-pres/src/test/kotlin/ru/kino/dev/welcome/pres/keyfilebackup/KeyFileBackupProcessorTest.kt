@@ -46,7 +46,10 @@ class KeyFileBackupProcessorTest {
 
             containerHost.action(KeyFileBackupAction.KeyFilePicked(KEY))
             expectInternalState { copy(stage = CreateStage(busy = true)) }
-            expectInternalState { copy(keyFileSaved = true, stage = CreateStage()) }
+            expectInternalState { copy(keyFile = KeyFileChoice.Created, stage = CreateStage()) }
+
+            // No second dialog on its own - only on "next"
+            containerHost.action(KeyFileBackupAction.Continue)
             expectSideEffect(KeyFileBackupSideEffect.PickDatabase("kdbxvault.kdbx"))
 
             containerHost.action(KeyFileBackupAction.DatabasePicked(DB)).join()
@@ -87,11 +90,52 @@ class KeyFileBackupProcessorTest {
     fun `once the key file is saved the button asks for the database`() = runTest {
         val (processor, _) = processor()
 
-        processor.testWithInternalState(this, KeyFileBackupState(keyFileSaved = true)) {
+        processor.testWithInternalState(this, KeyFileBackupState(keyFile = KeyFileChoice.Created)) {
             containerHost.action(KeyFileBackupAction.Continue)
             expectSideEffect(KeyFileBackupSideEffect.PickDatabase("kdbxvault.kdbx"))
         }
     }
+
+    @Test
+    fun `an existing file as the key file is checked, not written, and the database is created with it`() =
+        runTest {
+            files.names[EXISTING] = "photo.jpg"
+            val (processor, _) = processor()
+
+            processor.testWithInternalState(this) {
+                containerHost.action(KeyFileBackupAction.PickExisting)
+                expectSideEffect(KeyFileBackupSideEffect.PickExistingKeyFile)
+
+                containerHost.action(KeyFileBackupAction.ExistingPicked(EXISTING))
+                expectInternalState { copy(stage = CreateStage(busy = true)) }
+                expectInternalState { copy(keyFile = KeyFileChoice.Picked("photo.jpg"), stage = CreateStage()) }
+
+                containerHost.action(KeyFileBackupAction.Continue)
+                expectSideEffect(KeyFileBackupSideEffect.PickDatabase("kdbxvault.kdbx"))
+
+                containerHost.action(KeyFileBackupAction.DatabasePicked(DB)).join()
+                cancelAndIgnoreRemainingItems()
+            }
+
+            assertEquals(listOf("checkKeyFile $EXISTING", "wouldOverwrite $DB", "create $DB"), journal)
+            assertEquals(EXISTING, database.keyFileReceived)
+        }
+
+    @Test
+    fun `an existing file over the size limit is refused right away, before the database file is made`() =
+        runTest {
+            files.checkFailure = WelcomeFailure.KeyFileTooLarge()
+            val (processor, _) = processor()
+
+            processor.testWithInternalState(this) {
+                containerHost.action(KeyFileBackupAction.ExistingPicked(EXISTING))
+                expectInternalState { copy(stage = CreateStage(busy = true)) }
+                expectInternalState { copy(stage = CreateStage(problem = EntryProblem.KeyFileTooLarge(10))) }
+            }
+
+            assertNull(draft.keyFileUri)
+            assertEquals(listOf("checkKeyFile $EXISTING"), journal)
+        }
 
     @Test
     fun `a key file that cannot be written is shown, and nothing is created`() = runTest {
@@ -123,6 +167,7 @@ class KeyFileBackupProcessorTest {
 
     private companion object {
         const val KEY = "content://keys/kdbxvault.keyx"
+        const val EXISTING = "content://media/photo.jpg"
         const val DB = "content://docs/kdbxvault.kdbx"
     }
 }

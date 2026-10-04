@@ -88,6 +88,16 @@ class BiometricRepositoryImplTest {
     }
 
     @Test
+    fun `forgetting all forgets the password of any database, and its key`() = runTest {
+        enable(DB, "secret")
+
+        repository.forgetAll()
+
+        assertFalse(repository.isEnabled(DB))
+        assertEquals(1, keys.deleted)
+    }
+
+    @Test
     fun `a session the prompt did not let through is ours, not a password`() = runTest {
         enable(DB, "secret")
         keys.lockedUntilPrompt = true

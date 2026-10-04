@@ -45,6 +45,10 @@
     <string name="create_password_text">It opens the database. It cannot be recovered, so keep it in mind.</string>
     <string name="create_password_confirm">Repeat the password</string>
     <string name="create_password_mismatch">The passwords don\'t match</string>
+    <plurals name="create_password_too_short">
+        <item quantity="one">At least %1$d character</item>
+        <item quantity="other">At least %1$d characters</item>
+    </plurals>
     <plurals name="create_password_too_long">
         <item quantity="one">No longer than %1$d character</item>
         <item quantity="other">No longer than %1$d characters</item>
@@ -60,11 +64,15 @@
     <string name="overwrite_confirm">Replace</string>
 
     <!-- Creating: key file -->
-    <string name="key_file_title">Save the key file</string>
+    <string name="key_file_title">Key file</string>
     <string name="key_file_text">The database opens only with the password and this file together. Without the file the password alone won\'t open it. Keep it apart from the database, not in the same folder.</string>
-    <string name="key_file_save">Save key file</string>
+    <string name="key_file_create">Create a new key file</string>
+    <string name="key_file_pick_existing">Choose an existing file</string>
+    <string name="key_file_existing_warning">Any file can be a key, but it must never change: if it changes by a single byte - a photo saved again, its details edited - the database will not open.</string>
     <string name="key_file_saved">The key file is saved</string>
-    <string name="key_file_choose_database">Choose where to save the database</string>
+    <string name="key_file_picked">Key file: %1$s</string>
+    <string name="key_file_picked_unnamed">The key file is chosen</string>
+    <string name="key_file_next_hint">Next, choose where to save the database</string>
 
     <!-- Creating: biometrics -->
     <string name="biometric_title">Unlock with biometrics</string>

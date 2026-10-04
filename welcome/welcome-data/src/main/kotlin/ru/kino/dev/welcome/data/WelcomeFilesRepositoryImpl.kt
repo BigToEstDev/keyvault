@@ -2,9 +2,11 @@ package ru.kino.dev.welcome.data
 
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
+import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.DatabaseFiles
 import ru.kino.dev.core.NativeCore
 import ru.kino.dev.welcome.PickedFile
+import ru.kino.dev.welcome.WelcomeFailure
 import ru.kino.dev.welcome.WelcomeFilesRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,6 +24,13 @@ internal class WelcomeFilesRepositoryImpl @Inject constructor(
 
     override suspend fun wouldOverwrite(uri: String, file: PickedFile): Boolean = welcomeCall {
         !accessing(file) { files.isEmpty(uri) }
+    }
+
+    override suspend fun checkKeyFile(uri: String) = welcomeCall {
+        if (!files.exists(uri)) throw WelcomeFailure.FileUnreachable(PickedFile.KeyFile)
+        // An unknown size passes: creating reads at most the limit and refuses then
+        val size = files.size(uri)
+        if (size != null && CredentialLimits.isKeyFileTooLarge(size)) throw WelcomeFailure.KeyFileTooLarge()
     }
 
     override suspend fun writeNewKeyFile(uri: String) = welcomeCall {

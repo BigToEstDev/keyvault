@@ -7,6 +7,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.FakeDatabaseFiles
 import ru.kino.dev.core.FakeNativeCore
 import ru.kino.dev.core.expectFailure
@@ -39,6 +40,31 @@ class WelcomeFilesRepositoryImplTest {
             assertFalse(repository.isReachable(KEY))
             assertFalse(journal.toString(), journal.any { it.startsWith("read") })
         }
+
+    @Test
+    fun `an existing file picked as a key file is checked by its size, not read`() = runTest {
+        files.contents[KEY] = byteArrayOf(1)
+        files.reportedSizes[KEY] = CredentialLimits.KEY_FILE_MAX_SIZE
+
+        repository.checkKeyFile(KEY)
+
+        assertFalse(journal.toString(), journal.any { it.startsWith("read") })
+    }
+
+    @Test
+    fun `a picked key file over the limit is refused right away`() = runTest {
+        files.contents[KEY] = byteArrayOf(1)
+        files.reportedSizes[KEY] = CredentialLimits.KEY_FILE_MAX_SIZE + 1
+
+        expectFailure<WelcomeFailure.KeyFileTooLarge> { repository.checkKeyFile(KEY) }
+    }
+
+    @Test
+    fun `a picked key file that is not there is no access to the key file`() = runTest {
+        val failure = expectFailure<WelcomeFailure.FileUnreachable> { repository.checkKeyFile(KEY) }
+
+        assertEquals(PickedFile.KeyFile, failure.file)
+    }
 
     @Test
     fun `a new file from save as would overwrite nothing`() = runTest {

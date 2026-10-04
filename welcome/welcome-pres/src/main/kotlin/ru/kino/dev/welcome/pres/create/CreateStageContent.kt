@@ -30,19 +30,19 @@ internal fun OverwriteDialog(overwrite: Overwrite, onConfirm: () -> Unit, onDism
 }
 
 /**
- * What went wrong while creating. Only a file that cannot be reached is likely here - the user picks
- * another one with the same button; anything else is ours.
+ * What went wrong while creating: a file that cannot be reached, or an existing file picked as the key file
+ * that is too large - the user picks another with the same buttons; anything else is ours.
  */
 @Composable
 internal fun CreateProblemText(problem: EntryProblem) {
     Text(
-        text = stringResource(
-            when (problem) {
-                EntryProblem.Unreachable(PickedFile.Database) -> R.string.error_database_unreachable
-                EntryProblem.Unreachable(PickedFile.KeyFile) -> R.string.error_key_file_unreachable
-                else -> R.string.error_unexpected
-            },
-        ),
+        text = when (problem) {
+            EntryProblem.Unreachable(PickedFile.Database) -> stringResource(R.string.error_database_unreachable)
+            EntryProblem.Unreachable(PickedFile.KeyFile) -> stringResource(R.string.error_key_file_unreachable)
+            is EntryProblem.KeyFileTooLarge ->
+                stringResource(R.string.error_key_file_too_large, problem.maxMebibytes.toInt())
+            else -> stringResource(R.string.error_unexpected)
+        },
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.error,
         textAlign = TextAlign.Center,

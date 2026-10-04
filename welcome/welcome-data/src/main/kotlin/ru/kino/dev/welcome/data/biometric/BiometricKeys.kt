@@ -47,4 +47,7 @@ internal interface BiometricCleanup {
 
     /** Forgets what is stored unless it belongs to [dbUri]. */
     suspend fun forgetOtherThan(dbUri: String)
+
+    /** Forgets what is stored, whichever database it belongs to - a new database was created. */
+    suspend fun forgetAll()
 }
