@@ -32,6 +32,7 @@ dependencyResolutionManagement {
 include(":app")
 include(":core:core-domain")
 include(":core:core-pres")
+include(":core:core-nav")
 include(":core:core-data")
 include(":welcome:welcome-domain")
 include(":welcome:welcome-data")
