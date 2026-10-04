@@ -52,6 +52,26 @@ class WelcomeDatabaseRepositoryImplTest {
     }
 
     @Test
+    fun `opening the same database again keeps its biometrics`() = runTest {
+        givenDatabase()
+
+        repository.open(DB, "pw", null)
+
+        assertFalse(journal.toString(), journal.contains("forgetAllBiometrics"))
+    }
+
+    @Test
+    fun `a database created in the place of an old one forgets the old biometrics - same uri or not`() =
+        runTest {
+            givenNewFile()
+
+            repository.create(DB, "pw", null)
+
+            assertInOrder("remember $DB", "forgetAllBiometrics")
+            assertFalse(journal.toString(), journal.any { it.startsWith("forgetBiometricsOtherThan") })
+        }
+
+    @Test
     fun `the remembered database has the names it was opened with`() = runTest {
         givenDatabase()
         givenKeyFile()

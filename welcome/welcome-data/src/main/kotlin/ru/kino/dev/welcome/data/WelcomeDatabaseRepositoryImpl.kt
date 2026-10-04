@@ -46,7 +46,7 @@ internal class WelcomeDatabaseRepositoryImpl @Inject constructor(
         val opened = keyFile.wipedAfter {
             core.openDatabase(dbKey = uri, bytes = bytes, password = password, fileName = fileName, keyFile = it)
         }
-        fix(opened, fileName, keyFileUri, keyFile?.name)
+        fix(opened, fileName, keyFileUri, keyFile?.name, created = false)
     }
 
     override suspend fun unlock(dbKey: String, password: String?, keyFileUri: String?) = welcomeCall {
@@ -109,7 +109,7 @@ internal class WelcomeDatabaseRepositoryImpl @Inject constructor(
                 accessing(PickedFile.Database) { files.writeReplacing(uri, created.bytes) }
             }
         }
-        return fix(created.database, fileName, keyFileUri, keyFile?.name)
+        return fix(created.database, fileName, keyFileUri, keyFile?.name, created = true)
     }
 
     /**
@@ -117,12 +117,16 @@ internal class WelcomeDatabaseRepositoryImpl @Inject constructor(
      *
      * Access that cannot be kept is "no access", and the database is closed again: remembered without it,
      * it would not open after a restart.
+     *
+     * @param created a new database - the password stored for biometrics is of no database here any more,
+     * even one at the same uri
      */
     private suspend fun fix(
         opened: OpenedDatabase,
         fileName: String?,
         keyFileUri: String?,
         keyFileName: String?,
+        created: Boolean,
     ): String {
         closingOnFailure(opened.dbKey) {
             accessing(PickedFile.Database) { files.keepAccess(opened.dbKey, forWriting = true) }
@@ -140,20 +144,23 @@ internal class WelcomeDatabaseRepositoryImpl @Inject constructor(
                 ),
             )
         }
-        forgetBiometricsOfAnother(opened.dbKey)
+        forgetStaleBiometrics(opened.dbKey, created)
         return opened.dbKey
     }
 
     /**
-     * The password stored for biometrics belongs to the remembered database; another one is remembered now.
-     * Best effort: what is stored is tied to its own uri and never offered for this one, so failing to wipe
-     * it does not fail an opening that has succeeded.
+     * The password stored for biometrics belongs to the remembered database. Opening another one makes it
+     * stale; creating one makes it stale whatever the uri - a database deleted and created anew in the same
+     * place has the same uri, and its old password must not unlock the new one (pass-docs, Step 34, bug 3).
+     *
+     * Best effort, so that it does not fail an opening or a creation that has succeeded: a stored password
+     * left behind is caught at the next biometric sign-in - it does not open, and is forgotten then.
      */
-    private suspend fun forgetBiometricsOfAnother(dbUri: String) {
+    private suspend fun forgetStaleBiometrics(dbUri: String, created: Boolean) {
         try {
-            biometrics.forgetOtherThan(dbUri)
+            if (created) biometrics.forgetAll() else biometrics.forgetOtherThan(dbUri)
         } catch (e: BiometricFailure) {
-            // Left behind, not used
+            // Left behind, caught at sign-in
         }
     }
 
