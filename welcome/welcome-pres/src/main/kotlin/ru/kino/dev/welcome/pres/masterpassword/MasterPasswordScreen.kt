@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -103,7 +104,8 @@ private fun MasterPasswordContent(state: MasterPasswordState, onAction: (MasterP
                 visible = state.passwordVisible,
                 onToggleVisible = { onAction(MasterPasswordAction.TogglePasswordVisible) },
                 error = if (state.tooLong) {
-                    stringResource(R.string.create_password_too_long, CredentialLimits.PASSWORD_MAX_CHARS)
+                    val max = CredentialLimits.PASSWORD_MAX_CHARS
+                    pluralStringResource(R.plurals.create_password_too_long, max, max)
                 } else {
                     null
                 },

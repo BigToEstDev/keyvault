@@ -43,7 +43,12 @@
     <string name="create_password_text">Им открывается база. Восстановить его нельзя — запомните его.</string>
     <string name="create_password_confirm">Повторите пароль</string>
     <string name="create_password_mismatch">Пароли не совпадают</string>
-    <string name="create_password_too_long">Не длиннее %1$d символов</string>
+    <plurals name="create_password_too_long">
+        <item quantity="one">Не длиннее %1$d символа</item>
+        <item quantity="few">Не длиннее %1$d символов</item>
+        <item quantity="many">Не длиннее %1$d символов</item>
+        <item quantity="other">Не длиннее %1$d символа</item>
+    </plurals>
     <string name="create_key_file_switch">Добавить key-файл</string>
     <string name="create_key_file_switch_hint">Второй фактор: файл, который лежит отдельно от базы</string>
     <string name="create_sync_hint">Дальше вы выберете, куда сохранить базу. В синхронизируемой папке — Google Drive, Dropbox и подобных — она будет и на других ваших устройствах.</string>

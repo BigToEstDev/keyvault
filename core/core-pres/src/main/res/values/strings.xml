@@ -44,7 +44,10 @@
     <string name="create_password_text">It opens the database. It cannot be recovered, so keep it in mind.</string>
     <string name="create_password_confirm">Repeat the password</string>
     <string name="create_password_mismatch">The passwords don\'t match</string>
-    <string name="create_password_too_long">No longer than %1$d characters</string>
+    <plurals name="create_password_too_long">
+        <item quantity="one">No longer than %1$d character</item>
+        <item quantity="other">No longer than %1$d characters</item>
+    </plurals>
     <string name="create_key_file_switch">Add a key file</string>
     <string name="create_key_file_switch_hint">A second factor: a file kept apart from the database</string>
     <string name="create_sync_hint">Next you choose where to save the database. In a synced folder - Google Drive, Dropbox and the like - it is there on your other devices too.</string>
