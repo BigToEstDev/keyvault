@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Components -->
+    <string name="password_show">Показать пароль</string>
+    <string name="password_hide">Скрыть пароль</string>
+
+    <!-- Common actions -->
+    <string name="action_retry">Повторить</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_next">Далее</string>
+    <string name="action_pick_another_file">Выбрать другой файл</string>
+    <string name="action_pick_another_key_file">Выбрать другой key-файл</string>
+
+    <!-- welcome -->
+    <string name="welcome_title">Ваши пароли — в одном файле</string>
+    <string name="welcome_subtitle">База KeePass, которая лежит там, где вы её положили</string>
+    <string name="welcome_open">Открыть базу</string>
+    <string name="welcome_create">Создать базу</string>
+
+    <!-- unlock and locked -->
+    <string name="entry_password">Мастер-пароль</string>
+    <string name="entry_open">Открыть</string>
+    <string name="entry_unlock">Разблокировать</string>
+    <string name="entry_database_fallback">База</string>
+    <string name="entry_change_database_hint">Нажмите на имя, чтобы выбрать другой файл</string>
+    <string name="entry_locked_title">База заблокирована</string>
+    <string name="entry_key_file_add">Есть key-файл</string>
+    <string name="entry_key_file_remove">Отвязать key-файл</string>
+    <string name="entry_key_file_name">Key-файл: %1$s</string>
+    <string name="entry_key_file_unnamed">выбран</string>
+
+    <!-- Failures -->
+    <string name="error_invalid_credentials">Проверьте пароль и key-файл</string>
+    <string name="error_unsupported_file">Этот файл — не база, которую приложение умеет открыть</string>
+    <string name="error_corrupted_file">Файл повреждён или ещё не докачался</string>
+    <string name="error_database_unreachable">Нет доступа к файлу базы</string>
+    <string name="error_key_file_unreachable">Нет доступа к key-файлу</string>
+    <string name="error_key_file_too_large">Key-файл больше %1$d МиБ</string>
+    <string name="error_unexpected">Что-то пошло не так</string>
+
+    <!-- Creating: master password -->
+    <string name="create_password_title">Задайте мастер-пароль</string>
+    <string name="create_password_text">Им открывается база. Восстановить его нельзя — запомните его.</string>
+    <string name="create_password_confirm">Повторите пароль</string>
+    <string name="create_password_mismatch">Пароли не совпадают</string>
+    <plurals name="create_password_too_long">
+        <item quantity="one">Не длиннее %1$d символа</item>
+        <item quantity="few">Не длиннее %1$d символов</item>
+        <item quantity="many">Не длиннее %1$d символов</item>
+        <item quantity="other">Не длиннее %1$d символа</item>
+    </plurals>
+    <string name="create_key_file_switch">Добавить key-файл</string>
+    <string name="create_key_file_switch_hint">Второй фактор: файл, который лежит отдельно от базы</string>
+    <string name="create_sync_hint">Дальше вы выберете, куда сохранить базу. В синхронизируемой папке — Google Drive, Dropbox и подобных — она будет и на других ваших устройствах.</string>
+
+    <!-- Creating: writing over an existing file -->
+    <string name="overwrite_title">Заменить существующий файл?</string>
+    <string name="overwrite_database_text">Выбранный файл не пустой. Новая база заменит его безвозвратно.</string>
+    <string name="overwrite_key_file_text">Выбранный файл не пустой — это может быть ключ другой базы. Если заменить его, ту базу будет не открыть никогда.</string>
+    <string name="overwrite_confirm">Заменить</string>
+
+    <!-- Creating: key file -->
+    <string name="key_file_title">Сохраните key-файл</string>
+    <string name="key_file_text">База открывается только паролем и этим файлом вместе. Без файла один пароль её не откроет. Храните его отдельно от базы, не в той же папке.</string>
+    <string name="key_file_save">Сохранить key-файл</string>
+    <string name="key_file_saved">Key-файл сохранён</string>
+    <string name="key_file_choose_database">Выбрать, куда сохранить базу</string>
+
+    <!-- Creating: biometrics -->
+    <string name="biometric_title">Вход по биометрии</string>
+    <string name="biometric_text">Открывайте базу отпечатком пальца или лицом вместо ввода пароля.</string>
+    <string name="biometric_skip">Пропустить</string>
+
+    <!-- vault -->
+    <string name="entries_stub">База открыта. Список записей — следующий шаг.</string>
+    <string name="entries_debug_lock">Заблокировать (debug)</string>
+</resources>

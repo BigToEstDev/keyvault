@@ -28,12 +28,17 @@ interface WelcomeDatabaseRepository {
     /**
      * Unlocks the database the core still holds, locked while open - the locked screen.
      *
-     * Quick: the credentials are checked against the key the core kept, the file is not read. The key file
-     * is the one the database was opened with, from the remembered database.
+     * Quick: the credentials are checked against the key the core kept, the database file is not read.
+     *
+     * A key file other than the remembered one - picked on the locked screen because the remembered one
+     * could not be reached - is remembered once it unlocked the database, with access to it kept, so the
+     * next launch opens with it. When that cannot be fixed the database is locked again.
      *
      * @param password null for a database closed with a key file alone
+     * @param keyFileUri the key file to unlock with, usually the remembered one; read anew, never kept in
+     * memory
      */
-    suspend fun unlock(dbKey: String, password: String?)
+    suspend fun unlock(dbKey: String, password: String?, keyFileUri: String?)
 
     /**
      * Creates a database in [uri] - the empty file "save as" has just made - and leaves it open.

@@ -88,6 +88,16 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
         }
     }
 
+    override suspend fun lockDatabase(dbKey: String) {
+        withContext(dispatcher) {
+            val envelope = PassFfi.invoke(
+                FfiCommands.LOCK_DATABASE,
+                encode(DbKeyDto.serializer(), DbKeyDto(dbKey)),
+            )
+            FfiEnvelope.unwrap(envelope, DoneDto.serializer())
+        }
+    }
+
     override suspend fun unlockDatabase(
         dbKey: String,
         password: String?,

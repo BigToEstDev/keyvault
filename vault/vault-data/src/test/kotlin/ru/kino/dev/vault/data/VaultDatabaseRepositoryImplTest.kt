@@ -10,6 +10,7 @@ import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.DatabaseFileException
 import ru.kino.dev.core.FakeDatabaseFiles
 import ru.kino.dev.core.FakeNativeCore
+import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.expectFailure
 
 class VaultDatabaseRepositoryImplTest {
@@ -32,6 +33,22 @@ class VaultDatabaseRepositoryImplTest {
         files.unreachable += DB
 
         expectFailure<DatabaseFileException> { repository.save(DB) }
+    }
+
+    @Test
+    fun `locking locks the open database in the core, without saving it`() = runTest {
+        core.opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null)
+
+        repository.lock(DB)
+
+        assertTrue(DB in core.locked)
+        assertEquals(listOf("lockDatabase $DB"), journal)
+    }
+
+    @Test
+    fun `locking a database the core does not hold is a failure`() = runTest {
+        val error = expectFailure<CoreException> { repository.lock(DB) }
+        assertEquals("DbKeyNotFound", error.kind)
     }
 
     @Test

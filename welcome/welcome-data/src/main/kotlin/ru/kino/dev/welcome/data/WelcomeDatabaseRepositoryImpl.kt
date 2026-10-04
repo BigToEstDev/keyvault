@@ -46,13 +46,27 @@ internal class WelcomeDatabaseRepositoryImpl @Inject constructor(
         fix(opened, fileName, keyFileUri, keyFile?.name)
     }
 
-    override suspend fun unlock(dbKey: String, password: String?) = welcomeCall {
-        // The key file it was opened with - the remembered one, when the remembered database is this one
-        val keyFileUri = current.current.first()?.takeIf { it.uri == dbKey }?.keyFileUri
+    override suspend fun unlock(dbKey: String, password: String?, keyFileUri: String?) = welcomeCall {
         val keyFile = keyFileUri?.let { readKeyFile(it) }
+        val keyFileName = keyFile?.name
 
         keyFile.wipedAfter { core.unlockDatabase(dbKey = dbKey, password = password, keyFile = it) }
-        Unit
+        rememberKeyFile(dbKey, keyFileUri, keyFileName)
+    }
+
+    /**
+     * A key file other than the remembered one unlocked the database: it replaced one that could not be
+     * reached, and the next launch has to open with it. Fixed the way opening fixes it, or the database is
+     * locked again - unlocked with a key file the app does not remember, it would not open after a restart.
+     */
+    private suspend fun rememberKeyFile(dbKey: String, keyFileUri: String?, keyFileName: String?) {
+        val remembered = current.current.first()?.takeIf { it.uri == dbKey } ?: return
+        if (remembered.keyFileUri == keyFileUri) return
+
+        undoingOnFailure(undo = { core.lockDatabase(dbKey) }) {
+            keyFileUri?.let { accessing(PickedFile.KeyFile) { files.keepAccess(it, forWriting = false) } }
+            writer.remember(remembered.copy(keyFileUri = keyFileUri, keyFileName = keyFileName))
+        }
     }
 
     override suspend fun create(uri: String, password: String, keyFileUri: String?): String = welcomeCall {
@@ -127,12 +141,15 @@ internal class WelcomeDatabaseRepositoryImpl @Inject constructor(
     }
 
     private suspend fun <T> closingOnFailure(dbKey: String, block: suspend () -> T): T =
+        undoingOnFailure(undo = { core.closeDatabase(dbKey) }, block = block)
+
+    private suspend fun <T> undoingOnFailure(undo: suspend () -> Unit, block: suspend () -> T): T =
         try {
             block()
         } catch (e: Throwable) {
-            // The failure that brought us here is the one to report; one of closing goes along with it
+            // The failure that brought us here is the one to report; one of undoing goes along with it
             withContext(NonCancellable) {
-                runCatching { core.closeDatabase(dbKey) }.exceptionOrNull()?.let(e::addSuppressed)
+                runCatching { undo() }.exceptionOrNull()?.let(e::addSuppressed)
             }
             throw e
         }

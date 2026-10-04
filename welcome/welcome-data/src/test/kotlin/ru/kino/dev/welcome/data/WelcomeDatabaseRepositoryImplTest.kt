@@ -214,12 +214,12 @@ class WelcomeDatabaseRepositoryImplTest {
     // --- unlock -------------------------------------------------------------------------------------------
 
     @Test
-    fun `unlocking uses the key file the remembered database was opened with`() = runTest {
+    fun `unlocking hands the key file it is given to the core and wipes it`() = runTest {
         givenKeyFile()
         givenOpen()
         store.current.value = CurrentDatabase(DB, "passwords.kdbx", "Passwords", KEY, "my.keyx")
 
-        repository.unlock(DB, "pw")
+        repository.unlock(DB, "pw", KEY)
 
         val keyFile = core.keyFilesReceived.single()
         assertEquals("my.keyx", keyFile.name)
@@ -228,14 +228,66 @@ class WelcomeDatabaseRepositoryImplTest {
     }
 
     @Test
-    fun `unlocking another database than the remembered one takes no key file from it`() = runTest {
+    fun `unlocking with the remembered key file writes nothing`() = runTest {
         givenKeyFile()
         givenOpen()
-        store.current.value = CurrentDatabase("content://docs/other.kdbx", null, null, KEY, "my.keyx")
+        store.current.value = CurrentDatabase(DB, "passwords.kdbx", "Passwords", KEY, "my.keyx")
 
-        repository.unlock(DB, "pw")
+        repository.unlock(DB, "pw", KEY)
 
-        assertTrue(core.keyFilesReceived.isEmpty())
+        assertFalse(journal.toString(), journal.any { it.startsWith("keepAccess") || it.startsWith("remember") })
+    }
+
+    @Test
+    fun `another key file that unlocked the database is remembered, with access kept`() = runTest {
+        givenKeyFile()
+        givenOpen()
+        store.current.value = CurrentDatabase(DB, "passwords.kdbx", "Passwords", OLD_KEY, "old.keyx")
+
+        repository.unlock(DB, "pw", KEY)
+
+        assertInOrder("unlockDatabase $DB", "keepAccess $KEY", "remember $DB")
+        assertEquals(false, files.kept[KEY])
+        assertEquals(
+            CurrentDatabase(DB, "passwords.kdbx", "Passwords", KEY, "my.keyx"),
+            store.current.value,
+        )
+    }
+
+    @Test
+    fun `another key file whose access cannot be kept is no access, and the database is locked again`() =
+        runTest {
+            givenKeyFile()
+            givenOpen()
+            store.current.value = CurrentDatabase(DB, "passwords.kdbx", "Passwords", OLD_KEY, "old.keyx")
+            files.notKeepable += KEY
+
+            val failure = expectFailure<WelcomeFailure.FileUnreachable> { repository.unlock(DB, "pw", KEY) }
+
+            assertEquals(PickedFile.KeyFile, failure.file)
+            assertTrue(DB in core.locked)
+            assertEquals(OLD_KEY, store.current.value?.keyFileUri)
+        }
+
+    @Test
+    fun `a key file that cannot be read is no access to the key file`() = runTest {
+        givenOpen()
+        files.unreachable += KEY
+
+        val failure = expectFailure<WelcomeFailure.FileUnreachable> { repository.unlock(DB, "pw", KEY) }
+
+        assertEquals(PickedFile.KeyFile, failure.file)
+    }
+
+    @Test
+    fun `unlocking another database than the remembered one remembers nothing`() = runTest {
+        givenKeyFile()
+        givenOpen()
+        store.current.value = CurrentDatabase("content://docs/other.kdbx", null, null, OLD_KEY, "old.keyx")
+
+        repository.unlock(DB, "pw", KEY)
+
+        assertFalse(journal.toString(), journal.any { it.startsWith("remember") })
     }
 
     @Test
@@ -243,14 +295,14 @@ class WelcomeDatabaseRepositoryImplTest {
         givenOpen()
         core.failures["unlockDatabase"] = CoreException("InvalidCredentials", "no")
 
-        expectFailure<WelcomeFailure.InvalidCredentials> { repository.unlock(DB, "wrong") }
+        expectFailure<WelcomeFailure.InvalidCredentials> { repository.unlock(DB, "wrong", null) }
     }
 
     @Test
     fun `unlocking reads no file but the key file`() = runTest {
         givenOpen()
 
-        repository.unlock(DB, "pw")
+        repository.unlock(DB, "pw", null)
 
         assertEquals(listOf("unlockDatabase $DB"), journal)
     }
@@ -428,6 +480,7 @@ class WelcomeDatabaseRepositoryImplTest {
     private companion object {
         const val DB = "content://docs/passwords.kdbx"
         const val KEY = "content://keys/my.keyx"
+        const val OLD_KEY = "content://keys/old.keyx"
         val DB_BYTES = byteArrayOf(0x03, 0xD9.toByte(), 0xA2.toByte(), 0x9A.toByte(), 0x67)
         val KEY_BYTES = "<KeyFile>secret</KeyFile>".toByteArray()
     }

@@ -14,6 +14,12 @@ interface VaultDatabaseRepository {
     /** Writes the open database back into its file. */
     suspend fun save(dbKey: String)
 
+    /**
+     * Locks the database: its content is encrypted in memory, the key stays with the core, and unlocking it
+     * on the locked screen of `welcome` is quick. Unsaved edits survive the lock.
+     */
+    suspend fun lock(dbKey: String)
+
     /** Closes the database: its contents and its key leave the process. */
     suspend fun close(dbKey: String)
 

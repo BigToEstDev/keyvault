@@ -16,6 +16,9 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     /** Databases the core holds, by dbKey. */
     val opened = mutableMapOf<String, OpenedDatabase>()
 
+    /** Databases locked while open, by dbKey: still in [opened], unlocked again by [unlockDatabase]. */
+    val locked = mutableSetOf<String>()
+
     /** Databases whose file no longer matches the checksum - written by somebody else. */
     val changedElsewhere = mutableSetOf<String>()
 
@@ -89,12 +92,20 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         return OpenedDatabase(dbKey, databaseName, fileName, keyFile?.name).also { opened[dbKey] = it }
     }
 
+    override suspend fun lockDatabase(dbKey: String) {
+        step("lockDatabase", dbKey)
+        if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
+        locked += dbKey
+    }
+
     override suspend fun unlockDatabase(dbKey: String, password: String?, keyFile: KeyFile?): OpenedDatabase {
         passwordReceived = password
         keyFile?.let { keyFilesReceived += it }
         step("unlockDatabase", dbKey)
 
-        return opened[dbKey] ?: throw CoreException("DbKeyNotFound", "not open: $dbKey")
+        val database = opened[dbKey] ?: throw CoreException("DbKeyNotFound", "not open: $dbKey")
+        locked -= dbKey
+        return database
     }
 
     override suspend fun saveDatabase(dbKey: String): ByteArray {
@@ -105,6 +116,7 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     override suspend fun closeDatabase(dbKey: String) {
         step("closeDatabase", dbKey)
         opened.remove(dbKey)
+        locked -= dbKey
     }
 
     override suspend fun verifyFileChecksum(dbKey: String, bytes: ByteArray) {

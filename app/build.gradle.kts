@@ -30,12 +30,17 @@ dependencies {
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
     compileOnly(libs.errorprone.annotations)
+    // The system splash stays up while the start route is read
+    implementation(libs.androidx.core.splashscreen)
 
     implementation(projects.core.coreDomain)
     implementation(projects.core.corePres)
+    implementation(projects.core.coreNav)
     // The native core: its Hilt module binds NativeCore to the jni implementation
     implementation(projects.core.coreData)
     // Feature data modules: nothing here calls them, but Hilt only sees the bindings of what the app depends on
     implementation(projects.welcome.welcomeData)
     implementation(projects.vault.vaultData)
+    implementation(projects.welcome.welcomePres)
+    implementation(projects.vault.vaultPres)
 }
