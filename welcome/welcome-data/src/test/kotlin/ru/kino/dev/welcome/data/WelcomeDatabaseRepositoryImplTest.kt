@@ -26,7 +26,8 @@ class WelcomeDatabaseRepositoryImplTest {
     private val core = FakeNativeCore(journal)
     private val files = FakeDatabaseFiles(journal)
     private val store = FakeCurrentDatabaseStore(journal)
-    private val repository = WelcomeDatabaseRepositoryImpl(core, files, store, store)
+    private val biometrics = FakeBiometricCleanup(journal)
+    private val repository = WelcomeDatabaseRepositoryImpl(core, files, store, store, biometrics)
 
     // --- open ---------------------------------------------------------------------------------------------
 
@@ -39,6 +40,15 @@ class WelcomeDatabaseRepositoryImplTest {
 
         assertEquals(DB, dbKey)
         assertInOrder("openDatabase $DB", "keepAccess $DB", "keepAccess $KEY", "remember $DB")
+    }
+
+    @Test
+    fun `a database remembered forgets the biometrics stored for another, after it is remembered`() = runTest {
+        givenDatabase()
+
+        repository.open(DB, "pw", null)
+
+        assertInOrder("remember $DB", "forgetBiometricsOtherThan $DB")
     }
 
     @Test
