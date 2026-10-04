@@ -56,6 +56,7 @@ internal fun PasswordEntryContent(
     onSubmit: () -> Unit,
     onAttachKeyFile: () -> Unit,
     onRemoveKeyFile: () -> Unit,
+    onBiometric: () -> Unit,
     onDatabaseClick: (() -> Unit)?,
     onPickAnotherDatabase: (() -> Unit)?,
     subtitle: String? = null,
@@ -106,6 +107,7 @@ internal fun PasswordEntryContent(
                     onTogglePasswordVisible = onTogglePasswordVisible,
                     onSubmit = onSubmit,
                 )
+                BiometricSignInRow(entry = entry, onBiometric = onBiometric)
                 Spacer(Modifier.height(16.dp))
                 KeyFileRow(
                     entry = entry,
@@ -172,6 +174,31 @@ private fun PasswordInput(
     if (entry.problem == EntryProblem.Unexpected) {
         Spacer(Modifier.height(8.dp))
         ErrorText(stringResource(R.string.error_unexpected))
+    }
+}
+
+/** A second way in, next to the password, never instead of it - and only on a tap. */
+@Composable
+private fun BiometricSignInRow(entry: PasswordEntry, onBiometric: () -> Unit) {
+    if (entry.biometricOn) {
+        Spacer(Modifier.height(12.dp))
+        SecondaryButton(
+            text = stringResource(R.string.entry_biometric),
+            onClick = onBiometric,
+            enabled = !entry.busy,
+        )
+    }
+    entry.biometricNotice?.let { notice ->
+        Spacer(Modifier.height(8.dp))
+        ErrorText(
+            stringResource(
+                when (notice) {
+                    BiometricNotice.DeviceChanged -> R.string.biometric_notice_device_changed
+                    BiometricNotice.PasswordChanged -> R.string.biometric_notice_password_changed
+                    BiometricNotice.Failed -> R.string.biometric_notice_failed
+                },
+            ),
+        )
     }
 }
 

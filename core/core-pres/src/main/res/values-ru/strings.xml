@@ -70,6 +70,17 @@
     <string name="biometric_title">Вход по биометрии</string>
     <string name="biometric_text">Открывайте базу отпечатком пальца или лицом вместо ввода пароля.</string>
     <string name="biometric_skip">Пропустить</string>
+    <string name="biometric_enable">Включить</string>
+    <string name="biometric_enable_failed">Не удалось включить вход по биометрии</string>
+
+    <!-- Biometric unlock -->
+    <string name="entry_biometric">Войти по биометрии</string>
+    <string name="biometric_prompt_unlock_title">Разблокировка базы</string>
+    <string name="biometric_prompt_enable_title">Включение входа по биометрии</string>
+    <string name="biometric_prompt_use_password">Ввести пароль</string>
+    <string name="biometric_notice_device_changed">Биометрия на устройстве изменилась — войдите паролем</string>
+    <string name="biometric_notice_password_changed">Пароль базы изменился — войдите паролем</string>
+    <string name="biometric_notice_failed">Не удалось войти по биометрии — войдите паролем</string>
 
     <!-- vault -->
     <string name="entries_stub">База открыта. Список записей — следующий шаг.</string>

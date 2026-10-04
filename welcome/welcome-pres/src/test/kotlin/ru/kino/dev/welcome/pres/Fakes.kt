@@ -3,12 +3,16 @@ package ru.kino.dev.welcome.pres
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import ru.kino.dev.log.ErrorLog
+import ru.kino.dev.welcome.BiometricFailure
+import ru.kino.dev.welcome.BiometricRepository
+import ru.kino.dev.welcome.BiometricSession
 import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.CurrentDatabaseRepository
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeDatabaseRepository
 import ru.kino.dev.welcome.WelcomeFailure
 import ru.kino.dev.welcome.WelcomeFilesRepository
+import javax.crypto.Cipher
 
 /** Calls as `"<method> <uri>"`, shared by the fakes to check the order across them. */
 internal typealias Journal = MutableList<String>
@@ -78,6 +82,51 @@ internal class FakeWelcomeFiles(private val journal: Journal = mutableListOf()) 
 
 internal class FakeCurrentDatabase(database: CurrentDatabase? = null) : CurrentDatabaseRepository {
     override val current = MutableStateFlow(database)
+}
+
+/** Stored passwords by uri, in the clear - the Keystore and the prompt are not what processors test. */
+internal class FakeBiometrics(private val journal: Journal = mutableListOf()) : BiometricRepository {
+
+    var available = true
+    val passwords = mutableMapOf<String, String>()
+
+    /** Thrown by the next [startReading], then forgotten. */
+    var startFailure: BiometricFailure? = null
+
+    override fun isAvailable() = available
+
+    override suspend fun isEnabled(dbUri: String) = dbUri in passwords
+
+    override suspend fun startSaving(): BiometricSession {
+        journal += "startSaving"
+        passwords.clear()
+        return session()
+    }
+
+    override suspend fun save(dbUri: String, password: String, session: BiometricSession) {
+        journal += "save $dbUri"
+        passwords[dbUri] = password
+    }
+
+    override suspend fun startReading(dbUri: String): BiometricSession {
+        startFailure?.let {
+            startFailure = null
+            if (it is BiometricFailure.KeyInvalidated) passwords.remove(dbUri)
+            throw it
+        }
+        if (dbUri !in passwords) throw BiometricFailure.NotAvailable()
+        return session()
+    }
+
+    override suspend fun read(dbUri: String, session: BiometricSession): String =
+        passwords[dbUri] ?: throw BiometricFailure.NotAvailable()
+
+    override suspend fun forget(dbUri: String) {
+        journal += "forget $dbUri"
+        passwords.remove(dbUri)
+    }
+
+    private fun session() = BiometricSession(Cipher.getInstance("AES/GCM/NoPadding"))
 }
 
 internal class FakeErrorLog : ErrorLog {

@@ -20,6 +20,9 @@ import ru.kino.dev.welcome.CurrentDatabaseRepository
 import ru.kino.dev.welcome.WelcomeDatabaseRepository
 import ru.kino.dev.welcome.WelcomeFailure
 import ru.kino.dev.welcome.WelcomeFilesRepository
+import ru.kino.dev.welcome.pres.common.BiometricNotice
+import ru.kino.dev.welcome.pres.common.BiometricOutcome
+import ru.kino.dev.welcome.pres.common.BiometricSignIn
 import ru.kino.dev.welcome.pres.common.PasswordEntry
 import ru.kino.dev.welcome.pres.common.toProblem
 import ru.kino.dev.welcome.pres.navigation.WelcomeRoute
@@ -43,6 +46,10 @@ data class UnlockState(
  * a file picked here by mistake replaces nothing; the repository does the remembering, this screen only
  * goes on to `vault` and wipes the `welcome` graph behind it.
  *
+ * Biometrics, when on for the remembered database, give the password on a tap - and it opens the usual way,
+ * with the key file of the database. A stored password that no longer opens it was changed elsewhere: it
+ * is forgotten, and the user signs in with the password.
+ *
  * @param pickedUri a file just picked, or null for the remembered database
  */
 @HiltViewModel(assistedFactory = UnlockProcessor.Factory::class)
@@ -53,6 +60,7 @@ class UnlockProcessor @AssistedInject constructor(
     private val current: CurrentDatabaseRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
+    private val biometric: BiometricSignIn,
 ) : ViewModel(), OrbitContainerHost<UnlockState, UnlockState, UnlockSideEffect> {
 
     @AssistedFactory
@@ -105,6 +113,46 @@ class UnlockProcessor @AssistedInject constructor(
             }
 
             UnlockAction.RemoveKeyFile -> reduce { state.copy(entry = state.entry.withKeyFile(null, null)) }
+
+            UnlockAction.Biometric -> startBiometric()
+
+            is UnlockAction.BiometricFinished -> biometricFinished(action.outcome)
+        }
+    }
+
+    private suspend fun Syntax<UnlockState, UnlockSideEffect>.startBiometric() {
+        val uri = state.databaseUri ?: return
+        if (state.entry.busy) return
+
+        when (val start = biometric.start(uri)) {
+            is BiometricSignIn.Start.Prompt -> {
+                reduce { state.copy(entry = state.entry.copy(biometricNotice = null)) }
+                postSideEffect(UnlockSideEffect.ShowBiometricPrompt(start.session))
+            }
+
+            is BiometricSignIn.Start.Refused -> reduce {
+                state.copy(entry = state.entry.copy(biometricOn = start.stillOn, biometricNotice = start.notice))
+            }
+        }
+    }
+
+    private suspend fun Syntax<UnlockState, UnlockSideEffect>.biometricFinished(outcome: BiometricOutcome) {
+        val uri = state.databaseUri ?: return
+        when (outcome) {
+            BiometricOutcome.Cancelled -> Unit
+
+            BiometricOutcome.Failed -> reduce {
+                state.copy(entry = state.entry.copy(biometricNotice = BiometricNotice.Failed))
+            }
+
+            is BiometricOutcome.Succeeded -> {
+                val password = biometric.password(uri, outcome.session)
+                if (password == null) {
+                    reduce { state.copy(entry = state.entry.copy(biometricNotice = BiometricNotice.Failed)) }
+                } else {
+                    open(uri, password, fromBiometrics = true)
+                }
+            }
         }
     }
 
@@ -119,7 +167,11 @@ class UnlockProcessor @AssistedInject constructor(
                 databaseUri = uri,
                 databaseName = remembered.databaseName,
                 fileName = remembered.fileName,
-                entry = PasswordEntry(keyFileUri = remembered.keyFileUri, keyFileName = remembered.keyFileName),
+                entry = PasswordEntry(
+                    keyFileUri = remembered.keyFileUri,
+                    keyFileName = remembered.keyFileName,
+                    biometricOn = biometric.isOn(uri),
+                ),
             )
         } else {
             UnlockState(databaseUri = uri, fileName = nameOf(uri))
@@ -131,16 +183,42 @@ class UnlockProcessor @AssistedInject constructor(
         val uri = state.databaseUri ?: return
         if (state.entry.busy) return
 
+        open(uri, state.entry.passwordForCall, fromBiometrics = false)
+    }
+
+    /**
+     * Opens with [password] and the attached key file. From biometrics, wrong credentials mean the stored
+     * password is stale: it is forgotten, and the screen says the password changed instead of "check the
+     * password" under a field the user did not type in.
+     */
+    private suspend fun Syntax<UnlockState, UnlockSideEffect>.open(
+        uri: String,
+        password: String?,
+        fromBiometrics: Boolean,
+    ) {
         val entry = state.entry
-        reduce { state.copy(entry = entry.copy(busy = true, problem = null)) }
+        reduce { state.copy(entry = entry.copy(busy = true, problem = null, biometricNotice = null)) }
         try {
-            val dbKey = database.open(uri, entry.passwordForCall, entry.keyFileUri)
+            val dbKey = database.open(uri, password, entry.keyFileUri)
             // Nothing typed stays behind, though the screen is about to go
             reduce { state.copy(entry = PasswordEntry()) }
             navigator.navigate(
                 MviNavEvent.NavigateTo(EntriesListRoute(dbKey), popUpTo = WelcomeGraph, inclusive = true),
             )
         } catch (failure: WelcomeFailure) {
+            if (fromBiometrics && failure is WelcomeFailure.InvalidCredentials) {
+                biometric.passwordRejected(uri)
+                reduce {
+                    state.copy(
+                        entry = state.entry.copy(
+                            busy = false,
+                            biometricOn = false,
+                            biometricNotice = BiometricNotice.PasswordChanged,
+                        ),
+                    )
+                }
+                return
+            }
             if (failure is WelcomeFailure.Unexpected) log.unexpected(TAG, failure)
             reduce { state.copy(entry = state.entry.copy(busy = false, problem = failure.toProblem())) }
         }

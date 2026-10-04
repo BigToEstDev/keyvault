@@ -1,5 +1,8 @@
 package ru.kino.dev.welcome.pres.unlock
 
+import ru.kino.dev.welcome.BiometricSession
+import ru.kino.dev.welcome.pres.common.BiometricOutcome
+
 sealed interface UnlockAction {
 
     data class PasswordChanged(val password: String) : UnlockAction
@@ -19,6 +22,11 @@ sealed interface UnlockAction {
     data class KeyFilePicked(val uri: String) : UnlockAction
 
     data object RemoveKeyFile : UnlockAction
+
+    /** "Sign in with biometrics" tapped - the prompt is shown only on this. */
+    data object Biometric : UnlockAction
+
+    data class BiometricFinished(val outcome: BiometricOutcome) : UnlockAction
 }
 
 sealed interface UnlockSideEffect {
@@ -26,4 +34,6 @@ sealed interface UnlockSideEffect {
     data object PickDatabase : UnlockSideEffect
 
     data object PickKeyFile : UnlockSideEffect
+
+    data class ShowBiometricPrompt(val session: BiometricSession) : UnlockSideEffect
 }

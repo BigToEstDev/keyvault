@@ -9,7 +9,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.welcome.pres.common.BiometricPurpose
 import ru.kino.dev.welcome.pres.common.PasswordEntryContent
+import ru.kino.dev.welcome.pres.common.rememberBiometricPrompt
 import ru.kino.dev.welcome.pres.common.rememberOpenDocument
 
 @Composable
@@ -21,6 +23,7 @@ internal fun LockedScreen(
 ) {
     val state by processor.collectAsState()
     val pickKeyFile = rememberOpenDocument { processor.action(LockedAction.KeyFilePicked(it)) }
+    val showBiometricPrompt = rememberBiometricPrompt { processor.action(LockedAction.BiometricFinished(it)) }
     val activity = LocalActivity.current
 
     // "Back" puts the app away: going back would show `vault` under the lock, and one button would undo it
@@ -29,6 +32,7 @@ internal fun LockedScreen(
     processor.collectSideEffect { effect ->
         when (effect) {
             LockedSideEffect.PickKeyFile -> pickKeyFile()
+            is LockedSideEffect.ShowBiometricPrompt -> showBiometricPrompt(effect.session, BiometricPurpose.Unlock)
         }
     }
 
@@ -42,6 +46,7 @@ internal fun LockedScreen(
         onSubmit = { processor.action(LockedAction.Submit) },
         onAttachKeyFile = { processor.action(LockedAction.AttachKeyFile) },
         onRemoveKeyFile = { processor.action(LockedAction.RemoveKeyFile) },
+        onBiometric = { processor.action(LockedAction.Biometric) },
         onDatabaseClick = null,
         onPickAnotherDatabase = null,
     )

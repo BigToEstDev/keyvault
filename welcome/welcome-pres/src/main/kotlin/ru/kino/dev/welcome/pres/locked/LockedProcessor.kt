@@ -18,6 +18,9 @@ import ru.kino.dev.welcome.CurrentDatabaseRepository
 import ru.kino.dev.welcome.WelcomeDatabaseRepository
 import ru.kino.dev.welcome.WelcomeFailure
 import ru.kino.dev.welcome.WelcomeFilesRepository
+import ru.kino.dev.welcome.pres.common.BiometricNotice
+import ru.kino.dev.welcome.pres.common.BiometricOutcome
+import ru.kino.dev.welcome.pres.common.BiometricSignIn
 import ru.kino.dev.welcome.pres.common.PasswordEntry
 import ru.kino.dev.welcome.pres.common.toProblem
 
@@ -32,6 +35,9 @@ data class LockedState(
  * the core still holds it, so unlocking checks the credentials against the key it kept and is quick, and
  * success goes back to where the user was in `vault`, which is still there under this screen.
  *
+ * Biometrics give the password on a tap, and it unlocks the usual way - `unlock_kdbx` with the password,
+ * so the unlock is bound to the Keystore key rather than to a prompt that said yes (pass-docs, Step 33).
+ *
  * There is no changing the database here: it is open and may have unsaved changes, and closing it is for
  * `vault`.
  */
@@ -43,6 +49,7 @@ class LockedProcessor @AssistedInject constructor(
     private val current: CurrentDatabaseRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
+    private val biometric: BiometricSignIn,
 ) : ViewModel(), OrbitContainerHost<LockedState, LockedState, LockedSideEffect> {
 
     @AssistedFactory
@@ -53,10 +60,15 @@ class LockedProcessor @AssistedInject constructor(
     override val container = orbitContainer<LockedState, LockedSideEffect>(LockedState()) {
         // The key file it was opened with, from the remembered database
         val remembered = current.current.first()?.takeIf { it.uri == dbKey }
+        val biometricOn = remembered != null && biometric.isOn(dbKey)
         reduce {
             LockedState(
                 databaseName = remembered?.databaseName ?: remembered?.fileName,
-                entry = PasswordEntry(keyFileUri = remembered?.keyFileUri, keyFileName = remembered?.keyFileName),
+                entry = PasswordEntry(
+                    keyFileUri = remembered?.keyFileUri,
+                    keyFileName = remembered?.keyFileName,
+                    biometricOn = biometricOn,
+                ),
             )
         }
     }
@@ -92,19 +104,75 @@ class LockedProcessor @AssistedInject constructor(
             }
 
             LockedAction.RemoveKeyFile -> reduce { state.copy(entry = state.entry.withKeyFile(null, null)) }
+
+            LockedAction.Biometric -> startBiometric()
+
+            is LockedAction.BiometricFinished -> biometricFinished(action.outcome)
+        }
+    }
+
+    private suspend fun Syntax<LockedState, LockedSideEffect>.startBiometric() {
+        if (state.entry.busy) return
+
+        when (val start = biometric.start(dbKey)) {
+            is BiometricSignIn.Start.Prompt -> {
+                reduce { state.copy(entry = state.entry.copy(biometricNotice = null)) }
+                postSideEffect(LockedSideEffect.ShowBiometricPrompt(start.session))
+            }
+
+            is BiometricSignIn.Start.Refused -> reduce {
+                state.copy(entry = state.entry.copy(biometricOn = start.stillOn, biometricNotice = start.notice))
+            }
+        }
+    }
+
+    private suspend fun Syntax<LockedState, LockedSideEffect>.biometricFinished(outcome: BiometricOutcome) {
+        when (outcome) {
+            BiometricOutcome.Cancelled -> Unit
+
+            BiometricOutcome.Failed -> reduce {
+                state.copy(entry = state.entry.copy(biometricNotice = BiometricNotice.Failed))
+            }
+
+            is BiometricOutcome.Succeeded -> {
+                val password = biometric.password(dbKey, outcome.session)
+                if (password == null) {
+                    reduce { state.copy(entry = state.entry.copy(biometricNotice = BiometricNotice.Failed)) }
+                } else {
+                    unlock(password, fromBiometrics = true)
+                }
+            }
         }
     }
 
     private suspend fun Syntax<LockedState, LockedSideEffect>.submit() {
         if (state.entry.busy) return
 
+        unlock(state.entry.passwordForCall, fromBiometrics = false)
+    }
+
+    /** Unlocks with [password]; from biometrics, wrong credentials mean the stored password is stale. */
+    private suspend fun Syntax<LockedState, LockedSideEffect>.unlock(password: String?, fromBiometrics: Boolean) {
         val entry = state.entry
-        reduce { state.copy(entry = entry.copy(busy = true, problem = null)) }
+        reduce { state.copy(entry = entry.copy(busy = true, problem = null, biometricNotice = null)) }
         try {
-            database.unlock(dbKey, entry.passwordForCall, entry.keyFileUri)
+            database.unlock(dbKey, password, entry.keyFileUri)
             reduce { state.copy(entry = PasswordEntry()) }
             navigator.navigate(MviNavEvent.NavigateBack)
         } catch (failure: WelcomeFailure) {
+            if (fromBiometrics && failure is WelcomeFailure.InvalidCredentials) {
+                biometric.passwordRejected(dbKey)
+                reduce {
+                    state.copy(
+                        entry = state.entry.copy(
+                            busy = false,
+                            biometricOn = false,
+                            biometricNotice = BiometricNotice.PasswordChanged,
+                        ),
+                    )
+                }
+                return
+            }
             if (failure is WelcomeFailure.Unexpected) log.unexpected(TAG, failure)
             reduce { state.copy(entry = state.entry.copy(busy = false, problem = failure.toProblem())) }
         }

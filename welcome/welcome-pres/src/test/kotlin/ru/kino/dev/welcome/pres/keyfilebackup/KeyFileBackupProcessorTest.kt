@@ -9,6 +9,7 @@ import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
+import ru.kino.dev.welcome.pres.FakeBiometrics
 import ru.kino.dev.welcome.pres.FakeErrorLog
 import ru.kino.dev.welcome.pres.FakeWelcomeDatabase
 import ru.kino.dev.welcome.pres.FakeWelcomeFiles
@@ -18,7 +19,6 @@ import ru.kino.dev.welcome.pres.create.CreateStage
 import ru.kino.dev.welcome.pres.create.CreateSteps
 import ru.kino.dev.welcome.pres.create.Overwrite
 import ru.kino.dev.welcome.pres.navigation.BiometricSetupRoute
-import ru.kino.dev.welcome.pres.navigation.CreateGraph
 import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
 import ru.kino.dev.welcome.pres.recordNavigation
 
@@ -28,10 +28,11 @@ class KeyFileBackupProcessorTest {
     private val database = FakeWelcomeDatabase(journal)
     private val files = FakeWelcomeFiles(journal)
     private val draft = CreateDraft().apply { start("pw", withKeyFile = true) }
+    private val biometrics = FakeBiometrics()
 
     private fun TestScope.processor() =
         recordNavigation().let { (navigator, events) ->
-            val steps = CreateSteps(database, files, navigator, FakeErrorLog())
+            val steps = CreateSteps(database, files, biometrics, navigator, FakeErrorLog())
             KeyFileBackupProcessor(draft, steps, navigator) to events
         }
 
@@ -59,7 +60,7 @@ class KeyFileBackupProcessorTest {
         assertEquals(KEY, database.keyFileReceived)
         assertEquals("pw", database.passwordReceived)
         assertEquals(
-            listOf(MviNavEvent.NavigateTo(BiometricSetupRoute(DB), popUpTo = CreateGraph, inclusive = true)),
+            listOf(MviNavEvent.NavigateTo(BiometricSetupRoute(DB), popUpTo = MasterPasswordRoute, inclusive = true)),
             events,
         )
     }
@@ -112,7 +113,8 @@ class KeyFileBackupProcessorTest {
     fun `after the process was killed the draft is empty - back to the master password`() = runTest {
         val empty = CreateDraft()
         val (navigator, events) = recordNavigation()
-        val processor = KeyFileBackupProcessor(empty, CreateSteps(database, files, navigator, FakeErrorLog()), navigator)
+        val steps = CreateSteps(database, files, biometrics, navigator, FakeErrorLog())
+        val processor = KeyFileBackupProcessor(empty, steps, navigator)
 
         processor.testWithInternalState(this) { runOnCreate().join() }
 

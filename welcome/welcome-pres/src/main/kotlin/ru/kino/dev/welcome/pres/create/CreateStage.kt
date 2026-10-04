@@ -2,7 +2,10 @@ package ru.kino.dev.welcome.pres.create
 
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.EntriesListRoute
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.WelcomeGraph
+import ru.kino.dev.welcome.BiometricRepository
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeDatabaseRepository
 import ru.kino.dev.welcome.WelcomeFailure
@@ -10,7 +13,7 @@ import ru.kino.dev.welcome.WelcomeFilesRepository
 import ru.kino.dev.welcome.pres.common.EntryProblem
 import ru.kino.dev.welcome.pres.common.toProblem
 import ru.kino.dev.welcome.pres.navigation.BiometricSetupRoute
-import ru.kino.dev.welcome.pres.navigation.CreateGraph
+import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
 import javax.inject.Inject
 
 /**
@@ -37,6 +40,7 @@ data class Overwrite(val file: PickedFile, val uri: String)
 class CreateSteps @Inject constructor(
     private val database: WelcomeDatabaseRepository,
     private val files: WelcomeFilesRepository,
+    private val biometrics: BiometricRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) {
@@ -47,14 +51,20 @@ class CreateSteps @Inject constructor(
     suspend fun writeNewKeyFile(uri: String) = files.writeNewKeyFile(uri)
 
     /**
-     * Creates the database in [uri] with what the draft holds, and goes on to biometrics. The creation
-     * graph goes from the back stack - and the draft with it: the database is open, the password is not
-     * needed again.
+     * Creates the database in [uri] with what the draft holds, and goes on.
+     *
+     * With strong biometrics on the phone - to offering them: the screens of typing leave the back stack,
+     * the creation graph and its draft stay, for the password to be encrypted there. Without - straight to
+     * `vault`, and the graph and the draft go.
      */
     suspend fun create(uri: String, password: String, keyFileUri: String?) {
         val dbKey = database.create(uri, password, keyFileUri)
         navigator.navigate(
-            MviNavEvent.NavigateTo(BiometricSetupRoute(dbKey), popUpTo = CreateGraph, inclusive = true),
+            if (biometrics.isAvailable()) {
+                MviNavEvent.NavigateTo(BiometricSetupRoute(dbKey), popUpTo = MasterPasswordRoute, inclusive = true)
+            } else {
+                MviNavEvent.NavigateTo(EntriesListRoute(dbKey), popUpTo = WelcomeGraph, inclusive = true)
+            },
         )
     }
 

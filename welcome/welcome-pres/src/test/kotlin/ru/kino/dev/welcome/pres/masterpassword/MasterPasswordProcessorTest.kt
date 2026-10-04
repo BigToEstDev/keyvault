@@ -8,9 +8,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CredentialLimits
+import ru.kino.dev.navigation.EntriesListRoute
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.WelcomeGraph
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
+import ru.kino.dev.welcome.pres.FakeBiometrics
 import ru.kino.dev.welcome.pres.FakeErrorLog
 import ru.kino.dev.welcome.pres.FakeWelcomeDatabase
 import ru.kino.dev.welcome.pres.FakeWelcomeFiles
@@ -20,7 +23,7 @@ import ru.kino.dev.welcome.pres.create.CreateStage
 import ru.kino.dev.welcome.pres.create.CreateSteps
 import ru.kino.dev.welcome.pres.create.Overwrite
 import ru.kino.dev.welcome.pres.navigation.BiometricSetupRoute
-import ru.kino.dev.welcome.pres.navigation.CreateGraph
+import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
 import ru.kino.dev.welcome.pres.navigation.KeyFileBackupRoute
 import ru.kino.dev.welcome.pres.recordNavigation
 
@@ -30,10 +33,11 @@ class MasterPasswordProcessorTest {
     private val database = FakeWelcomeDatabase(journal)
     private val files = FakeWelcomeFiles(journal)
     private val draft = CreateDraft()
+    private val biometrics = FakeBiometrics()
 
     private fun TestScope.processor() =
         recordNavigation().let { (navigator, events) ->
-            val steps = CreateSteps(database, files, navigator, FakeErrorLog())
+            val steps = CreateSteps(database, files, biometrics, navigator, FakeErrorLog())
             MasterPasswordProcessor(draft, steps, navigator) to events
         }
 
@@ -139,7 +143,24 @@ class MasterPasswordProcessorTest {
         assertEquals("pw", database.passwordReceived)
         assertEquals(null, database.keyFileReceived)
         assertEquals(
-            listOf(MviNavEvent.NavigateTo(BiometricSetupRoute(DB), popUpTo = CreateGraph, inclusive = true)),
+            listOf(MviNavEvent.NavigateTo(BiometricSetupRoute(DB), popUpTo = MasterPasswordRoute, inclusive = true)),
+            events,
+        )
+    }
+
+    @Test
+    fun `without strong biometrics on the phone creating goes straight to vault`() = runTest {
+        draft.start("pw", withKeyFile = false)
+        biometrics.available = false
+        val (processor, events) = processor()
+
+        processor.testWithInternalState(this, ready()) {
+            containerHost.action(MasterPasswordAction.DatabasePicked(DB)).join()
+            cancelAndIgnoreRemainingItems()
+        }
+
+        assertEquals(
+            listOf(MviNavEvent.NavigateTo(EntriesListRoute(DB), popUpTo = WelcomeGraph, inclusive = true)),
             events,
         )
     }
