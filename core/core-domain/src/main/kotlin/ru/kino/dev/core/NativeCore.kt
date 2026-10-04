@@ -52,6 +52,14 @@ interface NativeCore {
     suspend fun saveDatabase(dbKey: String): ByteArray
 
     /**
+     * Locks the open database: its content is encrypted in place, only ciphertext stays in memory. Unsaved
+     * edits survive - they are encrypted, not dropped - so this is not a save and does not need one.
+     *
+     * The key stays with the core under [dbKey], which is what makes [unlockDatabase] quick.
+     */
+    suspend fun lockDatabase(dbKey: String)
+
+    /**
      * Unlocks a database that was locked while open: the credentials are checked against the key the core
      * kept, and the file is not read again - which is why this is quick and opening is not.
      *

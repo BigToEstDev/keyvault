@@ -32,6 +32,10 @@ internal class VaultDatabaseRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun lock(dbKey: String) {
+        core.lockDatabase(dbKey)
+    }
+
     override suspend fun close(dbKey: String) {
         core.closeDatabase(dbKey)
     }
