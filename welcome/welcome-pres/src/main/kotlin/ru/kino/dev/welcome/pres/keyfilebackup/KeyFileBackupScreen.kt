@@ -30,7 +30,9 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PrimaryButton
+import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.welcome.pres.common.rememberCreateDocument
+import ru.kino.dev.welcome.pres.common.rememberOpenDocument
 import ru.kino.dev.welcome.pres.create.CreateDraft
 import ru.kino.dev.welcome.pres.create.CreateProblemText
 import ru.kino.dev.welcome.pres.create.OverwriteDialog
@@ -44,11 +46,13 @@ internal fun KeyFileBackupScreen(
 ) {
     val state by processor.collectAsState()
     val pickKeyFile = rememberCreateDocument { processor.action(KeyFileBackupAction.KeyFilePicked(it)) }
+    val pickExisting = rememberOpenDocument { processor.action(KeyFileBackupAction.ExistingPicked(it)) }
     val pickDatabase = rememberCreateDocument { processor.action(KeyFileBackupAction.DatabasePicked(it)) }
 
     processor.collectSideEffect { effect ->
         when (effect) {
             is KeyFileBackupSideEffect.PickKeyFile -> pickKeyFile(effect.suggestedName)
+            KeyFileBackupSideEffect.PickExistingKeyFile -> pickExisting()
             is KeyFileBackupSideEffect.PickDatabase -> pickDatabase(effect.suggestedName)
         }
     }
@@ -61,11 +65,15 @@ internal fun KeyFileBackupScreen(
         )
     }
 
-    KeyFileBackupContent(state = state, onContinue = { processor.action(KeyFileBackupAction.Continue) })
+    KeyFileBackupContent(
+        state = state,
+        onContinue = { processor.action(KeyFileBackupAction.Continue) },
+        onPickExisting = { processor.action(KeyFileBackupAction.PickExisting) },
+    )
 }
 
 @Composable
-private fun KeyFileBackupContent(state: KeyFileBackupState, onContinue: () -> Unit) {
+private fun KeyFileBackupContent(state: KeyFileBackupState, onContinue: () -> Unit, onPickExisting: () -> Unit) {
     GradientBackground {
         Column(
             modifier = Modifier
@@ -93,35 +101,60 @@ private fun KeyFileBackupContent(state: KeyFileBackupState, onContinue: () -> Un
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (state.keyFileSaved) {
-                Spacer(Modifier.height(16.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.key_file_saved),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
-            }
+            state.keyFile?.let { KeyFileReady(it) }
             Spacer(Modifier.height(32.dp))
 
             state.stage.problem?.let {
                 CreateProblemText(it)
                 Spacer(Modifier.height(8.dp))
             }
-            PrimaryButton(
-                text = stringResource(
-                    if (state.keyFileSaved) R.string.key_file_choose_database else R.string.key_file_save,
-                ),
-                onClick = onContinue,
-                loading = state.stage.busy,
-            )
+            if (state.keyFile == null) {
+                PrimaryButton(
+                    text = stringResource(R.string.key_file_create),
+                    onClick = onContinue,
+                    loading = state.stage.busy,
+                )
+                Spacer(Modifier.height(12.dp))
+                SecondaryButton(
+                    text = stringResource(R.string.key_file_pick_existing),
+                    onClick = onPickExisting,
+                    enabled = !state.stage.busy,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.key_file_existing_warning),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                PrimaryButton(
+                    text = stringResource(R.string.key_file_choose_database),
+                    onClick = onContinue,
+                    loading = state.stage.busy,
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun KeyFileReady(keyFile: KeyFileChoice) {
+    Spacer(Modifier.height(16.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = Icons.Filled.CheckCircle,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = when (keyFile) {
+                KeyFileChoice.Created -> stringResource(R.string.key_file_saved)
+                is KeyFileChoice.Picked -> keyFile.name?.let { stringResource(R.string.key_file_picked, it) }
+                    ?: stringResource(R.string.key_file_picked_unnamed)
+            },
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
     }
 }

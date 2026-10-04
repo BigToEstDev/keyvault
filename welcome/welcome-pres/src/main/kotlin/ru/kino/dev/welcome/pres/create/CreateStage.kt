@@ -50,6 +50,17 @@ class CreateSteps @Inject constructor(
 
     suspend fun writeNewKeyFile(uri: String) = files.writeNewKeyFile(uri)
 
+    /** Checks an existing file picked as the key file: there, and not over the size limit. */
+    suspend fun checkKeyFile(uri: String) = files.checkKeyFile(uri)
+
+    /** The name of a picked file to show, or null when the provider does not tell or cannot be asked. */
+    suspend fun displayName(uri: String): String? =
+        try {
+            files.displayName(uri)
+        } catch (failure: WelcomeFailure) {
+            null
+        }
+
     /**
      * Creates the database in [uri] with what the draft holds, and goes on.
      *

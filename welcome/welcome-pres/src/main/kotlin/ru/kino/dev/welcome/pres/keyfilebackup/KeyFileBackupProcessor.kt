@@ -19,20 +19,31 @@ import ru.kino.dev.welcome.pres.create.CreateSteps
 import ru.kino.dev.welcome.pres.create.Overwrite
 import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
 
-/** @param keyFileSaved the key file is on disk; what is left is the database */
+/** Where the key file of the new database came from. */
+sealed interface KeyFileChoice {
+
+    /** Generated and written by us - a `.keyx`. */
+    data object Created : KeyFileChoice
+
+    /** A file already on the device; [name] to show, when the provider tells it. */
+    data class Picked(val name: String?) : KeyFileChoice
+}
+
+/** @param keyFile the key file is ready - created or picked; what is left is the database */
 data class KeyFileBackupState(
-    val keyFileSaved: Boolean = false,
+    val keyFile: KeyFileChoice? = null,
     val stage: CreateStage = CreateStage(),
 )
 
 /**
- * Saving the new key file - only when creating with one, and it cannot be skipped: there is no other copy,
- * and without it the database never opens again.
+ * The key file of a new database - only when creating with one. Either a new one, generated and saved where
+ * the user says, or a file already on the device, picked as it is.
  *
- * The key file is saved before the database is created, so that an app closed on this screen does not
- * leave a database with no key anywhere. Then "save as" for the database and `create` from here, with the
- * 2.5 s wait. An existing file is never written over without asking: as a key file it may be the key of
- * another database.
+ * A new one is saved before the database is created, so that an app closed on this screen does not leave a
+ * database with no key anywhere; it cannot be skipped. An existing file is never written to - it is only
+ * checked to be there and not too large, right away rather than after "save as" for the database. Then
+ * "save as" for the database and `create` from here, with the 2.5 s wait. An existing file is never
+ * written over without asking: as a key file it may be the key of another database.
  */
 @HiltViewModel(assistedFactory = KeyFileBackupProcessor.Factory::class)
 class KeyFileBackupProcessor @AssistedInject constructor(
@@ -55,14 +66,18 @@ class KeyFileBackupProcessor @AssistedInject constructor(
     fun action(action: KeyFileBackupAction) = intent {
         when (action) {
             KeyFileBackupAction.Continue -> postSideEffect(
-                if (state.keyFileSaved) {
+                if (state.keyFile != null) {
                     KeyFileBackupSideEffect.PickDatabase(CreateFileNames.DATABASE)
                 } else {
                     KeyFileBackupSideEffect.PickKeyFile(CreateFileNames.KEY_FILE)
                 },
             )
 
+            KeyFileBackupAction.PickExisting -> postSideEffect(KeyFileBackupSideEffect.PickExistingKeyFile)
+
             is KeyFileBackupAction.KeyFilePicked -> picked(Overwrite(PickedFile.KeyFile, action.uri))
+
+            is KeyFileBackupAction.ExistingPicked -> existingPicked(action.uri)
 
             is KeyFileBackupAction.DatabasePicked -> picked(Overwrite(PickedFile.Database, action.uri))
 
@@ -78,7 +93,23 @@ class KeyFileBackupProcessor @AssistedInject constructor(
         }
     }
 
-    /** A file picked: asked about first when it is not empty, written otherwise. */
+    /** An existing file as the key file: checked, not written; then straight on to the database. */
+    private suspend fun Syntax<KeyFileBackupState, KeyFileBackupSideEffect>.existingPicked(uri: String) {
+        if (draft.password == null || state.stage.busy) return
+
+        reduce { state.copy(stage = CreateStage(busy = true)) }
+        try {
+            steps.checkKeyFile(uri)
+            draft.keyFileSaved(uri)
+            val name = steps.displayName(uri)
+            reduce { state.copy(keyFile = KeyFileChoice.Picked(name), stage = CreateStage()) }
+            postSideEffect(KeyFileBackupSideEffect.PickDatabase(CreateFileNames.DATABASE))
+        } catch (failure: WelcomeFailure) {
+            reduce { state.copy(stage = CreateStage(problem = steps.problemOf(failure, TAG))) }
+        }
+    }
+
+    /** A file picked in "save as": asked about first when it is not empty, written otherwise. */
     private suspend fun Syntax<KeyFileBackupState, KeyFileBackupSideEffect>.picked(file: Overwrite) {
         if (draft.password == null || state.stage.busy) return
 
@@ -103,7 +134,7 @@ class KeyFileBackupProcessor @AssistedInject constructor(
                 PickedFile.KeyFile -> {
                     steps.writeNewKeyFile(file.uri)
                     draft.keyFileSaved(file.uri)
-                    reduce { state.copy(keyFileSaved = true, stage = CreateStage()) }
+                    reduce { state.copy(keyFile = KeyFileChoice.Created, stage = CreateStage()) }
                     // Straight on: the database is the only thing left
                     postSideEffect(KeyFileBackupSideEffect.PickDatabase(CreateFileNames.DATABASE))
                 }

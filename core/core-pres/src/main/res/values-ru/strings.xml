@@ -67,10 +67,14 @@
     <string name="overwrite_confirm">Заменить</string>
 
     <!-- Creating: key file -->
-    <string name="key_file_title">Сохраните key-файл</string>
+    <string name="key_file_title">Key-файл</string>
     <string name="key_file_text">База открывается только паролем и этим файлом вместе. Без файла один пароль её не откроет. Храните его отдельно от базы, не в той же папке.</string>
-    <string name="key_file_save">Сохранить key-файл</string>
+    <string name="key_file_create">Создать новый key-файл</string>
+    <string name="key_file_pick_existing">Выбрать существующий файл</string>
+    <string name="key_file_existing_warning">Ключом может быть любой файл, но он не должен меняться: изменится хоть на байт — фото пересохранят, поправят его свойства — и база не откроется.</string>
     <string name="key_file_saved">Key-файл сохранён</string>
+    <string name="key_file_picked">Key-файл: %1$s</string>
+    <string name="key_file_picked_unnamed">Key-файл выбран</string>
     <string name="key_file_choose_database">Выбрать, куда сохранить базу</string>
 
     <!-- Creating: biometrics -->

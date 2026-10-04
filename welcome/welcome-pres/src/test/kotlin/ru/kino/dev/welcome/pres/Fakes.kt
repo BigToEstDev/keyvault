@@ -76,6 +76,17 @@ internal class FakeWelcomeFiles(private val journal: Journal = mutableListOf()) 
         return uri in existing
     }
 
+    /** Thrown by the next [checkKeyFile], then forgotten. */
+    var checkFailure: WelcomeFailure? = null
+
+    override suspend fun checkKeyFile(uri: String) {
+        journal += "checkKeyFile $uri"
+        checkFailure?.let {
+            checkFailure = null
+            throw it
+        }
+    }
+
     override suspend fun writeNewKeyFile(uri: String) {
         journal += "writeNewKeyFile $uri"
         writeFailure?.let {
