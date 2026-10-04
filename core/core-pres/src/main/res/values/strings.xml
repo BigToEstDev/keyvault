@@ -29,6 +29,7 @@
     <string name="entry_key_file_remove">Remove key file</string>
     <string name="entry_key_file_name">Key file: %1$s</string>
     <string name="entry_key_file_unnamed">chosen</string>
+    <string name="entry_create_database">Create a new database</string>
 
     <!-- Failures, pass-docs decisions.md "Ошибки" -->
     <string name="error_invalid_credentials">Check the password and the key file</string>
@@ -69,6 +70,17 @@
     <string name="biometric_title">Unlock with biometrics</string>
     <string name="biometric_text">Open the database with a fingerprint or your face instead of typing the password.</string>
     <string name="biometric_skip">Skip</string>
+    <string name="biometric_enable">Turn on</string>
+    <string name="biometric_enable_failed">Could not turn on biometric unlock</string>
+
+    <!-- Biometric unlock -->
+    <string name="entry_biometric">Sign in with biometrics</string>
+    <string name="biometric_prompt_unlock_title">Unlock the database</string>
+    <string name="biometric_prompt_enable_title">Turn on biometric unlock</string>
+    <string name="biometric_prompt_use_password">Enter password</string>
+    <string name="biometric_notice_device_changed">Biometrics on this device changed - sign in with the password</string>
+    <string name="biometric_notice_password_changed">The database password changed - sign in with the password</string>
+    <string name="biometric_notice_failed">Could not sign in with biometrics - use the password</string>
 
     <!-- vault -->
     <string name="entries_stub">The database is open. The list of entries comes next.</string>

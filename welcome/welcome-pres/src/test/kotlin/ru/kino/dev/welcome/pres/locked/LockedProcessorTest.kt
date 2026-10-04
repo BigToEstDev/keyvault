@@ -11,9 +11,13 @@ import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
 import ru.kino.dev.welcome.pres.FakeCurrentDatabase
+import ru.kino.dev.welcome.pres.FakeBiometrics
 import ru.kino.dev.welcome.pres.FakeErrorLog
 import ru.kino.dev.welcome.pres.FakeWelcomeDatabase
 import ru.kino.dev.welcome.pres.FakeWelcomeFiles
+import ru.kino.dev.welcome.pres.common.BiometricNotice
+import ru.kino.dev.welcome.pres.common.BiometricOutcome
+import ru.kino.dev.welcome.pres.common.BiometricSignIn
 import ru.kino.dev.welcome.pres.common.EntryProblem
 import ru.kino.dev.welcome.pres.common.PasswordEntry
 import ru.kino.dev.welcome.pres.recordNavigation
@@ -23,11 +27,13 @@ class LockedProcessorTest {
     private val journal = mutableListOf<String>()
     private val database = FakeWelcomeDatabase(journal)
     private val files = FakeWelcomeFiles().apply { names[NEW_KEY] = "new.keyx" }
+    private val biometrics = FakeBiometrics(journal)
     private val current = FakeCurrentDatabase(CurrentDatabase(DB, "passwords.kdbx", "Passwords", KEY, "my.keyx"))
 
     private fun TestScope.processor() =
         recordNavigation().let { (navigator, events) ->
-            LockedProcessor(DB, database, files, current, navigator, FakeErrorLog()) to events
+            val log = FakeErrorLog()
+            LockedProcessor(DB, database, files, current, navigator, log, BiometricSignIn(biometrics, log)) to events
         }
 
     @Test
@@ -96,6 +102,44 @@ class LockedProcessorTest {
             expectInternalState { copy(entry = entry.copy(busy = false, problem = EntryProblem.InvalidCredentials)) }
         }
 
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `biometrics unlock with the stored password through the usual unlock`() = runTest {
+        biometrics.passwords[DB] = "stored"
+        val (processor, events) = processor()
+        val on = lockedState().let { it.copy(entry = it.entry.copy(biometricOn = true)) }
+
+        processor.testWithInternalState(this, on) {
+            containerHost.action(LockedAction.Biometric).join()
+            val prompt = awaitSideEffect() as LockedSideEffect.ShowBiometricPrompt
+            containerHost.action(LockedAction.BiometricFinished(BiometricOutcome.Succeeded(prompt.session))).join()
+            cancelAndIgnoreRemainingItems()
+        }
+
+        assertEquals(listOf("unlock $DB"), journal)
+        assertEquals("stored", database.passwordReceived)
+        assertEquals(KEY, database.keyFileReceived)
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `a stale stored password is forgotten on the lock too`() = runTest {
+        biometrics.passwords[DB] = "old"
+        database.failure = WelcomeFailure.InvalidCredentials()
+        val (processor, events) = processor()
+        val on = lockedState().let { it.copy(entry = it.entry.copy(biometricOn = true)) }
+
+        processor.testWithInternalState(this, on) {
+            containerHost.action(LockedAction.Biometric).join()
+            val prompt = awaitSideEffect() as LockedSideEffect.ShowBiometricPrompt
+            containerHost.action(LockedAction.BiometricFinished(BiometricOutcome.Succeeded(prompt.session))).join()
+            cancelAndIgnoreRemainingItems()
+        }
+
+        assertTrue(journal.contains("forget $DB"))
+        assertEquals(BiometricNotice.PasswordChanged, processor.container.stateFlow.value.entry.biometricNotice)
         assertTrue(events.isEmpty())
     }
 

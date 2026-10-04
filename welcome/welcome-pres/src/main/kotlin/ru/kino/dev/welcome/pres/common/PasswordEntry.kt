@@ -7,6 +7,8 @@ package ru.kino.dev.welcome.pres.common
  * Lives in memory only - the processor state is not saved anywhere.
  *
  * @param keyFileUri the attached key file; its name alone is shown
+ * @param biometricOn the "sign in with biometrics" button is shown - on for this database and the phone
+ * @param biometricNotice what to say about biometrics under the button
  */
 data class PasswordEntry(
     val password: String = "",
@@ -15,6 +17,8 @@ data class PasswordEntry(
     val keyFileName: String? = null,
     val busy: Boolean = false,
     val problem: EntryProblem? = null,
+    val biometricOn: Boolean = false,
+    val biometricNotice: BiometricNotice? = null,
 ) {
 
     /**

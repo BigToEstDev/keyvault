@@ -55,6 +55,15 @@ interface DatabaseFiles {
     suspend fun writeReplacing(uri: String, bytes: ByteArray)
 
     /**
+     * Whether the provider still has the file - asked without reading it, so it is quick even for a file in
+     * the cloud.
+     *
+     * False for a file deleted outside the app, and for one whose permission is gone. A provider that is
+     * offline may still answer from its cache: true is a hint, and the read after it reports for real.
+     */
+    suspend fun exists(uri: String): Boolean
+
+    /**
      * The name to show for the file, or null when the provider does not tell.
      *
      * Asked for explicitly because a uri has no readable name inside it - what looks like a file name in

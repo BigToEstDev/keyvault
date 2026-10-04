@@ -15,11 +15,17 @@ import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
 import ru.kino.dev.welcome.pres.FakeCurrentDatabase
+import ru.kino.dev.welcome.pres.FakeBiometrics
 import ru.kino.dev.welcome.pres.FakeErrorLog
 import ru.kino.dev.welcome.pres.FakeWelcomeDatabase
 import ru.kino.dev.welcome.pres.FakeWelcomeFiles
+import ru.kino.dev.welcome.BiometricFailure
+import ru.kino.dev.welcome.pres.common.BiometricNotice
+import ru.kino.dev.welcome.pres.common.BiometricOutcome
+import ru.kino.dev.welcome.pres.common.BiometricSignIn
 import ru.kino.dev.welcome.pres.common.EntryProblem
 import ru.kino.dev.welcome.pres.common.PasswordEntry
+import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
 import ru.kino.dev.welcome.pres.navigation.WelcomeRoute
 import ru.kino.dev.welcome.pres.recordNavigation
 
@@ -30,10 +36,11 @@ class UnlockProcessorTest {
     private val files = FakeWelcomeFiles().apply { names[OTHER] = "other.kdbx" }
     private val current = FakeCurrentDatabase(REMEMBERED)
     private val log = FakeErrorLog()
+    private val biometrics = FakeBiometrics(journal)
 
     private fun TestScope.processor(pickedUri: String? = null) =
         recordNavigation().let { (navigator, events) ->
-            UnlockProcessor(pickedUri, database, files, current, navigator, log) to events
+            UnlockProcessor(pickedUri, database, files, current, navigator, log, BiometricSignIn(biometrics, log)) to events
         }
 
     @Test
@@ -207,6 +214,161 @@ class UnlockProcessorTest {
             expectInternalState { copy(entry = PasswordEntry()) }
         }
     }
+
+    // --- a database that is gone (Step 34, bug 1) -------------------------------------------------------------
+
+    @Test
+    fun `a remembered database deleted outside the app is said on start, before the password is typed`() =
+        runTest {
+            files.missing += DB
+            val (processor, _) = processor()
+
+            processor.testWithInternalState(this) {
+                runOnCreate().join()
+                expectInternalState(gone())
+            }
+
+            assertTrue(journal.isEmpty())
+        }
+
+    @Test
+    fun `retry looks at the file again - still gone stays, back again shows the password`() = runTest {
+        files.missing += DB
+        val (processor, _) = processor()
+
+        processor.testWithInternalState(this, gone()) {
+            containerHost.action(UnlockAction.Retry)
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            expectInternalState { copy(entry = entry.copy(busy = false)) }
+
+            files.missing -= DB
+            containerHost.action(UnlockAction.Retry)
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            expectInternalState { copy(entry = entry.copy(busy = false, problem = null)) }
+        }
+
+        assertTrue(journal.isEmpty())
+    }
+
+    @Test
+    fun `retry with a typed password opens - a sync that finished, say`() = runTest {
+        val (processor, events) = processor()
+        val corrupted = rememberedState().let {
+            it.copy(entry = it.entry.copy(password = "pw", problem = EntryProblem.CorruptedFile))
+        }
+
+        processor.testWithInternalState(this, corrupted) {
+            containerHost.action(UnlockAction.Retry).join()
+            cancelAndIgnoreRemainingItems()
+        }
+
+        assertEquals(listOf("open $DB"), journal)
+        assertEquals(1, events.size)
+    }
+
+    @Test
+    fun `a new database can always be created from here - the way out when the remembered one is gone`() =
+        runTest {
+            val (processor, events) = processor()
+
+            processor.testWithInternalState(this, gone()) {
+                containerHost.action(UnlockAction.CreateDatabase).join()
+            }
+
+            assertEquals(listOf(MviNavEvent.NavigateTo(MasterPasswordRoute)), events)
+        }
+
+    private fun gone() = rememberedState().let {
+        it.copy(entry = it.entry.copy(problem = EntryProblem.Unreachable(PickedFile.Database)))
+    }
+
+    // --- biometrics -----------------------------------------------------------------------------------------
+
+    @Test
+    fun `the biometric button is there only when biometrics are on for the database and the phone`() = runTest {
+        biometrics.passwords[DB] = "pw"
+        val (processor, _) = processor()
+
+        processor.testWithInternalState(this) {
+            runOnCreate().join()
+            expectInternalState(rememberedState().let { it.copy(entry = it.entry.copy(biometricOn = true)) })
+        }
+
+        biometrics.available = false
+        val (offPhone, _) = processor()
+        offPhone.testWithInternalState(this) {
+            runOnCreate().join()
+            expectInternalState(rememberedState())
+        }
+    }
+
+    @Test
+    fun `biometrics give the password, and it opens the usual way, with the key file`() = runTest {
+        biometrics.passwords[DB] = "stored"
+        val (processor, events) = processor()
+
+        processor.testWithInternalState(this, biometricState()) {
+            containerHost.action(UnlockAction.Biometric).join()
+            val prompt = awaitSideEffect() as UnlockSideEffect.ShowBiometricPrompt
+            containerHost.action(UnlockAction.BiometricFinished(BiometricOutcome.Succeeded(prompt.session))).join()
+            cancelAndIgnoreRemainingItems()
+        }
+
+        assertEquals("stored", database.passwordReceived)
+        assertEquals(KEY, database.keyFileReceived)
+        assertEquals(
+            listOf(MviNavEvent.NavigateTo(EntriesListRoute(DB), popUpTo = WelcomeGraph, inclusive = true)),
+            events,
+        )
+    }
+
+    @Test
+    fun `a stored password that no longer opens is forgotten - the password changed`() = runTest {
+        biometrics.passwords[DB] = "old"
+        database.failure = WelcomeFailure.InvalidCredentials()
+        val (processor, events) = processor()
+
+        processor.testWithInternalState(this, biometricState()) {
+            containerHost.action(UnlockAction.Biometric).join()
+            val prompt = awaitSideEffect() as UnlockSideEffect.ShowBiometricPrompt
+            containerHost.action(UnlockAction.BiometricFinished(BiometricOutcome.Succeeded(prompt.session))).join()
+            cancelAndIgnoreRemainingItems()
+        }
+
+        assertTrue(journal.contains("forget $DB"))
+        assertEquals(
+            biometricState().entry.copy(biometricOn = false, biometricNotice = BiometricNotice.PasswordChanged),
+            processor.container.stateFlow.value.entry,
+        )
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `changed biometrics of the phone turn the button off and say why`() = runTest {
+        biometrics.passwords[DB] = "stored"
+        biometrics.startFailure = BiometricFailure.KeyInvalidated()
+        val (processor, _) = processor()
+
+        processor.testWithInternalState(this, biometricState()) {
+            containerHost.action(UnlockAction.Biometric)
+            expectInternalState {
+                copy(entry = entry.copy(biometricOn = false, biometricNotice = BiometricNotice.DeviceChanged))
+            }
+        }
+    }
+
+    @Test
+    fun `a cancelled prompt changes nothing - the password is still there to type`() = runTest {
+        val (processor, _) = processor()
+
+        processor.testWithInternalState(this, biometricState()) {
+            containerHost.action(UnlockAction.BiometricFinished(BiometricOutcome.Cancelled)).join()
+        }
+
+        assertTrue(journal.isEmpty())
+    }
+
+    private fun biometricState() = rememberedState().let { it.copy(entry = it.entry.copy(biometricOn = true)) }
 
     private suspend fun TestScope.assertFailureShows(problem: EntryProblem) {
         val (processor, events) = processor()

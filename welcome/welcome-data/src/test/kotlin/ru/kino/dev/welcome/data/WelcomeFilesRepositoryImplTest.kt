@@ -29,6 +29,18 @@ class WelcomeFilesRepositoryImplTest {
     }
 
     @Test
+    fun `a database deleted outside the app, or out of reach, is not reachable - asked without reading it`() =
+        runTest {
+            files.contents[KEY] = byteArrayOf(1)
+
+            assertTrue(repository.isReachable(KEY))
+            assertFalse(repository.isReachable("content://docs/deleted.kdbx"))
+            files.unreachable += KEY
+            assertFalse(repository.isReachable(KEY))
+            assertFalse(journal.toString(), journal.any { it.startsWith("read") })
+        }
+
+    @Test
     fun `a new file from save as would overwrite nothing`() = runTest {
         files.contents[KEY] = ByteArray(0)
 

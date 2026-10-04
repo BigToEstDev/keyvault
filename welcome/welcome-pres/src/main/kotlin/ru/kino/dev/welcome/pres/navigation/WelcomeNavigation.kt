@@ -43,9 +43,13 @@ fun NavGraphBuilder.welcomeGraph(navController: NavController, start: WelcomeSta
             composable<KeyFileBackupRoute> { entry ->
                 KeyFileBackupScreen(draft = createDraft(navController, entry))
             }
-        }
-        composable<BiometricSetupRoute> { entry ->
-            BiometricSetupScreen(dbKey = entry.toRoute<BiometricSetupRoute>().dbKey)
+            // In the graph: the password in the draft is what biometrics encrypt
+            composable<BiometricSetupRoute> { entry ->
+                BiometricSetupScreen(
+                    dbKey = entry.toRoute<BiometricSetupRoute>().dbKey,
+                    draft = createDraft(navController, entry),
+                )
+            }
         }
     }
     composable<LockedRoute> { entry -> LockedScreen(dbKey = entry.toRoute<LockedRoute>().dbKey) }

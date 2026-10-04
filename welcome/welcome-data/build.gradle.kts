@@ -7,6 +7,8 @@ dependencies {
     api(projects.welcome.welcomeDomain)
 
     implementation(libs.hilt)
+    // Strong biometrics: BiometricManager, BiometricPrompt
+    implementation(libs.androidx.biometric)
     ksp(libs.hilt.compiler)
 
     // The remembered database: one json string in preferences, the whole schema

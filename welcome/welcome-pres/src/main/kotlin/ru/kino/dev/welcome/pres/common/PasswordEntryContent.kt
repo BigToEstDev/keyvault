@@ -45,6 +45,9 @@ import ru.kino.dev.ui.components.SecondaryButton
  * @param onDatabaseClick null when the database cannot be changed here; otherwise the name is a link that
  * picks another file
  * @param onPickAnotherDatabase null when there is no other database to pick - the locked screen
+ * @param onRetry "retry" on a problem with the database file
+ * @param onCreateDatabase null where a new database makes no sense - the locked screen, the database is open;
+ * otherwise always there: without it a remembered database that is gone leaves no way on
  */
 @Composable
 internal fun PasswordEntryContent(
@@ -56,8 +59,11 @@ internal fun PasswordEntryContent(
     onSubmit: () -> Unit,
     onAttachKeyFile: () -> Unit,
     onRemoveKeyFile: () -> Unit,
+    onBiometric: () -> Unit,
     onDatabaseClick: (() -> Unit)?,
     onPickAnotherDatabase: (() -> Unit)?,
+    onRetry: () -> Unit,
+    onCreateDatabase: (() -> Unit)?,
     subtitle: String? = null,
 ) {
     val problem = entry.problem
@@ -94,8 +100,9 @@ internal fun PasswordEntryContent(
             if (problem.hidesPassword) {
                 FileProblem(
                     problem = problem,
-                    onRetry = onSubmit.takeUnless { problem == EntryProblem.UnsupportedFile },
+                    onRetry = onRetry.takeUnless { problem == EntryProblem.UnsupportedFile },
                     onPickAnother = onPickAnotherDatabase,
+                    onCreateDatabase = onCreateDatabase,
                     busy = entry.busy,
                 )
             } else {
@@ -106,12 +113,19 @@ internal fun PasswordEntryContent(
                     onTogglePasswordVisible = onTogglePasswordVisible,
                     onSubmit = onSubmit,
                 )
+                BiometricSignInRow(entry = entry, onBiometric = onBiometric)
                 Spacer(Modifier.height(16.dp))
                 KeyFileRow(
                     entry = entry,
                     onAttach = onAttachKeyFile,
                     onRemove = onRemoveKeyFile,
                 )
+                onCreateDatabase?.let {
+                    Spacer(Modifier.height(24.dp))
+                    TextButton(onClick = it, enabled = !entry.busy) {
+                        Text(stringResource(R.string.entry_create_database))
+                    }
+                }
             }
         }
     }
@@ -175,6 +189,31 @@ private fun PasswordInput(
     }
 }
 
+/** A second way in, next to the password, never instead of it - and only on a tap. */
+@Composable
+private fun BiometricSignInRow(entry: PasswordEntry, onBiometric: () -> Unit) {
+    if (entry.biometricOn) {
+        Spacer(Modifier.height(12.dp))
+        SecondaryButton(
+            text = stringResource(R.string.entry_biometric),
+            onClick = onBiometric,
+            enabled = !entry.busy,
+        )
+    }
+    entry.biometricNotice?.let { notice ->
+        Spacer(Modifier.height(8.dp))
+        ErrorText(
+            stringResource(
+                when (notice) {
+                    BiometricNotice.DeviceChanged -> R.string.biometric_notice_device_changed
+                    BiometricNotice.PasswordChanged -> R.string.biometric_notice_password_changed
+                    BiometricNotice.Failed -> R.string.biometric_notice_failed
+                },
+            ),
+        )
+    }
+}
+
 @Composable
 private fun KeyFileRow(entry: PasswordEntry, onAttach: () -> Unit, onRemove: () -> Unit) {
     val problem = entry.problem
@@ -227,6 +266,7 @@ private fun FileProblem(
     problem: EntryProblem?,
     onRetry: (() -> Unit)?,
     onPickAnother: (() -> Unit)?,
+    onCreateDatabase: (() -> Unit)?,
     busy: Boolean,
 ) {
     ErrorText(
@@ -243,6 +283,10 @@ private fun FileProblem(
     }
     onPickAnother?.let {
         SecondaryButton(text = stringResource(R.string.action_pick_another_file), onClick = it, enabled = !busy)
+    }
+    onCreateDatabase?.let {
+        Spacer(Modifier.height(12.dp))
+        SecondaryButton(text = stringResource(R.string.entry_create_database), onClick = it, enabled = !busy)
     }
 }
 

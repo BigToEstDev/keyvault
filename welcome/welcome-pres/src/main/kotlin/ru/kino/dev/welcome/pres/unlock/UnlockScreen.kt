@@ -7,7 +7,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.welcome.pres.common.BiometricPurpose
 import ru.kino.dev.welcome.pres.common.PasswordEntryContent
+import ru.kino.dev.welcome.pres.common.rememberBiometricPrompt
 import ru.kino.dev.welcome.pres.common.rememberOpenDocument
 
 /** "Back" is the default here: out of the app on start, back to the welcome screen after picking a file. */
@@ -21,11 +23,13 @@ internal fun UnlockScreen(
     val state by processor.collectAsState()
     val pickDatabase = rememberOpenDocument { processor.action(UnlockAction.DatabasePicked(it)) }
     val pickKeyFile = rememberOpenDocument { processor.action(UnlockAction.KeyFilePicked(it)) }
+    val showBiometricPrompt = rememberBiometricPrompt { processor.action(UnlockAction.BiometricFinished(it)) }
 
     processor.collectSideEffect { effect ->
         when (effect) {
             UnlockSideEffect.PickDatabase -> pickDatabase()
             UnlockSideEffect.PickKeyFile -> pickKeyFile()
+            is UnlockSideEffect.ShowBiometricPrompt -> showBiometricPrompt(effect.session, BiometricPurpose.Unlock)
         }
     }
 
@@ -39,6 +43,9 @@ internal fun UnlockScreen(
         onSubmit = { processor.action(UnlockAction.Submit) },
         onAttachKeyFile = { processor.action(UnlockAction.AttachKeyFile) },
         onRemoveKeyFile = { processor.action(UnlockAction.RemoveKeyFile) },
+        onBiometric = { processor.action(UnlockAction.Biometric) },
+        onRetry = { processor.action(UnlockAction.Retry) },
+        onCreateDatabase = { processor.action(UnlockAction.CreateDatabase) },
         onDatabaseClick = { changeDatabase() },
         onPickAnotherDatabase = { changeDatabase() },
     )

@@ -33,6 +33,9 @@ internal data object MasterPasswordRoute
 @Serializable
 internal data object KeyFileBackupRoute
 
-/** After the database was created and is open: the creation graph is gone, the database is not. */
+/**
+ * After the database was created and is open - offering biometrics. Inside the creation graph, so the
+ * draft with the password lives until it is encrypted; the screens of typing are gone by then.
+ */
 @Serializable
 internal data class BiometricSetupRoute(val dbKey: String)

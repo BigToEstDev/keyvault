@@ -9,10 +9,12 @@ import ru.kino.dev.core.NativeCore
 import ru.kino.dev.core.NewDatabase
 import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.readKeyFile
+import ru.kino.dev.welcome.BiometricFailure
 import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.CurrentDatabaseRepository
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeDatabaseRepository
+import ru.kino.dev.welcome.data.biometric.BiometricCleanup
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -33,6 +35,7 @@ internal class WelcomeDatabaseRepositoryImpl @Inject constructor(
     private val files: DatabaseFiles,
     private val current: CurrentDatabaseRepository,
     private val writer: CurrentDatabaseWriter,
+    private val biometrics: BiometricCleanup,
 ) : WelcomeDatabaseRepository {
 
     override suspend fun open(uri: String, password: String?, keyFileUri: String?): String = welcomeCall {
@@ -137,7 +140,21 @@ internal class WelcomeDatabaseRepositoryImpl @Inject constructor(
                 ),
             )
         }
+        forgetBiometricsOfAnother(opened.dbKey)
         return opened.dbKey
+    }
+
+    /**
+     * The password stored for biometrics belongs to the remembered database; another one is remembered now.
+     * Best effort: what is stored is tied to its own uri and never offered for this one, so failing to wipe
+     * it does not fail an opening that has succeeded.
+     */
+    private suspend fun forgetBiometricsOfAnother(dbUri: String) {
+        try {
+            biometrics.forgetOtherThan(dbUri)
+        } catch (e: BiometricFailure) {
+            // Left behind, not used
+        }
     }
 
     private suspend fun <T> closingOnFailure(dbKey: String, block: suspend () -> T): T =
