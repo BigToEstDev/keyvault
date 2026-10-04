@@ -5,11 +5,13 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.log.ErrorLog
+import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.welcome.CurrentDatabaseRepository
@@ -59,9 +61,18 @@ class LockedProcessor @AssistedInject constructor(
         }
     }
 
-    fun action(action: LockedAction) = intent {
+    fun action(action: LockedAction): Job = when (action) {
+        // Typed text: the state is updated before the field draws again, or the cursor jumps
+        is LockedAction.PasswordChanged -> textIntent {
+            reduce { state.copy(entry = state.entry.typed(action.password)) }
+        }
+
+        else -> intent { handle(action) }
+    }
+
+    private suspend fun Syntax<LockedState, LockedSideEffect>.handle(action: LockedAction) {
         when (action) {
-            is LockedAction.PasswordChanged -> reduce { state.copy(entry = state.entry.typed(action.password)) }
+            is LockedAction.PasswordChanged -> Unit // in action()
 
             LockedAction.TogglePasswordVisible -> reduce {
                 state.copy(entry = state.entry.copy(passwordVisible = !state.entry.passwordVisible))

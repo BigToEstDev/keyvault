@@ -5,10 +5,12 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.core.CredentialLimits
+import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.welcome.PickedFile
@@ -70,19 +72,30 @@ class MasterPasswordProcessor @AssistedInject constructor(
 
     override val container = orbitContainer<MasterPasswordState, MasterPasswordSideEffect>(MasterPasswordState())
 
-    fun action(action: MasterPasswordAction) = intent {
-        when (action) {
-            is MasterPasswordAction.PasswordChanged -> reduce {
+    fun action(action: MasterPasswordAction): Job = when (action) {
+        // Typed text: the state is updated before the field draws again, or the cursor jumps
+        is MasterPasswordAction.PasswordChanged -> textIntent {
+            reduce {
                 if (CredentialLimits.isPasswordTooLong(action.password)) {
                     state.copy(tooLong = true)
                 } else {
                     state.copy(password = action.password, tooLong = false)
                 }
             }
+        }
 
-            is MasterPasswordAction.ConfirmChanged -> reduce {
+        is MasterPasswordAction.ConfirmChanged -> textIntent {
+            reduce {
                 if (CredentialLimits.isPasswordTooLong(action.confirm)) state else state.copy(confirm = action.confirm)
             }
+        }
+
+        else -> intent { handle(action) }
+    }
+
+    private suspend fun Syntax<MasterPasswordState, MasterPasswordSideEffect>.handle(action: MasterPasswordAction) {
+        when (action) {
+            is MasterPasswordAction.PasswordChanged, is MasterPasswordAction.ConfirmChanged -> Unit // in action()
 
             MasterPasswordAction.ConfirmLeft -> reduce { state.copy(confirmLeft = true) }
 
@@ -97,7 +110,7 @@ class MasterPasswordProcessor @AssistedInject constructor(
             is MasterPasswordAction.DatabasePicked -> databasePicked(action.uri)
 
             MasterPasswordAction.OverwriteConfirmed -> {
-                val overwrite = state.stage.overwrite ?: return@intent
+                val overwrite = state.stage.overwrite ?: return
                 reduce { state.copy(stage = state.stage.copy(overwrite = null)) }
                 create(overwrite.uri)
             }

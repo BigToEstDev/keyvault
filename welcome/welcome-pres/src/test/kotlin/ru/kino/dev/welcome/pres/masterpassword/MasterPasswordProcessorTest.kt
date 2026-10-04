@@ -75,6 +75,21 @@ class MasterPasswordProcessorTest {
     }
 
     @Test
+    fun `typed text is in the state before the action returns - or the cursor of the field jumps`() = runTest {
+        val (processor, _) = processor()
+
+        processor.testWithInternalState(this) {
+            containerHost.action(MasterPasswordAction.PasswordChanged("pw"))
+            containerHost.action(MasterPasswordAction.ConfirmChanged("p"))
+
+            // Read straight away, without waiting for anything
+            assertEquals("pw", containerHost.container.stateFlow.value.password)
+            assertEquals("p", containerHost.container.stateFlow.value.confirm)
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
+    @Test
     fun `the limit counts code points, as the core does, not chars`() = runTest {
         val (processor, _) = processor()
         // An emoji is two chars and one code point: at the limit by code points, over it by chars
