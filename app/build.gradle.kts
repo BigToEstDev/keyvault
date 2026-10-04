@@ -30,6 +30,8 @@ dependencies {
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
     compileOnly(libs.errorprone.annotations)
+    // The system splash stays up while the start route is read
+    implementation(libs.androidx.core.splashscreen)
 
     implementation(projects.core.coreDomain)
     implementation(projects.core.corePres)

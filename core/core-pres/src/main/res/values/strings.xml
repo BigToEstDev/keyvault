@@ -4,4 +4,70 @@
     <!-- Components -->
     <string name="password_show">Show password</string>
     <string name="password_hide">Hide password</string>
+
+    <!-- Common actions -->
+    <string name="action_retry">Retry</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_next">Next</string>
+    <string name="action_pick_another_file">Choose another file</string>
+    <string name="action_pick_another_key_file">Choose another key file</string>
+
+    <!-- welcome -->
+    <string name="welcome_title">Your passwords, in one file</string>
+    <string name="welcome_subtitle">A KeePass database that lives where you put it</string>
+    <string name="welcome_open">Open database</string>
+    <string name="welcome_create">Create database</string>
+
+    <!-- unlock and locked -->
+    <string name="entry_password">Master password</string>
+    <string name="entry_open">Open</string>
+    <string name="entry_unlock">Unlock</string>
+    <string name="entry_database_fallback">Database</string>
+    <string name="entry_change_database_hint">Tap the name to choose another file</string>
+    <string name="entry_locked_title">The database is locked</string>
+    <string name="entry_key_file_add">I have a key file</string>
+    <string name="entry_key_file_remove">Remove key file</string>
+    <string name="entry_key_file_name">Key file: %1$s</string>
+    <string name="entry_key_file_unnamed">chosen</string>
+
+    <!-- Failures, pass-docs decisions.md "Ошибки" -->
+    <string name="error_invalid_credentials">Check the password and the key file</string>
+    <string name="error_unsupported_file">This file is not a database the app can open</string>
+    <string name="error_corrupted_file">The file is damaged, or not fully synced yet</string>
+    <string name="error_database_unreachable">Can\'t reach the database file</string>
+    <string name="error_key_file_unreachable">Can\'t reach the key file</string>
+    <string name="error_key_file_too_large">The key file is larger than %1$d MiB</string>
+    <string name="error_unexpected">Something went wrong</string>
+
+    <!-- Creating: master password -->
+    <string name="create_password_title">Set a master password</string>
+    <string name="create_password_text">It opens the database. It cannot be recovered, so keep it in mind.</string>
+    <string name="create_password_confirm">Repeat the password</string>
+    <string name="create_password_mismatch">The passwords don\'t match</string>
+    <string name="create_password_too_long">No longer than %1$d characters</string>
+    <string name="create_key_file_switch">Add a key file</string>
+    <string name="create_key_file_switch_hint">A second factor: a file kept apart from the database</string>
+    <string name="create_sync_hint">Next you choose where to save the database. In a synced folder - Google Drive, Dropbox and the like - it is there on your other devices too.</string>
+
+    <!-- Creating: writing over an existing file -->
+    <string name="overwrite_title">Replace the existing file?</string>
+    <string name="overwrite_database_text">The file you chose is not empty. The new database replaces it for good.</string>
+    <string name="overwrite_key_file_text">The file you chose is not empty - it may be the key of another database. Replacing it locks that database for good.</string>
+    <string name="overwrite_confirm">Replace</string>
+
+    <!-- Creating: key file -->
+    <string name="key_file_title">Save the key file</string>
+    <string name="key_file_text">The database opens only with the password and this file together. Without the file the password alone won\'t open it. Keep it apart from the database, not in the same folder.</string>
+    <string name="key_file_save">Save key file</string>
+    <string name="key_file_saved">The key file is saved</string>
+    <string name="key_file_choose_database">Choose where to save the database</string>
+
+    <!-- Creating: biometrics -->
+    <string name="biometric_title">Unlock with biometrics</string>
+    <string name="biometric_text">Open the database with a fingerprint or your face instead of typing the password.</string>
+    <string name="biometric_skip">Skip</string>
+
+    <!-- vault -->
+    <string name="entries_stub">The database is open. The list of entries comes next.</string>
+    <string name="entries_debug_lock">Lock (debug)</string>
 </resources>
