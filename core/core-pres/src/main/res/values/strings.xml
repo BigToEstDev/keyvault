@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Every string of the ui, for all modules: one place, no duplicates. Russian in values-ru. -->
+<resources>
+    <!-- Components -->
+    <string name="password_show">Show password</string>
+    <string name="password_hide">Hide password</string>
+</resources>
