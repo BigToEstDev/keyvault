@@ -44,6 +44,8 @@ internal fun UnlockScreen(
         onAttachKeyFile = { processor.action(UnlockAction.AttachKeyFile) },
         onRemoveKeyFile = { processor.action(UnlockAction.RemoveKeyFile) },
         onBiometric = { processor.action(UnlockAction.Biometric) },
+        onRetry = { processor.action(UnlockAction.Retry) },
+        onCreateDatabase = { processor.action(UnlockAction.CreateDatabase) },
         onDatabaseClick = { changeDatabase() },
         onPickAnotherDatabase = { changeDatabase() },
     )

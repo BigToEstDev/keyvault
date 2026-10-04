@@ -19,12 +19,15 @@ import ru.kino.dev.navigation.WelcomeGraph
 import ru.kino.dev.welcome.CurrentDatabaseRepository
 import ru.kino.dev.welcome.WelcomeDatabaseRepository
 import ru.kino.dev.welcome.WelcomeFailure
+import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFilesRepository
 import ru.kino.dev.welcome.pres.common.BiometricNotice
 import ru.kino.dev.welcome.pres.common.BiometricOutcome
 import ru.kino.dev.welcome.pres.common.BiometricSignIn
+import ru.kino.dev.welcome.pres.common.EntryProblem
 import ru.kino.dev.welcome.pres.common.PasswordEntry
 import ru.kino.dev.welcome.pres.common.toProblem
+import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
 import ru.kino.dev.welcome.pres.navigation.WelcomeRoute
 
 /**
@@ -101,6 +104,10 @@ class UnlockProcessor @AssistedInject constructor(
 
             UnlockAction.Submit -> submit()
 
+            UnlockAction.Retry -> retry()
+
+            UnlockAction.CreateDatabase -> navigator.navigate(MviNavEvent.NavigateTo(MasterPasswordRoute))
+
             UnlockAction.ChangeDatabase -> postSideEffect(UnlockSideEffect.PickDatabase)
 
             is UnlockAction.DatabasePicked -> showDatabase(action.uri)
@@ -176,8 +183,35 @@ class UnlockProcessor @AssistedInject constructor(
         } else {
             UnlockState(databaseUri = uri, fileName = nameOf(uri))
         }
-        reduce { next }
+        // A file deleted outside the app is said now, not after the password was typed for it
+        val gone = if (isReachable(uri)) null else DATABASE_GONE
+        reduce { next.copy(entry = next.entry.copy(problem = gone)) }
     }
+
+    private suspend fun Syntax<UnlockState, UnlockSideEffect>.retry() {
+        val uri = state.databaseUri ?: return
+        if (state.entry.busy) return
+
+        reduce { state.copy(entry = state.entry.copy(busy = true)) }
+        when {
+            !isReachable(uri) -> reduce {
+                state.copy(entry = state.entry.copy(busy = false, problem = DATABASE_GONE))
+            }
+            // Nothing typed yet - the file was missing when the screen came up: now the password can be typed
+            state.entry.password.isEmpty() -> reduce {
+                state.copy(entry = state.entry.copy(busy = false, problem = null))
+            }
+            else -> open(uri, state.entry.passwordForCall, fromBiometrics = false)
+        }
+    }
+
+    // Only a hint, and a failure of asking is no answer: then opening tells
+    private suspend fun isReachable(uri: String): Boolean =
+        try {
+            files.isReachable(uri)
+        } catch (failure: WelcomeFailure) {
+            true
+        }
 
     private suspend fun Syntax<UnlockState, UnlockSideEffect>.submit() {
         val uri = state.databaseUri ?: return
@@ -234,6 +268,9 @@ class UnlockProcessor @AssistedInject constructor(
 
     private companion object {
         const val TAG = "UnlockProcessor"
+
+        /** The database file is not there - deleted outside the app, or out of reach. */
+        val DATABASE_GONE = EntryProblem.Unreachable(PickedFile.Database)
     }
 }
 

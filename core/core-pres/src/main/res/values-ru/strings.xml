@@ -28,6 +28,7 @@
     <string name="entry_key_file_remove">Отвязать key-файл</string>
     <string name="entry_key_file_name">Key-файл: %1$s</string>
     <string name="entry_key_file_unnamed">выбран</string>
+    <string name="entry_create_database">Создать новую базу</string>
 
     <!-- Failures -->
     <string name="error_invalid_credentials">Проверьте пароль и key-файл</string>

@@ -44,6 +44,11 @@ class FakeDatabaseFiles(val journal: MutableList<String> = mutableListOf()) : Da
         contents[uri] = bytes.copyOf()
     }
 
+    override suspend fun exists(uri: String): Boolean {
+        log("exists", uri)
+        return uri in contents && uri !in unreachable
+    }
+
     override suspend fun displayName(uri: String): String? {
         log("displayName", uri)
         return names[uri]

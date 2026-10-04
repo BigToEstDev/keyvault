@@ -14,6 +14,14 @@ interface WelcomeFilesRepository {
     suspend fun displayName(uri: String): String?
 
     /**
+     * Whether the picked database is still there - asked when the unlock screen shows it, so that a file
+     * deleted outside the app is said before the password is typed, not after.
+     *
+     * A hint: an offline provider may answer from its cache, and opening reports for real.
+     */
+    suspend fun isReachable(uri: String): Boolean
+
+    /**
      * Whether writing into [uri] would destroy something - "save as" for the database or for the key file
      * handed back an existing file rather than a new one.
      *

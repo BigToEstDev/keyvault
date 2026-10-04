@@ -29,6 +29,7 @@
     <string name="entry_key_file_remove">Remove key file</string>
     <string name="entry_key_file_name">Key file: %1$s</string>
     <string name="entry_key_file_unnamed">chosen</string>
+    <string name="entry_create_database">Create a new database</string>
 
     <!-- Failures, pass-docs decisions.md "Ошибки" -->
     <string name="error_invalid_credentials">Check the password and the key file</string>

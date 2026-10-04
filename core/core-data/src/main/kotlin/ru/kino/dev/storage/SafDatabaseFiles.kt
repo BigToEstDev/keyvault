@@ -87,6 +87,20 @@ internal class SafDatabaseFiles @Inject constructor(
         }
     }
 
+    override suspend fun exists(uri: String): Boolean = withContext(dispatcher) {
+        try {
+            resolver.query(uri.toUri(), arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { it.moveToFirst() }
+                ?: false
+        } catch (_: SecurityException) {
+            // The permission is gone - for the app the file is not there
+            false
+        } catch (_: IllegalArgumentException) {
+            // How the local storage provider answers for a document deleted under it
+            false
+        }
+    }
+
     override suspend fun displayName(uri: String): String? = withContext(dispatcher) {
         try {
             resolver.query(uri.toUri(), arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)

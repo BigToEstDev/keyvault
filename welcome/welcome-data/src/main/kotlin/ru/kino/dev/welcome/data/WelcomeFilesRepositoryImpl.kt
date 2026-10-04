@@ -18,6 +18,8 @@ internal class WelcomeFilesRepositoryImpl @Inject constructor(
 
     override suspend fun displayName(uri: String): String? = welcomeCall { files.displayName(uri) }
 
+    override suspend fun isReachable(uri: String): Boolean = welcomeCall { files.exists(uri) }
+
     override suspend fun wouldOverwrite(uri: String, file: PickedFile): Boolean = welcomeCall {
         !accessing(file) { files.isEmpty(uri) }
     }

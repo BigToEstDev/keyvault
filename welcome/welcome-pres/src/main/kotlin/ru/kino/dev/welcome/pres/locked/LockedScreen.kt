@@ -47,6 +47,8 @@ internal fun LockedScreen(
         onAttachKeyFile = { processor.action(LockedAction.AttachKeyFile) },
         onRemoveKeyFile = { processor.action(LockedAction.RemoveKeyFile) },
         onBiometric = { processor.action(LockedAction.Biometric) },
+        onRetry = { processor.action(LockedAction.Submit) },
+        onCreateDatabase = null,
         onDatabaseClick = null,
         onPickAnotherDatabase = null,
     )

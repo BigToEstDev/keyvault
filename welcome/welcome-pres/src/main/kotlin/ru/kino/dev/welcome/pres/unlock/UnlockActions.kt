@@ -9,8 +9,17 @@ sealed interface UnlockAction {
 
     data object TogglePasswordVisible : UnlockAction
 
-    /** Open the database - also "retry" after a failure that may pass. */
+    /** Open the database. */
     data object Submit : UnlockAction
+
+    /**
+     * "Retry" on a problem with the database file: the file is looked at again first - it may have been
+     * found by the provider - and opened only when something was typed for it.
+     */
+    data object Retry : UnlockAction
+
+    /** "Create a new database" - the way out when the remembered one is gone. */
+    data object CreateDatabase : UnlockAction
 
     /** The name of the database tapped, or "pick another file" after a failure. */
     data object ChangeDatabase : UnlockAction

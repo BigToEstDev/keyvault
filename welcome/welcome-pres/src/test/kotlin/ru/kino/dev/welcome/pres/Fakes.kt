@@ -64,7 +64,12 @@ internal class FakeWelcomeFiles(private val journal: Journal = mutableListOf()) 
     /** Thrown by the next [writeNewKeyFile], then forgotten. */
     var writeFailure: WelcomeFailure? = null
 
+    /** Files deleted outside the app. */
+    val missing = mutableSetOf<String>()
+
     override suspend fun displayName(uri: String): String? = names[uri]
+
+    override suspend fun isReachable(uri: String): Boolean = uri !in missing
 
     override suspend fun wouldOverwrite(uri: String, file: PickedFile): Boolean {
         journal += "wouldOverwrite $uri"
