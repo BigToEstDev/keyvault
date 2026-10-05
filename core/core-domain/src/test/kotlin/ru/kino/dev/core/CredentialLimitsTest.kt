@@ -33,7 +33,7 @@ class CredentialLimitsTest {
 
     @Test
     fun `a password of the minimum is accepted and one character less is not`() {
-        assertEquals(12, CredentialLimits.PASSWORD_MIN_CHARS)
+        assertEquals(8, CredentialLimits.PASSWORD_MIN_CHARS)
         assertFalse(CredentialLimits.isPasswordTooShort("a".repeat(CredentialLimits.PASSWORD_MIN_CHARS)))
         assertTrue(CredentialLimits.isPasswordTooShort("a".repeat(CredentialLimits.PASSWORD_MIN_CHARS - 1)))
     }
@@ -41,11 +41,11 @@ class CredentialLimitsTest {
     @Test
     fun `the minimum is length alone - no rule on letters or digits`() {
         assertFalse(CredentialLimits.isPasswordTooShort("correct horse battery"))
-        assertFalse(CredentialLimits.isPasswordTooShort("123456789012"))
+        assertFalse(CredentialLimits.isPasswordTooShort("12345678"))
     }
 
     @Test
-    fun `the minimum counts code points too - twelve emoji are twelve characters`() {
+    fun `the minimum counts code points too - eight emoji are eight characters`() {
         assertFalse(CredentialLimits.isPasswordTooShort("😀".repeat(CredentialLimits.PASSWORD_MIN_CHARS)))
         assertTrue(CredentialLimits.isPasswordTooShort("😀".repeat(CredentialLimits.PASSWORD_MIN_CHARS - 1)))
     }

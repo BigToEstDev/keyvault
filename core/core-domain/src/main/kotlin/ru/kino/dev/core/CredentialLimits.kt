@@ -29,7 +29,7 @@ object CredentialLimits {
      * no rules on what the characters are: a master password is attacked offline, where length counts and
      * "a digit and a letter" does not (pass-docs, Step 34, item 4).
      */
-    const val PASSWORD_MIN_CHARS: Int = 12
+    const val PASSWORD_MIN_CHARS: Int = 8
 
     const val KIND_KEY_FILE_TOO_LARGE = "KeyFileTooLarge"
     const val KIND_PASSWORD_TOO_LONG = "PasswordTooLong"
