@@ -65,7 +65,7 @@ class MasterPasswordProcessorTest {
     }
 
     @Test
-    fun `next is off below twelve characters, matching or not, and the screen says why`() {
+    fun `next is off below the minimum length, matching or not, and the screen says why`() {
         val short = "x".repeat(CredentialLimits.PASSWORD_MIN_CHARS - 1)
         val atMinimum = "x".repeat(CredentialLimits.PASSWORD_MIN_CHARS)
 
