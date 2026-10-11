@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.kino.dev.core.CreatedDatabase
 import ru.kino.dev.core.CredentialLimits
+import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.KeyFile
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.NativeCore
@@ -150,6 +151,72 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
 
         answer.payload
     }
+
+    override suspend fun groupTree(dbKey: String): GroupTree = withContext(dispatcher) {
+        call(
+            FfiCommands.GROUPS_SUMMARY_DATA,
+            DbKeyDto.serializer(),
+            DbKeyDto(dbKey),
+            GroupTreeDto.serializer(),
+        ).toDomain()
+    }
+
+    override suspend fun createGroup(dbKey: String, parentId: String, name: String): String =
+        withContext(dispatcher) {
+            // The core builds the blank group - uuid, times, defaults - so a new group is the same shape as
+            // one read from a file, and only the name is ours
+            val blank = call(
+                FfiCommands.NEW_BLANK_GROUP_WITH_PARENT,
+                NewBlankGroupWithParentDto.serializer(),
+                NewBlankGroupWithParentDto(parentGroupUuid = parentId, markAsCategory = false),
+                GroupDto.serializer(),
+            )
+            val group = blank.named(name)
+            call(
+                FfiCommands.INSERT_GROUP,
+                GroupArgsDto.serializer(),
+                GroupArgsDto(dbKey, group),
+                DoneDto.serializer(),
+            )
+
+            group.uuid
+        }
+
+    override suspend fun renameGroup(dbKey: String, groupId: String, name: String) {
+        withContext(dispatcher) {
+            val group = call(
+                FfiCommands.GET_GROUP_BY_ID,
+                GroupIdDto.serializer(),
+                GroupIdDto(dbKey = dbKey, groupUuid = groupId),
+                GroupDto.serializer(),
+            )
+            call(
+                FfiCommands.UPDATE_GROUP,
+                GroupArgsDto.serializer(),
+                GroupArgsDto(dbKey, group.named(name)),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun moveGroupToRecycleBin(dbKey: String, groupId: String) {
+        withContext(dispatcher) {
+            call(
+                FfiCommands.MOVE_GROUP_TO_RECYCLE_BIN,
+                GroupIdDto.serializer(),
+                GroupIdDto(dbKey = dbKey, groupUuid = groupId),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    /** A call with json both ways and nothing in the binary slot - most of the commands. */
+    private fun <A, R> call(
+        command: String,
+        argsSerializer: kotlinx.serialization.SerializationStrategy<A>,
+        args: A,
+        answerSerializer: kotlinx.serialization.DeserializationStrategy<R>,
+    ): R = FfiEnvelope.unwrap(PassFfi.invoke(command, encode(argsSerializer, args)), answerSerializer)
 
     private fun <T> encode(serializer: kotlinx.serialization.SerializationStrategy<T>, value: T): String =
         FfiEnvelope.json.encodeToString(serializer, value)

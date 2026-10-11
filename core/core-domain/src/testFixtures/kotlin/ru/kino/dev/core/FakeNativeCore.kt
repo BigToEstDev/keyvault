@@ -141,8 +141,80 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         return generatedKeyFile.copyOf()
     }
 
+    /**
+     * The groups of every database, by dbKey, as [groupTree] answers them. The group calls change them the
+     * way the core would; a database without a tree here is one the core does not hold.
+     */
+    val groupTrees = mutableMapOf<String, GroupTree>()
+
+    /** Ids handed to the groups [createGroup] makes - `group-1`, `group-2`, … */
+    private var groupsCreated = 0
+
+    override suspend fun groupTree(dbKey: String): GroupTree {
+        step("groupTree", dbKey)
+        return tree(dbKey)
+    }
+
+    override suspend fun createGroup(dbKey: String, parentId: String, name: String): String {
+        step("createGroup", dbKey)
+        val tree = tree(dbKey)
+        val parent = tree.groups[parentId] ?: throw notFound(parentId)
+
+        val id = "group-${++groupsCreated}"
+        groupTrees[dbKey] = tree.copy(
+            groups = tree.groups +
+                (id to GroupNode(id, parentId, name, emptyList(), emptyList())) +
+                (parentId to parent.copy(groupIds = parent.groupIds + id)),
+        )
+        return id
+    }
+
+    override suspend fun renameGroup(dbKey: String, groupId: String, name: String) {
+        step("renameGroup", dbKey)
+        val tree = tree(dbKey)
+        val group = tree.groups[groupId] ?: throw notFound(groupId)
+
+        groupTrees[dbKey] = tree.copy(groups = tree.groups + (groupId to group.copy(name = name)))
+    }
+
+    override suspend fun moveGroupToRecycleBin(dbKey: String, groupId: String) {
+        step("moveGroupToRecycleBin", dbKey)
+        var tree = tree(dbKey)
+        val group = tree.groups[groupId] ?: throw notFound(groupId)
+
+        // Like the core: no bin yet - one is made under the root on the first delete
+        val binId = tree.recycleBinId ?: RECYCLE_BIN_ID.also { binId ->
+            val root = tree.groups.getValue(tree.rootId)
+            tree = tree.copy(
+                recycleBinId = binId,
+                groups = tree.groups +
+                    (binId to GroupNode(binId, tree.rootId, "Recycle Bin", emptyList(), emptyList())) +
+                    (tree.rootId to root.copy(groupIds = root.groupIds + binId)),
+            )
+        }
+        val oldParent = tree.groups.getValue(checkNotNull(group.parentId) { "the root cannot be deleted" })
+        val bin = tree.groups.getValue(binId)
+
+        groupTrees[dbKey] = tree.copy(
+            groups = tree.groups +
+                (oldParent.id to oldParent.copy(groupIds = oldParent.groupIds - groupId)) +
+                (binId to bin.copy(groupIds = bin.groupIds + groupId)) +
+                (groupId to group.copy(parentId = binId)),
+        )
+    }
+
+    private fun tree(dbKey: String): GroupTree =
+        groupTrees[dbKey] ?: throw CoreException("DbKeyNotFound", "not open: $dbKey")
+
+    private fun notFound(id: String) = CoreException("NotFound", "no group $id")
+
     private fun step(method: String, dbKey: String) {
         journal += "$method $dbKey".trimEnd()
         failures[method]?.let { throw it }
+    }
+
+    companion object {
+        /** The id of the recycle bin [moveGroupToRecycleBin] makes when the database has none. */
+        const val RECYCLE_BIN_ID = "recycle-bin"
     }
 }

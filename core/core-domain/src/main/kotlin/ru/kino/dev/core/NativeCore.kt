@@ -101,6 +101,29 @@ interface NativeCore {
      * file: it may be the key of another database, and replacing it locks that database for good.
      */
     suspend fun generateKeyFile(): ByteArray
+
+    /** The whole tree of groups in one answer - the recycle bin and what is inside it included. */
+    suspend fun groupTree(dbKey: String): GroupTree
+
+    /**
+     * Creates a group named [name] inside [parentId] and returns its id. Every other field is the core's
+     * default for a blank group.
+     *
+     * In memory only, like every change of the database: the file gets it on the next [saveDatabase].
+     */
+    suspend fun createGroup(dbKey: String, parentId: String, name: String): String
+
+    /**
+     * Renames the group. The rest of it - notes, icon, the fields of another program the core keeps - goes
+     * back as it was read. In memory only.
+     */
+    suspend fun renameGroup(dbKey: String, groupId: String, name: String)
+
+    /**
+     * Moves the group, with everything inside it, into the recycle bin; the core creates the bin when the
+     * database has none. In memory only.
+     */
+    suspend fun moveGroupToRecycleBin(dbKey: String, groupId: String)
 }
 
 /**
