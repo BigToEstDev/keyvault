@@ -99,6 +99,7 @@
     <string name="vault_search">Search</string>
     <string name="vault_back">Back</string>
     <string name="vault_group_empty">Nothing here yet</string>
+    <string name="vault_group_empty_hint">Tap + to create a group</string>
     <string name="vault_create_group">Create group</string>
     <string name="vault_create_entry">Create entry</string>
     <string name="vault_group_edit">Edit</string>

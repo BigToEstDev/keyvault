@@ -12,17 +12,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Key
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -33,6 +32,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.ui.components.EmptyState
 import ru.kino.dev.ui.components.ExpandableFab
 import ru.kino.dev.ui.components.FabItem
 import ru.kino.dev.ui.components.GradientBackground
@@ -129,12 +129,11 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentAlignment = Alignment.Center,
+            contentAlignment = EMPTY_ALIGNMENT,
         ) {
-            Text(
-                text = stringResource(R.string.vault_group_empty),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            EmptyState(
+                title = stringResource(R.string.vault_group_empty),
+                hint = stringResource(R.string.vault_group_empty_hint),
             )
         }
 
@@ -179,6 +178,9 @@ private val GroupListMessage.text: Int
         GroupListMessage.LoadFailed -> R.string.vault_message_load_failed
         GroupListMessage.Unexpected -> R.string.error_unexpected
     }
+
+/** The empty state a little above the middle: the eye lands there, and the buttons take the bottom. */
+private val EMPTY_ALIGNMENT = BiasAlignment(horizontalBias = 0f, verticalBias = -0.3f)
 
 /** Cards drawn while the tree is read - about a screenful. */
 private const val SKELETON_ROWS = 6

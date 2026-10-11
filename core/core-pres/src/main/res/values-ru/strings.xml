@@ -101,6 +101,7 @@
     <string name="vault_search">Поиск</string>
     <string name="vault_back">Назад</string>
     <string name="vault_group_empty">Здесь пока ничего нет</string>
+    <string name="vault_group_empty_hint">Нажмите +, чтобы создать группу</string>
     <string name="vault_create_group">Создать группу</string>
     <string name="vault_create_entry">Создать запись</string>
     <string name="vault_group_edit">Редактировать</string>
