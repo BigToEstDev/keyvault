@@ -133,7 +133,7 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
         ) {
             EmptyState(
                 title = stringResource(R.string.vault_group_empty),
-                hint = stringResource(R.string.vault_group_empty_hint),
+                hint = stringResource(R.string.vault_empty_hint),
             )
         }
 
