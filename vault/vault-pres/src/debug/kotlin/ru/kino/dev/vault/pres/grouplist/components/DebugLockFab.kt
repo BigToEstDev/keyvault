@@ -19,9 +19,10 @@ import ru.kino.dev.core.pres.R
  * own. In the accent color, to stand apart from the real buttons. Goes when automatic locking comes.
  */
 @Composable
-internal fun DebugLockFab(locking: Boolean, onLock: () -> Unit) {
+internal fun DebugLockFab(locking: Boolean, onLock: () -> Unit, modifier: Modifier = Modifier) {
     FloatingActionButton(
         onClick = { if (!locking) onLock() },
+        modifier = modifier,
         containerColor = MaterialTheme.colorScheme.tertiary,
         contentColor = MaterialTheme.colorScheme.onTertiary,
     ) {

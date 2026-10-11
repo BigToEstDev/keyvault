@@ -4,8 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -77,28 +77,32 @@ internal fun GroupListScreen(
             },
             snackbarHost = { SnackbarHost(snackbar) },
             floatingActionButton = {
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    DebugLockFab(locking = state.locking, onLock = { processor.action(GroupListAction.Lock) })
-                    ExpandableFab(
-                        expanded = state.fabExpanded,
-                        onToggle = { processor.action(GroupListAction.ToggleFab) },
-                        items = listOf(
-                            FabItem(Icons.Filled.CreateNewFolder, stringResource(R.string.vault_create_group)) {
-                                processor.action(GroupListAction.CreateGroup)
-                            },
-                            FabItem(Icons.Filled.Key, stringResource(R.string.vault_create_entry)) {
-                                processor.action(GroupListAction.CreateEntry)
-                            },
-                        ),
-                    )
-                }
+                ExpandableFab(
+                    expanded = state.fabExpanded,
+                    onToggle = { processor.action(GroupListAction.ToggleFab) },
+                    items = listOf(
+                        FabItem(Icons.Filled.CreateNewFolder, stringResource(R.string.vault_create_group)) {
+                            processor.action(GroupListAction.CreateGroup)
+                        },
+                        FabItem(Icons.Filled.Key, stringResource(R.string.vault_create_entry)) {
+                            processor.action(GroupListAction.CreateEntry)
+                        },
+                    ),
+                )
             },
         ) { padding ->
             GroupListContent(state = state, padding = padding, action = processor::action)
         }
+
+        // In the opposite corner from "add", away from the real buttons; the same margin as the fab
+        DebugLockFab(
+            locking = state.locking,
+            onLock = { processor.action(GroupListAction.Lock) },
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .navigationBarsPadding()
+                .padding(16.dp),
+        )
 
         GroupDialogs(
             dialog = state.dialog,
