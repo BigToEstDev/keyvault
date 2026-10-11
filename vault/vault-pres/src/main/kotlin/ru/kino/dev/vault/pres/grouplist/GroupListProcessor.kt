@@ -30,6 +30,7 @@ import ru.kino.dev.vault.pres.navigation.GroupRoute
  * @param path from the root down to this group; empty until the tree is read
  * @param entryCount entries in this group and below it; at the root - the whole database
  * @param query typed into the search field; nothing searches yet - pass-docs, Step 38
+ * @param filtersOpen the filter dialog is shown; empty until the entries come - Step 38
  * @param message for the snackbar, until it takes it
  */
 data class GroupListState(
@@ -39,6 +40,7 @@ data class GroupListState(
     val groups: List<GroupItem> = emptyList(),
     val query: String = "",
     val fabExpanded: Boolean = false,
+    val filtersOpen: Boolean = false,
     val dialog: GroupDialog? = null,
     val locking: Boolean = false,
     val message: GroupListMessage? = null,
@@ -101,6 +103,10 @@ class GroupListProcessor @AssistedInject constructor(
             GroupListAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
 
             GroupListAction.ToggleFab -> reduce { state.copy(fabExpanded = !state.fabExpanded) }
+
+            GroupListAction.OpenFilters -> reduce { state.copy(filtersOpen = true, fabExpanded = false) }
+
+            GroupListAction.CloseFilters -> reduce { state.copy(filtersOpen = false) }
 
             GroupListAction.CreateGroup -> if (!state.loading) {
                 reduce { state.copy(fabExpanded = false, dialog = GroupDialog.Create()) }

@@ -7,6 +7,7 @@
     <!-- Common actions -->
     <string name="action_retry">Повторить</string>
     <string name="action_cancel">Отмена</string>
+    <string name="action_close">Закрыть</string>
     <string name="action_next">Далее</string>
     <string name="action_pick_another_file">Выбрать другой файл</string>
     <string name="action_pick_another_key_file">Выбрать другой key-файл</string>
@@ -99,6 +100,7 @@
     <string name="search_clear">Очистить поиск</string>
 
     <string name="vault_search">Поиск</string>
+    <string name="vault_filters">Фильтры</string>
     <string name="vault_back">Назад</string>
     <string name="vault_group_empty">Здесь пока ничего нет</string>
     <string name="vault_empty_hint">Нажмите +, чтобы добавить запись</string>

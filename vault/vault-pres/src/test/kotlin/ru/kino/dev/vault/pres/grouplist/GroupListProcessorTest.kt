@@ -227,6 +227,20 @@ class GroupListProcessorTest {
     }
 
     @Test
+    fun `the filter button opens the dialog, and it closes`() = runTest {
+        val (opened, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenFilters)
+        val (closed, _) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.OpenFilters,
+            GroupListAction.CloseFilters,
+        )
+
+        assertTrue(opened.filtersOpen)
+        assertFalse(closed.filtersOpen)
+    }
+
+    @Test
     fun `create entry opens its stub inside this group and closes the menu`() = runTest {
         val (state, events) = perform(
             groupId = work.value,

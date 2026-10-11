@@ -18,6 +18,11 @@ sealed interface GroupListAction {
 
     data object ToggleFab : GroupListAction
 
+    /** The filter button in the search field. The filters themselves come with the entries - Step 38. */
+    data object OpenFilters : GroupListAction
+
+    data object CloseFilters : GroupListAction
+
     data object CreateGroup : GroupListAction
 
     data object CreateEntry : GroupListAction

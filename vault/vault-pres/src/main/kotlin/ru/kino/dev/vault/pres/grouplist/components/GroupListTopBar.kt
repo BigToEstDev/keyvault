@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,7 +28,8 @@ import ru.kino.dev.vault.pres.grouplist.Crumb
 
 /**
  * The top of the list: at the root - the database, its entry count on a folder and its name; inside a group
- * - "back" and the path from the database down to the group. The search field under either.
+ * - "back" and the path from the database down to the group. Under either, the search field and the
+ * filter button to the right of it.
  *
  * The database is named by its root group, which is what the tree has. A root without a name - another
  * program may write one - shows the usual "Database".
@@ -38,6 +40,7 @@ internal fun GroupListTopBar(
     entryCount: Int,
     query: String,
     onQueryChange: (String) -> Unit,
+    onFilters: () -> Unit,
     onBack: () -> Unit,
     onCrumb: (index: Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -75,12 +78,21 @@ internal fun GroupListTopBar(
                 )
             }
         }
-        // Nothing searches yet - the entries and their search are pass-docs, Step 38
-        SearchBar(
-            query = query,
-            onQueryChange = onQueryChange,
-            placeholder = stringResource(R.string.vault_search),
+        Row(
             modifier = Modifier.fillMaxWidth(),
-        )
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // Nothing searches yet - the entries and their search are pass-docs, Step 38
+            SearchBar(
+                query = query,
+                onQueryChange = onQueryChange,
+                placeholder = stringResource(R.string.vault_search),
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onFilters) {
+                Icon(Icons.Filled.Tune, contentDescription = stringResource(R.string.vault_filters))
+            }
+        }
     }
 }

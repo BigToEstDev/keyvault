@@ -37,6 +37,7 @@ import ru.kino.dev.ui.components.ExpandableFab
 import ru.kino.dev.ui.components.FabItem
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.vault.pres.grouplist.components.DebugLockFab
+import ru.kino.dev.vault.pres.grouplist.components.FilterDialog
 import ru.kino.dev.vault.pres.grouplist.components.GroupCard
 import ru.kino.dev.vault.pres.grouplist.components.GroupDialogs
 import ru.kino.dev.vault.pres.grouplist.components.GroupListTopBar
@@ -71,6 +72,7 @@ internal fun GroupListScreen(
                     entryCount = state.entryCount,
                     query = state.query,
                     onQueryChange = { processor.action(GroupListAction.QueryChanged(it)) },
+                    onFilters = { processor.action(GroupListAction.OpenFilters) },
                     onBack = { processor.action(GroupListAction.Back) },
                     onCrumb = { processor.action(GroupListAction.OpenCrumb(it)) },
                 )
@@ -103,6 +105,10 @@ internal fun GroupListScreen(
                 .navigationBarsPadding()
                 .padding(16.dp),
         )
+
+        if (state.filtersOpen) {
+            FilterDialog(onClose = { processor.action(GroupListAction.CloseFilters) })
+        }
 
         GroupDialogs(
             dialog = state.dialog,

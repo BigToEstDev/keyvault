@@ -8,6 +8,7 @@
     <!-- Common actions -->
     <string name="action_retry">Retry</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
     <string name="action_next">Next</string>
     <string name="action_pick_another_file">Choose another file</string>
     <string name="action_pick_another_key_file">Choose another key file</string>
@@ -97,6 +98,7 @@
 
     <!-- vault: groups -->
     <string name="vault_search">Search</string>
+    <string name="vault_filters">Filters</string>
     <string name="vault_back">Back</string>
     <string name="vault_group_empty">Nothing here yet</string>
     <string name="vault_empty_hint">Tap + to add an entry</string>
