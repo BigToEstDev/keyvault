@@ -2,7 +2,7 @@ package ru.kino.dev.welcome.pres.create
 
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
-import ru.kino.dev.navigation.EntriesListRoute
+import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.WelcomeGraph
 import ru.kino.dev.welcome.BiometricRepository
@@ -74,7 +74,7 @@ class CreateSteps @Inject constructor(
             if (biometrics.isAvailable()) {
                 MviNavEvent.NavigateTo(BiometricSetupRoute(dbKey), popUpTo = MasterPasswordRoute, inclusive = true)
             } else {
-                MviNavEvent.NavigateTo(EntriesListRoute(dbKey), popUpTo = WelcomeGraph, inclusive = true)
+                MviNavEvent.NavigateTo(VaultRootRoute(dbKey), popUpTo = WelcomeGraph, inclusive = true)
             },
         )
     }

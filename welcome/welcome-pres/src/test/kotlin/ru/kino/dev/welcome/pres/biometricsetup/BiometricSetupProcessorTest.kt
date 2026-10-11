@@ -6,7 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
-import ru.kino.dev.navigation.EntriesListRoute
+import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.WelcomeGraph
 import ru.kino.dev.welcome.pres.FakeBiometrics
@@ -82,7 +82,7 @@ class BiometricSetupProcessorTest {
         assertEquals(listOf(toVault()), events)
     }
 
-    private fun toVault() = MviNavEvent.NavigateTo(EntriesListRoute(DB), popUpTo = WelcomeGraph, inclusive = true)
+    private fun toVault() = MviNavEvent.NavigateTo(VaultRootRoute(DB), popUpTo = WelcomeGraph, inclusive = true)
 
     private companion object {
         const val DB = "content://docs/kdbxvault.kdbx"
