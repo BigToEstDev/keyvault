@@ -1,0 +1,95 @@
+package ru.kino.dev.vault.group
+
+/** One group, as the tree holds it. */
+data class VaultGroup(
+    val id: GroupId,
+    /** Null for the root */
+    val parentId: GroupId?,
+    val name: String,
+    /** The groups inside, in the order the database keeps them */
+    val childGroupIds: List<GroupId>,
+    /** The entries directly inside, not those of the groups below */
+    val entryIds: List<EntryId>,
+)
+
+/**
+ * The groups of the open database, as `vault` shows them.
+ *
+ * What is visible is what can be reached from the root without entering the recycle bin: the bin is not
+ * shown in v1, its groups cannot be opened, and its entries are not counted (pass-docs, Step 36, decision
+ * 2). Every question about a group that is not visible answers as if there were no such group.
+ *
+ * A snapshot: a change made through the repository is seen in the next tree, not in this one.
+ */
+class VaultTree(
+    val rootId: GroupId,
+    /** Null while the database has no recycle bin */
+    val recycleBinId: GroupId?,
+    private val groups: Map<GroupId, VaultGroup>,
+) {
+
+    init {
+        require(rootId in groups) { "the root ${rootId.value} is not among the groups" }
+    }
+
+    val root: VaultGroup get() = groups.getValue(rootId)
+
+    /**
+     * Visible groups, walked once from the root. A visited set rather than trust in the shape: a file
+     * damaged into a cycle must not hang the screen.
+     */
+    private val visible: Set<GroupId> by lazy {
+        val seen = LinkedHashSet<GroupId>()
+        val queue = ArrayDeque(listOf(rootId))
+        while (queue.isNotEmpty()) {
+            val id = queue.removeFirst()
+            if (id == recycleBinId || !seen.add(id)) continue
+            groups[id]?.childGroupIds?.let(queue::addAll)
+        }
+        seen
+    }
+
+    /** Entries of every visible group, its visible groups below included - counted once for the tree. */
+    private val entryCounts: Map<GroupId, Int> by lazy {
+        val counts = HashMap<GroupId, Int>()
+        // Reverse of the walk from the root: every group comes after the groups inside it
+        for (id in visible.reversed()) {
+            val group = groups.getValue(id)
+            counts[id] = group.entryIds.size + group.childGroupIds.sumOf { counts[it] ?: 0 }
+        }
+        counts
+    }
+
+    /** The group, or null when there is none or it is not visible. */
+    fun group(id: GroupId): VaultGroup? = if (id in visible) groups[id] else null
+
+    /** The visible groups directly inside [id], in the order the database keeps them. */
+    fun subgroups(id: GroupId): List<VaultGroup> =
+        group(id)?.childGroupIds.orEmpty().mapNotNull(::group)
+
+    /**
+     * The number of entries in [id] and in every visible group below it. For the root it is every entry of
+     * the database outside the recycle bin.
+     */
+    fun entryCount(id: GroupId): Int = entryCounts[id] ?: 0
+
+    /** The groups from the root down to [id], both ends included; empty when [id] is not visible. */
+    fun path(id: GroupId): List<VaultGroup> {
+        if (group(id) == null) return emptyList()
+        // Parents named in a damaged file may loop where the children lists do not: no path is longer than
+        // the number of groups
+        return generateSequence(group(id)) { it.parentId?.let(::group) }
+            .take(visible.size)
+            .toList()
+            .asReversed()
+    }
+
+    /**
+     * Whether a visible group inside [parentId] is already called [name], ignoring case and the spaces
+     * around it. [renamedId] is the group being renamed: its own name is not a rival.
+     */
+    fun isNameTaken(parentId: GroupId, name: String, renamedId: GroupId? = null): Boolean {
+        val wanted = name.trim()
+        return subgroups(parentId).any { it.id != renamedId && it.name.trim().equals(wanted, ignoreCase = true) }
+    }
+}
