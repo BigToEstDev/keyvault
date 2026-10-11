@@ -9,7 +9,7 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.log.ErrorLog
-import ru.kino.dev.navigation.EntriesListRoute
+import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.WelcomeGraph
@@ -96,7 +96,7 @@ class BiometricSetupProcessor @AssistedInject constructor(
     }
 
     private suspend fun toVault() {
-        navigator.navigate(MviNavEvent.NavigateTo(EntriesListRoute(dbKey), popUpTo = WelcomeGraph, inclusive = true))
+        navigator.navigate(MviNavEvent.NavigateTo(VaultRootRoute(dbKey), popUpTo = WelcomeGraph, inclusive = true))
     }
 
     private companion object {

@@ -8,7 +8,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
-import ru.kino.dev.navigation.EntriesListRoute
+import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.WelcomeGraph
 import ru.kino.dev.welcome.CurrentDatabase
@@ -88,7 +88,7 @@ class UnlockProcessorTest {
         assertEquals("pw", database.passwordReceived)
         assertEquals(KEY, database.keyFileReceived)
         assertEquals(
-            listOf(MviNavEvent.NavigateTo(EntriesListRoute(DB), popUpTo = WelcomeGraph, inclusive = true)),
+            listOf(MviNavEvent.NavigateTo(VaultRootRoute(DB), popUpTo = WelcomeGraph, inclusive = true)),
             events,
         )
     }
@@ -317,7 +317,7 @@ class UnlockProcessorTest {
         assertEquals("stored", database.passwordReceived)
         assertEquals(KEY, database.keyFileReceived)
         assertEquals(
-            listOf(MviNavEvent.NavigateTo(EntriesListRoute(DB), popUpTo = WelcomeGraph, inclusive = true)),
+            listOf(MviNavEvent.NavigateTo(VaultRootRoute(DB), popUpTo = WelcomeGraph, inclusive = true)),
             events,
         )
     }

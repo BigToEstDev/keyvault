@@ -7,6 +7,7 @@
     <!-- Common actions -->
     <string name="action_retry">Повторить</string>
     <string name="action_cancel">Отмена</string>
+    <string name="action_close">Закрыть</string>
     <string name="action_next">Далее</string>
     <string name="action_pick_another_file">Выбрать другой файл</string>
     <string name="action_pick_another_key_file">Выбрать другой key-файл</string>
@@ -94,6 +95,37 @@
     <string name="biometric_notice_failed">Не удалось войти по биометрии — войдите паролем</string>
 
     <!-- vault -->
-    <string name="entries_stub">База открыта. Список записей — следующий шаг.</string>
-    <string name="entries_debug_lock">Заблокировать (debug)</string>
+    <string name="fab_open">Добавить</string>
+    <string name="fab_close">Закрыть</string>
+    <string name="search_clear">Очистить поиск</string>
+
+    <string name="vault_search">Поиск</string>
+    <string name="vault_filters">Фильтры</string>
+    <string name="vault_back">Назад</string>
+    <string name="vault_group_empty">Здесь пока ничего нет</string>
+    <string name="vault_empty_hint">Нажмите +, чтобы добавить запись</string>
+    <string name="vault_create_group">Создать группу</string>
+    <string name="vault_create_entry">Создать запись</string>
+    <string name="vault_group_edit">Редактировать</string>
+    <string name="vault_group_delete">Удалить</string>
+    <string name="vault_debug_lock">Заблокировать (debug)</string>
+    <string name="group_dialog_create_title">Новая группа</string>
+    <string name="group_dialog_rename_title">Переименовать группу</string>
+    <string name="group_dialog_name">Название</string>
+    <string name="group_dialog_save">Сохранить</string>
+    <string name="group_name_empty">Введите название</string>
+    <plurals name="group_name_too_long">
+        <item quantity="one">Не длиннее %1$d символа</item>
+        <item quantity="few">Не длиннее %1$d символов</item>
+        <item quantity="many">Не длиннее %1$d символов</item>
+        <item quantity="other">Не длиннее %1$d символа</item>
+    </plurals>
+    <string name="group_name_taken">Группа с таким названием уже есть</string>
+    <string name="group_delete_title">Удалить группу?</string>
+    <string name="group_delete_text">«%1$s» и всё, что в ней, попадёт в корзину.</string>
+    <string name="group_delete_confirm">Удалить</string>
+    <string name="vault_message_not_saved">Изменение сделано, но файл не записан</string>
+    <string name="vault_message_load_failed">Не удалось прочитать группы</string>
+
+    <string name="entry_stub_in_progress">В работе</string>
 </resources>

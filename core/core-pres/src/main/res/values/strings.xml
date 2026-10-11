@@ -8,6 +8,7 @@
     <!-- Common actions -->
     <string name="action_retry">Retry</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
     <string name="action_next">Next</string>
     <string name="action_pick_another_file">Choose another file</string>
     <string name="action_pick_another_key_file">Choose another key file</string>
@@ -90,7 +91,38 @@
     <string name="biometric_notice_password_changed">The database password changed - sign in with the password</string>
     <string name="biometric_notice_failed">Could not sign in with biometrics - use the password</string>
 
-    <!-- vault -->
-    <string name="entries_stub">The database is open. The list of entries comes next.</string>
-    <string name="entries_debug_lock">Lock (debug)</string>
+    <!-- Components -->
+    <string name="fab_open">Add</string>
+    <string name="fab_close">Close</string>
+    <string name="search_clear">Clear search</string>
+
+    <!-- vault: groups -->
+    <string name="vault_search">Search</string>
+    <string name="vault_filters">Filters</string>
+    <string name="vault_back">Back</string>
+    <string name="vault_group_empty">Nothing here yet</string>
+    <string name="vault_empty_hint">Tap + to add an entry</string>
+    <string name="vault_create_group">Create group</string>
+    <string name="vault_create_entry">Create entry</string>
+    <string name="vault_group_edit">Edit</string>
+    <string name="vault_group_delete">Delete</string>
+    <string name="vault_debug_lock">Lock (debug)</string>
+    <string name="group_dialog_create_title">New group</string>
+    <string name="group_dialog_rename_title">Rename group</string>
+    <string name="group_dialog_name">Name</string>
+    <string name="group_dialog_save">Save</string>
+    <string name="group_name_empty">Enter a name</string>
+    <plurals name="group_name_too_long">
+        <item quantity="one">No longer than %1$d character</item>
+        <item quantity="other">No longer than %1$d characters</item>
+    </plurals>
+    <string name="group_name_taken">A group with this name is already here</string>
+    <string name="group_delete_title">Delete the group?</string>
+    <string name="group_delete_text">«%1$s» and everything in it goes to the recycle bin.</string>
+    <string name="group_delete_confirm">Delete</string>
+    <string name="vault_message_not_saved">The change is made, but the file was not written</string>
+    <string name="vault_message_load_failed">Could not read the groups</string>
+
+    <!-- vault: entries, stubs until the entries step -->
+    <string name="entry_stub_in_progress">In progress</string>
 </resources>

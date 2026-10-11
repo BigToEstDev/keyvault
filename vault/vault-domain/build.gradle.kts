@@ -1,5 +1,7 @@
 plugins {
     id("java-lib")
+    // Fakes of the interfaces declared here, shared by the tests of the modules above
+    `java-test-fixtures`
 }
 
 dependencies {

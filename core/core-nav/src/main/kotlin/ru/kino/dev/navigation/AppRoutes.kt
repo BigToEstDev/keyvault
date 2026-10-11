@@ -23,6 +23,6 @@ data object VaultGraph
 @Serializable
 data class LockedRoute(val dbKey: String)
 
-/** The list of entries - the first screen of `vault`. */
+/** The root group of the open database - the first screen of `vault`. Its groups below are `vault`'s own. */
 @Serializable
-data class EntriesListRoute(val dbKey: String)
+data class VaultRootRoute(val dbKey: String)

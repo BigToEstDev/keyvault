@@ -12,7 +12,7 @@ import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.mvi.textIntent
-import ru.kino.dev.navigation.EntriesListRoute
+import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.WelcomeGraph
@@ -237,7 +237,7 @@ class UnlockProcessor @AssistedInject constructor(
             // Nothing typed stays behind, though the screen is about to go
             reduce { state.copy(entry = PasswordEntry()) }
             navigator.navigate(
-                MviNavEvent.NavigateTo(EntriesListRoute(dbKey), popUpTo = WelcomeGraph, inclusive = true),
+                MviNavEvent.NavigateTo(VaultRootRoute(dbKey), popUpTo = WelcomeGraph, inclusive = true),
             )
         } catch (failure: WelcomeFailure) {
             if (fromBiometrics && failure is WelcomeFailure.InvalidCredentials) {
