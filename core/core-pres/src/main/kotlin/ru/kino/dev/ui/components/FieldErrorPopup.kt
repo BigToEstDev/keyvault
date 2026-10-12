@@ -53,11 +53,12 @@ import ru.kino.dev.core.pres.R
 /**
  * When the error bubble of a field is up.
  *
- * Up while the field has focus, down once it leaves; the "!" icon flips it either way. A new error brings it
- * back if the field still has focus.
+ * A new error brings it up, focus or not - an error that comes when the field is left, a mismatch with the
+ * field above, has to show too. Down once focus leaves the field, up again when it comes back; the "!" icon
+ * flips it either way.
  *
- * Focus lost to the field going disabled - the wait while the input is checked - does not count: the error
- * that wait ends with is about what was just typed, and has to show.
+ * Focus lost to the field going disabled - the wait while the input is checked - does not count: that wait
+ * may end with the same error as before, which is no change of [error] and would not bring the bubble back.
  */
 @Stable
 internal class FieldErrorState {
@@ -75,16 +76,16 @@ internal class FieldErrorState {
         shown = !shown
     }
 
-    fun onErrorChanged() {
-        shown = focused
+    fun onErrorChanged(error: String?) {
+        shown = error != null
     }
 }
 
-/** A [FieldErrorState] that rereads focus each time [error] changes. */
+/** A [FieldErrorState] that shows the bubble each time [error] changes to a new one. */
 @Composable
 internal fun rememberFieldErrorState(error: String?): FieldErrorState {
     val state = remember { FieldErrorState() }
-    LaunchedEffect(error) { state.onErrorChanged() }
+    LaunchedEffect(error) { state.onErrorChanged(error) }
     return state
 }
 
