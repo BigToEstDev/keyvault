@@ -44,7 +44,7 @@ internal object FfiCommands {
     const val ENTRY_SUMMARY_DATA = "entry_summary_data"
     const val GET_ENTRY_FORM_DATA_BY_ID = "get_entry_form_data_by_id"
     const val ENTRY_KEY_VALUE_FIELDS = "entry_key_value_fields"
-    const val NEW_ENTRY_FORM_DATA_BY_ID = "new_entry_form_data_by_id"
+    const val NEW_ENTRY_FORM_DATA = "new_entry_form_data"
     const val INSERT_ENTRY_FROM_FORM_DATA = "insert_entry_from_form_data"
     const val UPDATE_ENTRY_FROM_FORM_DATA = "update_entry_from_form_data"
     const val MOVE_ENTRY = "move_entry"
@@ -81,10 +81,7 @@ internal object FfiCommands {
     const val DB_CHECKSUM_HASH = "db_checksum_hash"
     const val MERGE_DATABASE = "merge_kdbx_with_reader"
 
-    // The home screen: the tiles with their counts, the entry types to create from, and the one
-    // irreversible step of the recycle bin
-    const val COMBINED_CATEGORY_DETAILS = "combined_category_details"
-    const val ENTRY_TYPE_HEADERS = "entry_type_headers"
+    // The one irreversible step of the recycle bin
     const val EMPTY_TRASH = "empty_trash"
 
     const val GENERATE_PASSWORD = "generate_password"
@@ -117,7 +114,7 @@ internal object FfiCommands {
         ENTRY_SUMMARY_DATA,
         GET_ENTRY_FORM_DATA_BY_ID,
         ENTRY_KEY_VALUE_FIELDS,
-        NEW_ENTRY_FORM_DATA_BY_ID,
+        NEW_ENTRY_FORM_DATA,
         INSERT_ENTRY_FROM_FORM_DATA,
         UPDATE_ENTRY_FROM_FORM_DATA,
         MOVE_ENTRY,
@@ -142,8 +139,6 @@ internal object FfiCommands {
         SET_DB_FILE_CHECKSUM,
         DB_CHECKSUM_HASH,
         MERGE_DATABASE,
-        COMBINED_CATEGORY_DETAILS,
-        ENTRY_TYPE_HEADERS,
         EMPTY_TRASH,
         GENERATE_PASSWORD,
         ANALYZED_PASSWORD,

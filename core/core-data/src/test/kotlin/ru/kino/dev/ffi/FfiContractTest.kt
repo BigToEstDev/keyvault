@@ -78,7 +78,7 @@ class FfiContractTest {
     @Test
     fun `an entry form is read exactly as the bridge describes it`() {
         assertKeysMatch(FfiCommands.GET_ENTRY_FORM_DATA_BY_ID, EntryFormDataDto.serializer())
-        assertKeysMatch(FfiCommands.NEW_ENTRY_FORM_DATA_BY_ID, EntryFormDataDto.serializer())
+        assertKeysMatch(FfiCommands.NEW_ENTRY_FORM_DATA, EntryFormDataDto.serializer())
     }
 
     @Test
@@ -142,12 +142,6 @@ class FfiContractTest {
     fun `the checksum and the result of a merge are read exactly as the bridge describes them`() {
         assertKeysMatch(FfiCommands.DB_CHECKSUM_HASH, ChecksumDto.serializer())
         assertKeysMatch(FfiCommands.MERGE_DATABASE, MergeResultDto.serializer())
-    }
-
-    @Test
-    fun `the home screen is read exactly as the bridge describes it`() {
-        assertKeysMatch(FfiCommands.COMBINED_CATEGORY_DETAILS, EntryCategoriesDto.serializer())
-        assertKeysMatch(FfiCommands.ENTRY_TYPE_HEADERS, EntryTypeHeadersDto.serializer())
     }
 
     @Test
