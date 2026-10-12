@@ -2,8 +2,6 @@
   {
     "created_time": "null-in-this-sample",
     "custom_icon_uuid": "null-in-this-sample",
-    "entry_type_name": "string",
-    "entry_type_uuid": "string",
     "history_index": "number",
     "icon_id": "number",
     "modified_time": "null-in-this-sample",

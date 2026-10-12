@@ -77,7 +77,7 @@ commands! {
     EntrySummaryData => "entry_summary_data",
     GetEntryFormDataById => "get_entry_form_data_by_id",
     EntryKeyValueFields => "entry_key_value_fields",
-    NewEntryFormDataById => "new_entry_form_data_by_id",
+    NewEntryFormData => "new_entry_form_data",
     InsertEntryFromFormData => "insert_entry_from_form_data",
     UpdateEntryFromFormData => "update_entry_from_form_data",
     MoveEntry => "move_entry",
@@ -114,10 +114,7 @@ commands! {
     DbChecksumHash => "db_checksum_hash",
     MergeKdbxWithReader => "merge_kdbx_with_reader",
 
-    // The home screen: the tiles with their counts, the entry types to create from, and the one
-    // irreversible step of the recycle bin
-    CombinedCategoryDetails => "combined_category_details",
-    EntryTypeHeaders => "entry_type_headers",
+    // The one irreversible step of the recycle bin
     EmptyTrash => "empty_trash",
 
     GeneratePassword => "generate_password",

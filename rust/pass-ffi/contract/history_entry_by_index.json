@@ -7,10 +7,8 @@
   },
   "binary_key_values": [],
   "creation_time": "string",
+  "custom_fields": [],
   "custom_icon_uuid": "null-in-this-sample",
-  "entry_type_icon_name": "null-in-this-sample",
-  "entry_type_name": "string",
-  "entry_type_uuid": "string",
   "expires": "bool",
   "expiry_time": "string",
   "group_uuid": "string",
@@ -20,42 +18,15 @@
   "last_modification_time": "string",
   "notes": "string",
   "parsed_fields": {},
-  "section_fields": {
-    "Additional One-Time Passwords": [],
-    "Login Details": [
-      {
-        "current_opt_token": "null-in-this-sample",
-        "data_type": "string",
-        "helper_text": "null-in-this-sample",
-        "key": "string",
-        "password_score": "null-in-this-sample",
-        "protected": "bool",
-        "required": "bool",
-        "select_field_options": "null-in-this-sample",
-        "standard_field": "bool",
-        "value": "string"
-      }
-    ],
-    "Passkey Details": [
-      {
-        "current_opt_token": "null-in-this-sample",
-        "data_type": "string",
-        "helper_text": "null-in-this-sample",
-        "key": "string",
-        "password_score": "null-in-this-sample",
-        "protected": "bool",
-        "required": "bool",
-        "select_field_options": "null-in-this-sample",
-        "standard_field": "bool",
-        "value": "string"
-      }
-    ]
-  },
-  "section_names": [
-    "string"
-  ],
-  "standard_section_names": [
-    "string"
+  "preset_fields": [
+    {
+      "current_opt_token": "null-in-this-sample",
+      "data_type": "string",
+      "key": "string",
+      "password_score": "null-in-this-sample",
+      "protected": "bool",
+      "value": "string"
+    }
   ],
   "tags": [],
   "title": "string",

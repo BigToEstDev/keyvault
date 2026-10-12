@@ -40,10 +40,9 @@ struct EntrySummaryArgs {
     category: Category,
 }
 
+/// Arguments of `new_entry_form_data`: no database is needed - the blank form is the standard preset.
 #[derive(Deserialize)]
 struct NewEntryFormArgs {
-    db_key: String,
-    entry_type_uuid: Uuid,
     /// The group the entry is created in. Absent means the ui has not picked one yet
     parent_group_uuid: Option<Uuid>,
 }
@@ -84,7 +83,6 @@ enum Category {
     Favorites,
     Deleted,
     Group(String),
-    EntryTypeUuid(Uuid),
     Tag(String),
 }
 
@@ -95,7 +93,6 @@ impl From<Category> for EntryCategory {
             Category::Favorites => EntryCategory::Favorites,
             Category::Deleted => EntryCategory::Deleted,
             Category::Group(uuid) => EntryCategory::Group(uuid),
-            Category::EntryTypeUuid(uuid) => EntryCategory::EntryTypeUuid(uuid),
             Category::Tag(tag) => EntryCategory::Tag(tag),
         }
     }
@@ -121,7 +118,8 @@ pub(crate) fn entry_summary_data(
     json_answer(&entries)
 }
 
-/// One entry as a form: sections, fields, tags, times. Placeholders are already resolved by the core.
+/// One entry as a form: the preset fields, the entry's own fields, tags, times. Placeholders are
+/// already resolved by the core.
 pub(crate) fn get_entry_form_data_by_id(
     args_json: &str,
     input: Option<Vec<u8>>,
@@ -150,20 +148,15 @@ pub(crate) fn entry_key_value_fields(
     json_answer(&fields)
 }
 
-/// An empty form of the given entry type - what the "new entry" screen starts from.
-pub(crate) fn new_entry_form_data_by_id(
+/// An empty form of the standard preset - what the "new entry" screen starts from.
+pub(crate) fn new_entry_form_data(
     args_json: &str,
     input: Option<Vec<u8>>,
 ) -> Result<Answer, ErrorPayload> {
-    reject_bytes(Command::NewEntryFormDataById, input)?;
+    reject_bytes(Command::NewEntryFormData, input)?;
     let args: NewEntryFormArgs = args(args_json)?;
 
-    let form = db_service::new_entry_form_data_by_id(
-        &args.db_key,
-        &args.entry_type_uuid,
-        args.parent_group_uuid.as_ref(),
-    )
-    .map_err(|e| ErrorPayload::of(&e))?;
+    let form = db_service::new_entry_form_data(args.parent_group_uuid.as_ref());
 
     json_answer(&form)
 }

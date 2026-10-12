@@ -45,7 +45,7 @@ pub(crate) fn shape(value: &Value) -> Value {
 const DATA_KEY: &str = "<key>";
 
 /// The same as [`assert_shape`], for an answer that is a map whose keys are *data* rather than a
-/// contract: the fields of an entry are named by the entry type and by whatever the user added.
+/// contract: the fields of an entry are named by the preset and by whatever the user added.
 ///
 /// Pinning those names would make the file a copy of the test fixture and would break as soon as the
 /// fixture changed, so every key collapses into `<key>` and what stays pinned is the only promise

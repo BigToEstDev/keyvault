@@ -10,9 +10,6 @@ use crate::contract::{assert_shape, assert_shape_of_map};
 use crate::dispatch::run_with_bytes;
 use crate::test_support::{close_database, key_of, ok_payload, open_database};
 
-/// The standard "Login" entry type, the one a new entry starts from.
-const LOGIN_TYPE_UUID: &str = "ffef5f51-7efc-4373-9eb5-382d5b501768";
-
 fn call(command: &str, args: Value) -> String {
     run_with_bytes(command, &args.to_string(), None).envelope
 }
@@ -36,16 +33,12 @@ fn root_uuid(db_key: &str) -> String {
         .to_string()
 }
 
-/// A filled in form of a new login entry, as the ui would build it: ask for a blank form, set the
+/// A filled in form of a new entry, as the ui would build it: ask for a blank form, set the
 /// title, send it back.
 fn new_entry(db_key: &str, title: &str, parent_group_uuid: &str) -> Value {
     let mut form = call_ok(
-        "new_entry_form_data_by_id",
-        json!({
-            "db_key": db_key,
-            "entry_type_uuid": LOGIN_TYPE_UUID,
-            "parent_group_uuid": parent_group_uuid,
-        }),
+        "new_entry_form_data",
+        json!({ "parent_group_uuid": parent_group_uuid }),
     );
     form["title"] = json!(title);
 
@@ -86,16 +79,9 @@ fn an_entry_is_created_listed_read_back_and_edited() {
     open_database(&db_key);
     let root = root_uuid(&db_key);
 
-    // A blank form of the login type: this is what the "new entry" screen starts from
-    let blank = call(
-        "new_entry_form_data_by_id",
-        json!({
-            "db_key": db_key,
-            "entry_type_uuid": LOGIN_TYPE_UUID,
-            "parent_group_uuid": root,
-        }),
-    );
-    assert_shape("new_entry_form_data_by_id", &blank);
+    // A blank form of the standard preset: this is what the "new entry" screen starts from
+    let blank = call("new_entry_form_data", json!({ "parent_group_uuid": root }));
+    assert_shape("new_entry_form_data", &blank);
 
     let form = new_entry(&db_key, "Mail", &root);
     let uuid = uuid_of(&form).to_string();
@@ -148,7 +134,7 @@ fn the_fields_of_an_entry_come_back_as_a_map_of_names_to_values() {
         "entry_key_value_fields",
         json!({"db_key": db_key, "entry_uuid": uuid_of(&form)}),
     );
-    // The keys here are data - the fields of the entry type, plus whatever the user added - so the
+    // The keys here are data - the fields of the preset, plus whatever the user added - so the
     // contract pins that this is a map of strings, not which names are in it
     assert_shape_of_map("entry_key_value_fields", &envelope);
 

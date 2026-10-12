@@ -83,7 +83,7 @@ fn dispatch(
         Command::EntrySummaryData => entries::entry_summary_data(args_json, input),
         Command::GetEntryFormDataById => entries::get_entry_form_data_by_id(args_json, input),
         Command::EntryKeyValueFields => entries::entry_key_value_fields(args_json, input),
-        Command::NewEntryFormDataById => entries::new_entry_form_data_by_id(args_json, input),
+        Command::NewEntryFormData => entries::new_entry_form_data(args_json, input),
         Command::InsertEntryFromFormData => entries::insert_entry_from_form_data(args_json, input),
         Command::UpdateEntryFromFormData => entries::update_entry_from_form_data(args_json, input),
         Command::MoveEntry => entries::move_entry(args_json, input),
@@ -118,8 +118,6 @@ fn dispatch(
         Command::DbChecksumHash => integrity::db_checksum_hash(args_json, input),
         Command::MergeKdbxWithReader => integrity::merge_kdbx_with_reader(args_json, input),
 
-        Command::CombinedCategoryDetails => catalog::combined_category_details(args_json, input),
-        Command::EntryTypeHeaders => catalog::entry_type_headers(args_json, input),
         Command::EmptyTrash => catalog::empty_trash(args_json, input),
 
         Command::GeneratePassword => generator::generate_password(args_json, input),

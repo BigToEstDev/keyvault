@@ -6,8 +6,6 @@ use crate::contract::assert_shape;
 use crate::dispatch::run_with_bytes;
 use crate::test_support::{close_database, key_of, ok_payload, open_database};
 
-const LOGIN_TYPE_UUID: &str = "ffef5f51-7efc-4373-9eb5-382d5b501768";
-
 fn call(command: &str, args: Value) -> String {
     run_with_bytes(command, &args.to_string(), None).envelope
 }
@@ -35,14 +33,7 @@ fn root_uuid(db_key: &str) -> String {
 fn new_entry(db_key: &str, title: &str, tags: &[&str]) {
     let root = root_uuid(db_key);
 
-    let mut form = call_ok(
-        "new_entry_form_data_by_id",
-        json!({
-            "db_key": db_key,
-            "entry_type_uuid": LOGIN_TYPE_UUID,
-            "parent_group_uuid": root,
-        }),
-    );
+    let mut form = call_ok("new_entry_form_data", json!({ "parent_group_uuid": root }));
     form["title"] = json!(title);
     if !tags.is_empty() {
         form["tags"] = json!(tags);
