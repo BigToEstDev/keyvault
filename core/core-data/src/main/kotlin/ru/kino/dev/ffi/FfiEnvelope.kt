@@ -298,6 +298,10 @@ internal data class EntryIdDto(
  * Two names of the core show through and stop here, in this module: `group_uuid` means the *parent
  * group* (a TODO of the upstream), and `parsed_fields` is answer-only - the core ignores it on the way
  * back, and it is kept so the form can be sent in unchanged.
+ *
+ * The fields come in two lists: `preset_fields` - every field of the standard preset, in its order,
+ * empty when the entry lacks one - and `custom_fields`, the entry's own, in the order of the file. The
+ * form is laid out as icon, title, preset fields, notes, custom fields.
  */
 @Serializable
 internal data class EntryFormDataDto(
@@ -313,14 +317,10 @@ internal data class EntryFormDataDto(
     val tags: List<String> = emptyList(),
     @SerialName("binary_key_values") val binaryKeyValues: List<BinaryKeyValueDto> = emptyList(),
     @SerialName("history_count") val historyCount: Int,
-    @SerialName("entry_type_name") val entryTypeName: String,
-    @SerialName("entry_type_uuid") val entryTypeUuid: String,
-    @SerialName("entry_type_icon_name") val entryTypeIconName: String? = null,
     val title: String,
+    @SerialName("preset_fields") val presetFields: List<KeyValueDataDto> = emptyList(),
     val notes: String,
-    @SerialName("standard_section_names") val standardSectionNames: List<String> = emptyList(),
-    @SerialName("section_names") val sectionNames: List<String> = emptyList(),
-    @SerialName("section_fields") val sectionFields: Map<String, List<KeyValueDataDto>> = emptyMap(),
+    @SerialName("custom_fields") val customFields: List<KeyValueDataDto> = emptyList(),
     @SerialName("auto_type") val autoType: AutoTypeDto,
     @SerialName("parsed_fields") val parsedFields: Map<String, String> = emptyMap(),
 )
@@ -337,11 +337,7 @@ internal data class KeyValueDataDto(
     val key: String,
     val value: String? = null,
     val protected: Boolean,
-    val required: Boolean,
-    @SerialName("helper_text") val helperText: String? = null,
     @SerialName("data_type") val dataType: String,
-    @SerialName("standard_field") val standardField: Boolean,
-    @SerialName("select_field_options") val selectFieldOptions: List<String>? = null,
     @SerialName("password_score") val passwordScore: JsonElement? = null,
     @SerialName("current_opt_token") val currentOtpToken: JsonElement? = null,
 )
@@ -378,8 +374,6 @@ internal data class EntrySummaryDto(
     @SerialName("parent_group_uuid") val parentGroupUuid: String,
     val title: String? = null,
     @SerialName("secondary_title") val secondaryTitle: String? = null,
-    @SerialName("entry_type_name") val entryTypeName: String,
-    @SerialName("entry_type_uuid") val entryTypeUuid: String,
     @SerialName("icon_id") val iconId: Int,
     @SerialName("custom_icon_uuid") val customIconUuid: String? = null,
     @SerialName("history_index") val historyIndex: Int? = null,
@@ -413,11 +407,9 @@ internal data class EntrySummaryArgsDto(
     val category: EntryCategoryDto,
 )
 
-/** Arguments of `new_entry_form_data_by_id`. */
+/** Arguments of `new_entry_form_data`: no database is needed - the blank form is the standard preset. */
 @Serializable
 internal data class NewEntryFormDto(
-    @SerialName("db_key") val dbKey: String,
-    @SerialName("entry_type_uuid") val entryTypeUuid: String,
     @SerialName("parent_group_uuid") val parentGroupUuid: String? = null,
 )
 
@@ -696,60 +688,6 @@ internal data class MergedEntryDto(
     val name: String,
     @SerialName("parent_group_uuid") val parentGroupUuid: String? = null,
     @SerialName("previous_parent_group_uuid") val previousParentGroupUuid: String? = null,
-)
-
-/**
- * Arguments of `combined_category_details`.
- *
- * `grouping` is `as_group_categories`, `as_types` or `as_tags` - what the tiles below the standard
- * ones are grouped by.
- */
-@Serializable
-internal data class CategoriesArgsDto(
-    @SerialName("db_key") val dbKey: String,
-    val grouping: String,
-)
-
-/** The tiles of the home screen: the standard ones, and those of the chosen grouping. */
-@Serializable
-internal data class EntryCategoriesDto(
-    @SerialName("general_categories") val generalCategories: List<CategoryDetailDto> = emptyList(),
-    @SerialName("grouping_kind") val groupingKind: String,
-    @SerialName("grouped_categories") val groupedCategories: List<CategoryDetailDto> = emptyList(),
-)
-
-/** One tile, with the counts it shows. */
-@Serializable
-internal data class CategoryDetailDto(
-    val title: String,
-    @SerialName("display_title") val displayTitle: String? = null,
-    @SerialName("entries_count") val entriesCount: Int,
-    @SerialName("groups_count") val groupsCount: Int,
-    @SerialName("icon_id") val iconId: Int,
-    @SerialName("icon_name") val iconName: String? = null,
-    @SerialName("entry_type_uuid") val entryTypeUuid: String? = null,
-    @SerialName("group_uuid") val groupUuid: String? = null,
-    @SerialName("parent_group_uuid") val parentGroupUuid: String? = null,
-    @SerialName("tag_id") val tagId: String? = null,
-)
-
-/**
- * The entry types to create an entry from.
- *
- * `custom` is answered and stays empty in v1: making custom types needs an editor screen, which is
- * not in v1, but a database written elsewhere may well carry them.
- */
-@Serializable
-internal data class EntryTypeHeadersDto(
-    val standard: List<EntryTypeHeaderDto> = emptyList(),
-    val custom: List<EntryTypeHeaderDto> = emptyList(),
-)
-
-@Serializable
-internal data class EntryTypeHeaderDto(
-    val uuid: String,
-    val name: String,
-    @SerialName("icon_name") val iconName: String? = null,
 )
 
 /**
