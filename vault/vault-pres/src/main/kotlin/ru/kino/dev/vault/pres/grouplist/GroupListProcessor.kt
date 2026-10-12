@@ -104,6 +104,8 @@ class GroupListProcessor @AssistedInject constructor(
 
             GroupListAction.ToggleFab -> reduce { state.copy(fabExpanded = !state.fabExpanded) }
 
+            GroupListAction.CloseFab -> reduce { state.copy(fabExpanded = false) }
+
             GroupListAction.OpenFilters -> reduce { state.copy(filtersOpen = true, fabExpanded = false) }
 
             GroupListAction.CloseFilters -> reduce { state.copy(filtersOpen = false) }

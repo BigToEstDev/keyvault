@@ -39,7 +39,7 @@ data class FabItem(
  * A plus that opens a short menu of what can be added, above itself.
  *
  * Open, the plus turns 45 degrees into a cross, and a tap on it closes the menu. Whether it is open is the
- * caller's: the screen closes it after a choice, and on "back".
+ * caller's: the screen closes it after a choice, on "back" and on a tap past the menu.
  */
 @Composable
 fun ExpandableFab(
@@ -53,7 +53,7 @@ fun ExpandableFab(
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(ITEM_SPACING),
     ) {
         AnimatedVisibility(
             visible = expanded,
@@ -62,7 +62,7 @@ fun ExpandableFab(
         ) {
             Column(
                 horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(ITEM_SPACING),
             ) {
                 items.forEach { item -> FabMenuItem(item) }
             }
@@ -105,3 +105,6 @@ private fun FabMenuItem(item: FabItem) {
 }
 
 private const val OPEN_ROTATION = 45f
+
+// Between the cards, and between the last card and the plus
+private val ITEM_SPACING = 16.dp

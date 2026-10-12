@@ -18,6 +18,9 @@ sealed interface GroupListAction {
 
     data object ToggleFab : GroupListAction
 
+    /** Closes the menu of the fab - "back" or a tap past it; never opens it, unlike [ToggleFab]. */
+    data object CloseFab : GroupListAction
+
     /** The filter button in the search field. The filters themselves come with the entries - Step 38. */
     data object OpenFilters : GroupListAction
 

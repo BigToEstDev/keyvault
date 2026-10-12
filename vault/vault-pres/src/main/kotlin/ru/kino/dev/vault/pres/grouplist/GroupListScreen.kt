@@ -1,6 +1,8 @@
 package ru.kino.dev.vault.pres.grouplist
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -58,7 +60,7 @@ internal fun GroupListScreen(
     // Every time the screen is shown: after "back" from a group below, or after unlocking, the tree may differ
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.action(GroupListAction.Load) }
 
-    BackHandler(enabled = state.fabExpanded) { processor.action(GroupListAction.ToggleFab) }
+    BackHandler(enabled = state.fabExpanded) { processor.action(GroupListAction.CloseFab) }
 
     Messages(state.message, snackbar) { processor.action(GroupListAction.MessageShown) }
 
@@ -77,21 +79,8 @@ internal fun GroupListScreen(
                     onCrumb = { processor.action(GroupListAction.OpenCrumb(it)) },
                 )
             },
-            snackbarHost = { SnackbarHost(snackbar) },
-            floatingActionButton = {
-                ExpandableFab(
-                    expanded = state.fabExpanded,
-                    onToggle = { processor.action(GroupListAction.ToggleFab) },
-                    items = listOf(
-                        FabItem(Icons.Filled.CreateNewFolder, stringResource(R.string.vault_create_group)) {
-                            processor.action(GroupListAction.CreateGroup)
-                        },
-                        FabItem(Icons.Filled.Key, stringResource(R.string.vault_create_entry)) {
-                            processor.action(GroupListAction.CreateEntry)
-                        },
-                    ),
-                )
-            },
+            // The fab is not in the scaffold (see below), so the snackbar is lifted over it here
+            snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = FAB_CLEARANCE)) },
         ) { padding ->
             GroupListContent(state = state, padding = padding, action = processor::action)
         }
@@ -103,7 +92,30 @@ internal fun GroupListScreen(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .navigationBarsPadding()
-                .padding(16.dp),
+                .padding(FAB_MARGIN),
+        )
+
+        // Over everything but the fab: a tap past the open menu closes it and goes no further
+        if (state.fabExpanded) {
+            FabDismissLayer(onDismiss = { processor.action(GroupListAction.CloseFab) })
+        }
+
+        // Out of the scaffold's slot to be above the layer that closes it
+        ExpandableFab(
+            expanded = state.fabExpanded,
+            onToggle = { processor.action(GroupListAction.ToggleFab) },
+            items = listOf(
+                FabItem(Icons.Filled.Key, stringResource(R.string.vault_create_entry)) {
+                    processor.action(GroupListAction.CreateEntry)
+                },
+                FabItem(Icons.Filled.CreateNewFolder, stringResource(R.string.vault_create_group)) {
+                    processor.action(GroupListAction.CreateGroup)
+                },
+            ),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .navigationBarsPadding()
+                .padding(FAB_MARGIN),
         )
 
         if (state.filtersOpen) {
@@ -117,6 +129,21 @@ internal fun GroupListScreen(
             onDismiss = { processor.action(GroupListAction.DialogDismiss) },
         )
     }
+}
+
+/** Transparent, the whole screen: takes the tap - nothing under it gets it - and closes the menu. */
+@Composable
+private fun FabDismissLayer(onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClickLabel = stringResource(R.string.fab_close),
+                onClick = onDismiss,
+            ),
+    )
 }
 
 @Composable
@@ -191,4 +218,8 @@ private val EMPTY_ALIGNMENT = BiasAlignment(horizontalBias = 0f, verticalBias = 
 /** Cards drawn while the tree is read - about a screenful. */
 private const val SKELETON_ROWS = 6
 
+/** Room the buttons take at the bottom: under the last card, and under the snackbar. */
 private val FAB_CLEARANCE = 96.dp
+
+/** From the fabs to the edges of the screen - what the scaffold kept for its own fab. */
+private val FAB_MARGIN = 16.dp

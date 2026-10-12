@@ -241,6 +241,30 @@ class GroupListProcessorTest {
     }
 
     @Test
+    fun `close fab closes the open menu`() = runTest {
+        val (state, _) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.ToggleFab,
+            GroupListAction.CloseFab,
+        )
+
+        assertFalse(state.fabExpanded)
+    }
+
+    @Test
+    fun `close fab never opens the menu, a repeated one included`() = runTest {
+        val (state, _) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.CloseFab,
+            GroupListAction.CloseFab,
+        )
+
+        assertFalse(state.fabExpanded)
+    }
+
+    @Test
     fun `create entry opens its stub inside this group and closes the menu`() = runTest {
         val (state, events) = perform(
             groupId = work.value,
