@@ -1,5 +1,6 @@
 package ru.kino.dev.vault.pres.common
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,10 +61,19 @@ internal fun EntryTopBar(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/** A section of the entry: a card with a background, its fields one under another. */
+/**
+ * A section of the entry: its fields one under another, in a card outlined in the accent of the palette over
+ * a faint fill of the same color - the default fill of a card is not of our palette and looks muddy over the
+ * gradient (pass-docs, Step 40, fix 3).
+ */
 @Composable
 internal fun EntrySection(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Card(modifier = modifier.fillMaxWidth()) {
+    val accent = MaterialTheme.colorScheme.tertiary
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = accent.copy(alpha = SECTION_FILL_ALPHA)),
+        border = BorderStroke(1.dp, accent),
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -137,6 +148,9 @@ internal fun EntrySkeleton(brush: Brush) {
         repeat(SKELETON_FIELDS) { SkeletonField(brush = brush) }
     }
 }
+
+/** How much of the accent shows through the fill of a section. */
+private const val SECTION_FILL_ALPHA = 0.06f
 
 /** The fields of the standard preset after the title. */
 private const val SKELETON_FIELDS = 5
