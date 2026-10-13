@@ -96,27 +96,32 @@ internal fun EntrySection(modifier: Modifier = Modifier, content: @Composable Co
 /**
  * The icon of the entry in a frame - one icon for every entry until choosing an icon comes, a step of its
  * own (vault-our.md, "Фича выбор иконки").
+ *
+ * Not [enabled] - while the entry is saved - it fades as a disabled field of Material 3 does: the text color
+ * of the theme at 38%.
  */
 @Composable
-internal fun EntryIconFrame(modifier: Modifier = Modifier) {
+internal fun EntryIconFrame(modifier: Modifier = Modifier, enabled: Boolean = true) {
+    val colors = MaterialTheme.colorScheme
+    val disabled = colors.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
     Box(
         modifier = modifier
             .size(56.dp)
-            .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium),
+            .border(1.dp, if (enabled) colors.outline else disabled, MaterialTheme.shapes.medium),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Filled.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Icon(Icons.Filled.Key, contentDescription = null, tint = if (enabled) colors.primary else disabled)
     }
 }
 
 /** The first card of every preset: the icon and the title, side by side. */
 @Composable
-internal fun EntryTitleSection(title: @Composable (Modifier) -> Unit) {
+internal fun EntryTitleSection(enabled: Boolean = true, title: @Composable (Modifier) -> Unit) {
     EntrySection {
         // By the bottom, not the center: an outlined field keeps room above its box for the label, so its box
         // sits lower than its middle. The frame is as tall as the box, and their bottoms meet
         Row(verticalAlignment = Alignment.Bottom) {
-            EntryIconFrame()
+            EntryIconFrame(enabled = enabled)
             title(
                 Modifier
                     .weight(1f)
@@ -129,16 +134,21 @@ internal fun EntryTitleSection(title: @Composable (Modifier) -> Unit) {
 /**
  * The card of the preset, between the title and the fields: a button outlined in the primary color with the
  * name of the preset. It opens the choice of presets - an empty dialog until presets of one's own come
- * (Step 44).
+ * (Step 44). Not [enabled], its outline fades as that of a disabled outlined button of Material 3: the text
+ * color of the theme at 12%; the text fades by itself.
  */
 @Composable
 internal fun EntryPresetSection(onClick: () -> Unit, enabled: Boolean) {
+    val colors = MaterialTheme.colorScheme
     EntrySection {
         OutlinedButton(
             onClick = onClick,
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+            border = BorderStroke(
+                1.dp,
+                if (enabled) colors.primary else colors.onSurface.copy(alpha = DISABLED_OUTLINE_ALPHA),
+            ),
         ) {
             Text(stringResource(R.string.entry_preset_standard))
         }
@@ -180,6 +190,10 @@ internal fun EntrySkeleton(brush: Brush) {
         repeat(SKELETON_FIELDS) { SkeletonField(brush = brush) }
     }
 }
+
+/** What Material 3 gives disabled content and a disabled outline: the text color at these. */
+private const val DISABLED_CONTENT_ALPHA = 0.38f
+private const val DISABLED_OUTLINE_ALPHA = 0.12f
 
 /** The fill of a section over the dark theme and over the light one. */
 private const val DARK_FILL_ALPHA = 0.08f

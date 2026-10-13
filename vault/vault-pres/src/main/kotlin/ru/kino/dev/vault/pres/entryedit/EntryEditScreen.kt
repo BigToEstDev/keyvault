@@ -148,7 +148,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         )
     }
 
-    EntryTitleSection { modifier ->
+    EntryTitleSection(enabled = enabled) { modifier ->
         PresetText(
             key = StandardPreset.TITLE,
             modifier = modifier,
