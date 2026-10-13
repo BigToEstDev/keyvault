@@ -1,0 +1,133 @@
+package ru.kino.dev.vault.data.entry
+
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
+import org.junit.Test
+import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.EntryFieldData
+import ru.kino.dev.core.FakeNativeCore
+import ru.kino.dev.core.GroupNode
+import ru.kino.dev.core.GroupTree
+import ru.kino.dev.core.expectFailure
+import ru.kino.dev.vault.entry.EntryFailure
+import ru.kino.dev.vault.entry.EntryField
+import ru.kino.dev.vault.entry.StandardPreset
+import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.GroupId
+
+class EntryRepositoryImplTest {
+
+    private val core = FakeNativeCore()
+    private val repository = EntryRepositoryImpl(core)
+
+    init {
+        core.groupTrees[DB] = GroupTree(
+            rootId = ROOT,
+            recycleBinId = null,
+            groups = mapOf(
+                ROOT to GroupNode(ROOT, null, "Passwords", listOf(WORK), emptyList()),
+                WORK to GroupNode(WORK, ROOT, "Work", emptyList(), emptyList()),
+            ),
+        )
+        core.addEntry(DB, WORK, "mail", listOf(data("Title", "Mail"), data("UserName", "anton")))
+        core.addEntry(DB, WORK, "bank", listOf(data("Title", "Bank"), data("PIN", "1", protected = true)))
+    }
+
+    @Test
+    fun `the entries of a group come by title, with their user name`() = runTest {
+        val entries = repository.entries(DB, GroupId(WORK))
+
+        assertEquals(listOf("Bank", "Mail"), entries.map { it.title })
+        assertEquals(listOf("", "anton"), entries.map { it.userName })
+        assertEquals(EntryId("bank"), entries.first().id)
+    }
+
+    @Test
+    fun `a group that is not there has no entries`() = runTest {
+        assertEquals(emptyList<Any>(), repository.entries(DB, GroupId("missing")))
+    }
+
+    @Test
+    fun `the fields of an entry come as the core holds them, laid over the preset for the screens`() = runTest {
+        assertEquals(
+            listOf(EntryField("Title", "Bank", false), EntryField("PIN", "1", true)),
+            repository.fields(DB, EntryId("bank")),
+        )
+
+        val content = repository.content(DB, EntryId("bank"))
+        assertEquals("Bank", content.value(StandardPreset.TITLE))
+        assertEquals(listOf("PIN"), content.ownFields.map { it.key })
+    }
+
+    @Test
+    fun `a created entry is in its group with exactly its fields`() = runTest {
+        val fields = listOf(EntryField("Title", "Shop", false), EntryField("Password", "x", true))
+
+        val id = repository.create(DB, GroupId(WORK), fields)
+
+        assertEquals(fields, repository.fields(DB, id))
+        assertEquals(listOf("Bank", "Mail", "Shop"), repository.entries(DB, GroupId(WORK)).map { it.title })
+    }
+
+    @Test
+    fun `an entry created in a group that is gone - the group is not found`() = runTest {
+        val failure = expectFailure<EntryFailure.GroupNotFound> {
+            repository.create(DB, GroupId("missing"), listOf(EntryField("Title", "Shop", false)))
+        }
+
+        assertEquals("NotFound", (failure.cause as CoreException).kind)
+    }
+
+    @Test
+    fun `an updated entry holds the new fields`() = runTest {
+        val fields = listOf(EntryField("Title", "Bank", false), EntryField("PIN", "2", true))
+
+        repository.update(DB, EntryId("bank"), fields)
+
+        assertEquals(fields, repository.fields(DB, EntryId("bank")))
+    }
+
+    @Test
+    fun `an entry that is gone is not found`() = runTest {
+        expectFailure<EntryFailure.EntryNotFound> { repository.fields(DB, EntryId("missing")) }
+        expectFailure<EntryFailure.EntryNotFound> { repository.update(DB, EntryId("missing"), emptyList()) }
+        expectFailure<EntryFailure.EntryNotFound> { repository.moveToRecycleBin(DB, EntryId("missing")) }
+    }
+
+    @Test
+    fun `a deleted entry leaves its group for the recycle bin`() = runTest {
+        repository.moveToRecycleBin(DB, EntryId("mail"))
+
+        assertEquals(listOf("Bank"), repository.entries(DB, GroupId(WORK)).map { it.title })
+        val bin = core.groupTrees.getValue(DB).groups.getValue(FakeNativeCore.RECYCLE_BIN_ID)
+        assertEquals(listOf("mail"), bin.entryIds)
+    }
+
+    @Test
+    fun `two fields under one key reaching the core are a bug of ours`() = runTest {
+        val failure = expectFailure<EntryFailure.Unexpected> {
+            repository.update(DB, EntryId("bank"), listOf(EntryField("PIN", "1", true), EntryField("PIN", "2", true)))
+        }
+
+        assertEquals("DuplicateFieldKey", (failure.cause as CoreException).kind)
+    }
+
+    @Test
+    fun `any other failure of the core is unexpected`() = runTest {
+        val cause = CoreException("DbKeyNotFound", "not open")
+        core.failures["entries"] = cause
+
+        val failure = expectFailure<EntryFailure.Unexpected> { repository.entries(DB, GroupId(WORK)) }
+
+        assertSame(cause, failure.cause)
+    }
+
+    private fun data(key: String, value: String, protected: Boolean = false) = EntryFieldData(key, value, protected)
+
+    private companion object {
+        const val DB = "content://db"
+        const val ROOT = "root"
+        const val WORK = "work"
+    }
+}

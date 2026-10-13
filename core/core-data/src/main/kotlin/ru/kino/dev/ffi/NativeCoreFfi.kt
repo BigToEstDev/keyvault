@@ -3,8 +3,11 @@ package ru.kino.dev.ffi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.builtins.ListSerializer
 import ru.kino.dev.core.CreatedDatabase
 import ru.kino.dev.core.CredentialLimits
+import ru.kino.dev.core.EntryFieldData
+import ru.kino.dev.core.EntrySummaryData
 import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.KeyFile
 import ru.kino.dev.core.MergeSummary
@@ -209,6 +212,70 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
             )
         }
     }
+
+    override suspend fun entries(dbKey: String, groupId: String): List<EntrySummaryData> =
+        withContext(dispatcher) {
+            call(
+                FfiCommands.ENTRY_SUMMARY_DATA,
+                EntrySummaryArgsDto.serializer(),
+                entriesOfGroup(dbKey, groupId),
+                ListSerializer(EntrySummaryDto.serializer()),
+            ).map { it.toDomain() }
+        }
+
+    override suspend fun entryFields(dbKey: String, entryId: String): List<EntryFieldData> =
+        withContext(dispatcher) { entryForm(dbKey, entryId).fieldsToDomain() }
+
+    override suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String =
+        withContext(dispatcher) {
+            // The core builds the blank entry - uuid, times, icon - so a new entry is the same shape as one
+            // read from a file, and only the strings are ours
+            val blank = call(
+                FfiCommands.NEW_ENTRY_FORM_DATA,
+                NewEntryFormDto.serializer(),
+                NewEntryFormDto(parentGroupUuid = groupId),
+                EntryFormDataDto.serializer(),
+            )
+            val entry = blank.withFields(fields)
+            call(
+                FfiCommands.INSERT_ENTRY_FROM_FORM_DATA,
+                EntryFormArgsDto.serializer(),
+                EntryFormArgsDto(dbKey, entry),
+                DoneDto.serializer(),
+            )
+
+            entry.uuid
+        }
+
+    override suspend fun updateEntry(dbKey: String, entryId: String, fields: List<EntryFieldData>) {
+        withContext(dispatcher) {
+            val entry = entryForm(dbKey, entryId)
+            call(
+                FfiCommands.UPDATE_ENTRY_FROM_FORM_DATA,
+                EntryFormArgsDto.serializer(),
+                EntryFormArgsDto(dbKey, entry.withFields(fields)),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun moveEntryToRecycleBin(dbKey: String, entryId: String) {
+        withContext(dispatcher) {
+            call(
+                FfiCommands.MOVE_ENTRY_TO_RECYCLE_BIN,
+                EntryIdDto.serializer(),
+                EntryIdDto(dbKey = dbKey, entryUuid = entryId),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    private fun entryForm(dbKey: String, entryId: String): EntryFormDataDto = call(
+        FfiCommands.GET_ENTRY_FORM_DATA_BY_ID,
+        EntryIdDto.serializer(),
+        EntryIdDto(dbKey = dbKey, entryUuid = entryId),
+        EntryFormDataDto.serializer(),
+    )
 
     /** A call with json both ways and nothing in the binary slot - most of the commands. */
     private fun <A, R> call(
