@@ -3,6 +3,7 @@ package ru.kino.dev.vault.pres.grouplist.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -19,7 +20,8 @@ internal fun EntryCard(
     modifier: Modifier = Modifier,
 ) {
     ListCard(
-        icon = { Icon(Icons.Filled.Key, contentDescription = null) },
+        // The color of the folder of a group card, so the two kinds of cards match
+        icon = { Icon(Icons.Filled.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         title = entry.title.ifEmpty { stringResource(R.string.entry_untitled) },
         onOpen = onOpen,
         onEdit = onEdit,
