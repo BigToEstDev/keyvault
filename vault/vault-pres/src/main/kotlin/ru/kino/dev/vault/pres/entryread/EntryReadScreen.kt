@@ -210,8 +210,9 @@ private fun ReadField(
             null
         } else {
             {
-                clipboard?.let { CopyButton(onCopy = { it.copy(label, value) }) }
+                // The eye first, then "copy" - as on the password
                 onToggleShown?.let { VisibilityToggle(visible = shown, onToggle = it) }
+                clipboard?.let { CopyButton(onCopy = { it.copy(label, value) }) }
             }
         },
     )
