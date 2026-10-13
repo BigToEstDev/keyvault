@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.R
@@ -62,17 +63,23 @@ internal fun EntryTopBar(onBack: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 /**
- * A section of the entry: its fields one under another, in a card outlined in the accent of the palette over
- * a faint fill of the same color - the default fill of a card is not of our palette and looks muddy over the
- * gradient (pass-docs, Step 40, fix 3).
+ * A section of the entry: its fields one under another, in a card outlined in the accent of the palette over a
+ * light fill - lighter than the backdrop in either theme. The default fill of a card is not of our palette and
+ * looks muddy over the gradient (pass-docs, Step 40, fix 3).
  */
 @Composable
 internal fun EntrySection(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val accent = MaterialTheme.colorScheme.tertiary
+    val colors = MaterialTheme.colorScheme
+    // Light over a dark backdrop is its text color, faint; over a light one - the surface, nearly whole
+    val fill = if (colors.background.luminance() < HALF) {
+        colors.onSurface.copy(alpha = DARK_FILL_ALPHA)
+    } else {
+        colors.surface.copy(alpha = LIGHT_FILL_ALPHA)
+    }
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = accent.copy(alpha = SECTION_FILL_ALPHA)),
-        border = BorderStroke(1.dp, accent),
+        colors = CardDefaults.cardColors(containerColor = fill),
+        border = BorderStroke(1.dp, colors.tertiary),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -149,8 +156,10 @@ internal fun EntrySkeleton(brush: Brush) {
     }
 }
 
-/** How much of the accent shows through the fill of a section. */
-private const val SECTION_FILL_ALPHA = 0.06f
+/** The fill of a section over the dark theme and over the light one. */
+private const val DARK_FILL_ALPHA = 0.08f
+private const val LIGHT_FILL_ALPHA = 0.85f
+private const val HALF = 0.5f
 
 /** The fields of the standard preset after the title. */
 private const val SKELETON_FIELDS = 5
