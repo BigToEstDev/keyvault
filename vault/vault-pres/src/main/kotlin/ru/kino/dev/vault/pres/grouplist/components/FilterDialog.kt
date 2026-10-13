@@ -20,8 +20,8 @@ import androidx.compose.ui.window.Dialog
 import ru.kino.dev.core.pres.R
 
 /**
- * The filters of the list: the title and "close" only, for now. What to show and how to sort come with the
- * entries - without them there is nothing to filter (pass-docs, Step 38).
+ * The filters of the list: the title and "close" only, for now. What to show and how to sort are
+ * pass-docs, Step 41.
  */
 @Composable
 internal fun FilterDialog(onClose: () -> Unit) {

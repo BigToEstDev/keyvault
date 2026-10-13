@@ -83,7 +83,7 @@ internal fun GroupListTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // Nothing searches yet - the entries and their search are pass-docs, Step 38
+            // Nothing searches yet - the search is pass-docs, Step 41
             SearchBar(
                 query = query,
                 onQueryChange = onQueryChange,
