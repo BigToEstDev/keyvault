@@ -81,7 +81,9 @@ class EntryEditorTest {
     fun `a password cannot be emptied`() = runTest {
         val id = entries.add("e1", GROUP, filled.fields())
 
-        val failure = expectFailure<EntryFailure.InvalidFields> { editor.update(DB, id, filled.withValue(PASSWORD, "")) }
+        val failure = expectFailure<EntryFailure.InvalidFields> {
+            editor.update(DB, id, filled.withValue(PASSWORD, ""))
+        }
 
         assertEquals(listOf(FieldProblem.Required(PASSWORD)), failure.problems)
         assertEquals(listOf("fields"), journal)
@@ -97,7 +99,9 @@ class EntryEditorTest {
         // Unchanged it is not saved at all; any other change asks for the twin to be renamed first
         editor.update(DB, id, content)
         assertEquals(listOf("fields"), journal)
-        val failure = expectFailure<EntryFailure.InvalidFields> { editor.update(DB, id, content.withValue(TITLE, "Bank")) }
+        val failure = expectFailure<EntryFailure.InvalidFields> {
+            editor.update(DB, id, content.withValue(TITLE, "Bank"))
+        }
         assertEquals(listOf(FieldProblem.BadName(1, NameProblem.TAKEN)), failure.problems)
 
         editor.update(DB, id, content.copy(ownFields = listOf(field(" PIN"), field(" Card "))))

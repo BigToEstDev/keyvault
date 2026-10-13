@@ -42,7 +42,10 @@ class EntryValidatorTest {
     fun `a required field empty in the file already is not asked for`() {
         val foreign = filled.withValue(USER_NAME, "")
 
-        assertEquals(emptyList<FieldProblem>(), EntryValidator.problems(foreign.withValue(TITLE, "Bank"), read = foreign))
+        assertEquals(
+            emptyList<FieldProblem>(),
+            EntryValidator.problems(foreign.withValue(TITLE, "Bank"), read = foreign),
+        )
     }
 
     @Test
