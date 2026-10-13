@@ -1,11 +1,5 @@
 package ru.kino.dev.vault.pres.grouplist.components
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -19,21 +13,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
+import ru.kino.dev.ui.components.skeletonBrush
 
 /**
- * A card while the tree is being read: the shape of a [GroupCard] - the icon, the name - with a gradient
- * running over it. Colors are the text color of the theme, faint, so it follows light and dark.
+ * A card while the tree is being read: the shape of a [GroupCard] - the icon, the name - painted with
+ * [skeletonBrush].
  */
 @Composable
 internal fun SkeletonCard(modifier: Modifier = Modifier) {
-    val brush = shimmer()
+    val brush = skeletonBrush()
 
     Card(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -58,30 +50,5 @@ internal fun SkeletonCard(modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-private fun shimmer(): Brush {
-    val base = MaterialTheme.colorScheme.onSurface
-    val transition = rememberInfiniteTransition(label = "skeleton")
-    val x by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = SWEEP,
-        animationSpec = infiniteRepeatable(tween(SWEEP_MILLIS, easing = LinearEasing), RepeatMode.Restart),
-        label = "skeleton-x",
-    )
-    return Brush.linearGradient(
-        colors = listOf(base.copy(alpha = DIM), base.copy(alpha = BRIGHT), base.copy(alpha = DIM)),
-        start = Offset(x - BAND, 0f),
-        end = Offset(x, 0f),
-    )
-}
-
 /** Share of the row the name bar takes. */
 private const val NAME_WIDTH = 0.6f
-
-private const val DIM = 0.06f
-private const val BRIGHT = 0.16f
-
-/** How far the bright band travels, and how wide it is, in px - wider than a phone, so it runs off. */
-private const val SWEEP = 1600f
-private const val BAND = 500f
-private const val SWEEP_MILLIS = 1200

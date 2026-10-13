@@ -44,7 +44,7 @@ fun AppNavHost(navigator: Navigator, start: WelcomeStart) {
         popExitTransition = { slideOutOfContainer(direction(pop = true), tween(SLIDE_MILLIS)) },
     ) {
         welcomeGraph(navController, start)
-        vaultGraph(navController)
+        vaultGraph()
     }
 }
 

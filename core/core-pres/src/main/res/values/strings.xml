@@ -5,11 +5,15 @@
     <string name="password_show">Show password</string>
     <string name="password_hide">Hide password</string>
     <string name="field_error_show">Show error</string>
+    <string name="copy_value">Copy</string>
+    <string name="copied">Copied</string>
 
     <!-- Common actions -->
     <string name="action_retry">Retry</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_close">Close</string>
+    <string name="action_save">Save</string>
+    <string name="action_ok">OK</string>
     <string name="action_next">Next</string>
     <string name="action_pick_another_file">Choose another file</string>
     <string name="action_pick_another_key_file">Choose another key file</string>
@@ -105,8 +109,8 @@
     <string name="vault_empty_hint">Tap + to add an entry</string>
     <string name="vault_create_group">Create group</string>
     <string name="vault_create_entry">Create entry</string>
-    <string name="vault_group_edit">Edit</string>
-    <string name="vault_group_delete">Delete</string>
+    <string name="vault_card_edit">Edit</string>
+    <string name="vault_card_delete">Delete</string>
     <string name="vault_debug_lock">Lock (debug)</string>
     <string name="group_dialog_create_title">New group</string>
     <string name="group_dialog_rename_title">Rename group</string>
@@ -122,8 +126,39 @@
     <string name="group_delete_text">«%1$s» and everything in it goes to the recycle bin.</string>
     <string name="group_delete_confirm">Delete</string>
     <string name="vault_message_not_saved">The change is made, but the file was not written</string>
-    <string name="vault_message_load_failed">Could not read the groups</string>
+    <string name="vault_message_load_failed">Could not read the group</string>
 
-    <!-- vault: entries, stubs until the entries step -->
-    <string name="entry_stub_in_progress">In progress</string>
+    <!-- vault: entries -->
+    <string name="entry_untitled">Untitled</string>
+    <string name="entry_delete_title">Delete the entry?</string>
+    <string name="entry_delete_text">«%1$s» goes to the recycle bin.</string>
+    <string name="entry_preset_standard">Standard</string>
+    <string name="entry_field_title">Title</string>
+    <string name="entry_field_user_name">User name</string>
+    <string name="entry_field_password">Password</string>
+    <string name="entry_field_service">Service name</string>
+    <string name="entry_field_url">Service URL</string>
+    <string name="entry_field_notes">Notes</string>
+    <string name="entry_field_required">Fill this in</string>
+    <string name="entry_field_name">Field name</string>
+    <string name="entry_field_name_empty">Enter a name</string>
+    <string name="entry_field_name_taken">The entry already has a field with this name</string>
+    <string name="entry_field_menu">Field actions</string>
+    <string name="entry_field_rename">Rename</string>
+    <string name="entry_field_delete">Delete</string>
+    <string name="entry_add_field">+ Add field</string>
+    <string name="entry_add_field_title">New field</string>
+    <string name="entry_add_field_confirm">Add</string>
+    <string name="entry_rename_field_title">Rename field</string>
+    <string name="entry_delete_field_title">Delete the field?</string>
+    <string name="entry_delete_field_text">«%1$s» and its value leave the entry.</string>
+    <string name="entry_save">Save entry</string>
+    <string name="entry_edit">Edit entry</string>
+    <string name="entry_leave_title">Leave without saving?</string>
+    <string name="entry_leave_text">The changes you made will not be saved.</string>
+    <string name="entry_leave_confirm">Leave</string>
+    <string name="entry_leave_stay">Stay</string>
+    <string name="entry_not_saved_title">The file was not written</string>
+    <string name="entry_not_saved_text">The entry is changed, but the database file was not written. It is written with the next change you save.</string>
+    <string name="entry_message_load_failed">Could not read the entry</string>
 </resources>

@@ -10,7 +10,7 @@ import ru.kino.dev.vault.group.GroupNameValidator
 import ru.kino.dev.vault.pres.grouplist.GroupDialog
 import ru.kino.dev.vault.pres.grouplist.NameProblem
 
-/** The dialog over the list: the name of a new or renamed group, or "delete?". */
+/** The dialog over the list: the name of a new or renamed group, or "delete?" - a group or an entry. */
 @Composable
 internal fun GroupDialogs(
     dialog: GroupDialog?,
@@ -39,6 +39,20 @@ internal fun GroupDialogs(
             onNameChange = onNameChange,
             onConfirm = onConfirm,
             onDismiss = onDismiss,
+        )
+
+        is GroupDialog.DeleteEntry -> ConfirmDialog(
+            title = stringResource(R.string.entry_delete_title),
+            text = stringResource(
+                R.string.entry_delete_text,
+                dialog.title.ifEmpty { stringResource(R.string.entry_untitled) },
+            ),
+            confirmText = stringResource(R.string.group_delete_confirm),
+            dismissText = stringResource(R.string.action_cancel),
+            onConfirm = onConfirm,
+            onDismiss = onDismiss,
+            destructive = true,
+            loading = dialog.saving,
         )
 
         is GroupDialog.Delete -> ConfirmDialog(

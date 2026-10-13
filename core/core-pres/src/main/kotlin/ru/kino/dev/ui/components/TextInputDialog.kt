@@ -7,7 +7,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -16,7 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -30,7 +28,7 @@ import androidx.compose.ui.unit.dp
  * what it confirms is under way, and a second tap must not start it again.
  *
  * @param error marks the field as wrong and puts a "!" in it; the text is a bubble under the field - see
- * [FieldErrorIcon]
+ * [TextField]
  */
 @Composable
 fun TextInputDialog(
@@ -46,7 +44,6 @@ fun TextInputDialog(
     loading: Boolean = false,
 ) {
     val focus = remember { FocusRequester() }
-    val errorState = rememberFieldErrorState(error)
 
     AlertDialog(
         onDismissRequest = { if (!loading) onDismiss() },
@@ -59,18 +56,15 @@ fun TextInputDialog(
                 focus.requestFocus()
                 keyboard?.show()
             }
-            OutlinedTextField(
+            TextField(
                 value = value,
                 onValueChange = onValueChange,
+                label = label,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(focus)
-                    .onFocusChanged { errorState.onFocusChanged(it.isFocused, enabled = !loading) },
+                    .focusRequester(focus),
                 enabled = !loading,
-                label = { Text(label) },
-                singleLine = true,
-                isError = error != null,
-                trailingIcon = error?.let { { FieldErrorIcon(error = it, state = errorState) } },
+                error = error,
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done,
