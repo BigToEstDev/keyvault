@@ -28,7 +28,8 @@ import androidx.compose.ui.text.withStyle
  * @param hint shown under the field, error or not
  * @param readOnly shows the value without letting it change - a screen that reads, not edits
  * @param hidden shows the value as dots - a secret
- * @param minLines more than one makes the field multi-line, growing with the text
+ * @param singleLine false lets the text wrap and the field grow with it - notes
+ * @param minLines how tall a multi-line field starts
  * @param actions buttons at the end of the field, after the "!" of the error
  */
 @Composable
@@ -43,6 +44,7 @@ fun TextField(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     hidden: Boolean = false,
+    singleLine: Boolean = true,
     minLines: Int = 1,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
@@ -57,7 +59,7 @@ fun TextField(
         enabled = enabled,
         readOnly = readOnly,
         label = { FieldLabel(label, required) },
-        singleLine = minLines == 1,
+        singleLine = singleLine,
         minLines = minLines,
         isError = error != null,
         supportingText = hint?.let { { Text(it) } },

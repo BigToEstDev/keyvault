@@ -1,0 +1,142 @@
+package ru.kino.dev.vault.pres.common
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import ru.kino.dev.core.pres.R
+import ru.kino.dev.ui.components.SkeletonField
+import ru.kino.dev.vault.entry.StandardPreset
+
+/*
+ * What reading and editing an entry share: the screens are one layout - the same top bar, the same cards,
+ * the same fields - and differ in whether the fields take input (pass-docs, vault-our.md).
+ */
+
+/** "Back" and the name of the preset - "Standard" until presets of one's own come (Step 44). */
+@Composable
+internal fun EntryTopBar(onBack: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 8.dp, vertical = 8.dp)
+            .heightIn(min = 48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onBack) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.vault_back))
+        }
+        Text(
+            text = stringResource(R.string.entry_preset_standard),
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+    }
+}
+
+/** A section of the entry: a card with a background, its fields one under another. */
+@Composable
+internal fun EntrySection(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
+    }
+}
+
+/**
+ * The icon of the entry in a frame - one icon for every entry until choosing an icon comes, a step of its
+ * own (vault-our.md, "Фича выбор иконки").
+ */
+@Composable
+internal fun EntryIconFrame(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(56.dp)
+            .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Filled.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+    }
+}
+
+/** The first card of every preset: the icon and the title, side by side. */
+@Composable
+internal fun EntryTitleSection(title: @Composable (Modifier) -> Unit) {
+    EntrySection {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            EntryIconFrame()
+            title(
+                Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+            )
+        }
+    }
+}
+
+/** The label of a field of the standard preset; an own field is labelled with its key. */
+@Composable
+internal fun fieldLabel(key: String): String = when (key) {
+    StandardPreset.TITLE -> stringResource(R.string.entry_field_title)
+    StandardPreset.USER_NAME -> stringResource(R.string.entry_field_user_name)
+    StandardPreset.PASSWORD -> stringResource(R.string.entry_field_password)
+    StandardPreset.SERVICE -> stringResource(R.string.entry_field_service)
+    StandardPreset.URL -> stringResource(R.string.entry_field_url)
+    StandardPreset.NOTES -> stringResource(R.string.entry_field_notes)
+    else -> key
+}
+
+/** The cards while the entry is read: the shape of the title card and of the fields of the standard preset. */
+@Composable
+internal fun EntrySkeleton(brush: Brush) {
+    EntrySection {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(brush),
+            )
+            SkeletonField(
+                brush = brush,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+            )
+        }
+    }
+    EntrySection {
+        repeat(SKELETON_FIELDS) { SkeletonField(brush = brush) }
+    }
+}
+
+/** The fields of the standard preset after the title. */
+private const val SKELETON_FIELDS = 5

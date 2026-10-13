@@ -1,5 +1,6 @@
 package ru.kino.dev.vault.pres.grouplist
 
+import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 
 sealed interface GroupListAction {
@@ -30,6 +31,12 @@ sealed interface GroupListAction {
 
     data object CreateEntry : GroupListAction
 
+    data class OpenEntry(val id: EntryId) : GroupListAction
+
+    data class EditEntry(val id: EntryId) : GroupListAction
+
+    data class DeleteEntry(val id: EntryId) : GroupListAction
+
     data class RenameGroup(val id: GroupId) : GroupListAction
 
     data class DeleteGroup(val id: GroupId) : GroupListAction
@@ -55,10 +62,17 @@ data class GroupItem(
     val entryCount: Int,
 )
 
+/** An entry as its card shows it. */
+data class EntryItem(
+    val id: EntryId,
+    /** Empty when the entry has none: the card shows its own "untitled" */
+    val title: String,
+)
+
 /** One part of the path in the top bar. */
 data class Crumb(val id: GroupId, val name: String)
 
-/** The dialog over the list, if any. */
+/** The dialog over the list, if any - about a group or an entry of it. */
 sealed interface GroupDialog {
 
     /** The change is under way: the dialog shows progress and takes nothing. */
@@ -80,6 +94,13 @@ sealed interface GroupDialog {
     data class Delete(
         val groupId: GroupId,
         val name: String,
+        override val saving: Boolean = false,
+    ) : GroupDialog
+
+    data class DeleteEntry(
+        val entryId: EntryId,
+        /** As the card shows it; empty when the entry has none */
+        val title: String,
         override val saving: Boolean = false,
     ) : GroupDialog
 }

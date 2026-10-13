@@ -1,6 +1,5 @@
 package ru.kino.dev.vault.pres.navigation
 
-import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
@@ -14,10 +13,8 @@ import ru.kino.dev.vault.pres.grouplist.GroupListScreen
 /**
  * The screens of `vault` - the database is open. Entered at its root, with its dbKey; every group below is
  * the same screen again, one place on the back stack per level.
- *
- * The entry screens are stubs with no processor yet, so their "back" goes to [navController] straight.
  */
-fun NavGraphBuilder.vaultGraph(navController: NavController) {
+fun NavGraphBuilder.vaultGraph() {
     navigation<VaultGraph>(startDestination = VaultRootRoute::class) {
         composable<VaultRootRoute> { entry ->
             GroupListScreen(dbKey = entry.toRoute<VaultRootRoute>().dbKey, groupId = null)
@@ -26,11 +23,17 @@ fun NavGraphBuilder.vaultGraph(navController: NavController) {
             val route = entry.toRoute<GroupRoute>()
             GroupListScreen(dbKey = route.dbKey, groupId = route.groupId)
         }
-        composable<EntryReadRoute> {
-            EntryReadScreen(onBack = { navController.popBackStack() })
+        composable<EntryReadRoute> { entry ->
+            val route = entry.toRoute<EntryReadRoute>()
+            EntryReadScreen(dbKey = route.dbKey, entryId = route.entryId)
         }
-        composable<EntryEditRoute> {
-            EntryEditScreen(onBack = { navController.popBackStack() })
+        composable<EntryCreateRoute> { entry ->
+            val route = entry.toRoute<EntryCreateRoute>()
+            EntryEditScreen(dbKey = route.dbKey, groupId = route.groupId, entryId = null)
+        }
+        composable<EntryEditRoute> { entry ->
+            val route = entry.toRoute<EntryEditRoute>()
+            EntryEditScreen(dbKey = route.dbKey, groupId = null, entryId = route.entryId)
         }
     }
 }

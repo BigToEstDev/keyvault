@@ -14,10 +14,19 @@ import kotlinx.serialization.Serializable
 @Serializable
 internal data class GroupRoute(val dbKey: String, val groupId: String)
 
-/** Reading an entry - a stub until the step of the entries. */
+/** Reading an entry. */
 @Serializable
 internal data class EntryReadRoute(val dbKey: String, val entryId: String)
 
-/** Creating an entry in [parentGroupId], or editing [entryId] - a stub until the step of the entries. */
+/*
+ * Creating and editing are one screen with two ways in: each route carries exactly what its mode needs, so
+ * there is no "neither a group nor an entry" to guard against.
+ */
+
+/** Creating an entry inside [groupId]. */
 @Serializable
-internal data class EntryEditRoute(val dbKey: String, val parentGroupId: String, val entryId: String? = null)
+internal data class EntryCreateRoute(val dbKey: String, val groupId: String)
+
+/** Editing the entry [entryId]. */
+@Serializable
+internal data class EntryEditRoute(val dbKey: String, val entryId: String)

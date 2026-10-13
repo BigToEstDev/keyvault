@@ -17,20 +17,27 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.entry.EntryEditor
+import ru.kino.dev.vault.entry.EntryFailure
+import ru.kino.dev.vault.entry.EntryRepository
+import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.group.VaultTree
+import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
+import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
 
 /**
- * @param loading the tree is not read yet - the skeleton is shown
+ * @param loading the tree and the entries are not read yet - the skeleton is shown
  * @param path from the root down to this group; empty until the tree is read
  * @param entryCount entries in this group and below it; at the root - the whole database
- * @param query typed into the search field; nothing searches yet - pass-docs, Step 38
- * @param filtersOpen the filter dialog is shown; empty until the entries come - Step 38
+ * @param entries directly in this group, by title - after the groups in the list
+ * @param query typed into the search field; nothing searches yet - pass-docs, Step 41
+ * @param filtersOpen the filter dialog is shown; empty until the filters come - Step 41
  * @param message for the snackbar, until it takes it
  */
 data class GroupListState(
@@ -38,6 +45,7 @@ data class GroupListState(
     val path: List<Crumb> = emptyList(),
     val entryCount: Int = 0,
     val groups: List<GroupItem> = emptyList(),
+    val entries: List<EntryItem> = emptyList(),
     val query: String = "",
     val fabExpanded: Boolean = false,
     val filtersOpen: Boolean = false,
@@ -46,15 +54,18 @@ data class GroupListState(
     val message: GroupListMessage? = null,
 ) {
     val isRoot: Boolean get() = path.size <= 1
+
+    /** Nothing inside: no groups and no entries. */
+    val isEmpty: Boolean get() = groups.isEmpty() && entries.isEmpty()
 }
 
 /**
- * One group of the open database and the groups inside it - the root, or any group below it (pass-docs,
- * `docs/android/screens/vault/vault-our.md`).
+ * One group of the open database, the groups inside it and then its entries - the root, or any group below
+ * it (pass-docs, `docs/android/screens/vault/vault-our.md`).
  *
- * The tree is read anew every time the screen is shown: a change made one level down, or a group deleted
- * there, has to show here on the way back. Changes go through [GroupEditor] - checked, made, written to the
- * file - and the tree is read again after each.
+ * The tree and the entries are read anew every time the screen is shown: a change made one level down, or
+ * in an entry, has to show here on the way back. Changes go through [GroupEditor] and [EntryEditor] -
+ * checked, made, written to the file - and everything is read again after each.
  *
  * Locking puts the locked screen of `welcome` on top: this screen stays under it, and unlocking comes back
  * here.
@@ -67,6 +78,8 @@ class GroupListProcessor @AssistedInject constructor(
     @Assisted("groupId") private val groupId: String?,
     private val groups: GroupRepository,
     private val editor: GroupEditor,
+    private val entries: EntryRepository,
+    private val entryEditor: EntryEditor,
     private val database: VaultDatabaseRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
@@ -116,6 +129,14 @@ class GroupListProcessor @AssistedInject constructor(
 
             GroupListAction.CreateEntry -> createEntry()
 
+            is GroupListAction.OpenEntry -> navigator.navigate(MviNavEvent.NavigateTo(EntryReadRoute(dbKey, action.id.value)))
+
+            is GroupListAction.EditEntry -> navigator.navigate(MviNavEvent.NavigateTo(EntryEditRoute(dbKey, action.id.value)))
+
+            is GroupListAction.DeleteEntry -> state.entries.find { it.id == action.id }?.let { entry ->
+                reduce { state.copy(dialog = GroupDialog.DeleteEntry(entry.id, entry.title)) }
+            }
+
             is GroupListAction.RenameGroup -> state.groups.find { it.id == action.id }?.let { group ->
                 reduce { state.copy(dialog = GroupDialog.Rename(group.id, group.name)) }
             }
@@ -151,14 +172,23 @@ class GroupListProcessor @AssistedInject constructor(
             toRoot()
             return
         }
-        reduce { state.shown(tree, id) }
+
+        val inside = try {
+            entries.entries(dbKey, id).map { EntryItem(it.id, it.title) }
+        } catch (failure: EntryFailure) {
+            if (failure is EntryFailure.Unexpected) log.unexpected(TAG, failure)
+            reduce { state.copy(loading = false, message = GroupListMessage.LoadFailed) }
+            return
+        }
+        reduce { state.shown(tree, id, inside) }
     }
 
-    private fun GroupListState.shown(tree: VaultTree, id: GroupId) = copy(
+    private fun GroupListState.shown(tree: VaultTree, id: GroupId, entries: List<EntryItem>) = copy(
         loading = false,
         path = tree.path(id).map { Crumb(it.id, it.name) },
         entryCount = tree.entryCount(id),
         groups = tree.subgroups(id).map { GroupItem(it.id, it.name, tree.entryCount(it.id)) },
+        entries = entries,
     )
 
     private suspend fun Syntax<GroupListState, Nothing>.openCrumb(index: Int) {
@@ -178,7 +208,7 @@ class GroupListProcessor @AssistedInject constructor(
     private suspend fun Syntax<GroupListState, Nothing>.createEntry() {
         val current = state.path.lastOrNull() ?: return
         reduce { state.copy(fabExpanded = false) }
-        navigator.navigate(MviNavEvent.NavigateTo(EntryEditRoute(dbKey, parentGroupId = current.id.value)))
+        navigator.navigate(MviNavEvent.NavigateTo(EntryCreateRoute(dbKey, groupId = current.id.value)))
     }
 
     private suspend fun Syntax<GroupListState, Nothing>.confirm() {
@@ -192,11 +222,36 @@ class GroupListProcessor @AssistedInject constructor(
                 is GroupDialog.Create -> editor.create(dbKey, current, dialog.name)
                 is GroupDialog.Rename -> editor.rename(dbKey, dialog.groupId, dialog.name)
                 is GroupDialog.Delete -> editor.delete(dbKey, dialog.groupId)
+                is GroupDialog.DeleteEntry -> entryEditor.delete(dbKey, dialog.entryId)
             }
             reduce { state.copy(dialog = null) }
             load()
         } catch (failure: GroupFailure) {
             failed(failure)
+        } catch (failure: EntryFailure) {
+            failed(failure)
+        }
+    }
+
+    private suspend fun Syntax<GroupListState, Nothing>.failed(failure: EntryFailure) {
+        when (failure) {
+            // In the recycle bin, but not in the file: the list shows it gone, the snackbar says it is not written
+            is EntryFailure.NotSaved -> {
+                reduce { state.copy(dialog = null, message = GroupListMessage.NotSaved) }
+                load()
+            }
+
+            // Gone already - deleted or merged away; reading again shows what is there
+            is EntryFailure.EntryNotFound -> {
+                reduce { state.copy(dialog = null) }
+                load()
+            }
+
+            // Not what deleting an entry throws
+            is EntryFailure.InvalidFields, is EntryFailure.GroupNotFound, is EntryFailure.Unexpected -> {
+                log.unexpected(TAG, failure)
+                reduce { state.copy(dialog = null, message = GroupListMessage.Unexpected) }
+            }
         }
     }
 
@@ -251,13 +306,14 @@ class GroupListProcessor @AssistedInject constructor(
 private fun GroupDialog.typed(name: String): GroupDialog = when (this) {
     is GroupDialog.Create -> if (saving) this else copy(name = name, problem = null)
     is GroupDialog.Rename -> if (saving) this else copy(name = name, problem = null)
-    is GroupDialog.Delete -> this
+    is GroupDialog.Delete, is GroupDialog.DeleteEntry -> this
 }
 
 private fun GroupDialog.underWay(): GroupDialog = when (this) {
     is GroupDialog.Create -> copy(saving = true, problem = null)
     is GroupDialog.Rename -> copy(saving = true, problem = null)
     is GroupDialog.Delete -> copy(saving = true)
+    is GroupDialog.DeleteEntry -> copy(saving = true)
 }
 
 /** Back to typing, with the reason under the field. A delete has no field, so it only stops waiting. */
@@ -265,4 +321,5 @@ private fun GroupDialog.refused(problem: NameProblem): GroupDialog = when (this)
     is GroupDialog.Create -> copy(saving = false, problem = problem)
     is GroupDialog.Rename -> copy(saving = false, problem = problem)
     is GroupDialog.Delete -> copy(saving = false)
+    is GroupDialog.DeleteEntry -> copy(saving = false)
 }

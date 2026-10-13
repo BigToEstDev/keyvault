@@ -18,10 +18,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
@@ -31,14 +29,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.EmptyState
 import ru.kino.dev.ui.components.ExpandableFab
 import ru.kino.dev.ui.components.FabItem
 import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.vault.pres.grouplist.components.DebugLockFab
+import ru.kino.dev.vault.pres.grouplist.components.EntryCard
 import ru.kino.dev.vault.pres.grouplist.components.FilterDialog
 import ru.kino.dev.vault.pres.grouplist.components.GroupCard
 import ru.kino.dev.vault.pres.grouplist.components.GroupDialogs
@@ -62,7 +61,9 @@ internal fun GroupListScreen(
 
     BackHandler(enabled = state.fabExpanded) { processor.action(GroupListAction.CloseFab) }
 
-    Messages(state.message, snackbar) { processor.action(GroupListAction.MessageShown) }
+    SnackbarMessage(state.message?.let { stringResource(it.text) }, snackbar) {
+        processor.action(GroupListAction.MessageShown)
+    }
 
     GradientBackground {
         Scaffold(
@@ -158,7 +159,7 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
             items(SKELETON_ROWS) { SkeletonCard() }
         }
 
-        state.groups.isEmpty() -> Box(
+        state.isEmpty -> Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
@@ -184,23 +185,14 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
                     onDelete = { action(GroupListAction.DeleteGroup(group.id)) },
                 )
             }
-        }
-    }
-}
-
-/**
- * Hands the message to the snackbar and tells the processor it is taken at once - the snackbar shows it on
- * a scope of its own, so clearing the message does not cut it short.
- */
-@Composable
-private fun Messages(message: GroupListMessage?, snackbar: SnackbarHostState, onShown: () -> Unit) {
-    val scope = rememberCoroutineScope()
-    val text = message?.let { stringResource(it.text) }
-
-    LaunchedEffect(message) {
-        if (text != null) {
-            scope.launch { snackbar.showSnackbar(text) }
-            onShown()
+            items(state.entries, key = { it.id.value }) { entry ->
+                EntryCard(
+                    entry = entry,
+                    onOpen = { action(GroupListAction.OpenEntry(entry.id)) },
+                    onEdit = { action(GroupListAction.EditEntry(entry.id)) },
+                    onDelete = { action(GroupListAction.DeleteEntry(entry.id)) },
+                )
+            }
         }
     }
 }
