@@ -182,7 +182,10 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             minLines = NOTES_LINES,
             keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         )
+    }
 
+    // A card of its own: the own fields - read or added here - and the button that adds one
+    EntrySection {
         content.ownFields.forEachIndexed { index, field ->
             OwnFieldRow(
                 field = field,

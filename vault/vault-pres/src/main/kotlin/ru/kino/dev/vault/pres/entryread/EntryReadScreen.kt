@@ -37,6 +37,7 @@ import ru.kino.dev.ui.components.VisibilityToggle
 import ru.kino.dev.ui.components.rememberSensitiveClipboard
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.entry.EntryContent
+import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.pres.common.EntrySection
 import ru.kino.dev.vault.pres.common.EntrySkeleton
@@ -116,48 +117,70 @@ private fun EntryFields(state: EntryReadState, content: EntryContent, action: (E
 
     val shownPreset = READ_ORDER.filter { content.value(it).isNotEmpty() }
     val shownOwn = content.ownFields.withIndex().filter { it.value.value.isNotEmpty() }
-    if (shownPreset.isEmpty() && shownOwn.isEmpty()) return
+    if (shownPreset.isNotEmpty()) {
+        EntrySection { PresetFields(state, content, shownPreset, clipboard, action) }
+    }
 
-    EntrySection {
-        shownPreset.forEach { key ->
-            if (key == StandardPreset.PASSWORD) {
-                val label = fieldLabel(key)
-                val value = content.value(key)
-                PasswordField(
-                    value = value,
-                    onValueChange = {},
-                    label = label,
-                    visible = state.passwordVisible,
-                    onToggleVisible = { action(EntryReadAction.TogglePassword) },
-                    modifier = Modifier.fillMaxWidth(),
-                    readOnly = true,
-                    actions = { CopyButton(onCopy = { clipboard.copy(label, value) }) },
-                )
-            } else {
-                ReadField(
-                    label = fieldLabel(key),
-                    value = content.value(key),
-                    clipboard = clipboard,
-                    multiLine = key == StandardPreset.NOTES,
-                )
-            }
-        }
+    // A card of its own, as on the form
+    if (shownOwn.isNotEmpty()) {
+        EntrySection { OwnFields(state, shownOwn, clipboard, action) }
+    }
+}
 
-        shownOwn.forEach { (index, field) ->
-            val shown = index in state.shownOwn
+@Composable
+private fun PresetFields(
+    state: EntryReadState,
+    content: EntryContent,
+    keys: List<String>,
+    clipboard: SensitiveClipboard,
+    action: (EntryReadAction) -> Unit,
+) {
+    keys.forEach { key ->
+        if (key == StandardPreset.PASSWORD) {
+            val label = fieldLabel(key)
+            val value = content.value(key)
+            PasswordField(
+                value = value,
+                onValueChange = {},
+                label = label,
+                visible = state.passwordVisible,
+                onToggleVisible = { action(EntryReadAction.TogglePassword) },
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                actions = { CopyButton(onCopy = { clipboard.copy(label, value) }) },
+            )
+        } else {
             ReadField(
-                label = field.key,
-                value = field.value,
+                label = fieldLabel(key),
+                value = content.value(key),
                 clipboard = clipboard,
-                hidden = field.protected && !shown,
-                onToggleShown = if (field.protected) {
-                    { action(EntryReadAction.ToggleOwn(index)) }
-                } else {
-                    null
-                },
-                shown = shown,
+                multiLine = key == StandardPreset.NOTES,
             )
         }
+    }
+}
+
+@Composable
+private fun OwnFields(
+    state: EntryReadState,
+    fields: List<IndexedValue<EntryField>>,
+    clipboard: SensitiveClipboard,
+    action: (EntryReadAction) -> Unit,
+) {
+    fields.forEach { (index, field) ->
+        val shown = index in state.shownOwn
+        ReadField(
+            label = field.key,
+            value = field.value,
+            clipboard = clipboard,
+            hidden = field.protected && !shown,
+            onToggleShown = if (field.protected) {
+                { action(EntryReadAction.ToggleOwn(index)) }
+            } else {
+                null
+            },
+            shown = shown,
+        )
     }
 }
 
