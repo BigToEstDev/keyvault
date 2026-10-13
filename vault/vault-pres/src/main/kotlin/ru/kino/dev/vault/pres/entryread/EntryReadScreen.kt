@@ -72,7 +72,14 @@ internal fun EntryReadScreen(
         Scaffold(
             // The backdrop is the gradient behind
             containerColor = Color.Transparent,
-            topBar = { EntryTopBar(onBack = { processor.action(EntryReadAction.Back) }) },
+            topBar = {
+                // The title of the entry; nothing while it is read
+                val title = state.content?.value(StandardPreset.TITLE)
+                EntryTopBar(
+                    title = title?.ifEmpty { stringResource(R.string.entry_untitled) }.orEmpty(),
+                    onBack = { processor.action(EntryReadAction.Back) },
+                )
+            },
             floatingActionButton = {
                 if (state.content != null) {
                     FloatingActionButton(onClick = { processor.action(EntryReadAction.Edit) }) {

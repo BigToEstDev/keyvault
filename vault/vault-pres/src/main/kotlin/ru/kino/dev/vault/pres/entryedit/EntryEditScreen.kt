@@ -41,6 +41,7 @@ import ru.kino.dev.ui.components.TextField
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.StandardPreset
+import ru.kino.dev.vault.pres.common.EntryPresetSection
 import ru.kino.dev.vault.pres.common.EntrySection
 import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
@@ -82,7 +83,12 @@ internal fun EntryEditScreen(
         Scaffold(
             // The backdrop is the gradient behind
             containerColor = Color.Transparent,
-            topBar = { EntryTopBar(onBack = { processor.action(EntryEditAction.Back) }) },
+            topBar = {
+                EntryTopBar(
+                    title = stringResource(if (state.creating) R.string.entry_title_new else R.string.entry_title_edit),
+                    onBack = { processor.action(EntryEditAction.Back) },
+                )
+            },
             floatingActionButton = {
                 if (state.content != null) {
                     SaveFab(saving = state.saving, onSave = { processor.action(EntryEditAction.Save) })
@@ -149,6 +155,8 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
         )
     }
+
+    EntryPresetSection(onClick = { action(EntryEditAction.ChoosePreset) }, enabled = enabled)
 
     EntrySection {
         PresetText(

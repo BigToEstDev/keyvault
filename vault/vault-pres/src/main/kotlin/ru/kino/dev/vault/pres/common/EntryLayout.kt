@@ -21,6 +21,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.SkeletonField
@@ -39,9 +41,9 @@ import ru.kino.dev.vault.entry.StandardPreset
  * the same fields - and differ in whether the fields take input (pass-docs, vault-our.md).
  */
 
-/** "Back" and the name of the preset - "Standard" until presets of one's own come (Step 44). */
+/** "Back" and the [title] of the screen - one line, cut short with an ellipsis. */
 @Composable
-internal fun EntryTopBar(onBack: () -> Unit, modifier: Modifier = Modifier) {
+internal fun EntryTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -54,9 +56,11 @@ internal fun EntryTopBar(onBack: () -> Unit, modifier: Modifier = Modifier) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.vault_back))
         }
         Text(
-            text = stringResource(R.string.entry_preset_standard),
+            text = title,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(start = 8.dp),
         )
     }
@@ -118,6 +122,25 @@ internal fun EntryTitleSection(title: @Composable (Modifier) -> Unit) {
                     .weight(1f)
                     .padding(start = 16.dp),
             )
+        }
+    }
+}
+
+/**
+ * The card of the preset, between the title and the fields: a button outlined in the primary color with the
+ * name of the preset. It opens the choice of presets - an empty dialog until presets of one's own come
+ * (Step 44).
+ */
+@Composable
+internal fun EntryPresetSection(onClick: () -> Unit, enabled: Boolean) {
+    EntrySection {
+        OutlinedButton(
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = enabled,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+        ) {
+            Text(stringResource(R.string.entry_preset_standard))
         }
     }
 }
