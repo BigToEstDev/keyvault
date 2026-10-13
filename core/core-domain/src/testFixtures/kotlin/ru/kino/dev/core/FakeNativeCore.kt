@@ -179,19 +179,9 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
 
     override suspend fun moveGroupToRecycleBin(dbKey: String, groupId: String) {
         step("moveGroupToRecycleBin", dbKey)
-        var tree = tree(dbKey)
-        val group = tree.groups[groupId] ?: throw notFound(groupId)
-
-        // Like the core: no bin yet - one is made under the root on the first delete
-        val binId = tree.recycleBinId ?: RECYCLE_BIN_ID.also { binId ->
-            val root = tree.groups.getValue(tree.rootId)
-            tree = tree.copy(
-                recycleBinId = binId,
-                groups = tree.groups +
-                    (binId to GroupNode(binId, tree.rootId, "Recycle Bin", emptyList(), emptyList())) +
-                    (tree.rootId to root.copy(groupIds = root.groupIds + binId)),
-            )
-        }
+        val group = tree(dbKey).groups[groupId] ?: throw notFound(groupId)
+        val binId = recycleBin(dbKey)
+        val tree = tree(dbKey)
         val oldParent = tree.groups.getValue(checkNotNull(group.parentId) { "the root cannot be deleted" })
         val bin = tree.groups.getValue(binId)
 
@@ -201,6 +191,105 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
                 (binId to bin.copy(groupIds = bin.groupIds + groupId)) +
                 (groupId to group.copy(parentId = binId)),
         )
+    }
+
+    /** An entry the fake holds: the group it is in and its strings, in order. */
+    data class FakeEntry(val groupId: String, val fields: List<EntryFieldData>)
+
+    /**
+     * The entries of every database, by dbKey and then by id. The entry calls change them - and the
+     * [groupTrees] they are named in - the way the core would.
+     */
+    val storedEntries = mutableMapOf<String, MutableMap<String, FakeEntry>>()
+
+    /** Ids handed to the entries [createEntry] makes - `entry-1`, `entry-2`, … */
+    private var entriesCreated = 0
+
+    /** Puts an entry into [groupId] - into the tree too - for setting a test up. Not journaled. */
+    fun addEntry(dbKey: String, groupId: String, id: String, fields: List<EntryFieldData>): String {
+        val tree = tree(dbKey)
+        val group = tree.groups.getValue(groupId)
+        groupTrees[dbKey] = tree.copy(groups = tree.groups + (groupId to group.copy(entryIds = group.entryIds + id)))
+        storedEntries.getOrPut(dbKey) { mutableMapOf() }[id] = FakeEntry(groupId, fields)
+        return id
+    }
+
+    override suspend fun entries(dbKey: String, groupId: String): List<EntrySummaryData> {
+        step("entries", dbKey)
+        // Like the core: a group that is not there has no entries rather than a failure
+        val group = tree(dbKey).groups[groupId] ?: return emptyList()
+        return group.entryIds
+            .mapNotNull { id -> stored(dbKey)[id]?.let { summary(id, it) } }
+            .sortedBy { it.title }
+    }
+
+    override suspend fun entryFields(dbKey: String, entryId: String): List<EntryFieldData> {
+        step("entryFields", dbKey)
+        return entry(dbKey, entryId).fields
+    }
+
+    override suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String {
+        step("createEntry", dbKey)
+        tree(dbKey).groups[groupId] ?: throw notFound(groupId)
+        refuseDuplicateKeys(fields)
+        return addEntry(dbKey, groupId, "entry-${++entriesCreated}", fields)
+    }
+
+    override suspend fun updateEntry(dbKey: String, entryId: String, fields: List<EntryFieldData>) {
+        step("updateEntry", dbKey)
+        val entry = entry(dbKey, entryId)
+        refuseDuplicateKeys(fields)
+        stored(dbKey)[entryId] = entry.copy(fields = fields)
+    }
+
+    override suspend fun moveEntryToRecycleBin(dbKey: String, entryId: String) {
+        step("moveEntryToRecycleBin", dbKey)
+        val entry = entry(dbKey, entryId)
+        val binId = recycleBin(dbKey)
+        val tree = tree(dbKey)
+        val oldParent = tree.groups.getValue(entry.groupId)
+        val bin = tree.groups.getValue(binId)
+
+        groupTrees[dbKey] = tree.copy(
+            groups = tree.groups +
+                (oldParent.id to oldParent.copy(entryIds = oldParent.entryIds - entryId)) +
+                (binId to bin.copy(entryIds = bin.entryIds + entryId)),
+        )
+        stored(dbKey)[entryId] = entry.copy(groupId = binId)
+    }
+
+    private fun stored(dbKey: String): MutableMap<String, FakeEntry> {
+        tree(dbKey)
+        return storedEntries.getOrPut(dbKey) { mutableMapOf() }
+    }
+
+    private fun entry(dbKey: String, entryId: String): FakeEntry =
+        stored(dbKey)[entryId] ?: throw CoreException("NotFound", "no entry $entryId")
+
+    private fun summary(id: String, entry: FakeEntry) = EntrySummaryData(
+        id = id,
+        title = entry.fields.firstOrNull { it.key == "Title" }?.value.orEmpty(),
+        userName = entry.fields.firstOrNull { it.key == "UserName" }?.value.orEmpty(),
+    )
+
+    // Like the core since Step 45: a form with two fields under one key is not saved
+    private fun refuseDuplicateKeys(fields: List<EntryFieldData>) {
+        val keys = fields.map { it.key }
+        if (keys.size != keys.toSet().size) throw CoreException("DuplicateFieldKey", "two fields with one key")
+    }
+
+    /** The id of the recycle bin; like the core, one is made under the root on the first delete. */
+    private fun recycleBin(dbKey: String): String {
+        val tree = tree(dbKey)
+        tree.recycleBinId?.let { return it }
+        val root = tree.groups.getValue(tree.rootId)
+        groupTrees[dbKey] = tree.copy(
+            recycleBinId = RECYCLE_BIN_ID,
+            groups = tree.groups +
+                (RECYCLE_BIN_ID to GroupNode(RECYCLE_BIN_ID, tree.rootId, "Recycle Bin", emptyList(), emptyList())) +
+                (tree.rootId to root.copy(groupIds = root.groupIds + RECYCLE_BIN_ID)),
+        )
+        return RECYCLE_BIN_ID
     }
 
     private fun tree(dbKey: String): GroupTree =
@@ -214,7 +303,7 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     }
 
     companion object {
-        /** The id of the recycle bin [moveGroupToRecycleBin] makes when the database has none. */
+        /** The id of the recycle bin a move to the bin makes when the database has none. */
         const val RECYCLE_BIN_ID = "recycle-bin"
     }
 }

@@ -124,6 +124,36 @@ interface NativeCore {
      * database has none. In memory only.
      */
     suspend fun moveGroupToRecycleBin(dbKey: String, groupId: String)
+
+    /**
+     * The entries directly inside [groupId], not those of the groups below, in the order the core gives
+     * them - by title. A group that is not there has no entries.
+     */
+    suspend fun entries(dbKey: String, groupId: String): List<EntrySummaryData>
+
+    /** The strings of the entry, in its order. */
+    suspend fun entryFields(dbKey: String, entryId: String): List<EntryFieldData>
+
+    /**
+     * Creates an entry inside [groupId] holding exactly [fields], in that order, and returns its id. The
+     * rest of it - uuid, times, icon - is the core's default for a new entry. Two fields under one key are
+     * refused with kind `DuplicateFieldKey`. In memory only.
+     */
+    suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String
+
+    /**
+     * Replaces the strings of the entry with [fields], in that order. The rest of it - icon, tags,
+     * attachments, times, the fields of another program the core keeps - goes back as it was read; the
+     * core puts the previous state into the history. Two fields under one key are refused with kind
+     * `DuplicateFieldKey`. In memory only.
+     */
+    suspend fun updateEntry(dbKey: String, entryId: String, fields: List<EntryFieldData>)
+
+    /**
+     * Moves the entry into the recycle bin; the core creates the bin when the database has none. In memory
+     * only.
+     */
+    suspend fun moveEntryToRecycleBin(dbKey: String, entryId: String)
 }
 
 /**
