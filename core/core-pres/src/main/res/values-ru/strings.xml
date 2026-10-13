@@ -4,6 +4,8 @@
     <string name="password_show">Показать пароль</string>
     <string name="password_hide">Скрыть пароль</string>
     <string name="field_error_show">Показать ошибку</string>
+    <string name="copy_value">Копировать</string>
+    <string name="copied">Скопировано</string>
 
     <!-- Common actions -->
     <string name="action_retry">Повторить</string>
