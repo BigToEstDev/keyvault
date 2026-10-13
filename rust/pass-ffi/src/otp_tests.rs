@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 
 use crate::contract::assert_shape;
 use crate::dispatch::run_with_bytes;
-use crate::test_support::{close_database, key_of, ok_payload, open_database};
+use crate::test_support::{close_database, key_of, ok_payload, open_database, set_form_field};
 
 /// A valid base32 secret, the format an authenticator app shows behind its qr code.
 const SECRET: &str = "JBSWY3DPEHPK3PXP";
@@ -40,7 +40,7 @@ fn new_entry(db_key: &str) -> String {
     let root = root_uuid(db_key);
 
     let mut form = call_ok("new_entry_form_data", json!({ "parent_group_uuid": root }));
-    form["title"] = json!("With 2fa");
+    set_form_field(&mut form, "Title", "With 2fa");
     call_ok(
         "insert_entry_from_form_data",
         json!({"db_key": db_key, "form_data": form}),

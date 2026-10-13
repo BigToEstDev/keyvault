@@ -299,9 +299,10 @@ internal data class EntryIdDto(
  * group* (a TODO of the upstream), and `parsed_fields` is answer-only - the core ignores it on the way
  * back, and it is kept so the form can be sent in unchanged.
  *
- * The fields come in two lists: `preset_fields` - every field of the standard preset, in its order,
- * empty when the entry lacks one - and `custom_fields`, the entry's own, in the order of the file. The
- * form is laid out as icon, title, preset fields, notes, custom fields.
+ * `fields` - every string of the entry, `Title` and `Notes` too, in the order of the entry. The core
+ * knows no preset: laying the preset over the fields, their order on the screen and which are required
+ * is the app's (Step 45). A form read from a foreign file may hold a repeated key; sending one back is
+ * refused with `DuplicateFieldKey`.
  */
 @Serializable
 internal data class EntryFormDataDto(
@@ -317,10 +318,7 @@ internal data class EntryFormDataDto(
     val tags: List<String> = emptyList(),
     @SerialName("binary_key_values") val binaryKeyValues: List<BinaryKeyValueDto> = emptyList(),
     @SerialName("history_count") val historyCount: Int,
-    val title: String,
-    @SerialName("preset_fields") val presetFields: List<KeyValueDataDto> = emptyList(),
-    val notes: String,
-    @SerialName("custom_fields") val customFields: List<KeyValueDataDto> = emptyList(),
+    val fields: List<KeyValueDataDto> = emptyList(),
     @SerialName("auto_type") val autoType: AutoTypeDto,
     @SerialName("parsed_fields") val parsedFields: Map<String, String> = emptyMap(),
 )
@@ -407,7 +405,7 @@ internal data class EntrySummaryArgsDto(
     val category: EntryCategoryDto,
 )
 
-/** Arguments of `new_entry_form_data`: no database is needed - the blank form is the standard preset. */
+/** Arguments of `new_entry_form_data`: no database is needed - the blank form is the kdbx fields. */
 @Serializable
 internal data class NewEntryFormDto(
     @SerialName("parent_group_uuid") val parentGroupUuid: String? = null,

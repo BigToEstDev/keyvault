@@ -8,7 +8,9 @@ use serde_json::{json, Value};
 
 use crate::contract::assert_shape;
 use crate::dispatch::run_with_bytes;
-use crate::test_support::{close_database, key_of, ok_payload, open_database};
+use crate::test_support::{
+    close_database, form_field, key_of, ok_payload, open_database, set_form_field,
+};
 
 fn call(command: &str, args: Value) -> String {
     run_with_bytes(command, &args.to_string(), None).envelope
@@ -39,7 +41,7 @@ fn entry_with_history(db_key: &str, revisions: usize) -> String {
     let root = root_uuid(db_key);
 
     let mut form = call_ok("new_entry_form_data", json!({ "parent_group_uuid": root }));
-    form["title"] = json!("Version 0");
+    set_form_field(&mut form, "Title", "Version 0");
     call_ok(
         "insert_entry_from_form_data",
         json!({"db_key": db_key, "form_data": form}),
@@ -55,7 +57,7 @@ fn entry_with_history(db_key: &str, revisions: usize) -> String {
             "get_entry_form_data_by_id",
             json!({"db_key": db_key, "entry_uuid": uuid}),
         );
-        current["title"] = json!(format!("Version {}", revision));
+        set_form_field(&mut current, "Title", &format!("Version {}", revision));
         call_ok(
             "update_entry_from_form_data",
             json!({"db_key": db_key, "form_data": current}),
@@ -112,7 +114,7 @@ fn an_old_version_is_read_as_a_form() {
 
     let old = ok_payload(&envelope);
     assert_eq!(
-        old["title"].as_str(),
+        form_field(&old, "Title"),
         Some("Version 0"),
         "the first version is the entry as it was created"
     );
@@ -122,7 +124,7 @@ fn an_old_version_is_read_as_a_form() {
         "get_entry_form_data_by_id",
         json!({"db_key": db_key, "entry_uuid": uuid}),
     );
-    assert_eq!(current["title"].as_str(), Some("Version 1"));
+    assert_eq!(form_field(&current, "Title"), Some("Version 1"));
 
     close_database(&db_key);
 }
@@ -172,7 +174,7 @@ fn one_version_is_deleted_and_then_the_whole_history() {
         "get_entry_form_data_by_id",
         json!({"db_key": db_key, "entry_uuid": uuid}),
     );
-    assert_eq!(current["title"].as_str(), Some("Version 3"));
+    assert_eq!(form_field(&current, "Title"), Some("Version 3"));
 
     close_database(&db_key);
 }

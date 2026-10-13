@@ -8,7 +8,9 @@ use serde_json::{json, Value};
 
 use crate::contract::{assert_shape, assert_shape_of_map};
 use crate::dispatch::run_with_bytes;
-use crate::test_support::{close_database, key_of, ok_payload, open_database};
+use crate::test_support::{
+    close_database, form_field, key_of, ok_payload, open_database, set_form_field,
+};
 
 fn call(command: &str, args: Value) -> String {
     run_with_bytes(command, &args.to_string(), None).envelope
@@ -40,7 +42,7 @@ fn new_entry(db_key: &str, title: &str, parent_group_uuid: &str) -> Value {
         "new_entry_form_data",
         json!({ "parent_group_uuid": parent_group_uuid }),
     );
-    form["title"] = json!(title);
+    set_form_field(&mut form, "Title", title);
 
     let envelope = call(
         "insert_entry_from_form_data",
@@ -79,7 +81,7 @@ fn an_entry_is_created_listed_read_back_and_edited() {
     open_database(&db_key);
     let root = root_uuid(&db_key);
 
-    // A blank form of the standard preset: this is what the "new entry" screen starts from
+    // A blank form with the kdbx standard fields: the app lays its preset over it for the "new entry" screen
     let blank = call("new_entry_form_data", json!({ "parent_group_uuid": root }));
     assert_shape("new_entry_form_data", &blank);
 
@@ -104,9 +106,9 @@ fn an_entry_is_created_listed_read_back_and_edited() {
     );
     assert_shape("get_entry_form_data_by_id", &read_envelope);
     let mut read = ok_payload(&read_envelope);
-    assert_eq!(read["title"].as_str(), Some("Mail"));
+    assert_eq!(form_field(&read, "Title"), Some("Mail"));
 
-    read["title"] = json!("Mail and calendar");
+    set_form_field(&mut read, "Title", "Mail and calendar");
     let updated = call(
         "update_entry_from_form_data",
         json!({"db_key": db_key, "form_data": read}),
@@ -117,7 +119,7 @@ fn an_entry_is_created_listed_read_back_and_edited() {
         "get_entry_form_data_by_id",
         json!({"db_key": db_key, "entry_uuid": uuid}),
     );
-    assert_eq!(after["title"].as_str(), Some("Mail and calendar"));
+    assert_eq!(form_field(&after, "Title"), Some("Mail and calendar"));
 
     close_database(&db_key);
 }
@@ -270,7 +272,7 @@ fn an_entry_is_cloned_with_a_new_title() {
         "get_entry_form_data_by_id",
         json!({"db_key": db_key, "entry_uuid": clone_uuid}),
     );
-    assert_eq!(clone["title"].as_str(), Some("Copy"));
+    assert_eq!(form_field(&clone, "Title"), Some("Copy"));
 
     close_database(&db_key);
 }
@@ -326,6 +328,32 @@ fn an_entry_that_does_not_exist_is_a_failure_with_the_kind_of_the_core() {
     );
 
     assert!(envelope.contains("NotFound"), "{}", envelope);
+
+    close_database(&db_key);
+}
+
+// Two fields under one key are refused with a kind of their own, so the app can say which field to
+// rename (Step 45). The form keeps a repeated key read from a foreign file - this is the guard on saving
+#[test]
+fn a_form_with_a_repeated_key_is_refused_with_its_own_kind() {
+    let db_key = key_of("entry-repeated-key");
+    open_database(&db_key);
+    let root = root_uuid(&db_key);
+
+    let mut form = call_ok("new_entry_form_data", json!({ "parent_group_uuid": root }));
+    let fields = form["fields"].as_array_mut().unwrap();
+    let title = fields.iter().find(|f| f["key"] == "Title").unwrap().clone();
+    fields.push(title);
+
+    let refused = call(
+        "insert_entry_from_form_data",
+        json!({"db_key": db_key, "form_data": form}),
+    );
+    assert!(
+        refused.contains(r#""kind":"DuplicateFieldKey""#),
+        "{}",
+        refused
+    );
 
     close_database(&db_key);
 }

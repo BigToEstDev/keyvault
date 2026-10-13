@@ -1,8 +1,8 @@
 //! Emptying the recycle bin.
 //!
 //! The tiles of a home screen (`combined_category_details`) and the entry types to create from
-//! (`entry_type_headers`) went with Step 43: our ui has no such tiles, and a new entry is of the
-//! standard preset.
+//! (`entry_type_headers`) went with Step 43: our ui has no such tiles, and the core knows no entry
+//! types - presets are the app's (Step 45).
 
 use kdbx_rust_core::db_service;
 
