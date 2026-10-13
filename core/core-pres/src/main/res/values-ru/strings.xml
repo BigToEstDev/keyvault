@@ -136,6 +136,9 @@
     <string name="entry_delete_title">Удалить запись?</string>
     <string name="entry_delete_text">«%1$s» попадёт в корзину.</string>
     <string name="entry_preset_standard">Стандарт</string>
+    <string name="entry_preset">Пресет</string>
+    <string name="entry_title_new">Новая запись</string>
+    <string name="entry_title_edit">Редактирование</string>
     <string name="entry_field_title">Название</string>
     <string name="entry_field_user_name">Пользователь</string>
     <string name="entry_field_password">Пароль</string>

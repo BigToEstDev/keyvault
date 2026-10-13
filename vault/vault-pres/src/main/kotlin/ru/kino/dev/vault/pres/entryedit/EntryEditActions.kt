@@ -15,6 +15,9 @@ sealed interface EntryEditAction {
     /** Shows or hides the value of the protected own field at [index]. */
     data class ToggleOwn(val index: Int) : EntryEditAction
 
+    /** The preset button: the choice of presets - empty until presets of one's own come (Step 44). */
+    data object ChoosePreset : EntryEditAction
+
     /** "+ Add field": asks for the name of a new own field. */
     data object AddField : EntryEditAction
 
@@ -49,6 +52,9 @@ sealed interface EntryEditDialog {
 
     /** "Delete the field?" - the own field at [index], called [name]. */
     data class DeleteField(val index: Int, val name: String) : EntryEditDialog
+
+    /** The choice of presets - empty for now, closes and changes nothing. */
+    data object Preset : EntryEditDialog
 
     /** "Leave without saving?" - "back" with changes. */
     data object Leave : EntryEditDialog

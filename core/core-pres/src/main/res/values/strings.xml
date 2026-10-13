@@ -133,6 +133,9 @@
     <string name="entry_delete_title">Delete the entry?</string>
     <string name="entry_delete_text">«%1$s» goes to the recycle bin.</string>
     <string name="entry_preset_standard">Standard</string>
+    <string name="entry_preset">Preset</string>
+    <string name="entry_title_new">New entry</string>
+    <string name="entry_title_edit">Editing</string>
     <string name="entry_field_title">Title</string>
     <string name="entry_field_user_name">User name</string>
     <string name="entry_field_password">Password</string>

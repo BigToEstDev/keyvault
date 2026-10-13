@@ -9,9 +9,13 @@ import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.TextInputDialog
 import ru.kino.dev.vault.entry.NameProblem
+import ru.kino.dev.vault.pres.common.ClosableDialog
 import ru.kino.dev.vault.pres.entryedit.EntryEditDialog
 
-/** The dialog over the form: the name of an own field, "delete the field?", "leave?", "not written". */
+/**
+ * The dialog over the form: the name of an own field, "delete the field?", the presets, "leave?", "not
+ * written".
+ */
 @Composable
 internal fun EntryEditDialogs(
     dialog: EntryEditDialog?,
@@ -55,6 +59,8 @@ internal fun EntryEditDialogs(
             onDismiss = onDismiss,
             destructive = true,
         )
+
+        EntryEditDialog.Preset -> ClosableDialog(title = stringResource(R.string.entry_preset), onClose = onDismiss)
 
         EntryEditDialog.Leave -> ConfirmDialog(
             title = stringResource(R.string.entry_leave_title),

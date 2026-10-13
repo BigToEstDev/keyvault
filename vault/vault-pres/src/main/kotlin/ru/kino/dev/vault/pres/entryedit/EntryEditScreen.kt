@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -42,6 +41,7 @@ import ru.kino.dev.ui.components.TextField
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.StandardPreset
+import ru.kino.dev.vault.pres.common.EntryPresetSection
 import ru.kino.dev.vault.pres.common.EntrySection
 import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
@@ -83,7 +83,12 @@ internal fun EntryEditScreen(
         Scaffold(
             // The backdrop is the gradient behind
             containerColor = Color.Transparent,
-            topBar = { EntryTopBar(onBack = { processor.action(EntryEditAction.Back) }) },
+            topBar = {
+                EntryTopBar(
+                    title = stringResource(if (state.creating) R.string.entry_title_new else R.string.entry_title_edit),
+                    onBack = { processor.action(EntryEditAction.Back) },
+                )
+            },
             floatingActionButton = {
                 if (state.content != null) {
                     SaveFab(saving = state.saving, onSave = { processor.action(EntryEditAction.Save) })
@@ -95,7 +100,6 @@ internal fun EntryEditScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .imePadding()
                     .verticalScroll(rememberScrollState())
                     .padding(CONTENT_PADDING),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -144,13 +148,15 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         )
     }
 
-    EntryTitleSection { modifier ->
+    EntryTitleSection(enabled = enabled) { modifier ->
         PresetText(
             key = StandardPreset.TITLE,
             modifier = modifier,
             keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
         )
     }
+
+    EntryPresetSection(onClick = { action(EntryEditAction.ChoosePreset) }, enabled = enabled)
 
     EntrySection {
         PresetText(
@@ -182,7 +188,10 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             minLines = NOTES_LINES,
             keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         )
+    }
 
+    // A card of its own: the own fields - read or added here - and the button that adds one
+    EntrySection {
         content.ownFields.forEachIndexed { index, field ->
             OwnFieldRow(
                 field = field,

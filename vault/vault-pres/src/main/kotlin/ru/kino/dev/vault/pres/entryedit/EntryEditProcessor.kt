@@ -146,6 +146,10 @@ class EntryEditProcessor @AssistedInject constructor(
                 state.copy(shownOwn = if (action.index in shown) shown - action.index else shown + action.index)
             }
 
+            EntryEditAction.ChoosePreset -> if (state.editable) {
+                reduce { state.copy(dialog = EntryEditDialog.Preset) }
+            }
+
             EntryEditAction.AddField -> if (state.editable) {
                 reduce { state.copy(dialog = EntryEditDialog.AddField()) }
             }
@@ -224,6 +228,8 @@ class EntryEditProcessor @AssistedInject constructor(
                     .withoutOwnField(dialog.index)
                     .copy(dialog = null)
             }
+
+            EntryEditDialog.Preset -> reduce { state.copy(dialog = null) }
 
             EntryEditDialog.Leave, EntryEditDialog.NotSaved -> leave()
         }

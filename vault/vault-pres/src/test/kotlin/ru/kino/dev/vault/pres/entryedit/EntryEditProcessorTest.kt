@@ -259,6 +259,21 @@ class EntryEditProcessorTest {
         assertTrue(state.shownOwn.isEmpty())
     }
 
+    @Test
+    fun `the preset button opens the empty choice, and closing it changes nothing`() = runTest {
+        val (state, _) = editing(EntryEditAction.ChoosePreset, EntryEditAction.DialogDismiss)
+
+        assertNull(state.dialog)
+        assertFalse(state.changed)
+    }
+
+    @Test
+    fun `the preset button opens the choice of presets`() = runTest {
+        val (state, _) = creating(EntryEditAction.ChoosePreset)
+
+        assertEquals(EntryEditDialog.Preset, state.dialog)
+    }
+
     // Own fields
 
     @Test

@@ -19,7 +19,7 @@ import ru.kino.dev.core.pres.R
  * A password field - a [TextField] hidden behind dots until [visible], without state of its own.
  *
  * @param onToggleVisible null hides the toggle - for a field that follows the toggle of another one
- * @param actions buttons before the toggle - copying the value, on a screen that reads
+ * @param actions buttons after the toggle - copying the value, on a screen that reads
  * @see TextField for the rest
  */
 @Composable
@@ -60,8 +60,8 @@ fun PasswordField(
             null
         } else {
             {
-                actions?.invoke(this)
                 onToggleVisible?.let { VisibilityToggle(visible = visible, onToggle = it, enabled = enabled) }
+                actions?.invoke(this)
             }
         },
     )
