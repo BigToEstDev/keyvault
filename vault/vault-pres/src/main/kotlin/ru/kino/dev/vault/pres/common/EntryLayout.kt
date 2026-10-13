@@ -109,7 +109,9 @@ internal fun EntryIconFrame(modifier: Modifier = Modifier) {
 @Composable
 internal fun EntryTitleSection(title: @Composable (Modifier) -> Unit) {
     EntrySection {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // By the bottom, not the center: an outlined field keeps room above its box for the label, so its box
+        // sits lower than its middle. The frame is as tall as the box, and their bottoms meet
+        Row(verticalAlignment = Alignment.Bottom) {
             EntryIconFrame()
             title(
                 Modifier
@@ -136,7 +138,7 @@ internal fun fieldLabel(key: String): String = when (key) {
 @Composable
 internal fun EntrySkeleton(brush: Brush) {
     EntrySection {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.Bottom) {
             Box(
                 modifier = Modifier
                     .size(56.dp)
