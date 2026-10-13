@@ -1,9 +1,6 @@
 package ru.kino.dev.vault.pres.grouplist
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -12,19 +9,27 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
-import ru.kino.dev.core.MergeSummary
-import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.LockedRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.VaultRootRoute
-import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.entry.EntryEditor
+import ru.kino.dev.vault.entry.EntryField
+import ru.kino.dev.vault.entry.EntryFailure
+import ru.kino.dev.vault.entry.FakeEntryRepository
+import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
+import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
+import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
+import ru.kino.dev.vault.pres.testing.DB
+import ru.kino.dev.vault.pres.testing.FakeVaultDatabase
+import ru.kino.dev.vault.pres.testing.RecordingLog
+import ru.kino.dev.vault.pres.testing.recordNavigation
 
 class GroupListProcessorTest {
 
@@ -38,6 +43,10 @@ class GroupListProcessorTest {
     private val work = groups.add("work", groups.rootId, "Work", entries = 2)
     private val mail = groups.add("mail", work, "Mail", entries = 3)
     private val home = groups.add("home", groups.rootId, "Home")
+
+    private val entries = FakeEntryRepository()
+    private val mailbox = entries.add("mailbox", groups.rootId, titled("Mailbox"))
+    private val bank = entries.add("bank", groups.rootId, titled("Bank"))
 
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
@@ -227,17 +236,21 @@ class GroupListProcessorTest {
     }
 
     @Test
-    fun `the filter button opens the dialog, and it closes`() = runTest {
-        val (opened, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenFilters)
-        val (closed, _) = perform(
+    fun `the filter button opens the dialog`() = runTest {
+        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenFilters)
+
+        assertTrue(state.filtersOpen)
+    }
+
+    @Test
+    fun `the filter dialog closes`() = runTest {
+        val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.OpenFilters,
             GroupListAction.CloseFilters,
+            initial = GroupListState(filtersOpen = true),
         )
 
-        assertTrue(opened.filtersOpen)
-        assertFalse(closed.filtersOpen)
+        assertFalse(state.filtersOpen)
     }
 
     @Test
@@ -265,7 +278,7 @@ class GroupListProcessorTest {
     }
 
     @Test
-    fun `create entry opens its stub inside this group and closes the menu`() = runTest {
+    fun `create entry opens the form inside this group and closes the menu`() = runTest {
         val (state, events) = perform(
             groupId = work.value,
             GroupListAction.Load,
@@ -274,7 +287,7 @@ class GroupListProcessorTest {
         )
 
         assertFalse(state.fabExpanded)
-        assertEquals(listOf(MviNavEvent.NavigateTo(EntryEditRoute(DB, parentGroupId = work.value))), events)
+        assertEquals(listOf(MviNavEvent.NavigateTo(EntryCreateRoute(DB, groupId = work.value))), events)
     }
 
     @Test
@@ -297,6 +310,116 @@ class GroupListProcessorTest {
         assertEquals(1, log.logged.size)
     }
 
+    @Test
+    fun `the entries of the group come after its groups, by title, untitled ones too`() = runTest {
+        entries.add("blank", groups.rootId, titled(""))
+
+        val (state, _) = perform(groupId = null, GroupListAction.Load)
+
+        assertEquals(listOf("", "Bank", "Mailbox"), state.entries.map { it.title })
+        assertFalse(state.isEmpty)
+    }
+
+    @Test
+    fun `a group with entries and no groups is not empty`() = runTest {
+        entries.add("letter", home, titled("Letter"))
+
+        val (state, _) = perform(groupId = home.value, GroupListAction.Load)
+
+        assertTrue(state.groups.isEmpty())
+        assertFalse(state.isEmpty)
+    }
+
+    @Test
+    fun `a group with neither groups nor entries is empty`() = runTest {
+        val (state, _) = perform(groupId = mail.value, GroupListAction.Load)
+
+        assertTrue(state.isEmpty)
+    }
+
+    @Test
+    fun `entries that cannot be read say so and go to the log`() = runTest {
+        entries.failures["entries"] = EntryFailure.Unexpected(IllegalStateException("broken"))
+
+        val (state, _) = perform(groupId = null, GroupListAction.Load)
+
+        assertFalse(state.loading)
+        assertEquals(GroupListMessage.LoadFailed, state.message)
+        assertEquals(1, log.logged.size)
+    }
+
+    @Test
+    fun `a tapped entry opens for reading, edit from its menu opens the form`() = runTest {
+        val (_, events) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.OpenEntry(bank),
+            GroupListAction.EditEntry(bank),
+        )
+
+        assertEquals(
+            listOf(
+                MviNavEvent.NavigateTo(EntryReadRoute(DB, bank.value)),
+                MviNavEvent.NavigateTo(EntryEditRoute(DB, bank.value)),
+            ),
+            events,
+        )
+    }
+
+    @Test
+    fun `delete asks first, naming the entry`() = runTest {
+        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.DeleteEntry(bank))
+
+        assertEquals(GroupDialog.DeleteEntry(bank, "Bank"), state.dialog)
+    }
+
+    @Test
+    fun `a deleted entry goes to the recycle bin, leaves the list, and the file is written`() = runTest {
+        val (state, _) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.DeleteEntry(bank),
+            GroupListAction.DialogConfirm,
+        )
+
+        assertNull(state.dialog)
+        assertEquals(listOf("Mailbox"), state.entries.map { it.title })
+        assertEquals(listOf(bank), entries.recycled)
+        assertEquals(listOf("save"), database.calls)
+    }
+
+    @Test
+    fun `a deleted entry that is not written leaves the list anyway, and the snackbar says so`() = runTest {
+        database.saveFailure = CoreException("Io", "disk full")
+
+        val (state, _) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.DeleteEntry(bank),
+            GroupListAction.DialogConfirm,
+        )
+
+        assertNull(state.dialog)
+        assertEquals(GroupListMessage.NotSaved, state.message)
+        assertFalse(state.entries.any { it.id == bank })
+    }
+
+    @Test
+    fun `an entry gone before its delete closes the dialog and the list is read again`() = runTest {
+        entries.failures["moveToRecycleBin"] = EntryFailure.EntryNotFound()
+
+        val (state, _) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.DeleteEntry(bank),
+            GroupListAction.DialogConfirm,
+        )
+
+        assertNull(state.dialog)
+        assertNull(state.message)
+        assertEquals(2, entries.calls.count { it == "entries" })
+    }
+
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(
         groupId: String?,
@@ -304,7 +427,17 @@ class GroupListProcessorTest {
         initial: GroupListState = GroupListState(),
     ): Pair<GroupListState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = GroupListProcessor(DB, groupId, groups, GroupEditor(groups, database), database, navigator, log)
+        val processor = GroupListProcessor(
+            DB,
+            groupId,
+            groups,
+            GroupEditor(groups, database),
+            entries,
+            EntryEditor(entries, database),
+            database,
+            navigator,
+            log,
+        )
 
         processor.testWithInternalState(this, initial) {
             actions.forEach { containerHost.action(it).join() }
@@ -313,43 +446,5 @@ class GroupListProcessorTest {
         return processor.container.stateFlow.value to events
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private fun TestScope.recordNavigation(): Pair<Navigator, List<MviNavEvent>> {
-        val navigator = Navigator()
-        val events = mutableListOf<MviNavEvent>()
-        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
-        return navigator to events
-    }
-
-    private class FakeVaultDatabase : VaultDatabaseRepository {
-        val calls = mutableListOf<String>()
-        var saveFailure: Exception? = null
-        var lockFailure: CoreException? = null
-
-        override suspend fun save(dbKey: String) {
-            calls += "save"
-            saveFailure?.let { throw it }
-        }
-
-        override suspend fun lock(dbKey: String) {
-            calls += "lock"
-            lockFailure?.let { throw it }
-        }
-
-        override suspend fun close(dbKey: String) = error("not here")
-        override suspend fun hasChangedElsewhere(dbKey: String): Boolean = error("not here")
-        override suspend fun merge(dbKey: String): MergeSummary = error("not here")
-    }
-
-    private class RecordingLog : ErrorLog {
-        val logged = mutableListOf<Throwable>()
-
-        override fun unexpected(where: String, error: Throwable) {
-            logged += error
-        }
-    }
-
-    private companion object {
-        const val DB = "content://docs/passwords.kdbx"
-    }
+    private fun titled(title: String) = listOf(EntryField(StandardPreset.TITLE, title, protected = false))
 }
