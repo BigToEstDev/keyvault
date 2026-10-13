@@ -7,18 +7,10 @@
   },
   "binary_key_values": [],
   "creation_time": "string",
-  "custom_fields": [],
   "custom_icon_uuid": "null-in-this-sample",
   "expires": "bool",
   "expiry_time": "string",
-  "group_uuid": "string",
-  "history_count": "number",
-  "icon_id": "number",
-  "last_access_time": "string",
-  "last_modification_time": "string",
-  "notes": "string",
-  "parsed_fields": {},
-  "preset_fields": [
+  "fields": [
     {
       "current_opt_token": "null-in-this-sample",
       "data_type": "string",
@@ -28,7 +20,12 @@
       "value": "string"
     }
   ],
+  "group_uuid": "string",
+  "history_count": "number",
+  "icon_id": "number",
+  "last_access_time": "string",
+  "last_modification_time": "string",
+  "parsed_fields": {},
   "tags": [],
-  "title": "string",
   "uuid": "string"
 }

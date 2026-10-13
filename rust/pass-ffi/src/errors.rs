@@ -39,7 +39,7 @@ impl ErrorPayload {
     }
 }
 
-// The core's Error is a #[non_exhaustive] enum of 53 variants that does not implement Serialize, and
+// The core's Error is a #[non_exhaustive] enum that does not implement Serialize, and
 // matching all of them here would go stale on every new variant. Debug already prints the variant
 // name first (`NotFound("...")`, `DbKeyNotFound`), so the name is taken from there: everything up to
 // the first delimiter. A variant rename therefore changes `kind` - that is intended, it is the same

@@ -73,6 +73,28 @@ pub(crate) fn close_database(db_key: &str) {
 }
 
 /// The `ok` payload of an envelope, for a test that wants to look inside the answer.
+/// The value of a field of an entry form, by its key - the form is one list `fields`, Title and
+/// Notes too (Step 45).
+pub(crate) fn form_field<'a>(form: &'a serde_json::Value, key: &str) -> Option<&'a str> {
+    form["fields"]
+        .as_array()?
+        .iter()
+        .find(|f| f["key"] == key)
+        .and_then(|f| f["value"].as_str())
+}
+
+/// Sets the value of a field of an entry form. The field has to be there: a blank form carries the
+/// kdbx standard fields.
+pub(crate) fn set_form_field(form: &mut serde_json::Value, key: &str, value: &str) {
+    let field = form["fields"]
+        .as_array_mut()
+        .expect("an entry form has fields")
+        .iter_mut()
+        .find(|f| f["key"] == key)
+        .unwrap_or_else(|| panic!("the form has no field {}", key));
+    field["value"] = serde_json::json!(value);
+}
+
 pub(crate) fn ok_payload(envelope: &str) -> serde_json::Value {
     let parsed: serde_json::Value =
         serde_json::from_str(envelope).expect("the envelope is not json");

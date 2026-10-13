@@ -4,7 +4,7 @@ use serde_json::{json, Value};
 
 use crate::contract::assert_shape;
 use crate::dispatch::run_with_bytes;
-use crate::test_support::{close_database, key_of, ok_payload, open_database};
+use crate::test_support::{close_database, key_of, ok_payload, open_database, set_form_field};
 
 fn call(command: &str, args: Value) -> String {
     run_with_bytes(command, &args.to_string(), None).envelope
@@ -34,7 +34,7 @@ fn new_entry(db_key: &str, title: &str, tags: &[&str]) {
     let root = root_uuid(db_key);
 
     let mut form = call_ok("new_entry_form_data", json!({ "parent_group_uuid": root }));
-    form["title"] = json!(title);
+    set_form_field(&mut form, "Title", title);
     if !tags.is_empty() {
         form["tags"] = json!(tags);
     }

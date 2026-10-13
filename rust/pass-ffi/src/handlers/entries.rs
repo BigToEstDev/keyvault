@@ -40,7 +40,7 @@ struct EntrySummaryArgs {
     category: Category,
 }
 
-/// Arguments of `new_entry_form_data`: no database is needed - the blank form is the standard preset.
+/// Arguments of `new_entry_form_data`: no database is needed - the blank form is the kdbx standard fields.
 #[derive(Deserialize)]
 struct NewEntryFormArgs {
     /// The group the entry is created in. Absent means the ui has not picked one yet
@@ -148,7 +148,8 @@ pub(crate) fn entry_key_value_fields(
     json_answer(&fields)
 }
 
-/// An empty form of the standard preset - what the "new entry" screen starts from.
+/// An empty form with the kdbx standard fields - the app lays its preset over it for the "new entry"
+/// screen.
 pub(crate) fn new_entry_form_data(
     args_json: &str,
     input: Option<Vec<u8>>,
