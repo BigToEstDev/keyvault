@@ -131,6 +131,14 @@ interface NativeCore {
      */
     suspend fun entries(dbKey: String, groupId: String): List<EntrySummaryData>
 
+    /**
+     * The entries of the whole database found by [term], in no particular order. An entry is found by its
+     * title or its user name - as its card shows them - holding the term as plain text, case aside; a
+     * protected field is never looked into, and the recycle bin, with the groups inside it, is not looked
+     * at. A blank term finds nothing.
+     */
+    suspend fun searchEntries(dbKey: String, term: String): EntrySearchData
+
     /** The strings of the entry, in its order. */
     suspend fun entryFields(dbKey: String, entryId: String): List<EntryFieldData>
 

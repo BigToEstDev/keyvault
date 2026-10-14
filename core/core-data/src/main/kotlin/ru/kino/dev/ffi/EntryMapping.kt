@@ -1,6 +1,7 @@
 package ru.kino.dev.ffi
 
 import ru.kino.dev.core.EntryFieldData
+import ru.kino.dev.core.EntrySearchData
 import ru.kino.dev.core.EntrySummaryData
 
 /** The strings of the entry, in its order - all the rest of the form stays in this module. */
@@ -21,10 +22,15 @@ internal fun EntryFormDataDto.withFields(fields: List<EntryFieldData>) = copy(
 
 internal fun EntrySummaryDto.toDomain() = EntrySummaryData(
     id = uuid,
+    groupId = parentGroupUuid,
     title = title.orEmpty(),
     // The user name of an entry; only a version from the history has its time there
     userName = secondaryTitle.orEmpty(),
+    // Only a version from the history comes without it, and none is asked for here
+    createdAt = createdTime ?: 0,
 )
+
+internal fun EntrySearchResultDto.toDomain() = EntrySearchData(term = term, entries = entryItems.map { it.toDomain() })
 
 /** `entry_summary_data` for the entries directly inside one group. */
 internal fun entriesOfGroup(dbKey: String, groupId: String) =

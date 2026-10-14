@@ -7,6 +7,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import ru.kino.dev.core.CreatedDatabase
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.EntryFieldData
+import ru.kino.dev.core.EntrySearchData
 import ru.kino.dev.core.EntrySummaryData
 import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.KeyFile
@@ -221,6 +222,16 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
                 entriesOfGroup(dbKey, groupId),
                 ListSerializer(EntrySummaryDto.serializer()),
             ).map { it.toDomain() }
+        }
+
+    override suspend fun searchEntries(dbKey: String, term: String): EntrySearchData =
+        withContext(dispatcher) {
+            call(
+                FfiCommands.SEARCH_TERM,
+                SearchTermDto.serializer(),
+                SearchTermDto(dbKey = dbKey, term = term),
+                EntrySearchResultDto.serializer(),
+            ).toDomain()
         }
 
     override suspend fun entryFields(dbKey: String, entryId: String): List<EntryFieldData> =

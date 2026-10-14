@@ -507,7 +507,10 @@ internal data class FormedOtpUrlDto(@SerialName("otp_url") val otpUrl: String)
 @Serializable
 internal data class OtpUrlValidityDto(val valid: Boolean)
 
-/** Arguments of `search_term`. The core matches it against every field, protected ones included. */
+/**
+ * Arguments of `search_term`. The core matches the term against the title and the user name of an entry,
+ * as plain text, case aside; a protected field is never looked into.
+ */
 @Serializable
 internal data class SearchTermDto(
     @SerialName("db_key") val dbKey: String,
