@@ -75,6 +75,25 @@ class VaultTreeTest {
     }
 
     @Test
+    fun `the groups below a group come at any depth, each after its parent, without the recycle bin`() {
+        assertEquals(listOf(WORK, MAIL, HOME), tree.descendants(ROOT).map { it.id })
+        assertEquals(listOf(MAIL), tree.descendants(WORK).map { it.id })
+        assertEquals(emptyList<VaultGroup>(), tree.descendants(HOME))
+        assertEquals(emptyList<VaultGroup>(), tree.descendants(BIN))
+    }
+
+    @Test
+    fun `a group is within itself and every group above it, never within the recycle bin`() {
+        assertTrue(tree.isWithin(MAIL, MAIL))
+        assertTrue(tree.isWithin(MAIL, WORK))
+        assertTrue(tree.isWithin(MAIL, ROOT))
+        assertFalse(tree.isWithin(WORK, MAIL))
+        assertFalse(tree.isWithin(HOME, WORK))
+        assertFalse(tree.isWithin(OLD, ROOT))
+        assertFalse(tree.isWithin(OLD, BIN))
+    }
+
+    @Test
     fun `a damaged file whose groups loop does not hang the tree`() {
         val a = GroupId("a")
         val b = GroupId("b")
@@ -90,5 +109,6 @@ class VaultTreeTest {
 
         assertEquals(listOf(a), looped.subgroups(ROOT).map { it.id })
         assertTrue(looped.path(b).size <= 3)
+        assertEquals(listOf(a, b), looped.descendants(ROOT).map { it.id })
     }
 }

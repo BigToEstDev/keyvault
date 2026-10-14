@@ -16,6 +16,12 @@ interface EntryRepository {
     /** The entries directly inside [groupId], in the order the core gives them - by title. */
     suspend fun entries(dbKey: String, groupId: GroupId): List<EntrySummary>
 
+    /**
+     * The entries of the whole database found by [term]: by the title or the user name, as plain text,
+     * case aside; never by a protected field, never in the recycle bin. A blank term finds nothing.
+     */
+    suspend fun search(dbKey: String, term: String): EntrySearch
+
     /** The fields of the entry, as the core holds them - in the order of the file. */
     suspend fun fields(dbKey: String, entryId: EntryId): List<EntryField>
 

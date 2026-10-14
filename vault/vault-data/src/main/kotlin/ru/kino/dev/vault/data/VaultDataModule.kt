@@ -12,6 +12,7 @@ import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryRepository
 import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupRepository
+import ru.kino.dev.vault.search.VaultSearch
 
 /** Binds the repositories of `vault` to their implementations. */
 @Module
@@ -37,5 +38,9 @@ internal interface VaultDataModule {
         @Provides
         fun provideEntryEditor(entries: EntryRepository, database: VaultDatabaseRepository): EntryEditor =
             EntryEditor(entries, database)
+
+        @Provides
+        fun provideVaultSearch(groups: GroupRepository, entries: EntryRepository): VaultSearch =
+            VaultSearch(groups, entries)
     }
 }

@@ -12,8 +12,8 @@ import ru.kino.dev.vault.group.GroupId
  */
 class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : EntryRepository {
 
-    /** An entry the fake holds: the group it is in and its fields, in order. */
-    data class StoredEntry(val groupId: GroupId, val fields: List<EntryField>)
+    /** An entry the fake holds: the group it is in, its fields in order, when it was made. */
+    data class StoredEntry(val groupId: GroupId, val fields: List<EntryField>, val createdAt: Long)
 
     /** Method name to the failure it throws. */
     val failures = mutableMapOf<String, Exception>()
@@ -25,17 +25,37 @@ class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : En
 
     private var created = 0
 
-    /** Puts an entry into [groupId], for setting a test up. Not recorded. */
-    fun add(id: String, groupId: GroupId, fields: List<EntryField>): EntryId =
-        EntryId(id).also { stored[it] = StoredEntry(groupId, fields) }
+    /** The creation time handed to the next entry made without one, in seconds. */
+    private var clock = 1_700_000_000L
+
+    /**
+     * Puts an entry into [groupId], for setting a test up. Not recorded. Without [createdAt] every entry is
+     * a second younger than the one put before it.
+     */
+    fun add(id: String, groupId: GroupId, fields: List<EntryField>, createdAt: Long = ++clock): EntryId =
+        EntryId(id).also { stored[it] = StoredEntry(groupId, fields, createdAt) }
 
     override suspend fun entries(dbKey: String, groupId: GroupId): List<EntrySummary> {
         call("entries")
         return stored.filterValues { it.groupId == groupId }
-            .map { (id, entry) ->
-                EntrySummary(id, entry.value(StandardPreset.TITLE), entry.value(StandardPreset.USER_NAME))
-            }
+            .map { (id, entry) -> entry.summary(id) }
             .sortedBy { it.title }
+    }
+
+    /** By the rules of the core: title or user name, case aside, never a protected field. */
+    override suspend fun search(dbKey: String, term: String): EntrySearch {
+        call("search")
+        val needle = term.trim()
+        if (needle.isEmpty()) return EntrySearch(term, emptyList())
+        val found = stored
+            .filterValues { entry ->
+                listOf(StandardPreset.TITLE, StandardPreset.USER_NAME).any { key ->
+                    entry.fields.firstOrNull { it.key == key && !it.protected }
+                        ?.value?.contains(needle, ignoreCase = true) == true
+                }
+            }
+            .map { (id, entry) -> entry.summary(id) }
+        return EntrySearch(term, found)
     }
 
     override suspend fun fields(dbKey: String, entryId: EntryId): List<EntryField> {
@@ -66,6 +86,14 @@ class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : En
     private fun entry(id: EntryId) = stored[id] ?: throw EntryFailure.EntryNotFound()
 
     private fun StoredEntry.value(key: String) = fields.firstOrNull { it.key == key }?.value.orEmpty()
+
+    private fun StoredEntry.summary(id: EntryId) = EntrySummary(
+        id = id,
+        groupId = groupId,
+        title = value(StandardPreset.TITLE),
+        userName = value(StandardPreset.USER_NAME),
+        createdAt = createdAt,
+    )
 
     // The core refuses two fields under one key, and the data layer reports that as a bug of ours
     private fun refuseDuplicateKeys(fields: List<EntryField>) {

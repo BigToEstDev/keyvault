@@ -1,6 +1,7 @@
 package ru.kino.dev.vault.entry
 
 import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.GroupId
 
 /**
  * One field of an entry - a string of kdbx: its key in the file, its value, and whether the file keeps it
@@ -20,8 +21,18 @@ data class EntryField(
 /** An entry as a card shows it. */
 data class EntrySummary(
     val id: EntryId,
+    /** The group the entry is directly in */
+    val groupId: GroupId,
     /** Empty when the entry has none: the screen shows its own "untitled" */
     val title: String,
     /** Empty when the entry has none */
     val userName: String,
+    /** When the entry was created, in seconds since the epoch, UTC - what the list is sorted by */
+    val createdAt: Long,
 )
+
+/**
+ * The entries of the whole database a term finds, in no particular order, with the term itself - the
+ * answer to a term already typed past is dropped by it.
+ */
+data class EntrySearch(val term: String, val entries: List<EntrySummary>)
