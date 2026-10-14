@@ -116,7 +116,10 @@
     <string name="vault_filter_oldest_first">Сначала старые</string>
     <string name="vault_filter_apply">Применить</string>
     <string name="vault_filter_reset">Сбросить</string>
-    <string name="vault_search_nothing_found">Ничего не найдено</string>
+    <string name="vault_search_nothing_found">По запросу «%1$s» ничего не найдено</string>
+    <string name="vault_search_hint_fields">Ищем по названию и пользователю</string>
+    <string name="vault_search_check_spelling">Проверьте написание</string>
+    <string name="vault_search_check_spelling_and_filter">Проверьте написание и фильтр</string>
     <string name="vault_filter_no_groups">Нет групп</string>
     <string name="vault_filter_no_entries">Нет записей</string>
     <string name="vault_back">Назад</string>

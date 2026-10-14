@@ -76,7 +76,7 @@ data class GroupListState(
     val groups: List<GroupItem> = shown.groups
 
     /** The entries the list shows, after the groups: by when they were created, as the filter says. */
-    val entries: List<EntryItem> = shown.entries.map { EntryItem(it.id, it.title) }
+    val entries: List<EntryItem> = shown.entries.map { EntryItem(it.id, it.title, found?.locations?.get(it.groupId)) }
 
     val isRoot: Boolean get() = path.size <= 1
 
@@ -98,10 +98,15 @@ data class GroupListState(
         }
 }
 
-/** What a list is made of, before the filter: groups as their cards show them, entries as the core gives them. */
+/**
+ * What a list is made of, before the filter: groups as their cards show them, entries as the core gives them.
+ *
+ * @param locations of a search: where the entries lie, by the group they are in
+ */
 data class ListSource(
     val groups: List<GroupItem> = emptyList(),
     val entries: List<EntrySummary> = emptyList(),
+    val locations: Map<GroupId, List<String>> = emptyMap(),
 )
 
 enum class EmptyReason {
@@ -328,8 +333,16 @@ class GroupListProcessor @AssistedInject constructor(
             state.copy(
                 searching = false,
                 found = ListSource(
-                    groups = result.groups.map { GroupItem(it.id, it.name, result.entryCounts[it.id] ?: 0) },
+                    groups = result.groups.map {
+                        GroupItem(
+                            id = it.id,
+                            name = it.name,
+                            entryCount = result.entryCounts[it.id] ?: 0,
+                            location = it.parentId?.let(result.locations::get),
+                        )
+                    },
                     entries = result.entries,
+                    locations = result.locations,
                 ),
             )
         }

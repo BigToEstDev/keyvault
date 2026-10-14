@@ -52,6 +52,22 @@ class VaultSearchTest {
     }
 
     @Test
+    fun `what is found comes with where it lies, from the group searched in`() = runTest {
+        val atRoot = search.search(DB, root, "bank")
+
+        assertEquals(listOf("Passwords", "Work"), atRoot.locations[work])
+        assertEquals(listOf("Passwords", "Work", "Bank cards"), atRoot.locations[cards])
+        assertEquals(listOf("Passwords", "Home"), atRoot.locations[home])
+
+        val inWork = search.search(DB, work, "bank")
+
+        // "Bank of work" lies in Work itself, the group "Bank cards" too; "Visa" - one level down
+        assertEquals(listOf("Work"), inWork.locations[work])
+        assertEquals(listOf("Work", "Bank cards"), inWork.locations[cards])
+        assertEquals(setOf(work, cards), inWork.locations.keys)
+    }
+
+    @Test
     fun `a group found comes with the entries under it, for its card`() = runTest {
         groups.addEntries(cards, 2)
 

@@ -114,7 +114,11 @@
     <string name="vault_filter_oldest_first">Oldest first</string>
     <string name="vault_filter_apply">Apply</string>
     <string name="vault_filter_reset">Reset</string>
-    <string name="vault_search_nothing_found">Nothing found</string>
+    <string name="vault_search_nothing_found">Nothing found for “%1$s”</string>
+    <string name="vault_search_hint_fields">We search titles and user names</string>
+    <string name="vault_search_check_spelling">Check the spelling</string>
+    <string name="vault_search_check_spelling_and_filter">Check the spelling and the filter</string>
+    <string name="vault_location_separator" translatable="false">" › "</string>
     <string name="vault_filter_no_groups">No groups</string>
     <string name="vault_filter_no_entries">No entries</string>
     <string name="vault_back">Back</string>

@@ -107,6 +107,16 @@ class VaultTree(
     }
 
     /**
+     * The groups from [scopeId] down to [id], both ends included - where [id] lies, seen from [scopeId].
+     * Empty when [id] is not [scopeId] or a visible group below it.
+     */
+    fun pathFrom(scopeId: GroupId, id: GroupId): List<VaultGroup> {
+        val full = path(id)
+        val start = full.indexOfFirst { it.id == scopeId }
+        return if (start < 0) emptyList() else full.drop(start)
+    }
+
+    /**
      * Whether a visible group inside [parentId] is already called [name], ignoring case and the spaces
      * around it. [renamedId] is the group being renamed: its own name is not a rival.
      */

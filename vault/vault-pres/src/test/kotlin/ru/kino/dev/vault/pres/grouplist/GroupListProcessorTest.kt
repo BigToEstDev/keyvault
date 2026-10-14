@@ -340,8 +340,26 @@ class GroupListProcessorTest {
 
         assertTrue(state.isSearch)
         assertFalse(state.searching)
-        assertEquals(listOf(GroupItem(mail, "Mail", 3)), state.groups)
+        assertEquals(listOf(GroupItem(mail, "Mail", 3, location = listOf("Passwords", "Work"))), state.groups)
         assertEquals(listOf("Mailbox"), state.entries.map { it.title })
+    }
+
+    @Test
+    fun `what a search finds shows where it lies, from the group searched in`() = runTest {
+        entries.add("work-mail", mail, titled("Mail of work"))
+
+        val (state, _) = perform(groupId = work.value, GroupListAction.Load, GroupListAction.QueryChanged("mail"))
+
+        assertEquals(listOf(listOf("Work")), state.groups.map { it.location })
+        assertEquals(listOf(listOf("Work", "Mail")), state.entries.map { it.location })
+    }
+
+    @Test
+    fun `the list of a group shows no location`() = runTest {
+        val (state, _) = perform(groupId = null, GroupListAction.Load)
+
+        assertTrue(state.groups.all { it.location == null })
+        assertTrue(state.entries.all { it.location == null })
     }
 
     @Test
