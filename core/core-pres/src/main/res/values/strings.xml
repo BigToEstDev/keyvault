@@ -115,6 +115,7 @@
     <string name="vault_filter_apply">Apply</string>
     <string name="vault_filter_reset">Reset</string>
     <string name="vault_search_nothing_found">Nothing found</string>
+    <string name="vault_location_separator" translatable="false">" › "</string>
     <string name="vault_filter_no_groups">No groups</string>
     <string name="vault_filter_no_entries">No entries</string>
     <string name="vault_back">Back</string>

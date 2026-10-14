@@ -73,6 +73,8 @@ data class GroupItem(
     val name: String,
     /** Entries in it and in every group below it */
     val entryCount: Int,
+    /** Found by a search: the names from the group searched in down to the one it is in. Null otherwise */
+    val location: List<String>? = null,
 )
 
 /** An entry as its card shows it. */
@@ -80,6 +82,8 @@ data class EntryItem(
     val id: EntryId,
     /** Empty when the entry has none: the card shows its own "untitled" */
     val title: String,
+    /** Found by a search: the names from the group searched in down to the one it is in. Null otherwise */
+    val location: List<String>? = null,
 )
 
 /** One part of the path in the top bar. */

@@ -192,6 +192,7 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
             items(state.groups, key = { it.id.value }) { group ->
                 GroupCard(
                     group = group,
+                    location = locationText(group.location, fromRoot = state.isRoot),
                     onOpen = { action(GroupListAction.OpenGroup(group.id)) },
                     onEdit = { action(GroupListAction.RenameGroup(group.id)) },
                     onDelete = { action(GroupListAction.DeleteGroup(group.id)) },
@@ -200,6 +201,7 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
             items(state.entries, key = { it.id.value }) { entry ->
                 EntryCard(
                     entry = entry,
+                    location = locationText(entry.location, fromRoot = state.isRoot),
                     onOpen = { action(GroupListAction.OpenEntry(entry.id)) },
                     onEdit = { action(GroupListAction.EditEntry(entry.id)) },
                     onDelete = { action(GroupListAction.DeleteEntry(entry.id)) },
@@ -207,6 +209,19 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
             }
         }
     }
+}
+
+/**
+ * Where a card found by a search lies, as one line: the names from the group searched in, joined. At the root
+ * the first is the database, which a root without a name shows as the top bar does - "Database".
+ */
+@Composable
+private fun locationText(names: List<String>?, fromRoot: Boolean): String? {
+    if (names == null) return null
+    val fallback = stringResource(R.string.entry_database_fallback)
+    return names
+        .mapIndexed { index, name -> if (index == 0 && fromRoot) name.ifBlank { fallback } else name }
+        .joinToString(stringResource(R.string.vault_location_separator))
 }
 
 /** In place of the list when there is nothing in it: what the emptiness means, and the way out if any. */

@@ -4,6 +4,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -39,11 +40,15 @@ import ru.kino.dev.core.pres.R
  * edit, delete - with its top corner where the finger is.
  *
  * Whether the menu is open is the card's own: it is a moment of the gesture, not of the screen.
+ *
+ * @param subtitle a second, smaller line under the title - where a card found by a search lies; cut from
+ * its start when long, so the nearest group stays in sight
  */
 @Composable
 internal fun ListCard(
     icon: @Composable () -> Unit,
     title: String,
+    subtitle: String?,
     onOpen: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -68,13 +73,23 @@ internal fun ListCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 icon()
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 24.dp),
-                )
+                Column(modifier = Modifier.padding(start = 24.dp)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (subtitle != null) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.StartEllipsis,
+                        )
+                    }
+                }
             }
         }
         // The menu is placed below its anchor, the card, and moved by the offset: up by the card's height and

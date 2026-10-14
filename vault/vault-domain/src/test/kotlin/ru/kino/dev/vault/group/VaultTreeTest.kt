@@ -94,6 +94,20 @@ class VaultTreeTest {
     }
 
     @Test
+    fun `the path from a group down to another starts at the first and ends at the second`() {
+        assertEquals(listOf(WORK, MAIL), tree.pathFrom(WORK, MAIL).map { it.id })
+        assertEquals(listOf(ROOT, WORK, MAIL), tree.pathFrom(ROOT, MAIL).map { it.id })
+        assertEquals(listOf(WORK), tree.pathFrom(WORK, WORK).map { it.id })
+    }
+
+    @Test
+    fun `there is no path from a group to one that is not below it`() {
+        assertEquals(emptyList<VaultGroup>(), tree.pathFrom(MAIL, WORK))
+        assertEquals(emptyList<VaultGroup>(), tree.pathFrom(WORK, HOME))
+        assertEquals(emptyList<VaultGroup>(), tree.pathFrom(ROOT, OLD))
+    }
+
+    @Test
     fun `a damaged file whose groups loop does not hang the tree`() {
         val a = GroupId("a")
         val b = GroupId("b")
