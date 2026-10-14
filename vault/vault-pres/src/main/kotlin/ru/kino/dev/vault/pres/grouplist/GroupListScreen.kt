@@ -9,15 +9,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -35,6 +31,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.ui.components.EmptySearchIllustration
 import ru.kino.dev.ui.components.EmptyState
 import ru.kino.dev.ui.components.ExpandableFab
 import ru.kino.dev.ui.components.FabItem
@@ -180,7 +177,7 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
                 .padding(padding),
             contentAlignment = EMPTY_ALIGNMENT,
         ) {
-            GroupListEmpty(empty)
+            GroupListEmpty(reason = empty, query = state.query, filterOn = !state.filter.isDefault)
         }
 
         else -> LazyColumn(
@@ -224,9 +221,14 @@ private fun locationText(names: List<String>?, fromRoot: Boolean): String? {
         .joinToString(stringResource(R.string.vault_location_separator))
 }
 
-/** In place of the list when there is nothing in it: what the emptiness means, and the way out if any. */
+/**
+ * In place of the list when there is nothing in it: what the emptiness means, and the way out if any.
+ *
+ * A search that found nothing says what was looked for, by which fields, and what to check - the spelling,
+ * and the filter too when one is on (Step 40, item 11).
+ */
 @Composable
-private fun GroupListEmpty(reason: EmptyReason) {
+private fun GroupListEmpty(reason: EmptyReason, query: String, filterOn: Boolean) {
     when (reason) {
         EmptyReason.EmptyGroup -> EmptyState(
             title = stringResource(R.string.vault_group_empty),
@@ -234,15 +236,12 @@ private fun GroupListEmpty(reason: EmptyReason) {
         )
 
         EmptyReason.NothingFound -> EmptyState(
-            title = stringResource(R.string.vault_search_nothing_found),
-            illustration = {
-                Icon(
-                    imageVector = Icons.Filled.Search,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(EMPTY_ICON),
-                )
-            },
+            title = stringResource(R.string.vault_search_nothing_found, query.trim()),
+            // By which fields, then what to check: the filter too, when one is on
+            hint = stringResource(R.string.vault_search_hint_fields) + "\n" + stringResource(
+                if (filterOn) R.string.vault_search_check_spelling_and_filter else R.string.vault_search_check_spelling,
+            ),
+            illustration = { EmptySearchIllustration() },
         )
 
         EmptyReason.NoGroups -> EmptyState(title = stringResource(R.string.vault_filter_no_groups))
@@ -262,9 +261,6 @@ private val GroupListMessage.text: Int
 
 /** The empty state a little above the middle: the eye lands there, and the buttons take the bottom. */
 private val EMPTY_ALIGNMENT = BiasAlignment(horizontalBias = 0f, verticalBias = -0.3f)
-
-/** The magnifier of "nothing found" - near the size of the empty folder it stands in for. */
-private val EMPTY_ICON = 96.dp
 
 /** Cards drawn while the tree is read - about a screenful. */
 private const val SKELETON_ROWS = 6
