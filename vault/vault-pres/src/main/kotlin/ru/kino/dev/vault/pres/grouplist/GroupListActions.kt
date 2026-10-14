@@ -1,5 +1,7 @@
 package ru.kino.dev.vault.pres.grouplist
 
+import ru.kino.dev.vault.filter.CreationOrder
+import ru.kino.dev.vault.filter.Visibility
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 
@@ -22,10 +24,21 @@ sealed interface GroupListAction {
     /** Closes the menu of the fab - "back" or a tap past it; never opens it, unlike [ToggleFab]. */
     data object CloseFab : GroupListAction
 
-    /** The filter button by the search field. The filters themselves are pass-docs, Step 41. */
+    /** The filter button by the search field: the dialog opens with the filter in effect. */
     data object OpenFilters : GroupListAction
 
+    /** The cross of the dialog, or a tap past it: what was chosen in it is dropped. */
     data object CloseFilters : GroupListAction
+
+    data class FilterVisibilityChanged(val visibility: Visibility) : GroupListAction
+
+    data class FilterOrderChanged(val order: CreationOrder) : GroupListAction
+
+    /** What is chosen in the dialog takes effect and is kept on the device. */
+    data object ApplyFilters : GroupListAction
+
+    /** The default takes effect and is kept on the device, whatever is chosen in the dialog. */
+    data object ResetFilters : GroupListAction
 
     data object CreateGroup : GroupListAction
 
@@ -109,4 +122,4 @@ sealed interface GroupDialog {
 enum class NameProblem { Empty, TooLong, Taken }
 
 /** What the snackbar says. */
-enum class GroupListMessage { NotSaved, LoadFailed, Unexpected }
+enum class GroupListMessage { NotSaved, LoadFailed, SearchFailed, FilterNotSaved, Unexpected }

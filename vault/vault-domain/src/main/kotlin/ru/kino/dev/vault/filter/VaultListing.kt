@@ -1,11 +1,10 @@
 package ru.kino.dev.vault.filter
 
 import ru.kino.dev.vault.entry.EntrySummary
-import ru.kino.dev.vault.group.VaultGroup
 
-/** What the list shows: the groups first, then the entries. */
-data class VaultListing(
-    val groups: List<VaultGroup>,
+/** What the list shows: the groups first - as the caller holds them, [G] - then the entries. */
+data class VaultListing<G>(
+    val groups: List<G>,
     val entries: List<EntrySummary>,
 )
 
@@ -14,7 +13,7 @@ data class VaultListing(
  * the groups in the order they came, the entries by when they were created - those made in the same second
  * by title, case aside.
  */
-fun VaultFilter.applyTo(groups: List<VaultGroup>, entries: List<EntrySummary>): VaultListing {
+fun <G> VaultFilter.applyTo(groups: List<G>, entries: List<EntrySummary>): VaultListing<G> {
     val byTitle = compareBy(String.CASE_INSENSITIVE_ORDER, EntrySummary::title)
     val byTime = when (order) {
         CreationOrder.NewestFirst -> compareByDescending<EntrySummary> { it.createdAt }

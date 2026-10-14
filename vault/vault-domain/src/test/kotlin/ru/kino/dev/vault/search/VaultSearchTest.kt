@@ -52,6 +52,15 @@ class VaultSearchTest {
     }
 
     @Test
+    fun `a group found comes with the entries under it, for its card`() = runTest {
+        groups.addEntries(cards, 2)
+
+        val result = search.search(DB, root, "cards")
+
+        assertEquals(mapOf(cards to 2), result.entryCounts)
+    }
+
+    @Test
     fun `in a group only what lies under it is searched, at any depth`() = runTest {
         val result = search.search(DB, work, "BANK")
 

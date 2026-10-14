@@ -47,7 +47,7 @@ class VaultListingTest {
     fun `entries made in the same second go by title, case aside`() {
         val same = listOf(entry("beta", 5), entry("Alpha", 5), entry("gamma", 5), entry("Delta", 5))
 
-        val listing = VaultFilter.DEFAULT.applyTo(emptyList(), same)
+        val listing = VaultFilter.DEFAULT.applyTo(emptyList<VaultGroup>(), same)
 
         assertEquals(listOf("Alpha", "beta", "Delta", "gamma"), listing.entries.map { it.title })
     }

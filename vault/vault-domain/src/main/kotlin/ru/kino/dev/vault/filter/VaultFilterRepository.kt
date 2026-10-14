@@ -11,5 +11,6 @@ interface VaultFilterRepository {
     /** The filter chosen last, [VaultFilter.DEFAULT] until one is; a new value on every change. */
     val filter: Flow<VaultFilter>
 
+    /** Throws an `IOException` when the device does not take it; the filter chosen is still in effect. */
     suspend fun save(filter: VaultFilter)
 }

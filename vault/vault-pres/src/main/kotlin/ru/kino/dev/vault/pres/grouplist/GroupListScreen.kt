@@ -9,11 +9,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -74,6 +78,7 @@ internal fun GroupListScreen(
                     path = state.path,
                     entryCount = state.entryCount,
                     query = state.query,
+                    filterOn = !state.filter.isDefault,
                     onQueryChange = { processor.action(GroupListAction.QueryChanged(it)) },
                     onFilters = { processor.action(GroupListAction.OpenFilters) },
                     onBack = { processor.action(GroupListAction.Back) },
@@ -119,8 +124,16 @@ internal fun GroupListScreen(
                 .padding(FAB_MARGIN),
         )
 
-        if (state.filtersOpen) {
-            FilterDialog(onClose = { processor.action(GroupListAction.CloseFilters) })
+        state.filterDraft?.let { draft ->
+            FilterDialog(
+                draft = draft,
+                saving = state.savingFilter,
+                onVisibility = { processor.action(GroupListAction.FilterVisibilityChanged(it)) },
+                onOrder = { processor.action(GroupListAction.FilterOrderChanged(it)) },
+                onApply = { processor.action(GroupListAction.ApplyFilters) },
+                onReset = { processor.action(GroupListAction.ResetFilters) },
+                onClose = { processor.action(GroupListAction.CloseFilters) },
+            )
         }
 
         GroupDialogs(
@@ -149,8 +162,10 @@ private fun FabDismissLayer(onDismiss: () -> Unit) {
 
 @Composable
 private fun GroupListContent(state: GroupListState, padding: PaddingValues, action: (GroupListAction) -> Unit) {
+    val empty = state.emptyReason
     when {
-        state.loading -> LazyColumn(
+        // The search shows the skeleton too: while the typing goes on, and while the core looks
+        state.loading || state.searching -> LazyColumn(
             modifier = Modifier.padding(padding),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -159,16 +174,13 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
             items(SKELETON_ROWS) { SkeletonCard() }
         }
 
-        state.isEmpty -> Box(
+        empty != null -> Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
             contentAlignment = EMPTY_ALIGNMENT,
         ) {
-            EmptyState(
-                title = stringResource(R.string.vault_group_empty),
-                hint = stringResource(R.string.vault_empty_hint),
-            )
+            GroupListEmpty(empty)
         }
 
         else -> LazyColumn(
@@ -197,15 +209,47 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
     }
 }
 
+/** In place of the list when there is nothing in it: what the emptiness means, and the way out if any. */
+@Composable
+private fun GroupListEmpty(reason: EmptyReason) {
+    when (reason) {
+        EmptyReason.EmptyGroup -> EmptyState(
+            title = stringResource(R.string.vault_group_empty),
+            hint = stringResource(R.string.vault_empty_hint),
+        )
+
+        EmptyReason.NothingFound -> EmptyState(
+            title = stringResource(R.string.vault_search_nothing_found),
+            illustration = {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(EMPTY_ICON),
+                )
+            },
+        )
+
+        EmptyReason.NoGroups -> EmptyState(title = stringResource(R.string.vault_filter_no_groups))
+
+        EmptyReason.NoEntries -> EmptyState(title = stringResource(R.string.vault_filter_no_entries))
+    }
+}
+
 private val GroupListMessage.text: Int
     get() = when (this) {
         GroupListMessage.NotSaved -> R.string.vault_message_not_saved
         GroupListMessage.LoadFailed -> R.string.vault_message_load_failed
+        GroupListMessage.SearchFailed -> R.string.vault_message_search_failed
+        GroupListMessage.FilterNotSaved -> R.string.vault_message_filter_not_saved
         GroupListMessage.Unexpected -> R.string.error_unexpected
     }
 
 /** The empty state a little above the middle: the eye lands there, and the buttons take the bottom. */
 private val EMPTY_ALIGNMENT = BiasAlignment(horizontalBias = 0f, verticalBias = -0.3f)
+
+/** The magnifier of "nothing found" - near the size of the empty folder it stands in for. */
+private val EMPTY_ICON = 96.dp
 
 /** Cards drawn while the tree is read - about a screenful. */
 private const val SKELETON_ROWS = 6

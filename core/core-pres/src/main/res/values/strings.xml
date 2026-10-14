@@ -104,6 +104,19 @@
     <!-- vault: groups -->
     <string name="vault_search">Search</string>
     <string name="vault_filters">Filters</string>
+    <string name="vault_filters_on">Filters are on</string>
+    <string name="vault_filter_visibility">Show</string>
+    <string name="vault_filter_all">All</string>
+    <string name="vault_filter_groups_only">Groups only</string>
+    <string name="vault_filter_entries_only">Entries only</string>
+    <string name="vault_filter_order">Entries by creation date</string>
+    <string name="vault_filter_newest_first">Newest first</string>
+    <string name="vault_filter_oldest_first">Oldest first</string>
+    <string name="vault_filter_apply">Apply</string>
+    <string name="vault_filter_reset">Reset</string>
+    <string name="vault_search_nothing_found">Nothing found</string>
+    <string name="vault_filter_no_groups">No groups</string>
+    <string name="vault_filter_no_entries">No entries</string>
     <string name="vault_back">Back</string>
     <string name="vault_group_empty">Nothing here yet</string>
     <string name="vault_empty_hint">Tap + to add an entry</string>
@@ -127,6 +140,8 @@
     <string name="group_delete_confirm">Delete</string>
     <string name="vault_message_not_saved">The change is made, but the file was not written</string>
     <string name="vault_message_load_failed">Could not read the group</string>
+    <string name="vault_message_search_failed">Could not search</string>
+    <string name="vault_message_filter_not_saved">The filter is applied, but will not be remembered</string>
 
     <!-- vault: entries -->
     <string name="entry_untitled">Untitled</string>
