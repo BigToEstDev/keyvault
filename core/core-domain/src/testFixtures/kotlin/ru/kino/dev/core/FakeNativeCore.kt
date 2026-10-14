@@ -193,8 +193,8 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         )
     }
 
-    /** An entry the fake holds: the group it is in and its strings, in order. */
-    data class FakeEntry(val groupId: String, val fields: List<EntryFieldData>)
+    /** An entry the fake holds: the group it is in, its strings in order, when it was made. */
+    data class FakeEntry(val groupId: String, val fields: List<EntryFieldData>, val createdAt: Long)
 
     /**
      * The entries of every database, by dbKey and then by id. The entry calls change them - and the
@@ -205,14 +205,26 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     /** Ids handed to the entries [createEntry] makes - `entry-1`, `entry-2`, … */
     private var entriesCreated = 0
 
-    /** Puts an entry into [groupId] - into the tree too - for setting a test up. Not journaled. */
-    fun addEntry(dbKey: String, groupId: String, id: String, fields: List<EntryFieldData>): String {
+    /**
+     * Puts an entry into [groupId] - into the tree too - for setting a test up. Not journaled. Without
+     * [createdAt] every entry is a second younger than the one put before it.
+     */
+    fun addEntry(
+        dbKey: String,
+        groupId: String,
+        id: String,
+        fields: List<EntryFieldData>,
+        createdAt: Long = ++clock,
+    ): String {
         val tree = tree(dbKey)
         val group = tree.groups.getValue(groupId)
         groupTrees[dbKey] = tree.copy(groups = tree.groups + (groupId to group.copy(entryIds = group.entryIds + id)))
-        storedEntries.getOrPut(dbKey) { mutableMapOf() }[id] = FakeEntry(groupId, fields)
+        storedEntries.getOrPut(dbKey) { mutableMapOf() }[id] = FakeEntry(groupId, fields, createdAt)
         return id
     }
+
+    /** The creation time handed to the next entry made without one, in seconds. */
+    private var clock = 1_700_000_000L
 
     override suspend fun entries(dbKey: String, groupId: String): List<EntrySummaryData> {
         step("entries", dbKey)
@@ -221,6 +233,29 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         return group.entryIds
             .mapNotNull { id -> stored(dbKey)[id]?.let { summary(id, it) } }
             .sortedBy { it.title }
+    }
+
+    // The core's rules, on the fake's entries: title and user name, never a protected one, case aside, the
+    // recycle bin and the groups inside it left out; in no particular order - here, the order they were put
+    override suspend fun searchEntries(dbKey: String, term: String): EntrySearchData {
+        step("searchEntries", dbKey)
+        val needle = term.trim().lowercase()
+        if (needle.isEmpty()) return EntrySearchData(term, emptyList())
+
+        fun open(entry: FakeEntry, key: String) =
+            entry.fields.firstOrNull { it.key == key }?.takeUnless { it.protected }?.value.orEmpty()
+
+        val found = stored(dbKey)
+            .filter { (_, entry) -> !inRecycleBin(dbKey, entry.groupId) }
+            .filter { (_, entry) -> listOf("Title", "UserName").any { open(entry, it).lowercase().contains(needle) } }
+            .map { (id, entry) -> summary(id, entry) }
+        return EntrySearchData(term, found)
+    }
+
+    private fun inRecycleBin(dbKey: String, groupId: String): Boolean {
+        val tree = tree(dbKey)
+        val bin = tree.recycleBinId ?: return false
+        return generateSequence(groupId) { tree.groups[it]?.parentId }.any { it == bin }
     }
 
     override suspend fun entryFields(dbKey: String, entryId: String): List<EntryFieldData> {
@@ -268,8 +303,10 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
 
     private fun summary(id: String, entry: FakeEntry) = EntrySummaryData(
         id = id,
+        groupId = entry.groupId,
         title = entry.fields.firstOrNull { it.key == "Title" }?.value.orEmpty(),
         userName = entry.fields.firstOrNull { it.key == "UserName" }?.value.orEmpty(),
+        createdAt = entry.createdAt,
     )
 
     // Like the core since Step 45: a form with two fields under one key is not saved

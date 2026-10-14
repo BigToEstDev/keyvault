@@ -18,6 +18,10 @@ import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.entry.StandardPreset
+import ru.kino.dev.vault.filter.CreationOrder
+import ru.kino.dev.vault.filter.FakeVaultFilterRepository
+import ru.kino.dev.vault.filter.VaultFilter
+import ru.kino.dev.vault.filter.Visibility
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupFailure
@@ -26,6 +30,7 @@ import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
+import ru.kino.dev.vault.search.VaultSearch
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.FakeVaultDatabase
 import ru.kino.dev.vault.pres.testing.RecordingLog
@@ -49,6 +54,7 @@ class GroupListProcessorTest {
     private val bank = entries.add("bank", groups.rootId, titled("Bank"))
 
     private val database = FakeVaultDatabase()
+    private val filters = FakeVaultFilterRepository()
     private val log = RecordingLog()
 
     @Test
@@ -236,21 +242,235 @@ class GroupListProcessorTest {
     }
 
     @Test
-    fun `the filter button opens the dialog`() = runTest {
+    fun `the filter button opens the dialog with the filter in effect`() = runTest {
+        val kept = VaultFilter(order = CreationOrder.OldestFirst)
+        filters.save(kept)
+        filters.saved.clear()
+
         val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenFilters)
 
         assertTrue(state.filtersOpen)
+        assertEquals(kept, state.filterDraft)
     }
 
     @Test
-    fun `the filter dialog closes`() = runTest {
+    fun `the cross drops what was chosen in the dialog`() = runTest {
         val (state, _) = perform(
             groupId = null,
+            GroupListAction.Load,
+            GroupListAction.OpenFilters,
+            GroupListAction.FilterVisibilityChanged(Visibility.GroupsOnly),
             GroupListAction.CloseFilters,
-            initial = GroupListState(filtersOpen = true),
         )
 
         assertFalse(state.filtersOpen)
+        assertEquals(VaultFilter.DEFAULT, state.filter)
+        assertEquals(emptyList<VaultFilter>(), filters.saved)
+    }
+
+    @Test
+    fun `an applied filter takes effect and is kept on the device`() = runTest {
+        val (state, _) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.OpenFilters,
+            GroupListAction.FilterVisibilityChanged(Visibility.EntriesOnly),
+            GroupListAction.FilterOrderChanged(CreationOrder.OldestFirst),
+            GroupListAction.ApplyFilters,
+        )
+
+        val chosen = VaultFilter(Visibility.EntriesOnly, CreationOrder.OldestFirst)
+        assertFalse(state.filtersOpen)
+        assertEquals(chosen, state.filter)
+        assertEquals(listOf(chosen), filters.saved)
+        assertTrue(state.groups.isEmpty())
+        assertEquals(listOf("Mailbox", "Bank"), state.entries.map { it.title })
+    }
+
+    @Test
+    fun `reset puts the default in effect whatever is chosen in the dialog`() = runTest {
+        filters.save(VaultFilter(visibility = Visibility.GroupsOnly))
+        filters.saved.clear()
+
+        val (state, _) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.OpenFilters,
+            GroupListAction.FilterOrderChanged(CreationOrder.OldestFirst),
+            GroupListAction.ResetFilters,
+        )
+
+        assertFalse(state.filtersOpen)
+        assertEquals(VaultFilter.DEFAULT, state.filter)
+        assertEquals(listOf(VaultFilter.DEFAULT), filters.saved)
+    }
+
+    @Test
+    fun `a filter the device does not take is in effect all the same, and the snackbar says so`() = runTest {
+        filters.failSaving = true
+
+        val (state, _) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.OpenFilters,
+            GroupListAction.FilterVisibilityChanged(Visibility.GroupsOnly),
+            GroupListAction.ApplyFilters,
+        )
+
+        assertEquals(Visibility.GroupsOnly, state.filter.visibility)
+        assertFalse(state.filtersOpen)
+        assertFalse(state.savingFilter)
+        assertEquals(GroupListMessage.FilterNotSaved, state.message)
+        assertEquals(1, log.logged.size)
+    }
+
+    @Test
+    fun `the filter kept on the device is read when the screen is shown`() = runTest {
+        filters.save(VaultFilter(order = CreationOrder.OldestFirst))
+
+        val (state, _) = perform(groupId = null, GroupListAction.Load)
+
+        assertEquals(CreationOrder.OldestFirst, state.filter.order)
+        assertEquals(listOf("Mailbox", "Bank"), state.entries.map { it.title })
+    }
+
+    @Test
+    fun `typing searches the whole database from the root - groups by name, entries by title`() = runTest {
+        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.QueryChanged("ma"))
+
+        assertTrue(state.isSearch)
+        assertFalse(state.searching)
+        assertEquals(listOf(GroupItem(mail, "Mail", 3)), state.groups)
+        assertEquals(listOf("Mailbox"), state.entries.map { it.title })
+    }
+
+    @Test
+    fun `in a group only what lies under it is searched`() = runTest {
+        entries.add("work-mail", mail, titled("Mail of work"))
+
+        val (state, _) = perform(groupId = work.value, GroupListAction.Load, GroupListAction.QueryChanged("MAIL"))
+
+        assertEquals(listOf(mail), state.groups.map { it.id })
+        assertEquals(listOf("Mail of work"), state.entries.map { it.title })
+    }
+
+    @Test
+    fun `typing quickly searches once, for what is typed last`() = runTest {
+        val (navigator, _) = recordNavigation()
+        val processor = processor(groupId = null, navigator = navigator)
+
+        processor.testWithInternalState(this, GroupListState()) {
+            containerHost.action(GroupListAction.Load).join()
+            containerHost.action(GroupListAction.QueryChanged("b"))
+            containerHost.action(GroupListAction.QueryChanged("ba"))
+            containerHost.action(GroupListAction.QueryChanged("ban")).join()
+            cancelAndIgnoreRemainingItems()
+        }
+
+        assertEquals(1, entries.calls.count { it == "search" })
+        assertEquals(listOf("Bank"), processor.container.stateFlow.value.entries.map { it.title })
+    }
+
+    @Test
+    fun `a search waits for the typing to stop and shows the skeleton meanwhile`() = runTest {
+        val (state, _) = perform(
+            groupId = null,
+            GroupListAction.QueryChanged("ba"),
+            initial = GroupListState(loading = false, path = listOf(Crumb(groups.rootId, "Passwords"))),
+            join = false,
+        )
+
+        assertTrue(state.searching)
+        assertEquals(0, entries.calls.count { it == "search" })
+    }
+
+    @Test
+    fun `an empty field is the group again`() = runTest {
+        val (state, _) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.QueryChanged("ma"),
+            GroupListAction.QueryChanged(""),
+        )
+
+        assertFalse(state.isSearch)
+        assertNull(state.found)
+        assertEquals(listOf("Work", "Home"), state.groups.map { it.name })
+        assertEquals(listOf("Bank", "Mailbox"), state.entries.map { it.title })
+    }
+
+    @Test
+    fun `a search that finds nothing says so`() = runTest {
+        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.QueryChanged("zzz"))
+
+        assertEquals(EmptyReason.NothingFound, state.emptyReason)
+    }
+
+    @Test
+    fun `the filter applies to what the search finds`() = runTest {
+        filters.save(VaultFilter(visibility = Visibility.EntriesOnly))
+
+        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.QueryChanged("ma"))
+
+        assertTrue(state.groups.isEmpty())
+        assertEquals(listOf("Mailbox"), state.entries.map { it.title })
+    }
+
+    @Test
+    fun `a search that fails says so and goes to the log`() = runTest {
+        entries.failures["search"] = EntryFailure.Unexpected(IllegalStateException("broken"))
+
+        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.QueryChanged("ma"))
+
+        assertFalse(state.searching)
+        assertEquals(GroupListMessage.SearchFailed, state.message)
+        assertEquals(1, log.logged.size)
+    }
+
+    @Test
+    fun `going into a group clears the search`() = runTest {
+        val (state, events) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.QueryChanged("ma"),
+            GroupListAction.OpenGroup(mail),
+        )
+
+        assertEquals("", state.query)
+        assertNull(state.found)
+        assertEquals(listOf(MviNavEvent.NavigateTo(GroupRoute(DB, mail.value))), events)
+    }
+
+    @Test
+    fun `going into an entry clears the search`() = runTest {
+        val (state, _) = perform(
+            groupId = null,
+            GroupListAction.Load,
+            GroupListAction.QueryChanged("ma"),
+            GroupListAction.OpenEntry(mailbox),
+        )
+
+        assertEquals("", state.query)
+        assertNull(state.found)
+    }
+
+    @Test
+    fun `groups only in a group of entries only says there are no groups`() = runTest {
+        entries.add("letter", home, titled("Letter"))
+        filters.save(VaultFilter(visibility = Visibility.GroupsOnly))
+
+        val (state, _) = perform(groupId = home.value, GroupListAction.Load)
+
+        assertEquals(EmptyReason.NoGroups, state.emptyReason)
+    }
+
+    @Test
+    fun `entries only in a group of groups only says there are no entries`() = runTest {
+        filters.save(VaultFilter(visibility = Visibility.EntriesOnly))
+
+        val (state, _) = perform(groupId = work.value, GroupListAction.Load)
+
+        assertEquals(EmptyReason.NoEntries, state.emptyReason)
     }
 
     @Test
@@ -311,7 +531,7 @@ class GroupListProcessorTest {
     }
 
     @Test
-    fun `the entries of the group come after its groups, by title, untitled ones too`() = runTest {
+    fun `the entries of the group come after its groups, the newest first, untitled ones too`() = runTest {
         entries.add("blank", groups.rootId, titled(""))
 
         val (state, _) = perform(groupId = null, GroupListAction.Load)
@@ -335,6 +555,7 @@ class GroupListProcessorTest {
         val (state, _) = perform(groupId = mail.value, GroupListAction.Load)
 
         assertTrue(state.isEmpty)
+        assertEquals(EmptyReason.EmptyGroup, state.emptyReason)
     }
 
     @Test
@@ -421,30 +642,39 @@ class GroupListProcessorTest {
     }
 
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
+    /**
+     * Runs [actions] one after another, each to its end - a search waits its delay out, in virtual time.
+     * Without [join] they are only started.
+     */
     private suspend fun TestScope.perform(
         groupId: String?,
         vararg actions: GroupListAction,
         initial: GroupListState = GroupListState(),
+        join: Boolean = true,
     ): Pair<GroupListState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = GroupListProcessor(
-            DB,
-            groupId,
-            groups,
-            GroupEditor(groups, database),
-            entries,
-            EntryEditor(entries, database),
-            database,
-            navigator,
-            log,
-        )
+        val processor = processor(groupId, navigator)
 
         processor.testWithInternalState(this, initial) {
-            actions.forEach { containerHost.action(it).join() }
+            actions.forEach { containerHost.action(it).also { job -> if (join) job.join() } }
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events
     }
+
+    private fun processor(groupId: String?, navigator: Navigator) = GroupListProcessor(
+        DB,
+        groupId,
+        groups,
+        GroupEditor(groups, database),
+        entries,
+        EntryEditor(entries, database),
+        database,
+        VaultSearch(groups, entries),
+        filters,
+        navigator,
+        log,
+    )
 
     private fun titled(title: String) = listOf(EntryField(StandardPreset.TITLE, title, protected = false))
 }

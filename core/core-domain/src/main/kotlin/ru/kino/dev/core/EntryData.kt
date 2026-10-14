@@ -20,8 +20,21 @@ data class EntryFieldData(
 /** An entry as a list shows it: enough for a card, nothing secret. */
 data class EntrySummaryData(
     val id: String,
+    /** The group the entry is directly in */
+    val groupId: String,
     /** Empty when the entry has no title */
     val title: String,
     /** The `UserName` of the entry, empty when it has none */
     val userName: String,
+    /** When the entry was created, in seconds since the epoch, UTC */
+    val createdAt: Long,
+)
+
+/**
+ * The entries a term finds, with the term itself: the calls are asynchronous and may finish out of order,
+ * so a screen drops the answer to a term the user has already typed past.
+ */
+data class EntrySearchData(
+    val term: String,
+    val entries: List<EntrySummaryData>,
 )

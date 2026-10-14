@@ -68,6 +68,28 @@ class VaultTree(
         group(id)?.childGroupIds.orEmpty().mapNotNull(::group)
 
     /**
+     * Every visible group below [id], at any depth - each right after the group it is in, siblings in the
+     * order the database keeps them; [id] itself is not among them. Empty when [id] is not visible.
+     */
+    fun descendants(id: GroupId): List<VaultGroup> {
+        val found = mutableListOf<VaultGroup>()
+        // A visited set rather than trust in the shape, as for the walk from the root
+        val seen = mutableSetOf(id)
+        fun walk(parent: GroupId) {
+            for (child in subgroups(parent)) {
+                if (!seen.add(child.id)) continue
+                found += child
+                walk(child.id)
+            }
+        }
+        if (group(id) != null) walk(id)
+        return found
+    }
+
+    /** Whether [id] is [scopeId] or a visible group anywhere below it. */
+    fun isWithin(id: GroupId, scopeId: GroupId): Boolean = path(id).any { it.id == scopeId }
+
+    /**
      * The number of entries in [id] and in every visible group below it. For the root it is every entry of
      * the database outside the recycle bin.
      */

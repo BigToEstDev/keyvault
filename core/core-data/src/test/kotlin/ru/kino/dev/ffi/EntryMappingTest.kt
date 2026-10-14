@@ -63,6 +63,31 @@ class EntryMappingTest {
     }
 
     @Test
+    fun `a summary carries the group of the entry and when it was made`() {
+        val summary = json.decodeFromString(
+            EntrySummaryDto.serializer(),
+            """{"uuid": "$ENTRY_ID", "parent_group_uuid": "$GROUP_ID", "title": "Bank", "secondary_title": "anton",
+               "icon_id": 0, "custom_icon_uuid": null, "history_index": null, "modified_time": 2, "created_time": 1700000000}""",
+        ).toDomain()
+
+        assertEquals(GROUP_ID, summary.groupId)
+        assertEquals(1_700_000_000L, summary.createdAt)
+    }
+
+    @Test
+    fun `a search result keeps its term beside the entries`() {
+        val result = json.decodeFromString(
+            EntrySearchResultDto.serializer(),
+            """{"term": "Ban", "entry_items": [{"uuid": "$ENTRY_ID", "parent_group_uuid": "$GROUP_ID",
+               "title": "Bank", "secondary_title": null, "icon_id": 0, "custom_icon_uuid": null,
+               "history_index": null, "modified_time": 1, "created_time": 1}]}""",
+        ).toDomain()
+
+        assertEquals("Ban", result.term)
+        assertEquals(listOf(ENTRY_ID), result.entries.map { it.id })
+    }
+
+    @Test
     fun `the entries of a group are asked for in the spelling of the bridge`() {
         val sent = json.encodeToJsonElement(EntrySummaryArgsDto.serializer(), entriesOfGroup("db", GROUP_ID))
 

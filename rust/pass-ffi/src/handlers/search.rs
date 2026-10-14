@@ -1,9 +1,10 @@
 //! Search across the whole database, and the tags it holds.
 //!
-//! Searching is not a filter over a list the ui already has: the core walks every field of every
-//! entry, including the ones a list never shows, so the term has to go to it rather than the entries
-//! coming here. The answer carries the term back, which is what lets a screen drop the result of a
-//! search the user has already typed past.
+//! Searching is not a filter over a list the ui already has: the core looks at every entry of the
+//! database, matches the title and the user name as a card shows them - place holders resolved - and
+//! leaves out a field marked protected, which only it knows of. So the term goes to it rather than the
+//! entries coming here. The answer carries the term back, which is what lets a screen drop the result
+//! of a search the user has already typed past.
 
 use serde::Deserialize;
 
@@ -18,7 +19,8 @@ use crate::handlers::{args, json_answer, reject_bytes};
 #[derive(Deserialize)]
 struct SearchArgs {
     db_key: String,
-    /// What to look for. The core matches it against every field, protected ones included
+    /// What to look for, as plain text: the title and the user name of an entry, case aside, never a
+    /// protected field
     term: String,
 }
 

@@ -44,6 +44,28 @@ class EntryRepositoryImplTest {
     }
 
     @Test
+    fun `an entry carries its group and when it was made`() = runTest {
+        val bank = repository.entries(DB, GroupId(WORK)).first()
+
+        assertEquals(GroupId(WORK), bank.groupId)
+        assertEquals(1_700_000_002L, bank.createdAt)
+    }
+
+    @Test
+    fun `a search finds by the title or the user name and comes back with its term`() = runTest {
+        val found = repository.search(DB, "ANT")
+
+        assertEquals("ANT", found.term)
+        assertEquals(listOf(EntryId("mail")), found.entries.map { it.id })
+        assertEquals(GroupId(WORK), found.entries.single().groupId)
+    }
+
+    @Test
+    fun `a search does not look into a protected field`() = runTest {
+        assertEquals(emptyList<Any>(), repository.search(DB, "1").entries)
+    }
+
+    @Test
     fun `a group that is not there has no entries`() = runTest {
         assertEquals(emptyList<Any>(), repository.entries(DB, GroupId("missing")))
     }

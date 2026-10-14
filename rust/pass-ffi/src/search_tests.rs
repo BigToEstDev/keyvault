@@ -78,6 +78,26 @@ fn a_term_finds_the_entries_that_carry_it_and_comes_back_with_them() {
 }
 
 #[test]
+fn a_password_is_not_what_a_term_finds() {
+    let db_key = key_of("search-password");
+    open_database(&db_key);
+    let root = root_uuid(&db_key);
+
+    let mut form = call_ok("new_entry_form_data", json!({ "parent_group_uuid": root }));
+    set_form_field(&mut form, "Title", "Shop");
+    set_form_field(&mut form, "Password", "hunter2");
+    call_ok(
+        "insert_entry_from_form_data",
+        json!({"db_key": db_key, "form_data": form}),
+    );
+
+    let result = call_ok("search_term", json!({"db_key": db_key, "term": "hunter2"}));
+    assert!(found_titles(&result).is_empty(), "{}", result);
+
+    close_database(&db_key);
+}
+
+#[test]
 fn a_term_that_matches_nothing_is_an_empty_result_and_not_a_failure() {
     let db_key = key_of("search-nothing");
     open_database(&db_key);

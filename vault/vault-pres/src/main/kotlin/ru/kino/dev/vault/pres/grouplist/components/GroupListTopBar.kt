@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +31,8 @@ import ru.kino.dev.vault.pres.grouplist.Crumb
 /**
  * The top of the list: at the root - the database, its entry count on a folder and its name; inside a group
  * - "back" and the path from the database down to the group. Under either, the search field and the
- * filter button to the right of it.
+ * filter button to the right of it - in the accent, with a dot over it, while a filter other than the
+ * default is on.
  *
  * The database is named by its root group, which is what the tree has. A root without a name - another
  * program may write one - shows the usual "Database".
@@ -39,6 +42,7 @@ internal fun GroupListTopBar(
     path: List<Crumb>,
     entryCount: Int,
     query: String,
+    filterOn: Boolean,
     onQueryChange: (String) -> Unit,
     onFilters: () -> Unit,
     onBack: () -> Unit,
@@ -83,7 +87,6 @@ internal fun GroupListTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // Nothing searches yet - the search is pass-docs, Step 41
             SearchBar(
                 query = query,
                 onQueryChange = onQueryChange,
@@ -91,8 +94,21 @@ internal fun GroupListTopBar(
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = onFilters) {
-                Icon(Icons.Filled.Tune, contentDescription = stringResource(R.string.vault_filters))
+                FilterIcon(on = filterOn)
             }
         }
+    }
+}
+
+/** The filter button's icon: plain with the default filter; in the accent with a dot over it otherwise. */
+@Composable
+private fun FilterIcon(on: Boolean) {
+    val description = stringResource(if (on) R.string.vault_filters_on else R.string.vault_filters)
+    if (!on) {
+        Icon(Icons.Filled.Tune, contentDescription = description)
+        return
+    }
+    BadgedBox(badge = { Badge(containerColor = MaterialTheme.colorScheme.tertiary) }) {
+        Icon(Icons.Filled.Tune, contentDescription = description, tint = MaterialTheme.colorScheme.primary)
     }
 }

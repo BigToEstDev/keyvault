@@ -6,6 +6,7 @@ import ru.kino.dev.core.NativeCore
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryRepository
+import ru.kino.dev.vault.entry.EntrySearch
 import ru.kino.dev.vault.entry.EntrySummary
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
@@ -20,6 +21,11 @@ internal class EntryRepositoryImpl @Inject constructor(
 
     override suspend fun entries(dbKey: String, groupId: GroupId): List<EntrySummary> = entryCall {
         core.entries(dbKey, groupId.value).map { it.toSummary() }
+    }
+
+    override suspend fun search(dbKey: String, term: String): EntrySearch = entryCall {
+        val found = core.searchEntries(dbKey, term)
+        EntrySearch(term = found.term, entries = found.entries.map { it.toSummary() })
     }
 
     override suspend fun fields(dbKey: String, entryId: EntryId): List<EntryField> = entryCall {
@@ -39,7 +45,13 @@ internal class EntryRepositoryImpl @Inject constructor(
         core.moveEntryToRecycleBin(dbKey, entryId.value)
     }
 
-    private fun EntrySummaryData.toSummary() = EntrySummary(id = EntryId(id), title = title, userName = userName)
+    private fun EntrySummaryData.toSummary() = EntrySummary(
+        id = EntryId(id),
+        groupId = GroupId(groupId),
+        title = title,
+        userName = userName,
+        createdAt = createdAt,
+    )
 
     private fun EntryFieldData.toField() = EntryField(key = key, value = value, protected = protected)
 
