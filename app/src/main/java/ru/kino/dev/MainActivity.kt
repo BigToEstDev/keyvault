@@ -35,8 +35,11 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
 
         // The whole app, not a screen: there are more screens with secrets than without, and a switch in
-        // settings would be an offer to make oneself less safe (pass-docs, welcome decisions.md)
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        // settings would be an offer to make oneself less safe (pass-docs, welcome decisions.md).
+        // Not in debug: screenshots are needed to review the UI
+        if (!BuildConfig.DEBUG) {
+            window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        }
 
         enableEdgeToEdge()
         setContent {
