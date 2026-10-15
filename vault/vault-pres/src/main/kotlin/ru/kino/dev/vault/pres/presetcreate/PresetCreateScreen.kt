@@ -60,7 +60,11 @@ internal fun PresetCreateScreen(processor: PresetCreateProcessor = hiltViewModel
 
     val message = state.message?.let {
         when (it) {
-            PresetCreateMessage.TooMany -> pluralStringResource(R.plurals.preset_too_many, PresetLimits.MAX_PRESETS, PresetLimits.MAX_PRESETS)
+            PresetCreateMessage.TooMany -> pluralStringResource(
+                R.plurals.preset_too_many,
+                PresetLimits.MAX_PRESETS,
+                PresetLimits.MAX_PRESETS,
+            )
             PresetCreateMessage.NotSaved -> stringResource(R.string.preset_not_saved)
         }
     }
