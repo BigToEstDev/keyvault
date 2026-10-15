@@ -16,5 +16,9 @@ dependencies {
     // String.toUri for the uris the storage access framework hands around
     implementation(libs.androidx.core.ktx)
 
+    // The presets of one's own: one json string in preferences, kept across launches
+    implementation(libs.androidx.datastore.preferences)
+
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
