@@ -14,7 +14,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import ru.kino.dev.navigation.AppNavHost
 import ru.kino.dev.navigation.Navigator
-import ru.kino.dev.ui.theme.PassappTheme
+import ru.kino.dev.ui.theme.KeyVaultTheme
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.welcome.pres.start.WelcomeStartResolver
 import javax.inject.Inject
@@ -49,7 +49,7 @@ class MainActivity : FragmentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            PassappTheme {
+            KeyVaultTheme {
                 val start by startResolver.start.collectAsStateWithLifecycle()
                 start?.let { AppNavHost(navigator = navigator, autoLock = autoLock, start = it) }
             }

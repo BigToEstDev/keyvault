@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Passapp" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.KeyVault" parent="android:Theme.Material.Light.NoActionBar" />
 
-    <!-- The launch theme: the system splash, then Theme.Passapp once the start route is known -->
-    <style name="Theme.Passapp.Starting" parent="Theme.SplashScreen">
-        <item name="postSplashScreenTheme">@style/Theme.Passapp</item>
+    <!-- The launch theme: the system splash, then Theme.KeyVault once the start route is known -->
+    <style name="Theme.KeyVault.Starting" parent="Theme.SplashScreen">
+        <item name="postSplashScreenTheme">@style/Theme.KeyVault</item>
     </style>
 </resources>
