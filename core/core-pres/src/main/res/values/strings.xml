@@ -161,6 +161,7 @@
     <string name="entry_field_service">Service name</string>
     <string name="entry_field_url">Service URL</string>
     <string name="entry_field_notes">Notes</string>
+    <string name="entry_field_group">Group</string>
     <string name="entry_field_required">Fill this in</string>
     <string name="entry_field_name">Field name</string>
     <string name="entry_field_name_empty">Enter a name</string>

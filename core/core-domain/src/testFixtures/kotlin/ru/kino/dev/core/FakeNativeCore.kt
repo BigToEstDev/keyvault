@@ -258,9 +258,10 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         return generateSequence(groupId) { tree.groups[it]?.parentId }.any { it == bin }
     }
 
-    override suspend fun entryFields(dbKey: String, entryId: String): List<EntryFieldData> {
-        step("entryFields", dbKey)
-        return entry(dbKey, entryId).fields
+    override suspend fun entry(dbKey: String, entryId: String): EntryData {
+        step("entry", dbKey)
+        val entry = found(dbKey, entryId)
+        return EntryData(entry.groupId, entry.fields)
     }
 
     override suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String {
@@ -272,14 +273,14 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
 
     override suspend fun updateEntry(dbKey: String, entryId: String, fields: List<EntryFieldData>) {
         step("updateEntry", dbKey)
-        val entry = entry(dbKey, entryId)
+        val entry = found(dbKey, entryId)
         refuseDuplicateKeys(fields)
         stored(dbKey)[entryId] = entry.copy(fields = fields)
     }
 
     override suspend fun moveEntryToRecycleBin(dbKey: String, entryId: String) {
         step("moveEntryToRecycleBin", dbKey)
-        val entry = entry(dbKey, entryId)
+        val entry = found(dbKey, entryId)
         val binId = recycleBin(dbKey)
         val tree = tree(dbKey)
         val oldParent = tree.groups.getValue(entry.groupId)
@@ -293,12 +294,27 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         stored(dbKey)[entryId] = entry.copy(groupId = binId)
     }
 
+    override suspend fun moveEntry(dbKey: String, entryId: String, groupId: String) {
+        step("moveEntry", dbKey)
+        val entry = found(dbKey, entryId)
+        val tree = tree(dbKey)
+        val target = tree.groups[groupId] ?: throw notFound(groupId)
+        val oldParent = tree.groups.getValue(entry.groupId)
+
+        groupTrees[dbKey] = tree.copy(
+            groups = tree.groups +
+                (oldParent.id to oldParent.copy(entryIds = oldParent.entryIds - entryId)) +
+                (groupId to target.copy(entryIds = target.entryIds + entryId)),
+        )
+        stored(dbKey)[entryId] = entry.copy(groupId = groupId)
+    }
+
     private fun stored(dbKey: String): MutableMap<String, FakeEntry> {
         tree(dbKey)
         return storedEntries.getOrPut(dbKey) { mutableMapOf() }
     }
 
-    private fun entry(dbKey: String, entryId: String): FakeEntry =
+    private fun found(dbKey: String, entryId: String): FakeEntry =
         stored(dbKey)[entryId] ?: throw CoreException("NotFound", "no entry $entryId")
 
     private fun summary(id: String, entry: FakeEntry) = EntrySummaryData(

@@ -17,6 +17,14 @@ data class EntryFieldData(
     override fun toString(): String = "EntryFieldData(key=$key, protected=$protected)"
 }
 
+/** An entry as its screens read it: where it is and what it holds. */
+data class EntryData(
+    /** The group the entry is directly in */
+    val groupId: String,
+    /** Its strings, in its order */
+    val fields: List<EntryFieldData>,
+)
+
 /** An entry as a list shows it: enough for a card, nothing secret. */
 data class EntrySummaryData(
     val id: String,

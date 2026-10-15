@@ -139,8 +139,8 @@ interface NativeCore {
      */
     suspend fun searchEntries(dbKey: String, term: String): EntrySearchData
 
-    /** The strings of the entry, in its order. */
-    suspend fun entryFields(dbKey: String, entryId: String): List<EntryFieldData>
+    /** The entry: the group it is directly in, and its strings in its order. */
+    suspend fun entry(dbKey: String, entryId: String): EntryData
 
     /**
      * Creates an entry inside [groupId] holding exactly [fields], in that order, and returns its id. The
@@ -162,6 +162,9 @@ interface NativeCore {
      * only.
      */
     suspend fun moveEntryToRecycleBin(dbKey: String, entryId: String)
+
+    /** Moves the entry into the group [groupId], with nothing else of it changed. In memory only. */
+    suspend fun moveEntry(dbKey: String, entryId: String, groupId: String)
 }
 
 /**

@@ -23,7 +23,11 @@ import ru.kino.dev.vault.entry.FieldProblem
 import ru.kino.dev.vault.entry.NameProblem
 import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
+import ru.kino.dev.vault.group.GroupRepository
+import ru.kino.dev.vault.pres.common.GroupChoice
+import ru.kino.dev.vault.pres.common.groupChoices
 
 /**
  * @param creating a new entry, not one of the database
@@ -31,6 +35,9 @@ import ru.kino.dev.vault.group.GroupId
  * @param content what the form holds now; null until the entry is read
  * @param initial what the form opened with - the blank or the entry as read: "back" asks before leaving
  * anything else
+ * @param groups every group the entry can go into, in the order of the tree; empty until the tree is read
+ * @param group the group chosen - where a new entry goes, where an edited one is moved on saving
+ * @param initialGroup the group the form opened with: another one is a change, as other fields are
  * @param shownOwn indexes of protected own fields shown in clear
  * @param problems what the last save was refused for, until the field is edited
  * @param saving the change is being made and written - the fab waits, the fields take nothing
@@ -41,6 +48,9 @@ data class EntryEditState(
     val loading: Boolean = false,
     val content: EntryContent? = null,
     val initial: EntryContent? = null,
+    val groups: List<GroupChoice> = emptyList(),
+    val group: GroupId? = null,
+    val initialGroup: GroupId? = null,
     val passwordVisible: Boolean = false,
     val shownOwn: Set<Int> = emptySet(),
     val problems: List<FieldProblem> = emptyList(),
@@ -48,8 +58,8 @@ data class EntryEditState(
     val dialog: EntryEditDialog? = null,
     val message: EntryEditMessage? = null,
 ) {
-    /** The form differs from what it opened with. */
-    val changed: Boolean get() = content != initial
+    /** The form differs from what it opened with - the fields, or the group. */
+    val changed: Boolean get() = content != initial || group != initialGroup
 
     /** The required field of the preset under [key] was refused for being empty. */
     fun isMissing(key: String): Boolean = problems.any { it is FieldProblem.Required && it.key == key }
@@ -79,6 +89,7 @@ class EntryEditProcessor @AssistedInject constructor(
     @Assisted("groupId") private val groupId: String?,
     @Assisted("entryId") private val entryId: String?,
     private val entries: EntryRepository,
+    private val groupRepository: GroupRepository,
     private val editor: EntryEditor,
     private val navigator: Navigator,
     private val log: ErrorLog,
@@ -100,12 +111,13 @@ class EntryEditProcessor @AssistedInject constructor(
     override val container = orbitContainer<EntryEditState, Nothing>(
         if (entryId == null) {
             val blank = StandardPreset.preset.blank()
-            EntryEditState(creating = true, content = blank, initial = blank)
+            val group = GroupId(checkNotNull(groupId))
+            EntryEditState(creating = true, content = blank, initial = blank, group = group, initialGroup = group)
         } else {
             EntryEditState(creating = false, loading = true)
         },
     ) {
-        if (entryId != null) load(EntryId(entryId))
+        if (entryId != null) load(EntryId(entryId)) else loadGroups()
     }
 
     fun action(action: EntryEditAction): Job = when (action) {
@@ -146,6 +158,10 @@ class EntryEditProcessor @AssistedInject constructor(
                 state.copy(shownOwn = if (action.index in shown) shown - action.index else shown + action.index)
             }
 
+            is EntryEditAction.GroupChosen -> if (state.editable) {
+                reduce { state.copy(group = action.id) }
+            }
+
             EntryEditAction.ChoosePreset -> if (state.editable) {
                 reduce { state.copy(dialog = EntryEditDialog.Preset) }
             }
@@ -184,14 +200,40 @@ class EntryEditProcessor @AssistedInject constructor(
 
     private suspend fun Syntax<EntryEditState, Nothing>.load(id: EntryId) {
         try {
-            val content = entries.content(dbKey, id)
-            reduce { state.copy(loading = false, content = content, initial = content) }
+            val opened = entries.opened(dbKey, id)
+            val groups = groupRepository.tree(dbKey).groupChoices()
+            reduce {
+                state.copy(
+                    loading = false,
+                    content = opened.content,
+                    initial = opened.content,
+                    groups = groups,
+                    group = opened.groupId,
+                    initialGroup = opened.groupId,
+                )
+            }
         } catch (_: EntryFailure.EntryNotFound) {
             leave()
         } catch (failure: EntryFailure) {
-            log.unexpected(TAG, failure)
-            reduce { state.copy(loading = false, message = EntryEditMessage.LoadFailed) }
+            loadFailed(failure)
+        } catch (failure: GroupFailure) {
+            loadFailed(failure)
         }
+    }
+
+    /** A new entry: the groups to choose from - the one it goes into is known from the route already. */
+    private suspend fun Syntax<EntryEditState, Nothing>.loadGroups() {
+        try {
+            val groups = groupRepository.tree(dbKey).groupChoices()
+            reduce { state.copy(groups = groups) }
+        } catch (failure: GroupFailure) {
+            loadFailed(failure)
+        }
+    }
+
+    private suspend fun Syntax<EntryEditState, Nothing>.loadFailed(failure: Exception) {
+        log.unexpected(TAG, failure)
+        reduce { state.copy(loading = false, message = EntryEditMessage.LoadFailed) }
     }
 
     private suspend fun Syntax<EntryEditState, Nothing>.confirm() {
@@ -237,14 +279,15 @@ class EntryEditProcessor @AssistedInject constructor(
 
     private suspend fun Syntax<EntryEditState, Nothing>.save() {
         val content = state.content ?: return
+        val group = state.group ?: return
         if (state.saving) return
 
         reduce { state.copy(saving = true, problems = emptyList()) }
         try {
             if (entryId == null) {
-                editor.create(dbKey, GroupId(checkNotNull(groupId)), content)
+                editor.create(dbKey, group, content)
             } else {
-                editor.update(dbKey, EntryId(entryId), content)
+                editor.update(dbKey, EntryId(entryId), content, group)
             }
             leave()
         } catch (failure: EntryFailure) {

@@ -163,6 +163,7 @@
     <string name="entry_field_service">Название сервиса</string>
     <string name="entry_field_url">URL сервиса</string>
     <string name="entry_field_notes">Заметки</string>
+    <string name="entry_field_group">Группа</string>
     <string name="entry_field_required">Заполните поле</string>
     <string name="entry_field_name">Название поля</string>
     <string name="entry_field_name_empty">Введите название</string>

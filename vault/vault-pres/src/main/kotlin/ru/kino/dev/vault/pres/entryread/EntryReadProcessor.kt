@@ -16,17 +16,23 @@ import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryRepository
 import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.GroupFailure
+import ru.kino.dev.vault.group.GroupRepository
+import ru.kino.dev.vault.pres.common.GroupChoice
+import ru.kino.dev.vault.pres.common.groupChoice
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 
 /**
  * @param loading the entry is not read yet - the skeleton is shown
  * @param content the entry; null until it is read
+ * @param group the group the entry is in, with the path down to it; null until it is read
  * @param shownOwn indexes of protected own fields shown in clear
  * @param message for the snackbar, until it takes it
  */
 data class EntryReadState(
     val loading: Boolean = true,
     val content: EntryContent? = null,
+    val group: GroupChoice? = null,
     val passwordVisible: Boolean = false,
     val shownOwn: Set<Int> = emptySet(),
     val message: EntryReadMessage? = null,
@@ -45,6 +51,7 @@ class EntryReadProcessor @AssistedInject constructor(
     @Assisted("dbKey") private val dbKey: String,
     @Assisted("entryId") private val entryId: String,
     private val entries: EntryRepository,
+    private val groupRepository: GroupRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryReadState, EntryReadState, Nothing> {
@@ -78,25 +85,37 @@ class EntryReadProcessor @AssistedInject constructor(
     }
 
     private suspend fun Syntax<EntryReadState, Nothing>.load() {
-        val content = try {
-            entries.content(dbKey, EntryId(entryId))
+        val opened = try {
+            entries.opened(dbKey, EntryId(entryId))
         } catch (_: EntryFailure.EntryNotFound) {
             // Deleted or merged away while this screen was under another one
             navigator.navigate(MviNavEvent.NavigateBack)
             return
         } catch (failure: EntryFailure) {
-            log.unexpected(TAG, failure)
-            reduce { state.copy(loading = false, message = EntryReadMessage.LoadFailed) }
+            loadFailed(failure)
             return
         }
+        // The group may be another one now - the entry comes back from its form moved
+        val group = try {
+            groupRepository.tree(dbKey).groupChoice(opened.groupId)
+        } catch (failure: GroupFailure) {
+            loadFailed(failure)
+            return
+        }
+        val content = opened.content
 
         reduce {
             if (content == state.content) {
-                state.copy(loading = false)
+                state.copy(loading = false, group = group)
             } else {
-                state.copy(loading = false, content = content, passwordVisible = false, shownOwn = emptySet())
+                state.copy(loading = false, content = content, group = group, passwordVisible = false, shownOwn = emptySet())
             }
         }
+    }
+
+    private suspend fun Syntax<EntryReadState, Nothing>.loadFailed(failure: Exception) {
+        log.unexpected(TAG, failure)
+        reduce { state.copy(loading = false, message = EntryReadMessage.LoadFailed) }
     }
 
     private companion object {

@@ -52,9 +52,9 @@ class EntryEditorTest {
     fun `changing an entry replaces its fields, then saves`() = runTest {
         val id = entries.add("e1", GROUP, filled.fields())
 
-        editor.update(DB, id, filled.withValue(PASSWORD, "new secret"))
+        editor.update(DB, id, filled.withValue(PASSWORD, "new secret"), GROUP)
 
-        assertEquals(listOf("fields", "update", "save"), journal)
+        assertEquals(listOf("read", "update", "save"), journal)
         assertEquals("new secret", entries.stored.getValue(id).fields.first { it.key == PASSWORD }.value)
     }
 
@@ -62,9 +62,9 @@ class EntryEditorTest {
     fun `the same fields again are not a change and write nothing`() = runTest {
         val id = entries.add("e1", GROUP, filled.fields())
 
-        editor.update(DB, id, filled)
+        editor.update(DB, id, filled, GROUP)
 
-        assertEquals(listOf("fields"), journal)
+        assertEquals(listOf("read"), journal)
     }
 
     @Test
@@ -72,9 +72,9 @@ class EntryEditorTest {
         val foreign = filled.withValue(USER_NAME, "")
         val id = entries.add("e1", GROUP, foreign.fields())
 
-        editor.update(DB, id, foreign.withValue(TITLE, "Bank"))
+        editor.update(DB, id, foreign.withValue(TITLE, "Bank"), GROUP)
 
-        assertEquals(listOf("fields", "update", "save"), journal)
+        assertEquals(listOf("read", "update", "save"), journal)
     }
 
     @Test
@@ -82,11 +82,11 @@ class EntryEditorTest {
         val id = entries.add("e1", GROUP, filled.fields())
 
         val failure = expectFailure<EntryFailure.InvalidFields> {
-            editor.update(DB, id, filled.withValue(PASSWORD, ""))
+            editor.update(DB, id, filled.withValue(PASSWORD, ""), GROUP)
         }
 
         assertEquals(listOf(FieldProblem.Required(PASSWORD)), failure.problems)
-        assertEquals(listOf("fields"), journal)
+        assertEquals(listOf("read"), journal)
     }
 
     @Test
@@ -97,15 +97,47 @@ class EntryEditorTest {
         journal.clear()
 
         // Unchanged it is not saved at all; any other change asks for the twin to be renamed first
-        editor.update(DB, id, content)
-        assertEquals(listOf("fields"), journal)
+        editor.update(DB, id, content, GROUP)
+        assertEquals(listOf("read"), journal)
         val failure = expectFailure<EntryFailure.InvalidFields> {
-            editor.update(DB, id, content.withValue(TITLE, "Bank"))
+            editor.update(DB, id, content.withValue(TITLE, "Bank"), GROUP)
         }
         assertEquals(listOf(FieldProblem.BadName(1, NameProblem.TAKEN)), failure.problems)
 
-        editor.update(DB, id, content.copy(ownFields = listOf(field(" PIN"), field(" Card "))))
+        editor.update(DB, id, content.copy(ownFields = listOf(field(" PIN"), field(" Card "))), GROUP)
         assertEquals(listOf(" PIN", "Card"), entries.stored.getValue(id).fields.drop(5).map { it.key })
+    }
+
+    @Test
+    fun `another group alone moves the entry and saves, the fields not written`() = runTest {
+        val id = entries.add("e1", GROUP, filled.fields())
+
+        editor.update(DB, id, filled, OTHER_GROUP)
+
+        assertEquals(listOf("read", "move", "save"), journal)
+        assertEquals(OTHER_GROUP, entries.stored.getValue(id).groupId)
+    }
+
+    @Test
+    fun `other fields and another group - both, and one save`() = runTest {
+        val id = entries.add("e1", GROUP, filled.fields())
+
+        editor.update(DB, id, filled.withValue(PASSWORD, "new secret"), OTHER_GROUP)
+
+        assertEquals(listOf("read", "update", "move", "save"), journal)
+        assertEquals(OTHER_GROUP, entries.stored.getValue(id).groupId)
+    }
+
+    @Test
+    fun `an emptied password is refused before the entry moves`() = runTest {
+        val id = entries.add("e1", GROUP, filled.fields())
+
+        expectFailure<EntryFailure.InvalidFields> {
+            editor.update(DB, id, filled.withValue(PASSWORD, ""), OTHER_GROUP)
+        }
+
+        assertEquals(listOf("read"), journal)
+        assertEquals(GROUP, entries.stored.getValue(id).groupId)
     }
 
     @Test
@@ -120,7 +152,7 @@ class EntryEditorTest {
 
     @Test
     fun `an entry that is gone is not found`() = runTest {
-        expectFailure<EntryFailure.EntryNotFound> { editor.update(DB, EntryId("missing"), filled) }
+        expectFailure<EntryFailure.EntryNotFound> { editor.update(DB, EntryId("missing"), filled, GROUP) }
         expectFailure<EntryFailure.EntryNotFound> { editor.delete(DB, EntryId("missing")) }
     }
 
@@ -158,5 +190,6 @@ class EntryEditorTest {
     private companion object {
         const val DB = "content://db"
         val GROUP = GroupId("work")
+        val OTHER_GROUP = GroupId("home")
     }
 }

@@ -44,6 +44,8 @@ import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.fieldLabel
+import ru.kino.dev.vault.pres.common.subtitle
+import ru.kino.dev.vault.pres.common.title
 
 @Composable
 internal fun EntryReadScreen(
@@ -124,6 +126,20 @@ private fun EntryFields(state: EntryReadState, content: EntryContent, action: (E
             clipboard = clipboard.takeIf { title.isNotEmpty() },
             modifier = modifier,
         )
+    }
+
+    // Where the entry is: the name, the path down to it under it (pass-docs, Step 48)
+    state.group?.let { group ->
+        EntrySection {
+            TextField(
+                value = group.title(),
+                onValueChange = {},
+                label = stringResource(R.string.entry_field_group),
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                hint = group.subtitle(),
+            )
+        }
     }
 
     val shownPreset = READ_ORDER.filter { content.value(it).isNotEmpty() }
