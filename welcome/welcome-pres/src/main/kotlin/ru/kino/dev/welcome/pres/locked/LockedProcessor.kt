@@ -12,8 +12,10 @@ import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.mvi.textIntent
+import ru.kino.dev.navigation.LockedRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.welcome.CurrentDatabaseRepository
 import ru.kino.dev.welcome.WelcomeDatabaseRepository
 import ru.kino.dev.welcome.WelcomeFailure
@@ -32,8 +34,9 @@ data class LockedState(
 
 /**
  * The database locked while open - its own screen, not a mode of unlocking (pass-docs, `decisions.md`):
- * the core still holds it, so unlocking checks the credentials against the key it kept and is quick, and
- * success goes back to where the user was in `vault`, which is still there under this screen.
+ * the core still holds it, so unlocking checks the credentials against the key it kept and is quick. Under
+ * this screen there is nothing: the lock popped `vault` whole, and success starts it again at the root
+ * (pass-docs, Step 46).
  *
  * Biometrics give the password on a tap, and it unlocks the usual way - `unlock_kdbx` with the password,
  * so the unlock is bound to the Keystore key rather than to a prompt that said yes (pass-docs, Step 33).
@@ -103,8 +106,6 @@ class LockedProcessor @AssistedInject constructor(
                 reduce { state.copy(entry = state.entry.withKeyFile(action.uri, name)) }
             }
 
-            LockedAction.RemoveKeyFile -> reduce { state.copy(entry = state.entry.withKeyFile(null, null)) }
-
             LockedAction.Biometric -> startBiometric()
 
             is LockedAction.BiometricFinished -> biometricFinished(action.outcome)
@@ -158,7 +159,10 @@ class LockedProcessor @AssistedInject constructor(
         try {
             database.unlock(dbKey, password, entry.keyFileUri)
             reduce { state.copy(entry = PasswordEntry()) }
-            navigator.navigate(MviNavEvent.NavigateBack)
+            // `vault` was popped by the lock: it starts again at the root (pass-docs, Step 46)
+            navigator.navigate(
+                MviNavEvent.NavigateTo(VaultRootRoute(dbKey), popUpTo = LockedRoute(dbKey), inclusive = true),
+            )
         } catch (failure: WelcomeFailure) {
             if (fromBiometrics && failure is WelcomeFailure.InvalidCredentials) {
                 biometric.passwordRejected(dbKey)

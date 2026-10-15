@@ -19,7 +19,7 @@ data object WelcomeGraph
 @Serializable
 data object VaultGraph
 
-/** The locked database, on top of `vault`: unlocking goes back to where the user was. */
+/** The locked database, in place of `vault`: the lock pops `vault` whole, unlocking starts it at the root. */
 @Serializable
 data class LockedRoute(val dbKey: String)
 

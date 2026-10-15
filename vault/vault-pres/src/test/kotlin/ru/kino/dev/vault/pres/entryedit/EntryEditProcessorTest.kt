@@ -10,6 +10,7 @@ import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryFailure
@@ -20,7 +21,6 @@ import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.testing.DB
-import ru.kino.dev.vault.pres.testing.FakeVaultDatabase
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
 

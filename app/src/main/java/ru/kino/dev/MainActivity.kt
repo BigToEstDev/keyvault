@@ -1,6 +1,8 @@
 package ru.kino.dev
 
 import android.os.Bundle
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -13,6 +15,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import ru.kino.dev.navigation.AppNavHost
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.ui.theme.PassappTheme
+import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.welcome.pres.start.WelcomeStartResolver
 import javax.inject.Inject
 
@@ -25,6 +28,9 @@ class MainActivity : FragmentActivity() {
 
     @Inject
     lateinit var navigator: Navigator
+
+    @Inject
+    lateinit var autoLock: AutoLock
 
     private val startResolver: WelcomeStartResolver by viewModels()
 
@@ -45,8 +51,26 @@ class MainActivity : FragmentActivity() {
         setContent {
             PassappTheme {
                 val start by startResolver.start.collectAsStateWithLifecycle()
-                start?.let { AppNavHost(navigator = navigator, start = it) }
+                start?.let { AppNavHost(navigator = navigator, autoLock = autoLock, start = it) }
             }
         }
+    }
+
+    // Before the first frame after coming back: a timer slept through in the background locks now, and
+    // `vault` is covered before it could be seen (pass-docs, Step 46)
+    override fun onStart() {
+        super.onStart()
+        autoLock.cameBack()
+    }
+
+    // Every touch and key of the app, whatever screen takes it - the person is here
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        autoLock.touched()
+        return super.dispatchTouchEvent(event)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        autoLock.touched()
+        return super.dispatchKeyEvent(event)
     }
 }

@@ -6,7 +6,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
+import ru.kino.dev.navigation.LockedRoute
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
@@ -48,7 +50,7 @@ class LockedProcessorTest {
     }
 
     @Test
-    fun `unlocking goes back to where the user was in vault`() = runTest {
+    fun `unlocking starts vault again at its root`() = runTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this, lockedState()) {
@@ -60,7 +62,7 @@ class LockedProcessorTest {
         assertEquals(listOf("unlock $DB"), journal)
         assertEquals("pw", database.passwordReceived)
         assertEquals(KEY, database.keyFileReceived)
-        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+        assertEquals(listOf(TO_VAULT_ROOT), events)
     }
 
     @Test
@@ -88,7 +90,7 @@ class LockedProcessorTest {
         }
 
         assertEquals(NEW_KEY, database.keyFileReceived)
-        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+        assertEquals(listOf(TO_VAULT_ROOT), events)
     }
 
     @Test
@@ -121,7 +123,7 @@ class LockedProcessorTest {
         assertEquals(listOf("unlock $DB"), journal)
         assertEquals("stored", database.passwordReceived)
         assertEquals(KEY, database.keyFileReceived)
-        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+        assertEquals(listOf(TO_VAULT_ROOT), events)
     }
 
     @Test
@@ -152,5 +154,8 @@ class LockedProcessorTest {
         const val DB = "content://docs/passwords.kdbx"
         const val KEY = "content://keys/my.keyx"
         const val NEW_KEY = "content://keys/new.keyx"
+
+        /** The lock popped `vault`: unlocking puts its root in place of the locked screen. */
+        val TO_VAULT_ROOT = MviNavEvent.NavigateTo(VaultRootRoute(DB), popUpTo = LockedRoute(DB), inclusive = true)
     }
 }

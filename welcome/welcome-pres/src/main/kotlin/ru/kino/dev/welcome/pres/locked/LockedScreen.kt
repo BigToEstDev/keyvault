@@ -45,11 +45,12 @@ internal fun LockedScreen(
         onTogglePasswordVisible = { processor.action(LockedAction.TogglePasswordVisible) },
         onSubmit = { processor.action(LockedAction.Submit) },
         onAttachKeyFile = { processor.action(LockedAction.AttachKeyFile) },
-        onRemoveKeyFile = { processor.action(LockedAction.RemoveKeyFile) },
+        onRemoveKeyFile = null,
         onBiometric = { processor.action(LockedAction.Biometric) },
         onRetry = { processor.action(LockedAction.Submit) },
         onCreateDatabase = null,
         onDatabaseClick = null,
         onPickAnotherDatabase = null,
+        locked = true,
     )
 }

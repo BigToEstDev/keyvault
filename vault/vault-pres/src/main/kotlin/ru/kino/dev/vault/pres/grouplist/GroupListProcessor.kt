@@ -11,14 +11,11 @@ import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
-import ru.kino.dev.core.CoreException
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.mvi.textIntent
-import ru.kino.dev.navigation.LockedRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.VaultRootRoute
-import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryRepository
@@ -32,6 +29,7 @@ import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.group.VaultTree
+import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
@@ -137,8 +135,9 @@ enum class EmptyReason {
  * into a group or an entry, back, or locking, clears it (`vault-our.md`, "Время жизни Поиска"). The filter
  * is read from the device every time the screen is shown, and kept there when applied.
  *
- * Locking puts the locked screen of `welcome` on top: this screen stays under it, and unlocking comes back
- * here.
+ * The root hands the database to [AutoLock]: from then on it locks after a while without a touch, and the
+ * app puts the locked screen of `welcome` up with `vault` gone - unlocking starts at the root again
+ * (pass-docs, Step 46).
  *
  * @param groupId null for the root
  */
@@ -150,7 +149,7 @@ class GroupListProcessor @AssistedInject constructor(
     private val editor: GroupEditor,
     private val entries: EntryRepository,
     private val entryEditor: EntryEditor,
-    private val database: VaultDatabaseRepository,
+    private val autoLock: AutoLock,
     private val vaultSearch: VaultSearch,
     private val filters: VaultFilterRepository,
     private val navigator: Navigator,
@@ -166,6 +165,11 @@ class GroupListProcessor @AssistedInject constructor(
 
     /** The search waiting for the typing to stop, or for its answer; the next letter cancels it. */
     private var searchJob: Job? = null
+
+    init {
+        // The root is where `vault` begins - after opening and after every unlock
+        if (groupId == null) autoLock.watch(dbKey)
+    }
 
     fun action(action: GroupListAction): Job = when (action) {
         is GroupListAction.QueryChanged -> queryChanged(action.query)
@@ -478,15 +482,8 @@ class GroupListProcessor @AssistedInject constructor(
         if (state.locking) return
 
         reduce { state.copy(locking = true, fabExpanded = false) }
-        try {
-            database.lock(dbKey)
-            reduce { state.copy(locking = false) }
-            // Closing the database ends the search (vault-our.md, "Время жизни Поиска")
-            clearSearch()
-            navigator.navigate(MviNavEvent.NavigateTo(LockedRoute(dbKey)))
-        } catch (e: CoreException) {
-            // The vault repositories throw what the core throws; no screen answer of its own yet
-            log.unexpected(TAG, e)
+        // The locked screen is put up by the app, with `vault` gone under it; the refusal is logged by the lock
+        if (!autoLock.lockNow()) {
             reduce { state.copy(locking = false, message = GroupListMessage.Unexpected) }
         }
     }

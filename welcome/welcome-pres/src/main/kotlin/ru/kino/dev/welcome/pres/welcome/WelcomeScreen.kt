@@ -28,6 +28,7 @@ import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.SecondaryButton
+import ru.kino.dev.welcome.pres.common.ShieldImage
 import ru.kino.dev.welcome.pres.common.rememberOpenDocument
 
 @Composable
@@ -64,7 +65,7 @@ private fun WelcomeContent(onOpen: () -> Unit, onCreate: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                WelcomeImage(modifier = Modifier.size(140.dp))
+                ShieldImage(modifier = Modifier.size(140.dp))
                 Spacer(Modifier.height(32.dp))
                 Text(
                     text = stringResource(R.string.welcome_title),
