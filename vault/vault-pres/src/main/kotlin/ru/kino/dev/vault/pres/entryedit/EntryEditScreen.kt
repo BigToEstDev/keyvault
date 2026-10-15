@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.preset.PresetField
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.Dropdown
 import ru.kino.dev.ui.components.GradientBackground
@@ -49,6 +50,7 @@ import ru.kino.dev.vault.pres.common.EntryTitleSection
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.fieldLabel
 import ru.kino.dev.vault.pres.common.option
+import ru.kino.dev.vault.pres.common.presetName
 import ru.kino.dev.vault.pres.entryedit.components.EntryEditDialogs
 import ru.kino.dev.vault.pres.entryedit.components.OwnFieldRow
 import ru.kino.dev.vault.pres.entryedit.components.nameProblemText
@@ -129,13 +131,9 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
     val missing = stringResource(R.string.entry_field_required)
 
     @Composable
-    fun PresetText(
-        key: String,
-        modifier: Modifier = Modifier.fillMaxWidth(),
-        minLines: Int = 1,
-        keyboard: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-    ) {
-        val field = content.preset.fields.first { it.key == key }
+    fun PresetText(field: PresetField, modifier: Modifier = Modifier.fillMaxWidth()) {
+        val key = field.key
+        val notes = key == StandardPreset.NOTES
         TextField(
             value = content.value(key),
             onValueChange = { action(EntryEditAction.ValueChanged(key, it)) },
@@ -144,18 +142,34 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             required = field.required,
             error = if (state.isMissing(key)) missing else null,
             enabled = enabled,
-            singleLine = minLines == 1,
-            minLines = minLines,
-            keyboardOptions = keyboard,
+            singleLine = !notes,
+            minLines = if (notes) NOTES_LINES else 1,
+            keyboardOptions = keyboardFor(key),
         )
     }
 
+    @Composable
+    fun PresetInput(field: PresetField) {
+        if (field.key == StandardPreset.PASSWORD) {
+            PasswordField(
+                value = content.value(field.key),
+                onValueChange = { action(EntryEditAction.ValueChanged(field.key, it)) },
+                label = fieldLabel(field.key),
+                visible = state.passwordVisible,
+                onToggleVisible = { action(EntryEditAction.TogglePassword) },
+                modifier = Modifier.fillMaxWidth(),
+                required = field.required,
+                error = if (state.isMissing(field.key)) missing else null,
+                enabled = enabled,
+                imeAction = ImeAction.Next,
+            )
+        } else {
+            PresetText(field)
+        }
+    }
+
     EntryTitleSection(enabled = enabled) { modifier ->
-        PresetText(
-            key = StandardPreset.TITLE,
-            modifier = modifier,
-            keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
-        )
+        PresetText(field = content.preset.fields.first(), modifier = modifier)
     }
 
     EntrySection {
@@ -169,38 +183,17 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         )
     }
 
-    EntryPresetSection(onClick = { action(EntryEditAction.ChoosePreset) }, enabled = enabled)
+    EntryPresetSection(
+        name = presetName(content.preset),
+        onClick = { action(EntryEditAction.ChoosePreset) },
+        enabled = enabled,
+    )
 
-    EntrySection {
-        PresetText(
-            key = StandardPreset.USER_NAME,
-            keyboard = KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Next),
-        )
-        PasswordField(
-            value = content.value(StandardPreset.PASSWORD),
-            onValueChange = { action(EntryEditAction.ValueChanged(StandardPreset.PASSWORD, it)) },
-            label = fieldLabel(StandardPreset.PASSWORD),
-            visible = state.passwordVisible,
-            onToggleVisible = { action(EntryEditAction.TogglePassword) },
-            modifier = Modifier.fillMaxWidth(),
-            required = true,
-            error = if (state.isMissing(StandardPreset.PASSWORD)) missing else null,
-            enabled = enabled,
-            imeAction = ImeAction.Next,
-        )
-        PresetText(
-            key = StandardPreset.SERVICE,
-            keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
-        )
-        PresetText(
-            key = StandardPreset.URL,
-            keyboard = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false, imeAction = ImeAction.Next),
-        )
-        PresetText(
-            key = StandardPreset.NOTES,
-            minLines = NOTES_LINES,
-            keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-        )
+    // The cards of the preset, as the preset has them
+    content.preset.cards.forEach { card ->
+        EntrySection {
+            card.fields.forEach { PresetInput(it) }
+        }
     }
 
     // A card of its own: the own fields - read or added here - and the button that adds one
@@ -241,6 +234,20 @@ private fun SaveFab(saving: Boolean, onSave: () -> Unit) {
             Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.entry_save))
         }
     }
+}
+
+/**
+ * The keyboard of a field of a preset: the standard ones each their own, a field the person named plain
+ * text. Notes - the last of every preset - leave "next" to the line break.
+ */
+private fun keyboardFor(key: String): KeyboardOptions = when (key) {
+    StandardPreset.TITLE, StandardPreset.SERVICE ->
+        KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next)
+    StandardPreset.USER_NAME -> KeyboardOptions(autoCorrectEnabled = false, imeAction = ImeAction.Next)
+    StandardPreset.URL ->
+        KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false, imeAction = ImeAction.Next)
+    StandardPreset.NOTES -> KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+    else -> KeyboardOptions(imeAction = ImeAction.Next)
 }
 
 /** Room around the cards; at the bottom - for the fab, so it never covers the last field. */
