@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -82,12 +81,7 @@ internal fun PasswordEntryContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Icon(
-                imageVector = Icons.Filled.Lock,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(56.dp),
-            )
+            ShieldImage(modifier = Modifier.size(SHIELD_SIZE))
             Spacer(Modifier.height(24.dp))
             subtitle?.let {
                 Text(
@@ -316,3 +310,6 @@ private fun ErrorText(text: String) {
         textAlign = TextAlign.Center,
     )
 }
+
+/** The shield over the password: smaller than on the welcome screen, which has nothing else to show. */
+private val SHIELD_SIZE = 96.dp

@@ -1,4 +1,4 @@
-package ru.kino.dev.welcome.pres.welcome
+package ru.kino.dev.welcome.pres.common
 
 import androidx.compose.foundation.Image
 import androidx.compose.material3.MaterialTheme
@@ -12,12 +12,13 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
 /**
- * The picture of the welcome screen: a shield with a keyhole. Decoration - no content description.
+ * The picture of the app: a shield with a keyhole - on the welcome screen, and over the password on the
+ * unlock and the locked screens. Decoration - no content description.
  *
  * Built from the theme colors rather than drawn in fixed ones, so it follows light and dark.
  */
 @Composable
-internal fun WelcomeImage(modifier: Modifier = Modifier) {
+internal fun ShieldImage(modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     val image = remember(colors.primary, colors.onPrimary, colors.onBackground) {
         shieldWithKeyhole(shield = colors.primary, shade = colors.onBackground, keyhole = colors.onPrimary)
