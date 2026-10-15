@@ -12,14 +12,16 @@ import ru.kino.dev.core.CoreException
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entry.EntryEditor
-import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryFailure
+import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.entry.FieldProblem
 import ru.kino.dev.vault.entry.NameProblem
 import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
+import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
@@ -42,8 +44,58 @@ class EntryEditProcessorTest {
         ),
     )
 
+    private val groups = FakeGroupRepository()
+    private val work = groups.add("work", groups.rootId, "Work")
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
+
+    // Groups
+
+    @Test
+    fun `an entry opens in its group, every group to choose from with its path, the bin left out`() = runTest {
+        // The bin, with a group in it: neither is a place for an entry
+        groups.moveToRecycleBin(DB, groups.add("old", groups.rootId, "Old"))
+
+        val (state, _) = editing()
+
+        assertEquals(group, state.group)
+        assertEquals(
+            listOf(GroupChoice(group, listOf("Passwords")), GroupChoice(work, listOf("Passwords", "Work"))),
+            state.groups,
+        )
+        assertFalse(state.changed)
+    }
+
+    @Test
+    fun `a new entry goes into the group it was made in unless another is chosen`() = runTest {
+        val (state, _) = creating()
+
+        assertEquals(group, state.group)
+        assertEquals(2, state.groups.size)
+    }
+
+    @Test
+    fun `another group is a change`() = runTest {
+        val (state, _) = editing(EntryEditAction.GroupChosen(work))
+
+        assertTrue(state.changed)
+    }
+
+    @Test
+    fun `saving with another group moves the entry there and closes the screen`() = runTest {
+        val (_, events) = editing(EntryEditAction.GroupChosen(work), EntryEditAction.Save)
+
+        assertEquals(work, entries.stored.getValue(mail).groupId)
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `leaving with another group asks first`() = runTest {
+        val (state, events) = editing(EntryEditAction.GroupChosen(work), EntryEditAction.Back)
+
+        assertEquals(EntryEditDialog.Leave, state.dialog)
+        assertTrue(events.isEmpty())
+    }
 
     // Creating
 
@@ -208,7 +260,7 @@ class EntryEditProcessorTest {
 
     @Test
     fun `an entry that cannot be read says so and goes to the log`() = runTest {
-        entries.failures["fields"] = EntryFailure.Unexpected(IllegalStateException("broken"))
+        entries.failures["read"] = EntryFailure.Unexpected(IllegalStateException("broken"))
 
         val (state, _) = editing()
 
@@ -446,7 +498,7 @@ class EntryEditProcessorTest {
         initial: EntryEditState? = null,
     ): Pair<EntryEditState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryEditProcessor(DB, groupId, entryId, entries, EntryEditor(entries, database), navigator, log)
+        val processor = EntryEditProcessor(DB, groupId, entryId, entries, groups, EntryEditor(entries, database), navigator, log)
 
         processor.testWithInternalState(this, initial) {
             if (initial == null) runOnCreate().join()

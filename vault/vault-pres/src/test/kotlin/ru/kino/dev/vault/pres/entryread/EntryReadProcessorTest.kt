@@ -9,11 +9,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
-import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryFailure
+import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.entry.StandardPreset
+import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
+import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
@@ -31,7 +33,30 @@ class EntryReadProcessorTest {
             EntryField("PIN", "1234", protected = true),
         ),
     )
+    private val groups = FakeGroupRepository()
     private val log = RecordingLog()
+
+    @Test
+    fun `the group of the entry is shown with the path down to it`() = runTest {
+        val (state, _) = perform(EntryReadAction.Load)
+
+        assertEquals(GroupChoice(groups.rootId, listOf("Passwords")), state.group)
+    }
+
+    @Test
+    fun `an entry moved on its form comes back in its new group`() = runTest {
+        val shown = EntryReadState(
+            loading = false,
+            content = entries.content(DB, mail),
+            group = GroupChoice(groups.rootId, listOf("Passwords")),
+        )
+        val work = groups.add("work", groups.rootId, "Work")
+        entries.stored[mail] = entries.stored.getValue(mail).copy(groupId = work)
+
+        val (state, _) = perform(EntryReadAction.Load, initial = shown)
+
+        assertEquals(GroupChoice(work, listOf("Passwords", "Work")), state.group)
+    }
 
     @Test
     fun `the entry is read when the screen is shown, laid over the preset, everything hidden`() = runTest {
@@ -87,7 +112,7 @@ class EntryReadProcessorTest {
 
     @Test
     fun `an entry that cannot be read says so and goes to the log`() = runTest {
-        entries.failures["fields"] = EntryFailure.Unexpected(IllegalStateException("broken"))
+        entries.failures["read"] = EntryFailure.Unexpected(IllegalStateException("broken"))
 
         val (state, _) = perform(EntryReadAction.Load, EntryReadAction.Edit)
 
@@ -113,7 +138,7 @@ class EntryReadProcessorTest {
         initial: EntryReadState = EntryReadState(),
     ): Pair<EntryReadState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryReadProcessor(DB, mail.value, entries, navigator, log)
+        val processor = EntryReadProcessor(DB, mail.value, entries, groups, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             actions.forEach { containerHost.action(it).join() }

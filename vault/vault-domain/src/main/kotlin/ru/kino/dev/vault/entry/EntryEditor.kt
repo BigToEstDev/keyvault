@@ -33,17 +33,27 @@ class EntryEditor(
     }
 
     /**
-     * Saves [content] over the entry. The checks are against the entry as it is now in the database. The
-     * same fields again are not a change: nothing is made and nothing is written - the core would put a
-     * version into the history on every update (pass-docs, Step 42, decision 15).
+     * Saves [content] over the entry and puts it into [groupId] - one action, one write. The checks are
+     * against the entry as it is now in the database. The same fields again are not a change: they are not
+     * written - the core would put a version into the history on every update (pass-docs, Step 42, decision
+     * 15); the same group is not a move. Neither - nothing is written at all.
      */
-    suspend fun update(dbKey: String, entryId: EntryId, content: EntryContent): Unit = guard.exclusive {
-        val read = entries.content(dbKey, entryId)
+    suspend fun update(
+        dbKey: String,
+        entryId: EntryId,
+        content: EntryContent,
+        groupId: GroupId,
+    ): Unit = guard.exclusive {
+        val opened = entries.opened(dbKey, entryId)
+        val read = opened.content
         val normalized = content.withNamesNormalized(keptNames = read.ownFields.map { it.key }.toSet())
-        if (normalized.fields() == read.fields()) return@exclusive
-        refuseProblems(EntryValidator.problems(normalized, read))
+        val changed = normalized.fields() != read.fields()
+        val moved = groupId != opened.groupId
+        if (!changed && !moved) return@exclusive
+        if (changed) refuseProblems(EntryValidator.problems(normalized, read))
 
-        entries.update(dbKey, entryId, normalized.fields())
+        if (changed) entries.update(dbKey, entryId, normalized.fields())
+        if (moved) entries.move(dbKey, entryId, groupId)
         save(dbKey)
     }
 

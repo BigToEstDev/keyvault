@@ -58,9 +58,10 @@ class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : En
         return EntrySearch(term, found)
     }
 
-    override suspend fun fields(dbKey: String, entryId: EntryId): List<EntryField> {
-        call("fields")
-        return entry(entryId).fields
+    override suspend fun read(dbKey: String, entryId: EntryId): EntryRecord {
+        call("read")
+        val entry = entry(entryId)
+        return EntryRecord(entry.groupId, entry.fields)
     }
 
     override suspend fun create(dbKey: String, groupId: GroupId, fields: List<EntryField>): EntryId {
@@ -81,6 +82,11 @@ class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : En
         entry(entryId)
         stored.remove(entryId)
         recycled += entryId
+    }
+
+    override suspend fun move(dbKey: String, entryId: EntryId, groupId: GroupId) {
+        call("move")
+        stored[entryId] = entry(entryId).copy(groupId = groupId)
     }
 
     private fun entry(id: EntryId) = stored[id] ?: throw EntryFailure.EntryNotFound()

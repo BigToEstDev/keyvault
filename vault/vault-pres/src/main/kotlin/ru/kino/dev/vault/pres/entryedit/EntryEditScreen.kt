@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.ui.components.Dropdown
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.SecondaryButton
@@ -47,6 +48,7 @@ import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.fieldLabel
+import ru.kino.dev.vault.pres.common.option
 import ru.kino.dev.vault.pres.entryedit.components.EntryEditDialogs
 import ru.kino.dev.vault.pres.entryedit.components.OwnFieldRow
 import ru.kino.dev.vault.pres.entryedit.components.nameProblemText
@@ -153,6 +155,17 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             key = StandardPreset.TITLE,
             modifier = modifier,
             keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
+        )
+    }
+
+    EntrySection {
+        Dropdown(
+            selected = state.group,
+            options = state.groups.map { it.option() },
+            onSelect = { action(EntryEditAction.GroupChosen(it)) },
+            label = stringResource(R.string.entry_field_group),
+            modifier = Modifier.fillMaxWidth(),
+            enabled = enabled,
         )
     }
 

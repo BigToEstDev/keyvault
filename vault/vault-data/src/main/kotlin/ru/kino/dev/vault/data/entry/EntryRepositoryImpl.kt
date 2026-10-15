@@ -5,6 +5,7 @@ import ru.kino.dev.core.EntrySummaryData
 import ru.kino.dev.core.NativeCore
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
+import ru.kino.dev.vault.entry.EntryRecord
 import ru.kino.dev.vault.entry.EntryRepository
 import ru.kino.dev.vault.entry.EntrySearch
 import ru.kino.dev.vault.entry.EntrySummary
@@ -28,8 +29,9 @@ internal class EntryRepositoryImpl @Inject constructor(
         EntrySearch(term = found.term, entries = found.entries.map { it.toSummary() })
     }
 
-    override suspend fun fields(dbKey: String, entryId: EntryId): List<EntryField> = entryCall {
-        core.entryFields(dbKey, entryId.value).map { it.toField() }
+    override suspend fun read(dbKey: String, entryId: EntryId): EntryRecord = entryCall {
+        val entry = core.entry(dbKey, entryId.value)
+        EntryRecord(groupId = GroupId(entry.groupId), fields = entry.fields.map { it.toField() })
     }
 
     override suspend fun create(dbKey: String, groupId: GroupId, fields: List<EntryField>): EntryId =
@@ -44,6 +46,13 @@ internal class EntryRepositoryImpl @Inject constructor(
     override suspend fun moveToRecycleBin(dbKey: String, entryId: EntryId) = entryCall {
         core.moveEntryToRecycleBin(dbKey, entryId.value)
     }
+
+    // The core names neither which is missing - the entry, or the group it goes to; the group is the one
+    // picked from a list that may be stale, the entry was just read
+    override suspend fun move(dbKey: String, entryId: EntryId, groupId: GroupId) =
+        entryCall(notFound = { EntryFailure.GroupNotFound(it) }) {
+            core.moveEntry(dbKey, entryId.value, groupId.value)
+        }
 
     private fun EntrySummaryData.toSummary() = EntrySummary(
         id = EntryId(id),

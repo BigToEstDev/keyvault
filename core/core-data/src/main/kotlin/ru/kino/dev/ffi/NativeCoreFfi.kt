@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import ru.kino.dev.core.CreatedDatabase
 import ru.kino.dev.core.CredentialLimits
+import ru.kino.dev.core.EntryData
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
 import ru.kino.dev.core.EntrySummaryData
@@ -234,8 +235,11 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
             ).toDomain()
         }
 
-    override suspend fun entryFields(dbKey: String, entryId: String): List<EntryFieldData> =
-        withContext(dispatcher) { entryForm(dbKey, entryId).fieldsToDomain() }
+    override suspend fun entry(dbKey: String, entryId: String): EntryData =
+        withContext(dispatcher) {
+            val form = entryForm(dbKey, entryId)
+            EntryData(groupId = form.parentGroupUuid, fields = form.fieldsToDomain())
+        }
 
     override suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String =
         withContext(dispatcher) {
@@ -276,6 +280,17 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
                 FfiCommands.MOVE_ENTRY_TO_RECYCLE_BIN,
                 EntryIdDto.serializer(),
                 EntryIdDto(dbKey = dbKey, entryUuid = entryId),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun moveEntry(dbKey: String, entryId: String, groupId: String) {
+        withContext(dispatcher) {
+            call(
+                FfiCommands.MOVE_ENTRY,
+                MoveEntryDto.serializer(),
+                MoveEntryDto(dbKey = dbKey, entryUuid = entryId, newParentUuid = groupId),
                 DoneDto.serializer(),
             )
         }

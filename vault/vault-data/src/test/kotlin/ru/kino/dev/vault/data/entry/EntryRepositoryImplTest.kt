@@ -12,6 +12,7 @@ import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
+import ru.kino.dev.vault.entry.EntryRecord
 import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
@@ -71,16 +72,18 @@ class EntryRepositoryImplTest {
     }
 
     @Test
-    fun `the fields of an entry come as the core holds them, laid over the preset for the screens`() = runTest {
-        assertEquals(
-            listOf(EntryField("Title", "Bank", false), EntryField("PIN", "1", true)),
-            repository.fields(DB, EntryId("bank")),
-        )
+    fun `an entry comes with its group and its fields as the core holds them, laid over the preset for the screens`() =
+        runTest {
+            assertEquals(
+                EntryRecord(GroupId(WORK), listOf(EntryField("Title", "Bank", false), EntryField("PIN", "1", true))),
+                repository.read(DB, EntryId("bank")),
+            )
 
-        val content = repository.content(DB, EntryId("bank"))
-        assertEquals("Bank", content.value(StandardPreset.TITLE))
-        assertEquals(listOf("PIN"), content.ownFields.map { it.key })
-    }
+            val opened = repository.opened(DB, EntryId("bank"))
+            assertEquals(GroupId(WORK), opened.groupId)
+            assertEquals("Bank", opened.content.value(StandardPreset.TITLE))
+            assertEquals(listOf("PIN"), opened.content.ownFields.map { it.key })
+        }
 
     @Test
     fun `a created entry is in its group with exactly its fields`() = runTest {
@@ -88,7 +91,7 @@ class EntryRepositoryImplTest {
 
         val id = repository.create(DB, GroupId(WORK), fields)
 
-        assertEquals(fields, repository.fields(DB, id))
+        assertEquals(fields, repository.read(DB, id).fields)
         assertEquals(listOf("Bank", "Mail", "Shop"), repository.entries(DB, GroupId(WORK)).map { it.title })
     }
 
@@ -107,12 +110,28 @@ class EntryRepositoryImplTest {
 
         repository.update(DB, EntryId("bank"), fields)
 
-        assertEquals(fields, repository.fields(DB, EntryId("bank")))
+        assertEquals(fields, repository.read(DB, EntryId("bank")).fields)
+    }
+
+    @Test
+    fun `a moved entry leaves its group for the other one, its fields as they were`() = runTest {
+        val before = repository.read(DB, EntryId("bank")).fields
+
+        repository.move(DB, EntryId("bank"), GroupId(ROOT))
+
+        assertEquals(EntryRecord(GroupId(ROOT), before), repository.read(DB, EntryId("bank")))
+        assertEquals(listOf("Mail"), repository.entries(DB, GroupId(WORK)).map { it.title })
+        assertEquals(listOf("Bank"), repository.entries(DB, GroupId(ROOT)).map { it.title })
+    }
+
+    @Test
+    fun `an entry moved into a group that is gone - the group is not found`() = runTest {
+        expectFailure<EntryFailure.GroupNotFound> { repository.move(DB, EntryId("bank"), GroupId("missing")) }
     }
 
     @Test
     fun `an entry that is gone is not found`() = runTest {
-        expectFailure<EntryFailure.EntryNotFound> { repository.fields(DB, EntryId("missing")) }
+        expectFailure<EntryFailure.EntryNotFound> { repository.read(DB, EntryId("missing")) }
         expectFailure<EntryFailure.EntryNotFound> { repository.update(DB, EntryId("missing"), emptyList()) }
         expectFailure<EntryFailure.EntryNotFound> { repository.moveToRecycleBin(DB, EntryId("missing")) }
     }

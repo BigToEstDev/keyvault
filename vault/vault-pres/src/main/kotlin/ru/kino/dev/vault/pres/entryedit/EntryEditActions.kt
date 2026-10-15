@@ -1,6 +1,7 @@
 package ru.kino.dev.vault.pres.entryedit
 
 import ru.kino.dev.vault.entry.NameProblem
+import ru.kino.dev.vault.group.GroupId
 
 sealed interface EntryEditAction {
 
@@ -14,6 +15,9 @@ sealed interface EntryEditAction {
 
     /** Shows or hides the value of the protected own field at [index]. */
     data class ToggleOwn(val index: Int) : EntryEditAction
+
+    /** Another group picked for the entry - it goes there on saving. */
+    data class GroupChosen(val id: GroupId) : EntryEditAction
 
     /** The preset button: the choice of presets - empty until presets of one's own come (Step 44). */
     data object ChoosePreset : EntryEditAction
