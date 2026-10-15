@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+    The launcher icon: the shield of the app's screens in the light theme, on white. The icon is drawn by the
+    launcher, outside the app's Compose theme, so these repeat the palette of core-pres (Color.kt) -
+    change them together.
+    -->
+    <color name="icon_background">#FFFFFFFF</color>
+    <!-- Teal119DA4 - primary of the light theme -->
+    <color name="icon_shield">#FF119DA4</color>
+    <!-- OnSurfaceLight1A1C1E - onBackground of the light theme, the shade of the right half -->
+    <color name="icon_shade">#FF1A1C1E</color>
+    <!-- onPrimary of the light theme -->
+    <color name="icon_keyhole">#FFFFFFFF</color>
+</resources>

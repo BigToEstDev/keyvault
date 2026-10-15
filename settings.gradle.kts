@@ -2,7 +2,7 @@
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-rootProject.name = "pass-app"
+rootProject.name = "KeyVault"
 
 pluginManagement {
     includeBuild("tools")

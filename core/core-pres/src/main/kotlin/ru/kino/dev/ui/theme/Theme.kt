@@ -56,7 +56,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun PassappTheme(
+fun KeyVaultTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Brand palette is fixed — Material You dynamic color is opted out by default
     dynamicColor: Boolean = false,

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+The themed icon (Android 13+): the launcher paints it in one color of its own, so only the shape counts - the
+shield with the keyhole cut out of it. The keyhole is one outline here, the head and the stem joined where the
+stem meets the circle, so the even-odd fill cuts it out whole.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.54"
+        android:scaleY="0.54"
+        android:translateX="21.6"
+        android:translateY="21.6">
+        <path
+            android:fillColor="@color/icon_shade"
+            android:fillType="evenOdd"
+            android:pathData="M60,6 L104,22 V56 C104,84 86,104 60,114 C34,104 16,84 16,56 V22 Z M54.42,61.75 L51,84 H69 L65.58,61.75 A13,13 0 1,0 54.42,61.75 Z" />
+    </group>
+</vector>
