@@ -9,6 +9,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -55,7 +56,11 @@ fun TextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier.onFocusChanged { errorState.onFocusChanged(it.isFocused, enabled) },
+        modifier = modifier
+            .onFocusChanged { errorState.onFocusChanged(it.isFocused, enabled) }
+            // A field only to read takes no focus: focus would light it up as a field to type into, and there
+            // is nothing to select it for - its value is copied by its button (Step 40, fix 16)
+            .focusProperties { canFocus = !readOnly },
         enabled = enabled,
         readOnly = readOnly,
         label = { FieldLabel(label, required) },
