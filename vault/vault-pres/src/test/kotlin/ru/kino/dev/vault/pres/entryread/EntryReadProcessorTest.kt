@@ -8,10 +8,12 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
+import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
+import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
@@ -24,6 +26,7 @@ import ru.kino.dev.vault.pres.testing.recordNavigation
 class EntryReadProcessorTest {
 
     private val entries = FakeEntryRepository()
+    private val opener = EntryOpener(entries, FakePresetRepository())
     private val mail = entries.add(
         "mail",
         GroupId("root"),
@@ -47,7 +50,7 @@ class EntryReadProcessorTest {
     fun `an entry moved on its form comes back in its new group`() = runTest {
         val shown = EntryReadState(
             loading = false,
-            content = entries.content(DB, mail),
+            content = opener.open(DB, mail).content,
             group = GroupChoice(groups.rootId, listOf("Passwords")),
         )
         val work = groups.add("work", groups.rootId, "Work")
@@ -86,7 +89,7 @@ class EntryReadProcessorTest {
     fun `an entry changed on its form comes back read anew and hidden again`() = runTest {
         val shown = EntryReadState(
             loading = false,
-            content = entries.content(DB, mail),
+            content = opener.open(DB, mail).content,
             passwordVisible = true,
             shownOwn = setOf(0),
         )
@@ -138,7 +141,7 @@ class EntryReadProcessorTest {
         initial: EntryReadState = EntryReadState(),
     ): Pair<EntryReadState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryReadProcessor(DB, mail.value, entries, groups, navigator, log)
+        val processor = EntryReadProcessor(DB, mail.value, opener, groups, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             actions.forEach { containerHost.action(it).join() }

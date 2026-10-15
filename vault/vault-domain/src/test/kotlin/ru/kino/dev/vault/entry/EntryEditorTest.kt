@@ -2,11 +2,16 @@ package ru.kino.dev.vault.entry
 
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Test
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.core.preset.CustomPreset
+import ru.kino.dev.core.preset.FakePresetRepository
+import ru.kino.dev.core.preset.PresetId
+import ru.kino.dev.core.preset.PresetLink
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.core.preset.StandardPreset.PASSWORD
 import ru.kino.dev.core.preset.StandardPreset.TITLE
@@ -20,7 +25,9 @@ class EntryEditorTest {
     private val journal = mutableListOf<String>()
     private val entries = FakeEntryRepository(journal)
     private val database = RecordingDatabase(journal)
-    private val editor = EntryEditor(entries, database)
+    private val card = CustomPreset.of(PresetId("card"), "Card", listOf(listOf("PIN")))
+    private val opener = EntryOpener(entries, FakePresetRepository(card))
+    private val editor = EntryEditor(entries, opener, database)
 
     private val filled = StandardPreset.preset.blank()
         .withValue(TITLE, "Mail")
@@ -94,7 +101,7 @@ class EntryEditorTest {
     fun `two fields of another program under one key - saved once one is renamed, with its spaces kept`() = runTest {
         val read = filled.fields() + field(" PIN") + field(" PIN")
         val id = entries.add("e1", GROUP, read)
-        val content = entries.content(DB, id)
+        val content = opener.open(DB, id).content
         journal.clear()
 
         // Unchanged it is not saved at all; any other change asks for the twin to be renamed first
@@ -107,6 +114,18 @@ class EntryEditorTest {
 
         editor.update(DB, id, content.copy(ownFields = listOf(field(" PIN"), field(" Card "))), GROUP)
         assertEquals(listOf(" PIN", "Card"), entries.stored.getValue(id).fields.drop(5).map { it.key })
+    }
+
+    @Test
+    fun `an entry of a preset of one's own is saved with its link, switched to the standard one - without`() = runTest {
+        val id = editor.create(DB, GROUP, EntryDraft(filled).withPreset(card).content.withValue("PIN", "1234"))
+        assertEquals(field(PresetLink.KEY, "card"), entries.stored.getValue(id).fields.last())
+
+        val read = opener.open(DB, id).content
+        assertEquals(card, read.preset)
+        editor.update(DB, id, EntryDraft(read).withPreset(StandardPreset.preset).content, GROUP)
+
+        assertFalse(entries.stored.getValue(id).fields.any { it.key == PresetLink.KEY || it.key == "PIN" })
     }
 
     @Test

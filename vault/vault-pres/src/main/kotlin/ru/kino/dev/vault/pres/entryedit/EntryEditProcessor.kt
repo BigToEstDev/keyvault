@@ -18,7 +18,7 @@ import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
-import ru.kino.dev.vault.entry.EntryRepository
+import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.entry.EntryValidator
 import ru.kino.dev.vault.entry.FieldProblem
 import ru.kino.dev.vault.entry.NameProblem
@@ -89,7 +89,7 @@ class EntryEditProcessor @AssistedInject constructor(
     @Assisted("dbKey") private val dbKey: String,
     @Assisted("groupId") private val groupId: String?,
     @Assisted("entryId") private val entryId: String?,
-    private val entries: EntryRepository,
+    private val opener: EntryOpener,
     private val groupRepository: GroupRepository,
     private val editor: EntryEditor,
     private val navigator: Navigator,
@@ -201,7 +201,7 @@ class EntryEditProcessor @AssistedInject constructor(
 
     private suspend fun Syntax<EntryEditState, Nothing>.load(id: EntryId) {
         try {
-            val opened = entries.opened(dbKey, id)
+            val opened = opener.open(dbKey, id)
             val groups = groupRepository.tree(dbKey).groupChoices()
             reduce {
                 state.copy(
