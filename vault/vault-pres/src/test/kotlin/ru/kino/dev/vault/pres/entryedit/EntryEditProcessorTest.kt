@@ -9,7 +9,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.preset.CustomPreset
 import ru.kino.dev.core.preset.FakePresetRepository
+import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.vault.FakeVaultDatabase
@@ -32,7 +34,9 @@ import ru.kino.dev.vault.pres.testing.recordNavigation
 class EntryEditProcessorTest {
 
     private val entries = FakeEntryRepository()
-    private val opener = EntryOpener(entries, FakePresetRepository())
+    private val card = CustomPreset.of(PresetId("card"), "Card", listOf(listOf("PIN"), listOf("Bank")))
+    private val presets = FakePresetRepository(card)
+    private val opener = EntryOpener(entries, presets)
     private val group = GroupId("root")
     private val mail = entries.add(
         "mail",
@@ -316,7 +320,7 @@ class EntryEditProcessorTest {
     }
 
     @Test
-    fun `the preset button opens the empty choice, and closing it changes nothing`() = runTest {
+    fun `closing the choice of presets changes nothing`() = runTest {
         val (state, _) = editing(EntryEditAction.ChoosePreset, EntryEditAction.DialogDismiss)
 
         assertNull(state.dialog)
@@ -324,10 +328,60 @@ class EntryEditProcessorTest {
     }
 
     @Test
-    fun `the preset button opens the choice of presets`() = runTest {
+    fun `the preset button opens the choice - presets of one's own, the standard one marked`() = runTest {
         val (state, _) = creating(EntryEditAction.ChoosePreset)
 
-        assertEquals(EntryEditDialog.Preset, state.dialog)
+        assertEquals(EntryEditDialog.Preset(listOf(card), selected = null), state.dialog)
+    }
+
+    @Test
+    fun `a preset chosen lays the form over it - a change, the values by key, the protected pin moves in`() = runTest {
+        val (state, _) = editing(EntryEditAction.ChoosePreset, EntryEditAction.PresetChosen(card.id))
+
+        val content = state.content!!
+        assertNull(state.dialog)
+        assertEquals(card, content.preset)
+        assertEquals("me", content.value(StandardPreset.USER_NAME))
+        assertEquals("1234", content.value("PIN"))
+        assertEquals(listOf("Recovery"), content.ownFields.map { it.key })
+        assertTrue(state.changed)
+    }
+
+    @Test
+    fun `a filled field the new preset lacks is hidden, and back on the preset before it is there again`() = runTest {
+        val (state, _) = creating(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "bank.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(null),
+        )
+
+        assertEquals(StandardPreset.preset, state.content!!.preset)
+        assertEquals("bank.ru", state.content!!.value(StandardPreset.URL))
+        assertEquals(emptyList<EntryField>(), state.hidden)
+    }
+
+    @Test
+    fun `while a preset of one's own is chosen, what the standard one had and it lacks is hidden`() = runTest {
+        val (state, _) = creating(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "bank.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+        )
+
+        assertEquals(listOf(field(StandardPreset.URL, "bank.ru")), state.hidden)
+    }
+
+    @Test
+    fun `choosing a preset forgets what was shown in clear and what was refused`() = runTest {
+        val (state, _) = creating(
+            EntryEditAction.Save,
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+        )
+
+        assertEquals(emptyList<FieldProblem>(), state.problems)
     }
 
     // Own fields
@@ -502,7 +556,7 @@ class EntryEditProcessorTest {
         initial: EntryEditState? = null,
     ): Pair<EntryEditState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryEditProcessor(DB, groupId, entryId, opener, groups, EntryEditor(entries, opener, database), navigator, log)
+        val processor = EntryEditProcessor(DB, groupId, entryId, opener, groups, EntryEditor(entries, opener, database), presets, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             if (initial == null) runOnCreate().join()

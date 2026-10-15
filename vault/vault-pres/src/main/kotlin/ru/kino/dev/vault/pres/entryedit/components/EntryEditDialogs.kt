@@ -6,10 +6,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.TextInputDialog
 import ru.kino.dev.vault.entry.NameProblem
-import ru.kino.dev.vault.pres.common.ClosableDialog
 import ru.kino.dev.vault.pres.entryedit.EntryEditDialog
 
 /**
@@ -22,6 +22,7 @@ internal fun EntryEditDialogs(
     onNameChange: (String) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    onPresetChosen: (PresetId?) -> Unit,
 ) {
     when (dialog) {
         null -> Unit
@@ -60,7 +61,13 @@ internal fun EntryEditDialogs(
             destructive = true,
         )
 
-        EntryEditDialog.Preset -> ClosableDialog(title = stringResource(R.string.entry_preset), onClose = onDismiss)
+        is EntryEditDialog.Preset -> PresetChoiceDialog(
+            title = stringResource(R.string.entry_preset),
+            presets = dialog.presets,
+            selected = dialog.selected,
+            onChoose = onPresetChosen,
+            onClose = onDismiss,
+        )
 
         EntryEditDialog.Leave -> ConfirmDialog(
             title = stringResource(R.string.entry_leave_title),

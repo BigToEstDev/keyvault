@@ -6,15 +6,19 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ru.kino.dev.core.preset.PresetId
+import ru.kino.dev.core.preset.PresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.vault.entry.EntryContent
+import ru.kino.dev.vault.entry.EntryDraft
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
@@ -39,6 +43,8 @@ import ru.kino.dev.vault.pres.common.groupChoices
  * @param groups every group the entry can go into, in the order of the tree; empty until the tree is read
  * @param group the group chosen - where a new entry goes, where an edited one is moved on saving
  * @param initialGroup the group the form opened with: another one is a change, as other fields are
+ * @param hidden filled fields of a preset chosen before that the preset now chosen lacks (see [EntryDraft]);
+ * memory only, as the whole state - never the saved state of the screen
  * @param shownOwn indexes of protected own fields shown in clear
  * @param problems what the last save was refused for, until the field is edited
  * @param saving the change is being made and written - the fab waits, the fields take nothing
@@ -52,6 +58,7 @@ data class EntryEditState(
     val groups: List<GroupChoice> = emptyList(),
     val group: GroupId? = null,
     val initialGroup: GroupId? = null,
+    val hidden: List<EntryField> = emptyList(),
     val passwordVisible: Boolean = false,
     val shownOwn: Set<Int> = emptySet(),
     val problems: List<FieldProblem> = emptyList(),
@@ -92,6 +99,7 @@ class EntryEditProcessor @AssistedInject constructor(
     private val opener: EntryOpener,
     private val groupRepository: GroupRepository,
     private val editor: EntryEditor,
+    private val presets: PresetRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryEditState, EntryEditState, Nothing> {
@@ -163,9 +171,12 @@ class EntryEditProcessor @AssistedInject constructor(
                 reduce { state.copy(group = action.id) }
             }
 
-            EntryEditAction.ChoosePreset -> if (state.editable) {
-                reduce { state.copy(dialog = EntryEditDialog.Preset) }
+            EntryEditAction.ChoosePreset -> state.content?.takeIf { state.editable }?.let { content ->
+                val own = presets.presets.first()
+                reduce { state.copy(dialog = EntryEditDialog.Preset(own, content.preset.id)) }
             }
+
+            is EntryEditAction.PresetChosen -> choosePreset(action.id)
 
             EntryEditAction.AddField -> if (state.editable) {
                 reduce { state.copy(dialog = EntryEditDialog.AddField()) }
@@ -272,9 +283,32 @@ class EntryEditProcessor @AssistedInject constructor(
                     .copy(dialog = null)
             }
 
-            EntryEditDialog.Preset -> reduce { state.copy(dialog = null) }
+            is EntryEditDialog.Preset -> reduce { state.copy(dialog = null) }
 
             EntryEditDialog.Leave, EntryEditDialog.NotSaved -> leave()
+        }
+    }
+
+    /**
+     * The form laid over the preset of [id] - the standard one for null: the values go by key, what the new
+     * preset lacks is hidden (see [EntryDraft]). What was said about the fields - shown in clear, refused -
+     * goes: they may have moved.
+     */
+    private suspend fun Syntax<EntryEditState, Nothing>.choosePreset(id: PresetId?) {
+        val content = state.content ?: return
+        if (!state.editable) return
+        val preset = (state.dialog as? EntryEditDialog.Preset)?.presets?.firstOrNull { it.id == id }
+            ?: StandardPreset.preset.takeIf { id == null }
+            ?: return
+        val draft = EntryDraft(content, state.hidden).withPreset(preset)
+        reduce {
+            state.copy(
+                content = draft.content,
+                hidden = draft.hidden,
+                dialog = null,
+                shownOwn = emptySet(),
+                problems = emptyList(),
+            )
         }
     }
 

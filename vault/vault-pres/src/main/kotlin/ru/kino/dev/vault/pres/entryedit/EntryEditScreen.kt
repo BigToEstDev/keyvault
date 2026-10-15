@@ -121,6 +121,7 @@ internal fun EntryEditScreen(
             onNameChange = { processor.action(EntryEditAction.DialogNameChanged(it)) },
             onConfirm = { processor.action(EntryEditAction.DialogConfirm) },
             onDismiss = { processor.action(EntryEditAction.DialogDismiss) },
+            onPresetChosen = { processor.action(EntryEditAction.PresetChosen(it)) },
         )
     }
 }
