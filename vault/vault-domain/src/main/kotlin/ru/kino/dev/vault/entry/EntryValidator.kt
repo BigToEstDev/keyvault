@@ -1,5 +1,7 @@
 package ru.kino.dev.vault.entry
 
+import ru.kino.dev.core.preset.PresetLink
+
 /**
  * The rules of the fields of an entry, for both sides: the screen marks the fields, [EntryEditor] refuses
  * the save.
@@ -17,8 +19,8 @@ object EntryValidator {
      * The problem with [name] as the name of an own field of [content], or null when there is none - for
      * adding a field and renaming one.
      *
-     * A name is not empty, not a key of the preset and not the name of another own field, ignoring case and
-     * the spaces around it. There is no limit on its length: a limit would lock entries of other programs
+     * A name is not empty, not a key of the preset, not the key of the link to a preset ([PresetLink]) and
+     * not the name of another own field, ignoring case and the spaces around it. There is no limit on its length: a limit would lock entries of other programs
      * (pass-docs, Step 42, decision 13).
      *
      * @param renamedIndex the own field being renamed - its current name is not a rival
@@ -28,6 +30,7 @@ object EntryValidator {
         return when {
             normalized.isEmpty() -> NameProblem.EMPTY
             content.preset.hasKey(normalized) -> NameProblem.TAKEN
+            normalized.equals(PresetLink.KEY, ignoreCase = true) -> NameProblem.TAKEN
             content.ownFields.withIndex().any { (index, field) ->
                 index != renamedIndex && normalizeName(field.key).equals(normalized, ignoreCase = true)
             } -> NameProblem.TAKEN
@@ -39,7 +42,7 @@ object EntryValidator {
      * Everything that stops [edited] from being saved, or an empty list.
      *
      * - A required field of the preset is filled when the entry is new, and is not emptied when it is
-     *   [read] - one that was empty in the file already is not asked for.
+     *   [read] - one that was empty or missing in the file already is not asked for.
      * - The name of an own field that was not there when the entry was read - added or renamed here - follows
      *   [nameProblem].
      * - The name of an own field as it was read is only checked for what the core refuses: a key the entry
@@ -51,7 +54,9 @@ object EntryValidator {
     fun problems(edited: EntryContent, read: EntryContent?): List<FieldProblem> {
         val required = edited.preset.fields.filter { it.required }.mapNotNull { field ->
             val emptied = edited.value(field.key).isEmpty()
-            val wasFilled = read == null || read.value(field.key).isNotEmpty()
+            // The entry may have been read with another preset: the field is found among all it held
+            val wasFilled = read == null ||
+                (read.presetFields + read.ownFields).firstOrNull { it.key == field.key }?.value?.isNotEmpty() == true
             if (emptied && wasFilled) FieldProblem.Required(field.key) else null
         }
 

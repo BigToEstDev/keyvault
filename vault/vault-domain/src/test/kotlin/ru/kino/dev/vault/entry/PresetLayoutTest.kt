@@ -2,14 +2,19 @@ package ru.kino.dev.vault.entry
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import ru.kino.dev.vault.entry.StandardPreset.NOTES
-import ru.kino.dev.vault.entry.StandardPreset.PASSWORD
-import ru.kino.dev.vault.entry.StandardPreset.SERVICE
-import ru.kino.dev.vault.entry.StandardPreset.TITLE
-import ru.kino.dev.vault.entry.StandardPreset.URL
-import ru.kino.dev.vault.entry.StandardPreset.USER_NAME
+import ru.kino.dev.core.preset.CustomPreset
+import ru.kino.dev.core.preset.PresetId
+import ru.kino.dev.core.preset.PresetLink
+import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.core.preset.StandardPreset.NOTES
+import ru.kino.dev.core.preset.StandardPreset.PASSWORD
+import ru.kino.dev.core.preset.StandardPreset.SERVICE
+import ru.kino.dev.core.preset.StandardPreset.TITLE
+import ru.kino.dev.core.preset.StandardPreset.URL
+import ru.kino.dev.core.preset.StandardPreset.USER_NAME
 
 class EntryPresetTest {
 
@@ -103,6 +108,38 @@ class EntryPresetTest {
         assertTrue(preset.hasKey("password"))
         assertTrue(preset.hasKey(" URL ".trim()))
         assertFalse(preset.hasKey("PIN"))
+    }
+
+    @Test
+    fun `an entry of the standard preset is written without a link`() {
+        val written = preset.blank().withValue(TITLE, "Mail").fields()
+
+        assertFalse(written.any { it.key == PresetLink.KEY })
+    }
+
+    @Test
+    fun `an entry of a preset of one's own is written with the link to it, last`() {
+        val card = CustomPreset.of(PresetId("4f1c"), "Card", listOf(listOf("PIN")))
+
+        val written = card.blank().withValue(TITLE, "Visa").copy(ownFields = listOf(field("Bank", "Sber"))).fields()
+
+        assertEquals(field(PresetLink.KEY, "4f1c"), written.last())
+        assertEquals(listOf(TITLE, USER_NAME, PASSWORD, NOTES, "Bank", PresetLink.KEY), written.map { it.key })
+    }
+
+    @Test
+    fun `the link is no field of the content - neither of the preset nor an own one`() {
+        val content = preset.layout(listOf(field(TITLE, "Visa"), field(PresetLink.KEY, "4f1c"), field("PIN", "1")))
+
+        assertEquals(listOf("PIN"), content.ownFields.map { it.key })
+        assertFalse(content.fields().any { it.key == PresetLink.KEY })
+    }
+
+    @Test
+    fun `the preset an entry links to is read from its fields`() {
+        assertEquals(PresetId("4f1c"), presetLink(listOf(field(TITLE, "Visa"), field(PresetLink.KEY, "4f1c"))))
+        assertNull(presetLink(listOf(field(TITLE, "Visa"))))
+        assertNull("an empty link is none", presetLink(listOf(field(PresetLink.KEY, ""))))
     }
 
     private fun field(key: String, value: String, protected: Boolean = false) = EntryField(key, value, protected)

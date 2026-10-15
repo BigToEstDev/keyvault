@@ -12,12 +12,14 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import ru.kino.dev.core.preset.PresetRepository
 import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.data.entry.EntryRepositoryImpl
 import ru.kino.dev.vault.data.filter.DataStoreVaultFilterRepository
 import ru.kino.dev.vault.data.filter.vaultFilterStore
 import ru.kino.dev.vault.data.group.GroupRepositoryImpl
 import ru.kino.dev.vault.entry.EntryEditor
+import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.entry.EntryRepository
 import ru.kino.dev.vault.filter.VaultFilterRepository
 import ru.kino.dev.vault.group.GroupEditor
@@ -54,11 +56,16 @@ internal interface VaultDataModule {
         ): GroupEditor = GroupEditor(groups, database, guard)
 
         @Provides
+        fun provideEntryOpener(entries: EntryRepository, presets: PresetRepository): EntryOpener =
+            EntryOpener(entries, presets)
+
+        @Provides
         fun provideEntryEditor(
             entries: EntryRepository,
+            opener: EntryOpener,
             database: VaultDatabaseRepository,
             guard: DatabaseGuard,
-        ): EntryEditor = EntryEditor(entries, database, guard)
+        ): EntryEditor = EntryEditor(entries, opener, database, guard)
 
         // One for the app: the editors and the lock wait for each other on it
         @Provides

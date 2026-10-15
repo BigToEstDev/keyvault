@@ -33,9 +33,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.SkeletonField
 import ru.kino.dev.ui.components.SkeletonText
-import ru.kino.dev.vault.entry.StandardPreset
 
 /*
  * What reading and editing an entry share: the screens are one layout - the same top bar, the same cards,

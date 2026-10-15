@@ -36,15 +36,6 @@ interface EntryRepository {
 
     /** Moves the entry into the group [groupId]; nothing else of it changes. */
     suspend fun move(dbKey: String, entryId: EntryId, groupId: GroupId)
-
-    /** The entry as its screens show it: its group, and its fields laid over the standard preset. */
-    suspend fun opened(dbKey: String, entryId: EntryId): OpenedEntry {
-        val record = read(dbKey, entryId)
-        return OpenedEntry(record.groupId, StandardPreset.preset.layout(record.fields))
-    }
-
-    /** The fields of the entry as its screens show them, laid over the standard preset. */
-    suspend fun content(dbKey: String, entryId: EntryId): EntryContent = opened(dbKey, entryId).content
 }
 
 /** An entry as the core holds it. */
@@ -55,5 +46,5 @@ data class EntryRecord(
     val fields: List<EntryField>,
 )
 
-/** An entry as its screens show it: where it is, and what it holds laid over its preset. */
+/** An entry as its screens show it ([EntryOpener]): where it is, and what it holds laid over its preset. */
 data class OpenedEntry(val groupId: GroupId, val content: EntryContent)

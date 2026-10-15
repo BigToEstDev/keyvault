@@ -13,7 +13,6 @@ import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryRecord
-import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 
@@ -72,18 +71,12 @@ class EntryRepositoryImplTest {
     }
 
     @Test
-    fun `an entry comes with its group and its fields as the core holds them, laid over the preset for the screens`() =
-        runTest {
-            assertEquals(
-                EntryRecord(GroupId(WORK), listOf(EntryField("Title", "Bank", false), EntryField("PIN", "1", true))),
-                repository.read(DB, EntryId("bank")),
-            )
-
-            val opened = repository.opened(DB, EntryId("bank"))
-            assertEquals(GroupId(WORK), opened.groupId)
-            assertEquals("Bank", opened.content.value(StandardPreset.TITLE))
-            assertEquals(listOf("PIN"), opened.content.ownFields.map { it.key })
-        }
+    fun `an entry comes with its group and its fields as the core holds them`() = runTest {
+        assertEquals(
+            EntryRecord(GroupId(WORK), listOf(EntryField("Title", "Bank", false), EntryField("PIN", "1", true))),
+            repository.read(DB, EntryId("bank")),
+        )
+    }
 
     @Test
     fun `a created entry is in its group with exactly its fields`() = runTest {

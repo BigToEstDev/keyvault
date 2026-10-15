@@ -14,7 +14,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryFailure
-import ru.kino.dev.vault.entry.EntryRepository
+import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupRepository
@@ -50,7 +50,7 @@ data class EntryReadState(
 class EntryReadProcessor @AssistedInject constructor(
     @Assisted("dbKey") private val dbKey: String,
     @Assisted("entryId") private val entryId: String,
-    private val entries: EntryRepository,
+    private val opener: EntryOpener,
     private val groupRepository: GroupRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
@@ -86,7 +86,7 @@ class EntryReadProcessor @AssistedInject constructor(
 
     private suspend fun Syntax<EntryReadState, Nothing>.load() {
         val opened = try {
-            entries.opened(dbKey, EntryId(entryId))
+            opener.open(dbKey, EntryId(entryId))
         } catch (_: EntryFailure.EntryNotFound) {
             // Deleted or merged away while this screen was under another one
             navigator.navigate(MviNavEvent.NavigateBack)

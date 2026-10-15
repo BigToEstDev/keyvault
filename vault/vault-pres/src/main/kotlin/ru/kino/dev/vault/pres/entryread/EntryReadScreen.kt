@@ -27,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.CopyButton
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PasswordField
@@ -38,7 +39,6 @@ import ru.kino.dev.ui.components.rememberSensitiveClipboard
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryField
-import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.pres.common.EntrySection
 import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection

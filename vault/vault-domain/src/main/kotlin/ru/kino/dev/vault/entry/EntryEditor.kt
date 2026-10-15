@@ -18,6 +18,7 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 class EntryEditor(
     private val entries: EntryRepository,
+    private val opener: EntryOpener,
     private val database: VaultDatabaseRepository,
     private val guard: DatabaseGuard = DatabaseGuard(),
 ) {
@@ -44,7 +45,7 @@ class EntryEditor(
         content: EntryContent,
         groupId: GroupId,
     ): Unit = guard.exclusive {
-        val opened = entries.opened(dbKey, entryId)
+        val opened = opener.open(dbKey, entryId)
         val read = opened.content
         val normalized = content.withNamesNormalized(keptNames = read.ownFields.map { it.key }.toSet())
         val changed = normalized.fields() != read.fields()

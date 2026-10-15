@@ -6,10 +6,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Test
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.FakeEntryRepository
-import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId

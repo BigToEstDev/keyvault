@@ -10,15 +10,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.preset.FakePresetRepository
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entry.EntryEditor
-import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryFailure
+import ru.kino.dev.vault.entry.EntryField
+import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.entry.FakeEntryRepository
-import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.filter.CreationOrder
 import ru.kino.dev.vault.filter.FakeVaultFilterRepository
 import ru.kino.dev.vault.filter.VaultFilter
@@ -33,10 +35,10 @@ import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
-import ru.kino.dev.vault.search.VaultSearch
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
+import ru.kino.dev.vault.search.VaultSearch
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -715,7 +717,7 @@ class GroupListProcessorTest {
         groups,
         GroupEditor(groups, database),
         entries,
-        EntryEditor(entries, database),
+        EntryEditor(entries, EntryOpener(entries, FakePresetRepository()), database),
         lock(),
         VaultSearch(groups, entries),
         filters,

@@ -9,15 +9,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.preset.FakePresetRepository
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
+import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.entry.FieldProblem
 import ru.kino.dev.vault.entry.NameProblem
-import ru.kino.dev.vault.entry.StandardPreset
+import ru.kino.dev.vault.entry.blank
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
@@ -29,6 +32,7 @@ import ru.kino.dev.vault.pres.testing.recordNavigation
 class EntryEditProcessorTest {
 
     private val entries = FakeEntryRepository()
+    private val opener = EntryOpener(entries, FakePresetRepository())
     private val group = GroupId("root")
     private val mail = entries.add(
         "mail",
@@ -445,7 +449,7 @@ class EntryEditProcessorTest {
         val (state, _) = editing(
             EntryEditAction.ValueChanged(StandardPreset.TITLE, "Changed"),
             EntryEditAction.AddField,
-            initial = entries.content(DB, mail).let { EntryEditState(creating = false, content = it, initial = it, saving = true) },
+            initial = opener.open(DB, mail).content.let { EntryEditState(creating = false, content = it, initial = it, saving = true) },
         )
 
         assertEquals("Mail", state.content?.value(StandardPreset.TITLE))
@@ -498,7 +502,7 @@ class EntryEditProcessorTest {
         initial: EntryEditState? = null,
     ): Pair<EntryEditState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryEditProcessor(DB, groupId, entryId, entries, groups, EntryEditor(entries, database), navigator, log)
+        val processor = EntryEditProcessor(DB, groupId, entryId, opener, groups, EntryEditor(entries, opener, database), navigator, log)
 
         processor.testWithInternalState(this, initial) {
             if (initial == null) runOnCreate().join()

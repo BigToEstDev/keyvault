@@ -15,4 +15,5 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.orbit.test)
     testImplementation(testFixtures(projects.vault.vaultDomain))
+    testImplementation(testFixtures(projects.core.coreDomain))
 }
