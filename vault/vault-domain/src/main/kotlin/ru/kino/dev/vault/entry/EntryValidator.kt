@@ -42,7 +42,7 @@ object EntryValidator {
      * Everything that stops [edited] from being saved, or an empty list.
      *
      * - A required field of the preset is filled when the entry is new, and is not emptied when it is
-     *   [read] - one that was empty in the file already is not asked for.
+     *   [read] - one that was empty or missing in the file already is not asked for.
      * - The name of an own field that was not there when the entry was read - added or renamed here - follows
      *   [nameProblem].
      * - The name of an own field as it was read is only checked for what the core refuses: a key the entry
@@ -54,7 +54,9 @@ object EntryValidator {
     fun problems(edited: EntryContent, read: EntryContent?): List<FieldProblem> {
         val required = edited.preset.fields.filter { it.required }.mapNotNull { field ->
             val emptied = edited.value(field.key).isEmpty()
-            val wasFilled = read == null || read.value(field.key).isNotEmpty()
+            // The entry may have been read with another preset: the field is found among all it held
+            val wasFilled = read == null ||
+                (read.presetFields + read.ownFields).firstOrNull { it.key == field.key }?.value?.isNotEmpty() == true
             if (emptied && wasFilled) FieldProblem.Required(field.key) else null
         }
 
