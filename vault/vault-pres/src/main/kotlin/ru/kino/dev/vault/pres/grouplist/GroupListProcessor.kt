@@ -41,6 +41,8 @@ import java.io.IOException
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
+ * @param isRoot the screen is the root of the database - known from the route, before the tree is read, so
+ * the top bar of a group below it never shows the root's while it loads (pass-docs, Step 40, fix 13)
  * @param loading the tree and the entries are not read yet - the skeleton is shown
  * @param path from the root down to this group; empty until the tree is read
  * @param entryCount entries in this group and below it; at the root - the whole database
@@ -54,6 +56,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * @param message for the snackbar, until it takes it
  */
 data class GroupListState(
+    val isRoot: Boolean = true,
     val loading: Boolean = true,
     val path: List<Crumb> = emptyList(),
     val entryCount: Int = 0,
@@ -77,8 +80,6 @@ data class GroupListState(
 
     /** The entries the list shows, after the groups: by when they were created, as the filter says. */
     val entries: List<EntryItem> = shown.entries.map { EntryItem(it.id, it.title, found?.locations?.get(it.groupId)) }
-
-    val isRoot: Boolean get() = path.size <= 1
 
     val isSearch: Boolean get() = query.isNotBlank()
 
@@ -161,7 +162,7 @@ class GroupListProcessor @AssistedInject constructor(
         fun create(@Assisted("dbKey") dbKey: String, @Assisted("groupId") groupId: String?): GroupListProcessor
     }
 
-    override val container = orbitContainer<GroupListState, Nothing>(GroupListState())
+    override val container = orbitContainer<GroupListState, Nothing>(GroupListState(isRoot = groupId == null))
 
     /** The search waiting for the typing to stop, or for its answer; the next letter cancels it. */
     private var searchJob: Job? = null

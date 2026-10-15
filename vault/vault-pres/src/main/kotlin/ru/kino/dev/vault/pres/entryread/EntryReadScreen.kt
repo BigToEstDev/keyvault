@@ -68,16 +68,20 @@ internal fun EntryReadScreen(
     }
     SnackbarMessage(message, snackbar) { processor.action(EntryReadAction.MessageShown) }
 
+    // While the entry is read, one brush for the title and the fields - their skeletons run together
+    val skeleton = if (state.content == null && state.loading) skeletonBrush() else null
+
     GradientBackground {
         Scaffold(
             // The backdrop is the gradient behind
             containerColor = Color.Transparent,
             topBar = {
-                // The title of the entry; nothing while it is read
+                // The title of the entry; a skeleton while it is read, nothing if it could not be
                 val title = state.content?.value(StandardPreset.TITLE)
                 EntryTopBar(
                     title = title?.ifEmpty { stringResource(R.string.entry_untitled) }.orEmpty(),
                     onBack = { processor.action(EntryReadAction.Back) },
+                    skeleton = skeleton,
                 )
             },
             floatingActionButton = {
@@ -100,7 +104,7 @@ internal fun EntryReadScreen(
                 val content = state.content
                 when {
                     content != null -> EntryFields(state = state, content = content, action = processor::action)
-                    state.loading -> EntrySkeleton(brush = skeletonBrush())
+                    skeleton != null -> EntrySkeleton(brush = skeleton)
                 }
             }
         }

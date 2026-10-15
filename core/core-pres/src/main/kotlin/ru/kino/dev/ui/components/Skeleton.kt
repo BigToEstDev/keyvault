@@ -15,11 +15,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 
 /**
  * The paint of a skeleton - a shape standing in for what is still being read: a gradient running over it.
@@ -67,7 +71,36 @@ fun SkeletonField(brush: Brush, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * A line of text while it is being read: a bar as tall as the letters of [style], in a box as tall as its
+ * line - the row around it keeps the height the text gives it, and nothing moves when the text comes.
+ * The bar takes [widthFraction] of the width the box is given.
+ */
+@Composable
+fun SkeletonText(
+    brush: Brush,
+    style: TextStyle,
+    modifier: Modifier = Modifier,
+    widthFraction: Float = TEXT_WIDTH,
+) {
+    val density = LocalDensity.current
+    val letters = with(density) { style.fontSize.toDp() }
+    val line = if (style.lineHeight.isSpecified) with(density) { style.lineHeight.toDp() } else letters
+    Box(modifier = modifier.height(line), contentAlignment = Alignment.CenterStart) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(widthFraction)
+                .height(letters)
+                .clip(MaterialTheme.shapes.small)
+                .background(brush),
+        )
+    }
+}
+
 private val LABEL_HEIGHT = 12.dp
+
+/** Share of the width a line of text takes. */
+private const val TEXT_WIDTH = 0.5f
 
 /** The height of a one-line outlined field of Material 3. */
 private val FIELD_HEIGHT = 56.dp
