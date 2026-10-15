@@ -9,6 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entry.EntryEditor
@@ -17,7 +18,7 @@ import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.entry.FieldProblem
 import ru.kino.dev.vault.entry.NameProblem
-import ru.kino.dev.vault.entry.StandardPreset
+import ru.kino.dev.vault.entry.blank
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId

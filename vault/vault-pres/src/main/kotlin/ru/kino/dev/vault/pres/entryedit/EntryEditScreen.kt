@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.Dropdown
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PasswordField
@@ -41,7 +42,6 @@ import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.TextField
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.entry.EntryContent
-import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.pres.common.EntryPresetSection
 import ru.kino.dev.vault.pres.common.EntrySection
 import ru.kino.dev.vault.pres.common.EntrySkeleton

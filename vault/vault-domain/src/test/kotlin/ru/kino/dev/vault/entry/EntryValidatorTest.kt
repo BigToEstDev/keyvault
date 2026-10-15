@@ -3,9 +3,10 @@ package ru.kino.dev.vault.entry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import ru.kino.dev.vault.entry.StandardPreset.PASSWORD
-import ru.kino.dev.vault.entry.StandardPreset.TITLE
-import ru.kino.dev.vault.entry.StandardPreset.USER_NAME
+import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.core.preset.StandardPreset.PASSWORD
+import ru.kino.dev.core.preset.StandardPreset.TITLE
+import ru.kino.dev.core.preset.StandardPreset.USER_NAME
 
 class EntryValidatorTest {
 

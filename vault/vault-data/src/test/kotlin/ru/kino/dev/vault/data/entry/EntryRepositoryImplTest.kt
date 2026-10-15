@@ -10,10 +10,10 @@ import ru.kino.dev.core.FakeNativeCore
 import ru.kino.dev.core.GroupNode
 import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryRecord
-import ru.kino.dev.vault.entry.StandardPreset
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 

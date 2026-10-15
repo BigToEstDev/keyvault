@@ -1,5 +1,8 @@
 package ru.kino.dev.vault.entry
 
+import ru.kino.dev.core.preset.EntryPreset
+import ru.kino.dev.core.preset.PresetField
+
 /**
  * What an entry holds, as the screens of an entry show and edit it: the fields of its [preset] in the
  * preset's order, then its own fields.

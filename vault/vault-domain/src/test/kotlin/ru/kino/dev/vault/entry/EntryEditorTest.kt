@@ -7,10 +7,11 @@ import org.junit.Test
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.core.preset.StandardPreset.PASSWORD
+import ru.kino.dev.core.preset.StandardPreset.TITLE
+import ru.kino.dev.core.preset.StandardPreset.USER_NAME
 import ru.kino.dev.vault.VaultDatabaseRepository
-import ru.kino.dev.vault.entry.StandardPreset.PASSWORD
-import ru.kino.dev.vault.entry.StandardPreset.TITLE
-import ru.kino.dev.vault.entry.StandardPreset.USER_NAME
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 

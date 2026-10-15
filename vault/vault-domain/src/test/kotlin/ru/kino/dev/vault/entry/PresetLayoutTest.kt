@@ -4,12 +4,13 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import ru.kino.dev.vault.entry.StandardPreset.NOTES
-import ru.kino.dev.vault.entry.StandardPreset.PASSWORD
-import ru.kino.dev.vault.entry.StandardPreset.SERVICE
-import ru.kino.dev.vault.entry.StandardPreset.TITLE
-import ru.kino.dev.vault.entry.StandardPreset.URL
-import ru.kino.dev.vault.entry.StandardPreset.USER_NAME
+import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.core.preset.StandardPreset.NOTES
+import ru.kino.dev.core.preset.StandardPreset.PASSWORD
+import ru.kino.dev.core.preset.StandardPreset.SERVICE
+import ru.kino.dev.core.preset.StandardPreset.TITLE
+import ru.kino.dev.core.preset.StandardPreset.URL
+import ru.kino.dev.core.preset.StandardPreset.USER_NAME
 
 class EntryPresetTest {
 

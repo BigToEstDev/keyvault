@@ -1,5 +1,6 @@
 package ru.kino.dev.vault.entry
 
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 
