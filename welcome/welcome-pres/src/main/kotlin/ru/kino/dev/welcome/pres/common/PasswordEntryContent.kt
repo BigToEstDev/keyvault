@@ -48,6 +48,9 @@ import ru.kino.dev.ui.components.SecondaryButton
  * @param onRetry "retry" on a problem with the database file
  * @param onCreateDatabase null where a new database makes no sense - the locked screen, the database is open;
  * otherwise always there: without it a remembered database that is gone leaves no way on
+ * @param onRemoveKeyFile null where the key file is the one the database was opened with - the locked
+ * screen: not removed or attached there, only picked again when it cannot be read (pass-docs, Step 46)
+ * @param locked the locked screen: the name in the accent, though not a link
  */
 @Composable
 internal fun PasswordEntryContent(
@@ -58,13 +61,14 @@ internal fun PasswordEntryContent(
     onTogglePasswordVisible: () -> Unit,
     onSubmit: () -> Unit,
     onAttachKeyFile: () -> Unit,
-    onRemoveKeyFile: () -> Unit,
+    onRemoveKeyFile: (() -> Unit)?,
     onBiometric: () -> Unit,
     onDatabaseClick: (() -> Unit)?,
     onPickAnotherDatabase: (() -> Unit)?,
     onRetry: () -> Unit,
     onCreateDatabase: (() -> Unit)?,
     subtitle: String? = null,
+    locked: Boolean = false,
 ) {
     val problem = entry.problem
 
@@ -94,7 +98,7 @@ internal fun PasswordEntryContent(
                 )
                 Spacer(Modifier.height(8.dp))
             }
-            DatabaseName(name = databaseName, onClick = onDatabaseClick.takeUnless { entry.busy })
+            DatabaseName(name = databaseName, accent = locked, onClick = onDatabaseClick.takeUnless { entry.busy })
             Spacer(Modifier.height(32.dp))
 
             if (problem.hidesPassword) {
@@ -134,13 +138,14 @@ internal fun PasswordEntryContent(
     }
 }
 
+/** The name: a link in the accent when it picks another database; [accent] - in the accent, not a link. */
 @Composable
-private fun DatabaseName(name: String, onClick: (() -> Unit)?) {
+private fun DatabaseName(name: String, accent: Boolean, onClick: (() -> Unit)?) {
     val colors = MaterialTheme.colorScheme
     Text(
         text = name,
         style = MaterialTheme.typography.headlineSmall,
-        color = if (onClick != null) colors.primary else colors.onBackground,
+        color = if (onClick != null || accent) colors.primary else colors.onBackground,
         textDecoration = if (onClick != null) TextDecoration.Underline else null,
         textAlign = TextAlign.Center,
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
@@ -217,11 +222,18 @@ private fun BiometricSignInRow(entry: PasswordEntry, onBiometric: () -> Unit) {
     }
 }
 
+/**
+ * The key file: its name, and the way to pick it again when it cannot be read.
+ *
+ * @param onRemove null where the key file is fixed - the locked screen: then there is no removing it, and
+ * no attaching one to a database opened without
+ */
 @Composable
-private fun KeyFileRow(entry: PasswordEntry, onAttach: () -> Unit, onRemove: () -> Unit) {
+private fun KeyFileRow(entry: PasswordEntry, onAttach: () -> Unit, onRemove: (() -> Unit)?) {
     val problem = entry.problem
 
     if (entry.keyFileUri == null) {
+        if (onRemove == null) return
         TextButton(onClick = onAttach, enabled = !entry.busy) {
             Icon(imageVector = Icons.Outlined.Key, contentDescription = null)
             Spacer(Modifier.size(8.dp))
@@ -259,8 +271,10 @@ private fun KeyFileRow(entry: PasswordEntry, onAttach: () -> Unit, onRemove: () 
             Text(stringResource(R.string.action_pick_another_key_file))
         }
     }
-    TextButton(onClick = onRemove, enabled = !entry.busy) {
-        Text(stringResource(R.string.entry_key_file_remove))
+    onRemove?.let {
+        TextButton(onClick = it, enabled = !entry.busy) {
+            Text(stringResource(R.string.entry_key_file_remove))
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 package ru.kino.dev.vault.group
 
 import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.lock.DatabaseGuard
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -10,30 +11,33 @@ import kotlin.coroutines.cancellation.CancellationException
  * "Delete" in the confirmation is the explicit save (pass-docs, Step 36, decision 3). The checks live here
  * and not in the dialog alone: a screen can be wrong, the database cannot.
  *
+ * Each change runs inside [guard], so a lock waits for its write to end.
+ *
  * Throws [GroupFailure] and nothing else.
  */
 class GroupEditor(
     private val groups: GroupRepository,
     private val database: VaultDatabaseRepository,
+    private val guard: DatabaseGuard = DatabaseGuard(),
 ) {
 
     /** Creates a group called [name] inside [parentId], saves, and returns its id. */
-    suspend fun create(dbKey: String, parentId: GroupId, name: String): GroupId {
+    suspend fun create(dbKey: String, parentId: GroupId, name: String): GroupId = guard.exclusive {
         val tree = groups.tree(dbKey)
         tree.group(parentId) ?: throw GroupFailure.GroupNotFound()
         GroupNameValidator.problem(tree, parentId, name)?.let { throw it }
 
         val id = groups.create(dbKey, parentId, GroupNameValidator.normalize(name))
         save(dbKey)
-        return id
+        id
     }
 
     /** Renames the group and saves. The same name again is not a change: nothing is written. */
-    suspend fun rename(dbKey: String, groupId: GroupId, name: String) {
+    suspend fun rename(dbKey: String, groupId: GroupId, name: String): Unit = guard.exclusive {
         val tree = groups.tree(dbKey)
         val group = editable(tree, groupId)
         val normalized = GroupNameValidator.normalize(name)
-        if (normalized == group.name) return
+        if (normalized == group.name) return@exclusive
         GroupNameValidator.problem(tree, checkNotNull(group.parentId), normalized, renamedId = groupId)
             ?.let { throw it }
 
@@ -42,7 +46,7 @@ class GroupEditor(
     }
 
     /** Moves the group, with everything inside it, into the recycle bin and saves. */
-    suspend fun delete(dbKey: String, groupId: GroupId) {
+    suspend fun delete(dbKey: String, groupId: GroupId): Unit = guard.exclusive {
         editable(groups.tree(dbKey), groupId)
 
         groups.moveToRecycleBin(dbKey, groupId)

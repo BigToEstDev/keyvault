@@ -1,5 +1,6 @@
 package ru.kino.dev.vault.pres.grouplist
 
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -9,10 +10,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
-import ru.kino.dev.navigation.LockedRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.VaultRootRoute
+import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryFailure
@@ -26,15 +27,18 @@ import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
+import ru.kino.dev.vault.lock.AutoLock
+import ru.kino.dev.vault.lock.DatabaseGuard
 import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
 import ru.kino.dev.vault.search.VaultSearch
 import ru.kino.dev.vault.pres.testing.DB
-import ru.kino.dev.vault.pres.testing.FakeVaultDatabase
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 class GroupListProcessorTest {
 
@@ -56,6 +60,7 @@ class GroupListProcessorTest {
     private val database = FakeVaultDatabase()
     private val filters = FakeVaultFilterRepository()
     private val log = RecordingLog()
+    private lateinit var autoLock: AutoLock
 
     @Test
     fun `the root shows its groups with the entries below each, and the whole database`() = runTest {
@@ -546,12 +551,19 @@ class GroupListProcessorTest {
     }
 
     @Test
-    fun `locking locks the database for real and puts the locked screen on top`() = runTest {
-        val (state, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.Lock)
+    fun `locking locks the database for real and leaves the locked screen to the app`() = runTest {
+        val (_, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.Lock)
 
-        assertFalse(state.locking)
         assertEquals(listOf("lock"), database.calls)
-        assertEquals(listOf(MviNavEvent.NavigateTo(LockedRoute(DB))), events)
+        assertEquals(DB, autoLock.locked.first())
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `a group below the root does not hand the database to the lock`() = runTest {
+        perform(groupId = work.value, GroupListAction.Load, GroupListAction.Lock)
+
+        assertTrue(database.calls.isEmpty())
     }
 
     @Test
@@ -697,19 +709,29 @@ class GroupListProcessorTest {
         return processor.container.stateFlow.value to events
     }
 
-    private fun processor(groupId: String?, navigator: Navigator) = GroupListProcessor(
+    private fun TestScope.processor(groupId: String?, navigator: Navigator) = GroupListProcessor(
         DB,
         groupId,
         groups,
         GroupEditor(groups, database),
         entries,
         EntryEditor(entries, database),
-        database,
+        lock(),
         VaultSearch(groups, entries),
         filters,
         navigator,
         log,
     )
+
+    /** The lock of the app, the timer never running out here - the tests lock by hand. */
+    private fun TestScope.lock(): AutoLock = AutoLock(
+        database = database,
+        guard = DatabaseGuard(),
+        clock = { testScheduler.currentTime.milliseconds },
+        scope = backgroundScope,
+        timeout = Duration.INFINITE,
+        onFailure = { log.unexpected("AutoLock", it) },
+    ).also { autoLock = it }
 
     private fun titled(title: String) = listOf(EntryField(StandardPreset.TITLE, title, protected = false))
 }

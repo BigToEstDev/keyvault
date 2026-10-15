@@ -63,7 +63,7 @@ sealed interface GroupListAction {
     /** The snackbar took the message. */
     data object MessageShown : GroupListAction
 
-    /** Lock the database - for now only the debug button; automatic locking of `vault` comes later. */
+    /** Lock the database now, not waiting for the timer - the debug button. */
     data object Lock : GroupListAction
 }
 

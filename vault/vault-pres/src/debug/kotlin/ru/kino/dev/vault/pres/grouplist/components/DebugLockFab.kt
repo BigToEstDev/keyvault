@@ -15,8 +15,8 @@ import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.R
 
 /**
- * Locks the database for real (`lock_kdbx`) - the only way to the locked screen until `vault` locks on its
- * own. In the accent color, to stand apart from the real buttons. Goes when automatic locking comes.
+ * Locks the database for real (`lock_kdbx`) now, not waiting for the automatic lock - to try the locked
+ * screen without waiting. In the accent color, to stand apart from the real buttons.
  */
 @Composable
 internal fun DebugLockFab(locking: Boolean, onLock: () -> Unit, modifier: Modifier = Modifier) {

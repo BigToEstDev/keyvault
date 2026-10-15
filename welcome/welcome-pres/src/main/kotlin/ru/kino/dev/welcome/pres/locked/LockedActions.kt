@@ -15,8 +15,6 @@ sealed interface LockedAction {
 
     data class KeyFilePicked(val uri: String) : LockedAction
 
-    data object RemoveKeyFile : LockedAction
-
     /** "Sign in with biometrics" tapped - the prompt is shown only on this. */
     data object Biometric : LockedAction
 
