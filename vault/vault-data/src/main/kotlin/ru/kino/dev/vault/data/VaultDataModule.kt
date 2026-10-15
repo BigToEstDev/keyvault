@@ -27,7 +27,7 @@ import ru.kino.dev.vault.lock.DatabaseGuard
 import ru.kino.dev.vault.search.VaultSearch
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 /** Binds the repositories of `vault` to their implementations, and builds its use cases and its lock. */
 @Module
@@ -78,11 +78,8 @@ internal interface VaultDataModule {
             onFailure = { Log.e(TAG, "the core refused to lock the database", it) },
         )
 
-        /**
-         * No touch this long, and the database locks - 5 minutes, the owner's (pass-docs, Step 46).
-         * TODO(Step 46): 30 seconds to try it on the device; back to 5 minutes before the merge into main
-         */
-        private val AUTO_LOCK_TIMEOUT = 30.seconds
+        /** No touch this long, and the database locks - the owner's (pass-docs, Step 46); later in settings. */
+        private val AUTO_LOCK_TIMEOUT = 5.minutes
 
         private const val TAG = "AutoLock"
 
