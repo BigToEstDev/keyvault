@@ -9,7 +9,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.preset.CustomPreset
 import ru.kino.dev.core.preset.FakePresetRepository
+import ru.kino.dev.core.preset.PresetId
+import ru.kino.dev.core.preset.PresetLink
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.vault.FakeVaultDatabase
@@ -25,6 +28,7 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.common.GroupChoice
+import ru.kino.dev.vault.pres.navigation.PresetCreateRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
@@ -32,7 +36,9 @@ import ru.kino.dev.vault.pres.testing.recordNavigation
 class EntryEditProcessorTest {
 
     private val entries = FakeEntryRepository()
-    private val opener = EntryOpener(entries, FakePresetRepository())
+    private val card = CustomPreset.of(PresetId("card"), "Card", listOf(listOf("PIN"), listOf("Bank")))
+    private val presets = FakePresetRepository(card)
+    private val opener = EntryOpener(entries, presets)
     private val group = GroupId("root")
     private val mail = entries.add(
         "mail",
@@ -316,7 +322,7 @@ class EntryEditProcessorTest {
     }
 
     @Test
-    fun `the preset button opens the empty choice, and closing it changes nothing`() = runTest {
+    fun `closing the choice of presets changes nothing`() = runTest {
         val (state, _) = editing(EntryEditAction.ChoosePreset, EntryEditAction.DialogDismiss)
 
         assertNull(state.dialog)
@@ -324,10 +330,166 @@ class EntryEditProcessorTest {
     }
 
     @Test
-    fun `the preset button opens the choice of presets`() = runTest {
+    fun `the preset button opens the choice - presets of one's own, the standard one marked`() = runTest {
         val (state, _) = creating(EntryEditAction.ChoosePreset)
 
-        assertEquals(EntryEditDialog.Preset, state.dialog)
+        assertEquals(EntryEditDialog.Preset(listOf(card), selected = null), state.dialog)
+    }
+
+    @Test
+    fun `a preset chosen lays the form over it - a change, the values by key, the protected pin moves in`() = runTest {
+        val (state, _) = editing(EntryEditAction.ChoosePreset, EntryEditAction.PresetChosen(card.id))
+
+        val content = state.content!!
+        assertNull(state.dialog)
+        assertEquals(card, content.preset)
+        assertEquals("me", content.value(StandardPreset.USER_NAME))
+        assertEquals("1234", content.value("PIN"))
+        assertEquals(listOf("Recovery"), content.ownFields.map { it.key })
+        assertTrue(state.changed)
+    }
+
+    @Test
+    fun `a filled field the new preset lacks is hidden, and back on the preset before it is there again`() = runTest {
+        val (state, _) = creating(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "bank.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(null),
+        )
+
+        assertEquals(StandardPreset.preset, state.content!!.preset)
+        assertEquals("bank.ru", state.content!!.value(StandardPreset.URL))
+        assertEquals(emptyList<EntryField>(), state.hidden)
+    }
+
+    @Test
+    fun `while a preset of one's own is chosen, what the standard one had and it lacks is hidden`() = runTest {
+        val (state, _) = creating(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "bank.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+        )
+
+        assertEquals(listOf(field(StandardPreset.URL, "bank.ru")), state.hidden)
+    }
+
+    @Test
+    fun `create preset leaves for its screen, remembering the presets there were`() = runTest {
+        val (state, events) = creating(EntryEditAction.ChoosePreset, EntryEditAction.CreatePreset)
+
+        assertNull(state.dialog)
+        assertEquals(setOf(card.id), state.presetsBeforeCreate)
+        assertEquals(listOf(MviNavEvent.NavigateTo(PresetCreateRoute)), events)
+    }
+
+    @Test
+    fun `back from the screen of presets, the one made there is picked`() = runTest {
+        val wifi = CustomPreset.of(PresetId("wifi"), "Wi-Fi", listOf(listOf("SSID")))
+        presets.save(wifi)
+        val blank = StandardPreset.preset.blank()
+
+        val (state, _) = editing(
+            EntryEditAction.Resumed,
+            initial = EntryEditState(creating = true, content = blank, initial = blank, group = group, presetsBeforeCreate = setOf(card.id!!)),
+        )
+
+        assertEquals(wifi, state.content!!.preset)
+        assertNull(state.presetsBeforeCreate)
+    }
+
+    @Test
+    fun `back from the screen of presets with none made, the form stays as it was`() = runTest {
+        val blank = StandardPreset.preset.blank()
+
+        val (state, _) = editing(
+            EntryEditAction.Resumed,
+            initial = EntryEditState(creating = true, content = blank, initial = blank, group = group, presetsBeforeCreate = setOf(card.id!!)),
+        )
+
+        assertEquals(StandardPreset.preset, state.content!!.preset)
+        assertNull(state.presetsBeforeCreate)
+    }
+
+    @Test
+    fun `shown again with nothing asked for, the form stays as it was`() = runTest {
+        presets.save(CustomPreset.of(PresetId("wifi"), "Wi-Fi", listOf(listOf("SSID"))))
+
+        val (state, _) = editing(EntryEditAction.Resumed)
+
+        assertEquals(StandardPreset.preset, state.content!!.preset)
+    }
+
+    @Test
+    fun `saving with hidden fields asks first, naming them, and writes nothing`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "mail.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+            EntryEditAction.Save,
+        )
+
+        assertEquals(EntryEditDialog.HiddenFields(listOf(StandardPreset.URL)), state.dialog)
+        assertFalse(state.saving)
+        assertEquals("", entries.stored.getValue(mail).fields.first { it.key == StandardPreset.URL }.value)
+    }
+
+    @Test
+    fun `save as is writes the entry of the new preset without the hidden fields`() = runTest {
+        val (_, events) = editing(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "mail.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+            EntryEditAction.Save,
+            EntryEditAction.DialogConfirm,
+        )
+
+        val written = entries.stored.getValue(mail).fields
+        assertFalse(written.any { it.key == StandardPreset.URL })
+        assertEquals(field(PresetLink.KEY, "card"), written.last())
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `add outside the preset writes the hidden fields as own ones`() = runTest {
+        val (_, events) = editing(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "mail.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+            EntryEditAction.Save,
+            EntryEditAction.KeepHidden,
+        )
+
+        val written = entries.stored.getValue(mail).fields
+        assertEquals("mail.ru", written.first { it.key == StandardPreset.URL }.value)
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `cancel stays with the hidden fields still hidden`() = runTest {
+        val (state, events) = editing(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "mail.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+            EntryEditAction.Save,
+            EntryEditAction.DialogDismiss,
+        )
+
+        assertNull(state.dialog)
+        assertEquals(listOf(field(StandardPreset.URL, "mail.ru")), state.hidden)
+        assertEquals(emptyList<MviNavEvent>(), events)
+    }
+
+    @Test
+    fun `choosing a preset forgets what was shown in clear and what was refused`() = runTest {
+        val (state, _) = creating(
+            EntryEditAction.Save,
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+        )
+
+        assertEquals(emptyList<FieldProblem>(), state.problems)
     }
 
     // Own fields
@@ -502,7 +664,7 @@ class EntryEditProcessorTest {
         initial: EntryEditState? = null,
     ): Pair<EntryEditState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryEditProcessor(DB, groupId, entryId, opener, groups, EntryEditor(entries, opener, database), navigator, log)
+        val processor = EntryEditProcessor(DB, groupId, entryId, opener, groups, EntryEditor(entries, opener, database), presets, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             if (initial == null) runOnCreate().join()

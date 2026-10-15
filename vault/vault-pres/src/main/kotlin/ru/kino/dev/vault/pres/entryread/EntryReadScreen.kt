@@ -142,11 +142,15 @@ private fun EntryFields(state: EntryReadState, content: EntryContent, action: (E
         }
     }
 
-    val shownPreset = READ_ORDER.filter { content.value(it).isNotEmpty() }
-    val shownOwn = content.ownFields.withIndex().filter { it.value.value.isNotEmpty() }
-    if (shownPreset.isNotEmpty()) {
-        EntrySection { PresetFields(state, content, shownPreset, clipboard, action) }
+    // The cards of the preset, as the preset has them - each with the fields that hold something, if any
+    content.preset.cards.forEach { card ->
+        val shown = card.fields.map { it.key }.filter { content.value(it).isNotEmpty() }
+        if (shown.isNotEmpty()) {
+            EntrySection { PresetFields(state, content, shown, clipboard, action) }
+        }
     }
+
+    val shownOwn = content.ownFields.withIndex().filter { it.value.value.isNotEmpty() }
 
     // A card of its own, as on the form
     if (shownOwn.isNotEmpty()) {
@@ -244,9 +248,6 @@ private fun ReadField(
         },
     )
 }
-
-/** The fields of the standard preset in the second card, in the order of the form. */
-private val READ_ORDER = StandardPreset.preset.fields.map { it.key } - StandardPreset.TITLE
 
 /** Room around the cards; at the bottom - for the fab, so it never covers the last field. */
 private val CONTENT_PADDING = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 96.dp)

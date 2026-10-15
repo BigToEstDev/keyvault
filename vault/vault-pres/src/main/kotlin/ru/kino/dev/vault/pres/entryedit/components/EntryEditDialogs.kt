@@ -6,15 +6,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.TextInputDialog
 import ru.kino.dev.vault.entry.NameProblem
-import ru.kino.dev.vault.pres.common.ClosableDialog
 import ru.kino.dev.vault.pres.entryedit.EntryEditDialog
 
 /**
- * The dialog over the form: the name of an own field, "delete the field?", the presets, "leave?", "not
- * written".
+ * The dialog over the form: the name of an own field, "delete the field?", the presets, fields outside the
+ * preset, "leave?", "not written".
  */
 @Composable
 internal fun EntryEditDialogs(
@@ -22,6 +22,9 @@ internal fun EntryEditDialogs(
     onNameChange: (String) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    onPresetChosen: (PresetId?) -> Unit,
+    onCreatePreset: () -> Unit,
+    onKeepHidden: () -> Unit,
 ) {
     when (dialog) {
         null -> Unit
@@ -60,7 +63,21 @@ internal fun EntryEditDialogs(
             destructive = true,
         )
 
-        EntryEditDialog.Preset -> ClosableDialog(title = stringResource(R.string.entry_preset), onClose = onDismiss)
+        is EntryEditDialog.Preset -> PresetChoiceDialog(
+            title = stringResource(R.string.entry_preset),
+            presets = dialog.presets,
+            selected = dialog.selected,
+            onChoose = onPresetChosen,
+            onCreate = onCreatePreset,
+            onClose = onDismiss,
+        )
+
+        is EntryEditDialog.HiddenFields -> HiddenFieldsDialog(
+            keys = dialog.keys,
+            onSaveAsIs = onConfirm,
+            onKeep = onKeepHidden,
+            onCancel = onDismiss,
+        )
 
         EntryEditDialog.Leave -> ConfirmDialog(
             title = stringResource(R.string.entry_leave_title),

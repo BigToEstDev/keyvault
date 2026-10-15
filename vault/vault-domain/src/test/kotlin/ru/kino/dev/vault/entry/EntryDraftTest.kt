@@ -78,6 +78,17 @@ class EntryDraftTest {
     }
 
     @Test
+    fun `hidden fields kept after all are own fields, last, and nothing is hidden any more`() {
+        val draft = filled.copy(content = filled.content.copy(ownFields = listOf(EntryField("Bank", "Sber", false))))
+            .withPreset(card)
+            .withHiddenAsOwn()
+
+        assertEquals(listOf("Bank", URL), draft.content.ownFields.map { it.key })
+        assertEquals("bank.ru", draft.content.ownFields.last().value)
+        assertFalse(draft.losesHidden)
+    }
+
+    @Test
     fun `nothing hidden, nothing lost`() {
         assertFalse(filled.withPreset(standard).losesHidden)
     }

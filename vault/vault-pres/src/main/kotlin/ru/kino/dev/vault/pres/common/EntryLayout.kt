@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.SkeletonField
 import ru.kino.dev.ui.components.SkeletonText
@@ -151,13 +152,12 @@ internal fun EntryTitleSection(enabled: Boolean = true, title: @Composable (Modi
 }
 
 /**
- * The card of the preset, between the title and the fields: a button outlined in the primary color with the
- * name of the preset. It opens the choice of presets - an empty dialog until presets of one's own come
- * (Step 44). Not [enabled], its outline fades as that of a disabled outlined button of Material 3: the text
- * color of the theme at 12%; the text fades by itself.
+ * The card of the preset, between the group and the fields: a button outlined in the primary color with the
+ * [name] of the preset. It opens the choice of presets. Not [enabled], its outline fades as that of a disabled
+ * outlined button of Material 3: the text color of the theme at 12%; the text fades by itself.
  */
 @Composable
-internal fun EntryPresetSection(onClick: () -> Unit, enabled: Boolean) {
+internal fun EntryPresetSection(name: String, onClick: () -> Unit, enabled: Boolean) {
     val colors = MaterialTheme.colorScheme
     EntrySection {
         OutlinedButton(
@@ -169,10 +169,14 @@ internal fun EntryPresetSection(onClick: () -> Unit, enabled: Boolean) {
                 if (enabled) colors.primary else colors.onSurface.copy(alpha = DISABLED_OUTLINE_ALPHA),
             ),
         ) {
-            Text(stringResource(R.string.entry_preset_standard))
+            Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
+
+/** The name of [preset]: one's own is named by the person, the standard one - from the resources. */
+@Composable
+internal fun presetName(preset: EntryPreset): String = preset.name ?: stringResource(R.string.entry_preset_standard)
 
 /** The label of a field of the standard preset; an own field is labelled with its key. */
 @Composable

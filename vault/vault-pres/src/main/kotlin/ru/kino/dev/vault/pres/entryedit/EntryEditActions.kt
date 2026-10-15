@@ -1,5 +1,7 @@
 package ru.kino.dev.vault.pres.entryedit
 
+import ru.kino.dev.core.preset.EntryPreset
+import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.vault.entry.NameProblem
 import ru.kino.dev.vault.group.GroupId
 
@@ -19,8 +21,17 @@ sealed interface EntryEditAction {
     /** Another group picked for the entry - it goes there on saving. */
     data class GroupChosen(val id: GroupId) : EntryEditAction
 
-    /** The preset button: the choice of presets - empty until presets of one's own come (Step 44). */
+    /** The preset button: the choice of presets, read anew. */
     data object ChoosePreset : EntryEditAction
+
+    /** A preset picked in the choice: the one of [id], or the standard one for null. */
+    data class PresetChosen(val id: PresetId?) : EntryEditAction
+
+    /** "+ Create preset" in the choice: the screen of a new preset. */
+    data object CreatePreset : EntryEditAction
+
+    /** The screen is shown - again, maybe, after a preset was made: that one is picked. */
+    data object Resumed : EntryEditAction
 
     /** "+ Add field": asks for the name of a new own field. */
     data object AddField : EntryEditAction
@@ -34,6 +45,9 @@ sealed interface EntryEditAction {
     data object DialogConfirm : EntryEditAction
 
     data object DialogDismiss : EntryEditAction
+
+    /** "Add outside the preset" in [EntryEditDialog.HiddenFields]: the hidden fields as own ones, then the save. */
+    data object KeepHidden : EntryEditAction
 
     /** The fab: checks, makes the change and writes the file. */
     data object Save : EntryEditAction
@@ -57,8 +71,17 @@ sealed interface EntryEditDialog {
     /** "Delete the field?" - the own field at [index], called [name]. */
     data class DeleteField(val index: Int, val name: String) : EntryEditDialog
 
-    /** The choice of presets - empty for now, closes and changes nothing. */
-    data object Preset : EntryEditDialog
+    /**
+     * The choice of presets: the standard one, then [presets] - those of one's own, in the order they were
+     * made; [selected] is the one of the form, null for the standard one.
+     */
+    data class Preset(val presets: List<EntryPreset>, val selected: PresetId?) : EntryEditDialog
+
+    /**
+     * "Save" with fields hidden by the preset chosen - their [keys]: "save as is" (confirm) drops them, "add
+     * outside the preset" ([EntryEditAction.KeepHidden]) keeps them as own fields, "cancel" stays.
+     */
+    data class HiddenFields(val keys: List<String>) : EntryEditDialog
 
     /** "Leave without saving?" - "back" with changes. */
     data object Leave : EntryEditDialog
