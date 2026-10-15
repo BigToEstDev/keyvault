@@ -19,17 +19,18 @@ import androidx.compose.ui.unit.dp
  *
  * Drawn in code with the brushes of `IllustrationBrushes.kt`, in the colors of the theme, so it follows
  * light and dark and needs no image file. Every coordinate is a share of the canvas, so it scales with
- * [modifier].
+ * [modifier]; without a size in it - [ILLUSTRATION_WIDTH] by [ILLUSTRATION_HEIGHT].
  */
 @Composable
-fun EmptySearchIllustration(modifier: Modifier = Modifier.size(width = 168.dp, height = 140.dp)) {
+fun EmptySearchIllustration(modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     val magnifier = colors.primary
     val glow = colors.tertiary
     val sheet = colors.surface
     val sheetLine = colors.onSurfaceVariant
 
-    Canvas(modifier = modifier) {
+    // A size given in [modifier] comes first and wins over this one
+    Canvas(modifier = modifier.size(width = ILLUSTRATION_WIDTH, height = ILLUSTRATION_HEIGHT)) {
         drawGlow(glow, center = Offset(size.width * 0.5f, size.height * 0.5f), radius = size.minDimension * 0.6f)
         drawEmptySheet(
             fill = sheet,

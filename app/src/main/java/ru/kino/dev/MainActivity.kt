@@ -1,8 +1,6 @@
 package ru.kino.dev
 
 import android.os.Bundle
-import android.view.KeyEvent
-import android.view.MotionEvent
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -63,14 +61,10 @@ class MainActivity : FragmentActivity() {
         autoLock.cameBack()
     }
 
-    // Every touch and key of the app, whatever screen takes it - the person is here
-    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+    // Every touch and key of the app, whatever screen takes it - the person is here. The callback of the
+    // Activity for exactly this: a touch counts once, as it starts, not on every move (pass-docs, Step 40, fix 14)
+    override fun onUserInteraction() {
+        super.onUserInteraction()
         autoLock.touched()
-        return super.dispatchTouchEvent(event)
-    }
-
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        autoLock.touched()
-        return super.dispatchKeyEvent(event)
     }
 }
