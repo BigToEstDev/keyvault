@@ -40,6 +40,9 @@ sealed interface EntryEditAction {
 
     data object DialogDismiss : EntryEditAction
 
+    /** "Add outside the preset" in [EntryEditDialog.HiddenFields]: the hidden fields as own ones, then the save. */
+    data object KeepHidden : EntryEditAction
+
     /** The fab: checks, makes the change and writes the file. */
     data object Save : EntryEditAction
 
@@ -67,6 +70,12 @@ sealed interface EntryEditDialog {
      * made; [selected] is the one of the form, null for the standard one.
      */
     data class Preset(val presets: List<EntryPreset>, val selected: PresetId?) : EntryEditDialog
+
+    /**
+     * "Save" with fields hidden by the preset chosen - their [keys]: "save as is" (confirm) drops them, "add
+     * outside the preset" ([EntryEditAction.KeepHidden]) keeps them as own fields, "cancel" stays.
+     */
+    data class HiddenFields(val keys: List<String>) : EntryEditDialog
 
     /** "Leave without saving?" - "back" with changes. */
     data object Leave : EntryEditDialog

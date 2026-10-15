@@ -198,7 +198,15 @@ class EntryEditProcessor @AssistedInject constructor(
                 else -> reduce { state.copy(dialog = null) }
             }
 
-            EntryEditAction.Save -> save()
+            EntryEditAction.Save -> save(dropHidden = false)
+
+            EntryEditAction.KeepHidden -> if (state.dialog is EntryEditDialog.HiddenFields) {
+                state.content?.let { content ->
+                    val kept = EntryDraft(content, state.hidden).withHiddenAsOwn()
+                    reduce { state.copy(content = kept.content, hidden = kept.hidden, dialog = null) }
+                    save(dropHidden = false)
+                }
+            }
 
             EntryEditAction.Back -> when {
                 state.saving -> Unit
@@ -285,6 +293,11 @@ class EntryEditProcessor @AssistedInject constructor(
 
             is EntryEditDialog.Preset -> reduce { state.copy(dialog = null) }
 
+            is EntryEditDialog.HiddenFields -> {
+                reduce { state.copy(dialog = null) }
+                save(dropHidden = true)
+            }
+
             EntryEditDialog.Leave, EntryEditDialog.NotSaved -> leave()
         }
     }
@@ -312,10 +325,18 @@ class EntryEditProcessor @AssistedInject constructor(
         }
     }
 
-    private suspend fun Syntax<EntryEditState, Nothing>.save() {
+    /**
+     * Checks, makes the change and writes. Fields hidden by the preset chosen are asked about first, unless
+     * [dropHidden] - the person said "save as is"; they stay in the form until the save goes through.
+     */
+    private suspend fun Syntax<EntryEditState, Nothing>.save(dropHidden: Boolean) {
         val content = state.content ?: return
         val group = state.group ?: return
         if (state.saving) return
+        if (!dropHidden && EntryDraft(content, state.hidden).losesHidden) {
+            reduce { state.copy(dialog = EntryEditDialog.HiddenFields(state.hidden.map { it.key })) }
+            return
+        }
 
         reduce { state.copy(saving = true, problems = emptyList()) }
         try {

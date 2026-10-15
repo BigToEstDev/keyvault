@@ -13,8 +13,8 @@ import ru.kino.dev.vault.entry.NameProblem
 import ru.kino.dev.vault.pres.entryedit.EntryEditDialog
 
 /**
- * The dialog over the form: the name of an own field, "delete the field?", the presets, "leave?", "not
- * written".
+ * The dialog over the form: the name of an own field, "delete the field?", the presets, fields outside the
+ * preset, "leave?", "not written".
  */
 @Composable
 internal fun EntryEditDialogs(
@@ -23,6 +23,7 @@ internal fun EntryEditDialogs(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     onPresetChosen: (PresetId?) -> Unit,
+    onKeepHidden: () -> Unit,
 ) {
     when (dialog) {
         null -> Unit
@@ -67,6 +68,13 @@ internal fun EntryEditDialogs(
             selected = dialog.selected,
             onChoose = onPresetChosen,
             onClose = onDismiss,
+        )
+
+        is EntryEditDialog.HiddenFields -> HiddenFieldsDialog(
+            keys = dialog.keys,
+            onSaveAsIs = onConfirm,
+            onKeep = onKeepHidden,
+            onCancel = onDismiss,
         )
 
         EntryEditDialog.Leave -> ConfirmDialog(

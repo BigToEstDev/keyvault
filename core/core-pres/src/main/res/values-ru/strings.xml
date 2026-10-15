@@ -155,6 +155,10 @@
     <string name="entry_delete_text">«%1$s» попадёт в корзину.</string>
     <string name="entry_preset_standard">Стандарт</string>
     <string name="entry_preset">Пресет</string>
+    <string name="entry_hidden_title">Поля вне пресета</string>
+    <string name="entry_hidden_text">В выбранном пресете нет полей: %1$s. Сохранить без них?</string>
+    <string name="entry_hidden_save">Сохранить так</string>
+    <string name="entry_hidden_keep">Добавить вне пресета</string>
     <string name="entry_title_new">Новая запись</string>
     <string name="entry_title_edit">Редактирование</string>
     <string name="entry_field_title">Название</string>

@@ -122,6 +122,7 @@ internal fun EntryEditScreen(
             onConfirm = { processor.action(EntryEditAction.DialogConfirm) },
             onDismiss = { processor.action(EntryEditAction.DialogDismiss) },
             onPresetChosen = { processor.action(EntryEditAction.PresetChosen(it)) },
+            onKeepHidden = { processor.action(EntryEditAction.KeepHidden) },
         )
     }
 }

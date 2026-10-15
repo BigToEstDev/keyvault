@@ -12,6 +12,7 @@ import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.preset.CustomPreset
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.PresetId
+import ru.kino.dev.core.preset.PresetLink
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.vault.FakeVaultDatabase
@@ -371,6 +372,66 @@ class EntryEditProcessorTest {
         )
 
         assertEquals(listOf(field(StandardPreset.URL, "bank.ru")), state.hidden)
+    }
+
+    @Test
+    fun `saving with hidden fields asks first, naming them, and writes nothing`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "mail.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+            EntryEditAction.Save,
+        )
+
+        assertEquals(EntryEditDialog.HiddenFields(listOf(StandardPreset.URL)), state.dialog)
+        assertFalse(state.saving)
+        assertEquals("", entries.stored.getValue(mail).fields.first { it.key == StandardPreset.URL }.value)
+    }
+
+    @Test
+    fun `save as is writes the entry of the new preset without the hidden fields`() = runTest {
+        val (_, events) = editing(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "mail.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+            EntryEditAction.Save,
+            EntryEditAction.DialogConfirm,
+        )
+
+        val written = entries.stored.getValue(mail).fields
+        assertFalse(written.any { it.key == StandardPreset.URL })
+        assertEquals(field(PresetLink.KEY, "card"), written.last())
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `add outside the preset writes the hidden fields as own ones`() = runTest {
+        val (_, events) = editing(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "mail.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+            EntryEditAction.Save,
+            EntryEditAction.KeepHidden,
+        )
+
+        val written = entries.stored.getValue(mail).fields
+        assertEquals("mail.ru", written.first { it.key == StandardPreset.URL }.value)
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `cancel stays with the hidden fields still hidden`() = runTest {
+        val (state, events) = editing(
+            EntryEditAction.ValueChanged(StandardPreset.URL, "mail.ru"),
+            EntryEditAction.ChoosePreset,
+            EntryEditAction.PresetChosen(card.id),
+            EntryEditAction.Save,
+            EntryEditAction.DialogDismiss,
+        )
+
+        assertNull(state.dialog)
+        assertEquals(listOf(field(StandardPreset.URL, "mail.ru")), state.hidden)
+        assertEquals(emptyList<MviNavEvent>(), events)
     }
 
     @Test

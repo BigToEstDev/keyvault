@@ -153,6 +153,10 @@
     <string name="entry_delete_text">«%1$s» goes to the recycle bin.</string>
     <string name="entry_preset_standard">Standard</string>
     <string name="entry_preset">Preset</string>
+    <string name="entry_hidden_title">Fields outside the preset</string>
+    <string name="entry_hidden_text">The chosen preset has no %1$s. Save without them?</string>
+    <string name="entry_hidden_save">Save as is</string>
+    <string name="entry_hidden_keep">Add outside the preset</string>
     <string name="entry_title_new">New entry</string>
     <string name="entry_title_edit">Editing</string>
     <string name="entry_field_title">Title</string>

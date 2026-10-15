@@ -40,5 +40,11 @@ data class EntryDraft(
         return EntryDraft(EntryContent(preset, presetFields, own), stillHidden + left)
     }
 
+    /**
+     * The draft with the [hidden] fields kept after all - as own fields, after the others (pass-docs, Step 49,
+     * answer 9: "add outside the preset").
+     */
+    fun withHiddenAsOwn(): EntryDraft = EntryDraft(content.copy(ownFields = content.ownFields + hidden))
+
     private fun EntryPreset.hasExactKey(key: String) = fields.any { it.key == key }
 }
