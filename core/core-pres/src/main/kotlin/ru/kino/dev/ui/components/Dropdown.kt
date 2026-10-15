@@ -3,6 +3,7 @@ package ru.kino.dev.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -63,7 +64,14 @@ fun <T> Dropdown(
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled)
                 .fillMaxWidth(),
         )
-        ExposedDropdownMenu(expanded = open, onDismissRequest = { expanded = false }) {
+        val scroll = rememberScrollState()
+        ExposedDropdownMenu(
+            expanded = open,
+            onDismissRequest = { expanded = false },
+            // A long list scrolls: its edges fade where there is more of it
+            modifier = Modifier.verticalFadingEdges(scroll),
+            scrollState = scroll,
+        ) {
             options.forEachIndexed { index, option ->
                 // A line between the choices: each is two lines of text, and they run together without it
                 if (index > 0) HorizontalDivider()
