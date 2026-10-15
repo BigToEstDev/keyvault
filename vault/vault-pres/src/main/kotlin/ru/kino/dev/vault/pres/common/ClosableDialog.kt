@@ -22,7 +22,7 @@ import ru.kino.dev.core.pres.R
 
 /**
  * A dialog with a title and a "close" button in its corner, and [content] under them - the filters of the
- * list, the presets of an entry. Both are empty for now: what goes in comes with their steps.
+ * list, the presets of an entry.
  */
 @Composable
 internal fun ClosableDialog(title: String, onClose: () -> Unit, content: @Composable ColumnScope.() -> Unit = {}) {

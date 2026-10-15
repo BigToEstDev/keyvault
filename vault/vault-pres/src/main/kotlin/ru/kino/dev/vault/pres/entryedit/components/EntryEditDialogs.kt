@@ -23,6 +23,7 @@ internal fun EntryEditDialogs(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     onPresetChosen: (PresetId?) -> Unit,
+    onCreatePreset: () -> Unit,
     onKeepHidden: () -> Unit,
 ) {
     when (dialog) {
@@ -67,6 +68,7 @@ internal fun EntryEditDialogs(
             presets = dialog.presets,
             selected = dialog.selected,
             onChoose = onPresetChosen,
+            onCreate = onCreatePreset,
             onClose = onDismiss,
         )
 

@@ -27,6 +27,12 @@ sealed interface EntryEditAction {
     /** A preset picked in the choice: the one of [id], or the standard one for null. */
     data class PresetChosen(val id: PresetId?) : EntryEditAction
 
+    /** "+ Create preset" in the choice: the screen of a new preset. */
+    data object CreatePreset : EntryEditAction
+
+    /** The screen is shown - again, maybe, after a preset was made: that one is picked. */
+    data object Resumed : EntryEditAction
+
     /** "+ Add field": asks for the name of a new own field. */
     data object AddField : EntryEditAction
 

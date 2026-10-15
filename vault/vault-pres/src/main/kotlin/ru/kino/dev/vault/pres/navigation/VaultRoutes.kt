@@ -30,3 +30,10 @@ internal data class EntryCreateRoute(val dbKey: String, val groupId: String)
 /** Editing the entry [entryId]. */
 @Serializable
 internal data class EntryEditRoute(val dbKey: String, val entryId: String)
+
+/**
+ * Creating a preset of one's own. No database in it: presets are one list for every database (pass-docs,
+ * Step 44, answer 4).
+ */
+@Serializable
+internal data object PresetCreateRoute

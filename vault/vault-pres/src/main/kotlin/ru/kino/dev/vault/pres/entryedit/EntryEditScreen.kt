@@ -7,16 +7,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -31,6 +24,8 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.PresetField
@@ -48,6 +43,7 @@ import ru.kino.dev.vault.pres.common.EntrySection
 import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
 import ru.kino.dev.vault.pres.common.EntryTopBar
+import ru.kino.dev.vault.pres.common.SaveFab
 import ru.kino.dev.vault.pres.common.fieldLabel
 import ru.kino.dev.vault.pres.common.option
 import ru.kino.dev.vault.pres.common.presetName
@@ -72,6 +68,9 @@ internal fun EntryEditScreen(
 
     // The system "back" asks as the one in the top bar does
     BackHandler { processor.action(EntryEditAction.Back) }
+
+    // Back from the screen of a new preset: the form picks it
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.action(EntryEditAction.Resumed) }
 
     val message = state.message?.let {
         stringResource(
@@ -122,6 +121,7 @@ internal fun EntryEditScreen(
             onConfirm = { processor.action(EntryEditAction.DialogConfirm) },
             onDismiss = { processor.action(EntryEditAction.DialogDismiss) },
             onPresetChosen = { processor.action(EntryEditAction.PresetChosen(it)) },
+            onCreatePreset = { processor.action(EntryEditAction.CreatePreset) },
             onKeepHidden = { processor.action(EntryEditAction.KeepHidden) },
         )
     }
@@ -219,22 +219,6 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
         )
-    }
-}
-
-/** The check that saves; while the change is made and written, it waits and takes no taps. */
-@Composable
-private fun SaveFab(saving: Boolean, onSave: () -> Unit) {
-    FloatingActionButton(onClick = { if (!saving) onSave() }) {
-        if (saving) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                strokeWidth = 2.dp,
-                color = LocalContentColor.current,
-            )
-        } else {
-            Icon(Icons.Filled.Check, contentDescription = stringResource(R.string.entry_save))
-        }
     }
 }
 

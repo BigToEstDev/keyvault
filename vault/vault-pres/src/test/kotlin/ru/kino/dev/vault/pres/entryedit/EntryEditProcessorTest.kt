@@ -28,6 +28,7 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.common.GroupChoice
+import ru.kino.dev.vault.pres.navigation.PresetCreateRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
@@ -372,6 +373,52 @@ class EntryEditProcessorTest {
         )
 
         assertEquals(listOf(field(StandardPreset.URL, "bank.ru")), state.hidden)
+    }
+
+    @Test
+    fun `create preset leaves for its screen, remembering the presets there were`() = runTest {
+        val (state, events) = creating(EntryEditAction.ChoosePreset, EntryEditAction.CreatePreset)
+
+        assertNull(state.dialog)
+        assertEquals(setOf(card.id), state.presetsBeforeCreate)
+        assertEquals(listOf(MviNavEvent.NavigateTo(PresetCreateRoute)), events)
+    }
+
+    @Test
+    fun `back from the screen of presets, the one made there is picked`() = runTest {
+        val wifi = CustomPreset.of(PresetId("wifi"), "Wi-Fi", listOf(listOf("SSID")))
+        presets.save(wifi)
+        val blank = StandardPreset.preset.blank()
+
+        val (state, _) = editing(
+            EntryEditAction.Resumed,
+            initial = EntryEditState(creating = true, content = blank, initial = blank, group = group, presetsBeforeCreate = setOf(card.id!!)),
+        )
+
+        assertEquals(wifi, state.content!!.preset)
+        assertNull(state.presetsBeforeCreate)
+    }
+
+    @Test
+    fun `back from the screen of presets with none made, the form stays as it was`() = runTest {
+        val blank = StandardPreset.preset.blank()
+
+        val (state, _) = editing(
+            EntryEditAction.Resumed,
+            initial = EntryEditState(creating = true, content = blank, initial = blank, group = group, presetsBeforeCreate = setOf(card.id!!)),
+        )
+
+        assertEquals(StandardPreset.preset, state.content!!.preset)
+        assertNull(state.presetsBeforeCreate)
+    }
+
+    @Test
+    fun `shown again with nothing asked for, the form stays as it was`() = runTest {
+        presets.save(CustomPreset.of(PresetId("wifi"), "Wi-Fi", listOf(listOf("SSID"))))
+
+        val (state, _) = editing(EntryEditAction.Resumed)
+
+        assertEquals(StandardPreset.preset, state.content!!.preset)
     }
 
     @Test
