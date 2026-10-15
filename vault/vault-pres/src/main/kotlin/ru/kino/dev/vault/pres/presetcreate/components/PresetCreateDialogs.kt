@@ -1,11 +1,12 @@
 package ru.kino.dev.vault.pres.presetcreate.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.FieldNameProblem
-import ru.kino.dev.core.preset.PresetNameProblem
 import ru.kino.dev.core.preset.PresetLimits
+import ru.kino.dev.core.preset.PresetNameProblem
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.TextInputDialog
 import ru.kino.dev.vault.pres.presetcreate.PresetCreateDialog
@@ -87,6 +88,10 @@ internal fun fieldNameProblemText(problem: FieldNameProblem): String = when (pro
 @Composable
 internal fun presetNameProblemText(problem: PresetNameProblem): String = when (problem) {
     PresetNameProblem.EMPTY -> stringResource(R.string.preset_name_empty)
-    PresetNameProblem.TOO_LONG -> stringResource(R.string.preset_name_too_long, PresetLimits.MAX_NAME_LENGTH)
+    PresetNameProblem.TOO_LONG -> pluralStringResource(
+        R.plurals.preset_name_too_long,
+        PresetLimits.MAX_NAME_LENGTH,
+        PresetLimits.MAX_NAME_LENGTH,
+    )
     PresetNameProblem.TAKEN -> stringResource(R.string.preset_name_taken)
 }

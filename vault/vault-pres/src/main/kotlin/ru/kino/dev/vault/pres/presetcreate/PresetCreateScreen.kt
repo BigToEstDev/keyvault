@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -59,7 +60,7 @@ internal fun PresetCreateScreen(processor: PresetCreateProcessor = hiltViewModel
 
     val message = state.message?.let {
         when (it) {
-            PresetCreateMessage.TooMany -> stringResource(R.string.preset_too_many, PresetLimits.MAX_PRESETS)
+            PresetCreateMessage.TooMany -> pluralStringResource(R.plurals.preset_too_many, PresetLimits.MAX_PRESETS, PresetLimits.MAX_PRESETS)
             PresetCreateMessage.NotSaved -> stringResource(R.string.preset_not_saved)
         }
     }

@@ -163,13 +163,23 @@
     <string name="preset_create_title">Создать пресет</string>
     <string name="preset_name">Название пресета</string>
     <string name="preset_name_empty">Введите название</string>
-    <string name="preset_name_too_long">Не больше %1$d символов</string>
+    <plurals name="preset_name_too_long">
+        <item quantity="one">Не длиннее %1$d символа</item>
+        <item quantity="few">Не длиннее %1$d символов</item>
+        <item quantity="many">Не длиннее %1$d символов</item>
+        <item quantity="other">Не длиннее %1$d символа</item>
+    </plurals>
     <string name="preset_name_taken">Пресет с таким названием уже есть</string>
     <string name="preset_add_card">+ Добавить карточку</string>
     <string name="preset_delete_card">Удалить карточку</string>
     <string name="preset_delete_card_title">Удалить карточку?</string>
     <string name="preset_delete_card_text">Все поля карточки удалятся.</string>
-    <string name="preset_too_many">Пресетов уже %1$d — больше не создать</string>
+    <plurals name="preset_too_many">
+        <item quantity="one">Уже %1$d пресет — больше не создать</item>
+        <item quantity="few">Уже %1$d пресета — больше не создать</item>
+        <item quantity="many">Уже %1$d пресетов — больше не создать</item>
+        <item quantity="other">Уже %1$d пресета — больше не создать</item>
+    </plurals>
     <string name="preset_not_saved">Пресет не сохранён. Попробуйте ещё раз</string>
     <string name="entry_title_new">Новая запись</string>
     <string name="entry_title_edit">Редактирование</string>
