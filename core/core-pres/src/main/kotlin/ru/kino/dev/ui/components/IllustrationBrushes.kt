@@ -84,6 +84,10 @@ internal fun DrawScope.drawSpark(color: Color, center: Offset, radius: Float) {
 }
 
 /** How bright the glow is at its middle. */
+/** The size of an illustration when the caller gives none - the empty folder and the empty search alike. */
+internal val ILLUSTRATION_WIDTH = 168.dp
+internal val ILLUSTRATION_HEIGHT = 140.dp
+
 private const val GLOW_ALPHA = 0.30f
 
 /** How far in the star pinches between its points, as a share of its radius. */
