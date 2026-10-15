@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.SkeletonField
+import ru.kino.dev.ui.components.SkeletonText
 import ru.kino.dev.vault.entry.StandardPreset
 
 /*
@@ -41,9 +42,17 @@ import ru.kino.dev.vault.entry.StandardPreset
  * the same fields - and differ in whether the fields take input (pass-docs, vault-our.md).
  */
 
-/** "Back" and the [title] of the screen - one line, cut short with an ellipsis. */
+/**
+ * "Back" and the [title] of the screen - one line, cut short with an ellipsis. With [skeleton] the title is
+ * not known yet - a bar painted with it stands in, so the title does not flash in (pass-docs, Step 40, fix 13).
+ */
 @Composable
-internal fun EntryTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
+internal fun EntryTopBar(
+    title: String,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    skeleton: Brush? = null,
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -55,14 +64,24 @@ internal fun EntryTopBar(title: String, onBack: () -> Unit, modifier: Modifier =
         IconButton(onClick = onBack) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.vault_back))
         }
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(start = 8.dp),
-        )
+        if (skeleton != null) {
+            SkeletonText(
+                brush = skeleton,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 8.dp),
+            )
+        } else {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
     }
 }
 

@@ -79,6 +79,23 @@ class GroupListProcessorTest {
     }
 
     @Test
+    fun `a group is known not to be the root before its tree is read`() = runTest {
+        val processor = processor(groupId = work.value, navigator = recordNavigation().first)
+
+        val state = processor.container.stateFlow.value
+        assertTrue(state.loading)
+        assertTrue(state.path.isEmpty())
+        assertFalse(state.isRoot)
+    }
+
+    @Test
+    fun `the root is known to be the root before its tree is read`() = runTest {
+        val processor = processor(groupId = null, navigator = recordNavigation().first)
+
+        assertTrue(processor.container.stateFlow.value.isRoot)
+    }
+
+    @Test
     fun `a group that is gone sends the screen back to the root`() = runTest {
         val (_, events) = perform(groupId = "gone", GroupListAction.Load)
 
@@ -667,7 +684,7 @@ class GroupListProcessorTest {
     private suspend fun TestScope.perform(
         groupId: String?,
         vararg actions: GroupListAction,
-        initial: GroupListState = GroupListState(),
+        initial: GroupListState = GroupListState(isRoot = groupId == null),
         join: Boolean = true,
     ): Pair<GroupListState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()

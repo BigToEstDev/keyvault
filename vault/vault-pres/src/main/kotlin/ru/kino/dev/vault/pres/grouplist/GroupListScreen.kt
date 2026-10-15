@@ -72,6 +72,7 @@ internal fun GroupListScreen(
             containerColor = Color.Transparent,
             topBar = {
                 GroupListTopBar(
+                    isRoot = state.isRoot,
                     path = state.path,
                     entryCount = state.entryCount,
                     query = state.query,
