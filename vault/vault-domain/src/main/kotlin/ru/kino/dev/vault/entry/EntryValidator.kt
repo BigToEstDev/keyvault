@@ -1,5 +1,7 @@
 package ru.kino.dev.vault.entry
 
+import ru.kino.dev.core.preset.PresetLink
+
 /**
  * The rules of the fields of an entry, for both sides: the screen marks the fields, [EntryEditor] refuses
  * the save.
@@ -17,8 +19,8 @@ object EntryValidator {
      * The problem with [name] as the name of an own field of [content], or null when there is none - for
      * adding a field and renaming one.
      *
-     * A name is not empty, not a key of the preset and not the name of another own field, ignoring case and
-     * the spaces around it. There is no limit on its length: a limit would lock entries of other programs
+     * A name is not empty, not a key of the preset, not the key of the link to a preset ([PresetLink]) and
+     * not the name of another own field, ignoring case and the spaces around it. There is no limit on its length: a limit would lock entries of other programs
      * (pass-docs, Step 42, decision 13).
      *
      * @param renamedIndex the own field being renamed - its current name is not a rival
@@ -28,6 +30,7 @@ object EntryValidator {
         return when {
             normalized.isEmpty() -> NameProblem.EMPTY
             content.preset.hasKey(normalized) -> NameProblem.TAKEN
+            normalized.equals(PresetLink.KEY, ignoreCase = true) -> NameProblem.TAKEN
             content.ownFields.withIndex().any { (index, field) ->
                 index != renamedIndex && normalizeName(field.key).equals(normalized, ignoreCase = true)
             } -> NameProblem.TAKEN

@@ -58,6 +58,7 @@ class EntryValidatorTest {
         assertEquals(NameProblem.TAKEN, EntryValidator.nameProblem(content, "pin"))
         assertNull(EntryValidator.nameProblem(content, "Card"))
         assertNull("its own name is not a rival", EntryValidator.nameProblem(content, "pin", renamedIndex = 0))
+        assertEquals("the link to a preset", NameProblem.TAKEN, EntryValidator.nameProblem(content, "keyvaultpreset"))
     }
 
     @Test

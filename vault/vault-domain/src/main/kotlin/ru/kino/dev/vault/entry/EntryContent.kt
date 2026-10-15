@@ -2,6 +2,7 @@ package ru.kino.dev.vault.entry
 
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetField
+import ru.kino.dev.core.preset.PresetLink
 
 /**
  * What an entry holds, as the screens of an entry show and edit it: the fields of its [preset] in the
@@ -30,13 +31,15 @@ data class EntryContent(
         copy(presetFields = presetFields.map { if (it.key == key) it.copy(value = value) else it })
 
     /**
-     * The strings to write, in the order of the form: the preset, then own fields. A field of ours that is
-     * empty is left out (see [PresetField.writtenWhenEmpty]).
+     * The strings to write, in the order of the form: the preset, then own fields, then the link to a preset
+     * of one's own (see [PresetLink]) - the standard one has none. A field of ours that is empty is left out
+     * (see [PresetField.writtenWhenEmpty]).
      */
     fun fields(): List<EntryField> {
         val written = presetFields.filterIndexed { index, field ->
             field.value.isNotEmpty() || preset.fields[index].writtenWhenEmpty
         }
-        return written + ownFields
+        val link = preset.id?.let { EntryField(PresetLink.KEY, it.value, protected = false) }
+        return written + ownFields + listOfNotNull(link)
     }
 }
