@@ -37,6 +37,7 @@ import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.TextField
 import ru.kino.dev.vault.pres.common.EntrySection
 import ru.kino.dev.vault.pres.common.EntryTopBar
+import ru.kino.dev.vault.pres.common.SECTION_PADDING
 import ru.kino.dev.vault.pres.common.SaveFab
 import ru.kino.dev.vault.pres.common.fieldLabel
 import ru.kino.dev.vault.pres.presetcreate.components.CardDeleteBadge
@@ -139,7 +140,10 @@ private fun PresetForm(state: PresetCreateState, action: (PresetCreateAction) ->
     SecondaryButton(
         text = stringResource(R.string.preset_add_card),
         onClick = { action(PresetCreateAction.AddCard) },
-        modifier = Modifier.fillMaxWidth(),
+        // As wide as "+ add field" in the cards above: inside the room of a card
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = SECTION_PADDING),
         enabled = enabled,
     )
 

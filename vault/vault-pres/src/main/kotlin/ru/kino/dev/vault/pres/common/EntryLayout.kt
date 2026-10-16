@@ -106,7 +106,7 @@ internal fun EntrySection(modifier: Modifier = Modifier, content: @Composable Co
         border = BorderStroke(1.dp, colors.tertiary),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(SECTION_PADDING),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             content = content,
         )
@@ -213,6 +213,9 @@ internal fun EntrySkeleton(brush: Brush) {
         repeat(SKELETON_FIELDS) { SkeletonField(brush = brush) }
     }
 }
+
+/** Room inside a section; what stands under the sections in line with their content takes it too. */
+internal val SECTION_PADDING = 16.dp
 
 /** What Material 3 gives disabled content and a disabled outline: the text color at these. */
 private const val DISABLED_CONTENT_ALPHA = 0.38f
