@@ -125,6 +125,26 @@ class PresetCreateProcessorTest {
     }
 
     @Test
+    fun `a preset of 6 cards takes no more`() = runTest {
+        val (state, _) = perform(*Array(6) { PresetCreateAction.AddCard })
+
+        assertEquals(6, state.cards.size)
+        assertFalse(state.canAddCard)
+    }
+
+    @Test
+    fun `a card deleted from a full preset makes room again`() = runTest {
+        val (state, _) = perform(
+            *Array(5) { PresetCreateAction.AddCard },
+            PresetCreateAction.DeleteCard(1),
+            PresetCreateAction.DialogConfirm,
+        )
+
+        assertEquals(5, state.cards.size)
+        assertTrue(state.canAddCard)
+    }
+
+    @Test
     fun `a card added is deleted after asking, with its fields`() = runTest {
         val (state, _) = perform(
             PresetCreateAction.AddCard,

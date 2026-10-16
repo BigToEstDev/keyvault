@@ -137,15 +137,18 @@ private fun PresetForm(state: PresetCreateState, action: (PresetCreateAction) ->
         }
     }
 
-    SecondaryButton(
-        text = stringResource(R.string.preset_add_card),
-        onClick = { action(PresetCreateAction.AddCard) },
-        // As wide as "+ add field" in the cards above: inside the room of a card
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = SECTION_PADDING),
-        enabled = enabled,
-    )
+    // Past the most cards a preset takes there is no button; a card deleted brings it back
+    if (state.canAddCard) {
+        SecondaryButton(
+            text = stringResource(R.string.preset_add_card),
+            onClick = { action(PresetCreateAction.AddCard) },
+            // As wide as "+ add field" in the cards above: inside the room of a card
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = SECTION_PADDING),
+            enabled = enabled,
+        )
+    }
 
     // The notes close every preset: a card of their own, fixed
     EntrySection {

@@ -15,6 +15,9 @@ object PresetValidator {
     /** Whether one more preset can be made next to [presets] - the ones of one's own. */
     fun canAdd(presets: List<EntryPreset>): Boolean = presets.size + 1 < PresetLimits.MAX_PRESETS
 
+    /** Whether one more card can be added to [cards], as [CustomPreset.of] takes them. */
+    fun canAddCard(cards: List<List<String>>): Boolean = cards.size < PresetLimits.MAX_CARDS
+
     /**
      * Whether one more field can go into the card [card] of [cards], as [CustomPreset.of] takes them: a card
      * holds up to [PresetLimits.MAX_CARD_FIELDS], the user name and the password of the first one counted.

@@ -60,4 +60,10 @@ object PresetLimits {
      * (pass-docs, Step 40, fix 19.1).
      */
     const val MAX_CARD_FIELDS: Int = 12
+
+    /**
+     * The most cards of a preset of one's own, the first one - with the user name and the password - counted
+     * and the notes not: no button to add one past it (pass-docs, Step 40, fix 19.2).
+     */
+    const val MAX_CARDS: Int = 6
 }

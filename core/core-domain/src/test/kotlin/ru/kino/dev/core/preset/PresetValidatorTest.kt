@@ -120,6 +120,12 @@ class PresetValidatorTest {
     }
 
     @Test
+    fun `a preset takes up to 6 cards, the first one counted`() {
+        assertTrue(PresetValidator.canAddCard(List(5) { emptyList() }))
+        assertFalse(PresetValidator.canAddCard(List(6) { emptyList() }))
+    }
+
+    @Test
     fun `no field goes into a card that is not there`() {
         assertFalse(PresetValidator.canAddField(listOf(emptyList()), card = 1))
     }
