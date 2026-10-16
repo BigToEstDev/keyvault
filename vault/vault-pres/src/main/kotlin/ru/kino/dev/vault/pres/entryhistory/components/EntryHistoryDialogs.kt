@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.ConfirmDialog
+import ru.kino.dev.vault.pres.common.RestoreVersionDialog
 import ru.kino.dev.vault.pres.common.entryTimeText
 import ru.kino.dev.vault.pres.entryhistory.EntryHistoryDialog
 
@@ -13,14 +14,11 @@ internal fun EntryHistoryDialogs(dialog: EntryHistoryDialog?, onConfirm: () -> U
     when (dialog) {
         null -> Unit
 
-        is EntryHistoryDialog.Restore -> ConfirmDialog(
-            title = stringResource(R.string.history_restore_title),
-            text = stringResource(R.string.history_restore_text, entryTimeText(dialog.modified)),
-            confirmText = stringResource(R.string.history_restore_confirm),
-            dismissText = stringResource(R.string.action_cancel),
+        is EntryHistoryDialog.Restore -> RestoreVersionDialog(
+            modified = dialog.modified,
+            restoring = dialog.saving,
             onConfirm = onConfirm,
             onDismiss = onDismiss,
-            loading = dialog.saving,
         )
 
         is EntryHistoryDialog.Delete -> ConfirmDialog(

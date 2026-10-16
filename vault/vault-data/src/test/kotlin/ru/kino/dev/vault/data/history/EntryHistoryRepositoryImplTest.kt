@@ -11,7 +11,9 @@ import ru.kino.dev.core.GroupNode
 import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.entry.EntryFailure
+import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.history.HistoryVersion
 
 class EntryHistoryRepositoryImplTest {
@@ -37,6 +39,17 @@ class EntryHistoryRepositoryImplTest {
 
         assertEquals(listOf(0, 1), versions.map { it.index })
         assertEquals(HistoryVersion(0, 1_000L), versions.first())
+    }
+
+    @Test
+    fun `a version is read as the entry was then, with when it was saved and the group of the entry`() = runTest {
+        core.updateEntry(DB, "mail", listOf(EntryFieldData("Title", "Post", false)))
+
+        val version = repository.version(DB, EntryId("mail"), 0)
+
+        assertEquals(listOf(EntryField("Title", "Mail", false)), version.fields)
+        assertEquals(GroupId(ROOT), version.groupId)
+        assertEquals(1_000L, version.times.modified)
     }
 
     @Test

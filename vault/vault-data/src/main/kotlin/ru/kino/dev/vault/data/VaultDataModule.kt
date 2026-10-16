@@ -28,6 +28,7 @@ import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.history.EntryHistoryEditor
 import ru.kino.dev.vault.history.EntryHistoryReader
 import ru.kino.dev.vault.history.EntryHistoryRepository
+import ru.kino.dev.vault.history.EntryVersionOpener
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.lock.DatabaseGuard
 import ru.kino.dev.vault.search.VaultSearch
@@ -68,6 +69,10 @@ internal interface VaultDataModule {
             database: VaultDatabaseRepository,
             guard: DatabaseGuard,
         ): EntryHistoryEditor = EntryHistoryEditor(history, database, guard)
+
+        @Provides
+        fun provideEntryVersionOpener(history: EntryHistoryRepository, opener: EntryOpener): EntryVersionOpener =
+            EntryVersionOpener(history, opener)
 
         @Provides
         fun provideEntryHistoryReader(entries: EntryRepository, history: EntryHistoryRepository): EntryHistoryReader =

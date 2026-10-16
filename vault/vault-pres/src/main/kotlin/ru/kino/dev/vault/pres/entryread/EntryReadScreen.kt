@@ -31,29 +31,17 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.StandardPreset
-import ru.kino.dev.ui.components.CopyButton
 import ru.kino.dev.ui.components.GradientBackground
-import ru.kino.dev.ui.components.PasswordField
-import ru.kino.dev.ui.components.SensitiveClipboard
 import ru.kino.dev.ui.components.SnackbarMessage
-import ru.kino.dev.ui.components.TextField
-import ru.kino.dev.ui.components.VisibilityToggle
-import ru.kino.dev.ui.components.rememberSensitiveClipboard
 import ru.kino.dev.ui.components.skeletonBrush
-import ru.kino.dev.vault.entry.EntryContent
-import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.pres.common.EntryDeleteDialog
-import ru.kino.dev.vault.pres.common.EntrySection
+import ru.kino.dev.vault.pres.common.EntryReadFields
 import ru.kino.dev.vault.pres.common.EntrySkeleton
-import ru.kino.dev.vault.pres.common.EntryTitleSection
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.deleteMenuItem
 import ru.kino.dev.vault.pres.common.entryTimeText
-import ru.kino.dev.vault.pres.common.fieldLabel
 import ru.kino.dev.vault.pres.common.historyMenuItem
-import ru.kino.dev.vault.pres.common.subtitle
-import ru.kino.dev.vault.pres.common.title
 
 @Composable
 internal fun EntryReadScreen(
@@ -125,7 +113,14 @@ internal fun EntryReadScreen(
                 val content = state.content
                 when {
                     content != null -> {
-                        EntryFields(state = state, content = content, action = processor::action)
+                        EntryReadFields(
+                            content = content,
+                            passwordVisible = state.passwordVisible,
+                            shownOwn = state.shownOwn,
+                            onTogglePassword = { processor.action(EntryReadAction.TogglePassword) },
+                            onToggleOwn = { processor.action(EntryReadAction.ToggleOwn(it)) },
+                            group = state.group,
+                        )
                         EntryTimesText(state.times)
                     }
                     skeleton != null -> EntrySkeleton(brush = skeleton)
@@ -163,142 +158,6 @@ private fun EntryTimesText(times: EntryTimes) {
 @Composable
 private fun TimeLine(text: String) {
     Text(text = text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
-
-/** The fields of the entry that hold something; an empty title reads "untitled" and is not copied. */
-@Composable
-private fun EntryFields(state: EntryReadState, content: EntryContent, action: (EntryReadAction) -> Unit) {
-    val clipboard = rememberSensitiveClipboard()
-
-    EntryTitleSection { modifier ->
-        val title = content.value(StandardPreset.TITLE)
-        ReadField(
-            label = fieldLabel(StandardPreset.TITLE),
-            value = title.ifEmpty { stringResource(R.string.entry_untitled) },
-            clipboard = clipboard.takeIf { title.isNotEmpty() },
-            modifier = modifier,
-        )
-    }
-
-    // Where the entry is: the name, the path down to it under it (pass-docs, Step 48)
-    state.group?.let { group ->
-        EntrySection {
-            TextField(
-                value = group.title(),
-                onValueChange = {},
-                label = stringResource(R.string.entry_field_group),
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                hint = group.subtitle(),
-            )
-        }
-    }
-
-    // The cards of the preset, as the preset has them - each with the fields that hold something, if any
-    content.preset.cards.forEach { card ->
-        val shown = card.fields.map { it.key }.filter { content.value(it).isNotEmpty() }
-        if (shown.isNotEmpty()) {
-            EntrySection { PresetFields(state, content, shown, clipboard, action) }
-        }
-    }
-
-    val shownOwn = content.ownFields.withIndex().filter { it.value.value.isNotEmpty() }
-
-    // A card of its own, as on the form
-    if (shownOwn.isNotEmpty()) {
-        EntrySection { OwnFields(state, shownOwn, clipboard, action) }
-    }
-}
-
-@Composable
-private fun PresetFields(
-    state: EntryReadState,
-    content: EntryContent,
-    keys: List<String>,
-    clipboard: SensitiveClipboard,
-    action: (EntryReadAction) -> Unit,
-) {
-    keys.forEach { key ->
-        if (key == StandardPreset.PASSWORD) {
-            val label = fieldLabel(key)
-            val value = content.value(key)
-            PasswordField(
-                value = value,
-                onValueChange = {},
-                label = label,
-                visible = state.passwordVisible,
-                onToggleVisible = { action(EntryReadAction.TogglePassword) },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                actions = { CopyButton(onCopy = { clipboard.copy(label, value) }) },
-            )
-        } else {
-            ReadField(
-                label = fieldLabel(key),
-                value = content.value(key),
-                clipboard = clipboard,
-                multiLine = key == StandardPreset.NOTES,
-            )
-        }
-    }
-}
-
-@Composable
-private fun OwnFields(
-    state: EntryReadState,
-    fields: List<IndexedValue<EntryField>>,
-    clipboard: SensitiveClipboard,
-    action: (EntryReadAction) -> Unit,
-) {
-    fields.forEach { (index, field) ->
-        val shown = index in state.shownOwn
-        ReadField(
-            label = field.key,
-            value = field.value,
-            clipboard = clipboard,
-            hidden = field.protected && !shown,
-            onToggleShown = if (field.protected) {
-                { action(EntryReadAction.ToggleOwn(index)) }
-            } else {
-                null
-            },
-            shown = shown,
-        )
-    }
-}
-
-/**
- * A field that only shows its value, with "copy" - when [clipboard] is given - and the eye of a protected one.
- */
-@Composable
-private fun ReadField(
-    label: String,
-    value: String,
-    clipboard: SensitiveClipboard?,
-    modifier: Modifier = Modifier,
-    multiLine: Boolean = false,
-    hidden: Boolean = false,
-    shown: Boolean = false,
-    onToggleShown: (() -> Unit)? = null,
-) {
-    TextField(
-        value = value,
-        onValueChange = {},
-        label = label,
-        modifier = modifier.fillMaxWidth(),
-        readOnly = true,
-        hidden = hidden,
-        singleLine = !multiLine,
-        actions = if (clipboard == null && onToggleShown == null) {
-            null
-        } else {
-            {
-                // The eye first, then "copy" - as on the password
-                onToggleShown?.let { VisibilityToggle(visible = shown, onToggle = it) }
-                clipboard?.let { CopyButton(onCopy = { it.copy(label, value) }) }
-            }
-        },
-    )
 }
 
 /** Room around the cards; at the bottom - for the fab, so it never covers the last field. */

@@ -326,6 +326,13 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         return found(dbKey, entryId).history.mapIndexed { index, version -> HistoryVersionData(index, version.savedAt) }
     }
 
+    override suspend fun historyVersion(dbKey: String, entryId: String, index: Int): EntryData {
+        step("historyVersion", dbKey)
+        val entry = found(dbKey, entryId)
+        val version = entry.history.getOrNull(index) ?: throw CoreException("NotFound", "no version $index")
+        return EntryData(entry.groupId, version.fields, entry.createdAt, version.savedAt)
+    }
+
     override suspend fun restoreHistoryVersion(dbKey: String, entryId: String, index: Int) {
         step("restoreHistoryVersion", dbKey)
         val entry = found(dbKey, entryId)

@@ -1,5 +1,7 @@
 package ru.kino.dev.vault.history
 
+import ru.kino.dev.vault.entry.EntryRecord
+import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.group.EntryId
 
 /**
@@ -12,6 +14,12 @@ interface EntryHistoryRepository {
 
     /** The old versions of the entry, oldest first, as the core keeps them; the current state is not one. */
     suspend fun versions(dbKey: String, entryId: EntryId): List<HistoryVersion>
+
+    /**
+     * The version at [index] as an entry: its fields, and [EntryTimes.modified] - when it was saved. Its group
+     * is the entry's now: a version does not keep one.
+     */
+    suspend fun version(dbKey: String, entryId: EntryId, index: Int): EntryRecord
 
     /**
      * Makes the version at [index] the entry again, whole; the current state goes into the history. In

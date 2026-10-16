@@ -1,6 +1,8 @@
 package ru.kino.dev.vault.history
 
 import ru.kino.dev.vault.entry.EntryFailure
+import ru.kino.dev.vault.entry.EntryRecord
+import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.group.EntryId
 
@@ -19,6 +21,13 @@ class FakeEntryHistoryRepository(private val entries: FakeEntryRepository) : Ent
         failures["versions"]?.let { throw it }
         val entry = entries.stored[entryId] ?: throw EntryFailure.EntryNotFound()
         return entry.history.mapIndexed { index, version -> HistoryVersion(index, version.savedAt) }
+    }
+
+    override suspend fun version(dbKey: String, entryId: EntryId, index: Int): EntryRecord {
+        failures["version"]?.let { throw it }
+        val entry = entries.stored[entryId] ?: throw EntryFailure.EntryNotFound()
+        val version = entry.history.getOrNull(index) ?: throw EntryFailure.EntryNotFound()
+        return EntryRecord(entry.groupId, version.fields, EntryTimes(entry.createdAt, version.savedAt))
     }
 
     override suspend fun restore(dbKey: String, entryId: EntryId, index: Int) {

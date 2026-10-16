@@ -17,6 +17,7 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.history.EntryHistory
 import ru.kino.dev.vault.history.EntryHistoryEditor
 import ru.kino.dev.vault.history.EntryHistoryReader
+import ru.kino.dev.vault.pres.navigation.EntryVersionRoute
 
 /**
  * @param loading the history is not read yet - the skeleton is shown
@@ -64,6 +65,10 @@ class EntryHistoryProcessor @AssistedInject constructor(
             EntryHistoryAction.Load -> load()
 
             EntryHistoryAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
+
+            is EntryHistoryAction.OpenVersion -> if (version(action.index) != null) {
+                navigator.navigate(MviNavEvent.NavigateTo(EntryVersionRoute(dbKey, entryId, action.index)))
+            }
 
             is EntryHistoryAction.Restore -> version(action.index)?.let { modified ->
                 if (state.dialog == null) {

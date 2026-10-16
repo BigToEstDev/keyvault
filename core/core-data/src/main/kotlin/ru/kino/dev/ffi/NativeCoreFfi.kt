@@ -312,6 +312,22 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
             ).mapIndexed { position, row -> row.toHistoryVersion(position) }
         }
 
+    override suspend fun historyVersion(dbKey: String, entryId: String, index: Int): EntryData =
+        withContext(dispatcher) {
+            val version = call(
+                FfiCommands.HISTORY_ENTRY_BY_INDEX,
+                HistoryIndexDto.serializer(),
+                HistoryIndexDto(dbKey = dbKey, entryUuid = entryId, index = index),
+                EntryFormDataDto.serializer(),
+            )
+            EntryData(
+                groupId = version.parentGroupUuid,
+                fields = version.fieldsToDomain(),
+                createdAt = coreTimeToEpochSeconds(version.creationTime),
+                modifiedAt = coreTimeToEpochSeconds(version.lastModificationTime),
+            )
+        }
+
     override suspend fun restoreHistoryVersion(dbKey: String, entryId: String, index: Int) {
         withContext(dispatcher) {
             // The version comes as a whole form, its group the entry's; sent back as the entry, it is the entry

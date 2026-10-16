@@ -19,6 +19,7 @@ import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.history.EntryHistoryEditor
 import ru.kino.dev.vault.history.EntryHistoryReader
 import ru.kino.dev.vault.history.FakeEntryHistoryRepository
+import ru.kino.dev.vault.pres.navigation.EntryVersionRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
@@ -85,6 +86,15 @@ class EntryHistoryProcessorTest {
     }
 
     // A version, from the menu of its card
+
+    @Test
+    fun `a tap on a version opens it`() = runTest {
+        entries.putHistory(mail, 1_000L, 2_000L)
+
+        val (_, events) = perform(EntryHistoryAction.Load, EntryHistoryAction.OpenVersion(1))
+
+        assertEquals(listOf(MviNavEvent.NavigateTo(EntryVersionRoute(DB, mail.value, 1))), events)
+    }
 
     @Test
     fun `restore asks first, naming when the version was saved`() = runTest {

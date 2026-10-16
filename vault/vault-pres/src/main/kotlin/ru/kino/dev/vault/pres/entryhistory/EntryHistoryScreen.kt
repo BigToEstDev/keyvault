@@ -116,6 +116,7 @@ private fun LazyListScope.historyCards(history: EntryHistory, action: (EntryHist
                     restoreMenuItem { action(EntryHistoryAction.Restore(version.index)) },
                     deleteVersionMenuItem { action(EntryHistoryAction.DeleteVersion(version.index)) },
                 ),
+                onOpen = { action(EntryHistoryAction.OpenVersion(version.index)) },
             )
         }
     }

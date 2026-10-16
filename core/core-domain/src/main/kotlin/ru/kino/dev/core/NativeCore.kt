@@ -173,6 +173,13 @@ interface NativeCore {
     suspend fun entryHistory(dbKey: String, entryId: String): List<HistoryVersionData>
 
     /**
+     * The old version at [index] as an entry: its strings, and [EntryData.modifiedAt] - when it was saved; the
+     * group is the entry's now - a version does not keep one. A version or an entry that is not there is
+     * refused with kind `NotFound`.
+     */
+    suspend fun historyVersion(dbKey: String, entryId: String, index: Int): EntryData
+
+    /**
      * Makes the old version at [index] the entry again - whole, as it was: its strings, icon, tags,
      * attachments; the group stays the entry's. The core puts the current state into the history, as on any
      * update. A version or an entry that is not there is refused with kind `NotFound`. In memory only.

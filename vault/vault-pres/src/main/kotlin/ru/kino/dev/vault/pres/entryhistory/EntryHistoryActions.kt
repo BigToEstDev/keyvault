@@ -7,6 +7,9 @@ sealed interface EntryHistoryAction {
 
     data object Back : EntryHistoryAction
 
+    /** A tap on a card of a version: the entry as it was then (pass-docs, Step 51, item 6). */
+    data class OpenVersion(val index: Int) : EntryHistoryAction
+
     /** "Restore this version" in the menu of a card: asks first. */
     data class Restore(val index: Int) : EntryHistoryAction
 
