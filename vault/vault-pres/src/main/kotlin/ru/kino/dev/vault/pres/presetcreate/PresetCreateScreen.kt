@@ -2,26 +2,22 @@ package ru.kino.dev.vault.pres.presetcreate
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
@@ -43,6 +39,7 @@ import ru.kino.dev.vault.pres.common.EntrySection
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.SaveFab
 import ru.kino.dev.vault.pres.common.fieldLabel
+import ru.kino.dev.vault.pres.presetcreate.components.CardDeleteBadge
 import ru.kino.dev.vault.pres.presetcreate.components.PresetCreateDialogs
 import ru.kino.dev.vault.pres.presetcreate.components.PresetFieldRow
 import ru.kino.dev.vault.pres.presetcreate.components.fieldNameProblemText
@@ -125,41 +122,17 @@ private fun PresetForm(state: PresetCreateState, action: (PresetCreateAction) ->
     }
 
     state.cards.forEachIndexed { card, keys ->
-        EntrySection {
+        Box {
+            PresetCard(card = card, keys = keys, state = state, enabled = enabled, action = action)
             if (card > 0) {
-                // A card the person added: the red cross in its corner deletes it, asking first
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    IconButton(onClick = { action(PresetCreateAction.DeleteCard(card)) }, enabled = enabled) {
-                        Icon(
-                            Icons.Filled.Close,
-                            contentDescription = stringResource(R.string.preset_delete_card),
-                            tint = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                }
-            } else {
-                // The first card holds the user name and the password - in every preset, not to be removed
-                PresetFieldRow(name = fieldLabel(StandardPreset.USER_NAME), enabled = enabled, required = true)
-                PresetFieldRow(name = fieldLabel(StandardPreset.PASSWORD), enabled = enabled, required = true)
-            }
-
-            keys.forEachIndexed { index, key ->
-                val at = FieldPosition(card, index)
-                PresetFieldRow(
-                    name = key,
+                // A card the person added: the red badge on its corner deletes it, asking first
+                CardDeleteBadge(
+                    contentDescription = stringResource(R.string.preset_delete_card),
                     enabled = enabled,
-                    error = state.fieldProblem(at)?.let { fieldNameProblemText(it) },
-                    onRename = { action(PresetCreateAction.RenameField(at)) },
-                    onDelete = { action(PresetCreateAction.DeleteField(at)) },
+                    onClick = { action(PresetCreateAction.DeleteCard(card)) },
+                    modifier = Modifier.align(Alignment.TopEnd),
                 )
             }
-
-            SecondaryButton(
-                text = stringResource(R.string.entry_add_field),
-                onClick = { action(PresetCreateAction.AddField(card)) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = enabled,
-            )
         }
     }
 
@@ -173,6 +146,42 @@ private fun PresetForm(state: PresetCreateState, action: (PresetCreateAction) ->
     // The notes close every preset: a card of their own, fixed
     EntrySection {
         PresetFieldRow(name = fieldLabel(StandardPreset.NOTES), enabled = enabled)
+    }
+}
+
+/** A card of the preset: its fields and "+ add field" under them. */
+@Composable
+private fun PresetCard(
+    card: Int,
+    keys: List<String>,
+    state: PresetCreateState,
+    enabled: Boolean,
+    action: (PresetCreateAction) -> Unit,
+) {
+    EntrySection {
+        if (card == 0) {
+            // The first card holds the user name and the password - in every preset, not to be removed
+            PresetFieldRow(name = fieldLabel(StandardPreset.USER_NAME), enabled = enabled, required = true)
+            PresetFieldRow(name = fieldLabel(StandardPreset.PASSWORD), enabled = enabled, required = true)
+        }
+
+        keys.forEachIndexed { index, key ->
+            val at = FieldPosition(card, index)
+            PresetFieldRow(
+                name = key,
+                enabled = enabled,
+                error = state.fieldProblem(at)?.let { fieldNameProblemText(it) },
+                onRename = { action(PresetCreateAction.RenameField(at)) },
+                onDelete = { action(PresetCreateAction.DeleteField(at)) },
+            )
+        }
+
+        SecondaryButton(
+            text = stringResource(R.string.entry_add_field),
+            onClick = { action(PresetCreateAction.AddField(card)) },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = enabled,
+        )
     }
 }
 
