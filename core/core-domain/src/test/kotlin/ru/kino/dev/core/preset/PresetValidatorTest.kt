@@ -108,4 +108,25 @@ class PresetValidatorTest {
             problems,
         )
     }
+
+    @Test
+    fun `a card takes up to 12 fields, the user name and the password of the first one counted`() {
+        val names = (1..12).map { "F$it" }
+
+        assertTrue(PresetValidator.canAddField(listOf(names.take(9)), card = 0))
+        assertFalse(PresetValidator.canAddField(listOf(names.take(10)), card = 0))
+        assertTrue(PresetValidator.canAddField(listOf(emptyList(), names.take(11)), card = 1))
+        assertFalse(PresetValidator.canAddField(listOf(emptyList(), names), card = 1))
+    }
+
+    @Test
+    fun `a preset takes up to 6 cards, the first one counted`() {
+        assertTrue(PresetValidator.canAddCard(List(5) { emptyList() }))
+        assertFalse(PresetValidator.canAddCard(List(6) { emptyList() }))
+    }
+
+    @Test
+    fun `no field goes into a card that is not there`() {
+        assertFalse(PresetValidator.canAddField(listOf(emptyList()), card = 1))
+    }
 }

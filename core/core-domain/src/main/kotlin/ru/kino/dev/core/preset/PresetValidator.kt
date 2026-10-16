@@ -15,6 +15,19 @@ object PresetValidator {
     /** Whether one more preset can be made next to [presets] - the ones of one's own. */
     fun canAdd(presets: List<EntryPreset>): Boolean = presets.size + 1 < PresetLimits.MAX_PRESETS
 
+    /** Whether one more card can be added to [cards], as [CustomPreset.of] takes them. */
+    fun canAddCard(cards: List<List<String>>): Boolean = cards.size < PresetLimits.MAX_CARDS
+
+    /**
+     * Whether one more field can go into the card [card] of [cards], as [CustomPreset.of] takes them: a card
+     * holds up to [PresetLimits.MAX_CARD_FIELDS], the user name and the password of the first one counted.
+     */
+    fun canAddField(cards: List<List<String>>, card: Int): Boolean {
+        val keys = cards.getOrNull(card) ?: return false
+        val fixed = if (card == 0) CustomPreset.FIRST_CARD_FIXED else 0
+        return fixed + keys.size < PresetLimits.MAX_CARD_FIELDS
+    }
+
     /**
      * The problem with [name] as the name of a preset, or null when there is none. A name is not empty, not
      * longer than [PresetLimits.MAX_NAME_LENGTH] characters (code points, so an emoji is one) and not the

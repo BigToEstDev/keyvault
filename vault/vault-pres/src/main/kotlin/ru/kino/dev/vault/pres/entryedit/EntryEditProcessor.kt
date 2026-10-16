@@ -75,6 +75,9 @@ data class EntryEditState(
     /** The form differs from what it opened with - the fields, or the group. */
     val changed: Boolean get() = content != initial || group != initialGroup
 
+    /** One more own field can be added - the card of own fields has room (pass-docs, Step 40, fix 19.1). */
+    val canAddField: Boolean get() = content?.let(EntryValidator::canAddField) == true
+
     /** The required field of the preset under [key] was refused for being empty. */
     fun isMissing(key: String): Boolean = problems.any { it is FieldProblem.Required && it.key == key }
 
@@ -201,7 +204,7 @@ class EntryEditProcessor @AssistedInject constructor(
                 presets.presets.first().firstOrNull { it.id !in before }?.let { switchPreset(it) }
             }
 
-            EntryEditAction.AddField -> if (state.editable) {
+            EntryEditAction.AddField -> if (state.editable && state.canAddField) {
                 reduce { state.copy(dialog = EntryEditDialog.AddField()) }
             }
 

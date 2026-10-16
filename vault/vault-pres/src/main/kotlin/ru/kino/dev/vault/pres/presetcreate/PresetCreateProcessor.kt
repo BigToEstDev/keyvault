@@ -38,6 +38,12 @@ data class PresetCreateState(
     /** Anything typed or added: "back" asks first. */
     val changed: Boolean get() = name.isNotEmpty() || cards != EMPTY_CARDS
 
+    /** One more field can go into the card [card] - it has room (pass-docs, Step 40, fix 19.1). */
+    fun canAddField(card: Int): Boolean = PresetValidator.canAddField(cards, card)
+
+    /** One more card can be added - the preset has room (pass-docs, Step 40, fix 19.2). */
+    val canAddCard: Boolean get() = PresetValidator.canAddCard(cards)
+
     /** Why the name was refused, if it was. */
     val nameProblem: PresetNameProblem? get() = problems.firstNotNullOfOrNull { (it as? PresetProblem.Name)?.problem }
 
@@ -87,7 +93,7 @@ class PresetCreateProcessor @Inject constructor(
         when (action) {
             is PresetCreateAction.NameChanged, is PresetCreateAction.DialogNameChanged -> Unit // in action()
 
-            is PresetCreateAction.AddField -> if (!state.saving && action.card in state.cards.indices) {
+            is PresetCreateAction.AddField -> if (!state.saving && state.canAddField(action.card)) {
                 reduce { state.copy(dialog = PresetCreateDialog.AddField(action.card)) }
             }
 
@@ -99,7 +105,7 @@ class PresetCreateProcessor @Inject constructor(
                 if (!state.saving) reduce { state.copy(dialog = PresetCreateDialog.DeleteField(action.at, name)) }
             }
 
-            PresetCreateAction.AddCard -> if (!state.saving) {
+            PresetCreateAction.AddCard -> if (!state.saving && state.canAddCard) {
                 reduce { state.copy(cards = state.cards + listOf(emptyList())) }
             }
 
