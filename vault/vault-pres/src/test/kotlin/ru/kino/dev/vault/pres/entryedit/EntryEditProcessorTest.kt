@@ -28,6 +28,7 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.common.GroupChoice
+import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.PresetCreateRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
@@ -633,6 +634,66 @@ class EntryEditProcessorTest {
 
         assertEquals("Mail", state.content?.value(StandardPreset.TITLE))
         assertNull(state.dialog)
+    }
+
+    // Delete, from the menu of the top bar
+
+    @Test
+    fun `delete asks first, naming the entry as the file holds it`() = runTest {
+        val (state, _) = editing(EntryEditAction.ValueChanged(StandardPreset.TITLE, "Typed"), EntryEditAction.Delete)
+
+        assertEquals(EntryEditDialog.Delete("Mail"), state.dialog)
+    }
+
+    @Test
+    fun `a new entry has nothing to delete`() = runTest {
+        val (state, _) = creating(EntryEditAction.Delete)
+
+        assertNull(state.dialog)
+    }
+
+    @Test
+    fun `a deleted entry goes to the recycle bin with what was typed, unasked, and the screen goes to the list`() = runTest {
+        val (_, events) = editing(
+            EntryEditAction.ValueChanged(StandardPreset.TITLE, "Typed"),
+            EntryEditAction.Delete,
+            EntryEditAction.DialogConfirm,
+        )
+
+        assertEquals(listOf(mail), entries.recycled)
+        assertEquals(listOf("save"), database.calls)
+        // Past the reading of the entry, if the form was opened from it; plain "back" otherwise
+        assertEquals(
+            listOf(MviNavEvent.NavigateBackTo(EntryReadRoute(DB, mail.value), inclusive = true, orBack = true)),
+            events,
+        )
+    }
+
+    @Test
+    fun `a deleted entry that is not written stays on the form, and the snackbar says so`() = runTest {
+        database.saveFailure = CoreException("Io", "disk full")
+
+        val (state, events) = editing(EntryEditAction.Delete, EntryEditAction.DialogConfirm)
+
+        assertNull(state.dialog)
+        assertEquals(EntryEditMessage.NotSaved, state.message)
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `a delete under way does not close`() = runTest {
+        val read = opener.open(DB, mail).content
+        val (state, _) = editing(
+            EntryEditAction.DialogDismiss,
+            initial = EntryEditState(
+                creating = false,
+                content = read,
+                initial = read,
+                dialog = EntryEditDialog.Delete("Mail", deleting = true),
+            ),
+        )
+
+        assertEquals(EntryEditDialog.Delete("Mail", deleting = true), state.dialog)
     }
 
     // Helpers

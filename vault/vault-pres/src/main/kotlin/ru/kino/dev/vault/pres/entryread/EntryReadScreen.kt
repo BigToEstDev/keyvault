@@ -39,6 +39,7 @@ import ru.kino.dev.ui.components.rememberSensitiveClipboard
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryField
+import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.pres.common.EntrySection
 import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
@@ -65,6 +66,8 @@ internal fun EntryReadScreen(
         stringResource(
             when (it) {
                 EntryReadMessage.LoadFailed -> R.string.entry_message_load_failed
+                EntryReadMessage.NotSaved -> R.string.vault_message_not_saved
+                EntryReadMessage.Unexpected -> R.string.error_unexpected
             },
         )
     }
@@ -84,6 +87,12 @@ internal fun EntryReadScreen(
                     title = title?.ifEmpty { stringResource(R.string.entry_untitled) }.orEmpty(),
                     onBack = { processor.action(EntryReadAction.Back) },
                     skeleton = skeleton,
+                    // Once the entry is read: there is nothing to delete before
+                    onDelete = if (state.content != null) {
+                        { processor.action(EntryReadAction.Delete) }
+                    } else {
+                        null
+                    },
                 )
             },
             floatingActionButton = {
@@ -109,6 +118,15 @@ internal fun EntryReadScreen(
                     skeleton != null -> EntrySkeleton(brush = skeleton)
                 }
             }
+        }
+
+        state.delete?.let { dialog ->
+            EntryDeleteDialog(
+                title = dialog.title,
+                deleting = dialog.deleting,
+                onConfirm = { processor.action(EntryReadAction.DeleteConfirm) },
+                onDismiss = { processor.action(EntryReadAction.DeleteDismiss) },
+            )
         }
     }
 }

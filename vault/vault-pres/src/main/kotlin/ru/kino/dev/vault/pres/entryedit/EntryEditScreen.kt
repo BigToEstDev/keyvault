@@ -76,6 +76,7 @@ internal fun EntryEditScreen(
         stringResource(
             when (it) {
                 EntryEditMessage.LoadFailed -> R.string.entry_message_load_failed
+                EntryEditMessage.NotSaved -> R.string.vault_message_not_saved
                 EntryEditMessage.Unexpected -> R.string.error_unexpected
             },
         )
@@ -90,6 +91,13 @@ internal fun EntryEditScreen(
                 EntryTopBar(
                     title = stringResource(if (state.creating) R.string.entry_title_new else R.string.entry_title_edit),
                     onBack = { processor.action(EntryEditAction.Back) },
+                    // An entry that is there, once read; a new one has nothing to delete
+                    onDelete = if (!state.creating && state.content != null) {
+                        { processor.action(EntryEditAction.Delete) }
+                    } else {
+                        null
+                    },
+                    menuEnabled = !state.saving,
                 )
             },
             floatingActionButton = {

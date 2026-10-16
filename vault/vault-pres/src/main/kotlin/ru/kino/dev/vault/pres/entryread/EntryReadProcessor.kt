@@ -12,7 +12,9 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.vault.entry.EntryContent
+import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.group.EntryId
@@ -27,6 +29,7 @@ import ru.kino.dev.vault.pres.navigation.EntryEditRoute
  * @param content the entry; null until it is read
  * @param group the group the entry is in, with the path down to it; null until it is read
  * @param shownOwn indexes of protected own fields shown in clear
+ * @param delete the dialog asking to delete the entry
  * @param message for the snackbar, until it takes it
  */
 data class EntryReadState(
@@ -35,6 +38,7 @@ data class EntryReadState(
     val group: GroupChoice? = null,
     val passwordVisible: Boolean = false,
     val shownOwn: Set<Int> = emptySet(),
+    val delete: DeleteDialog? = null,
     val message: EntryReadMessage? = null,
 )
 
@@ -45,6 +49,10 @@ data class EntryReadState(
  * The entry is read anew every time the screen is shown - it may come back from its form changed. What is
  * shown in clear stays shown while the entry is the same, and hides once it changed: the fields may have
  * moved.
+ *
+ * An entry in the recycle bin is not shown: the screen goes back. The form deleting the entry goes past this
+ * screen itself; this is the guard for an entry put there otherwise (pass-docs, Step 50, item 2). Deleted
+ * here, the screen goes back; deleted but not written, it stays and says so.
  */
 @HiltViewModel(assistedFactory = EntryReadProcessor.Factory::class)
 class EntryReadProcessor @AssistedInject constructor(
@@ -52,6 +60,7 @@ class EntryReadProcessor @AssistedInject constructor(
     @Assisted("entryId") private val entryId: String,
     private val opener: EntryOpener,
     private val groupRepository: GroupRepository,
+    private val editor: EntryEditor,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryReadState, EntryReadState, Nothing> {
@@ -80,7 +89,40 @@ class EntryReadProcessor @AssistedInject constructor(
                 state.copy(shownOwn = if (action.index in shown) shown - action.index else shown + action.index)
             }
 
+            EntryReadAction.Delete -> state.content?.let { content ->
+                if (state.delete == null) reduce { state.copy(delete = DeleteDialog(content.value(StandardPreset.TITLE))) }
+            }
+
+            EntryReadAction.DeleteConfirm -> delete()
+
+            EntryReadAction.DeleteDismiss -> if (state.delete?.deleting == false) reduce { state.copy(delete = null) }
+
             EntryReadAction.MessageShown -> reduce { state.copy(message = null) }
+        }
+    }
+
+    private suspend fun Syntax<EntryReadState, Nothing>.delete() {
+        val dialog = state.delete ?: return
+        if (dialog.deleting) return
+
+        reduce { state.copy(delete = dialog.copy(deleting = true)) }
+        try {
+            editor.delete(dbKey, EntryId(entryId))
+            navigator.navigate(MviNavEvent.NavigateBack)
+        } catch (failure: EntryFailure) {
+            when (failure) {
+                // In the recycle bin, but not in the file: the error is shown here (pass-docs, Step 50, item 2)
+                is EntryFailure.NotSaved -> reduce { state.copy(delete = null, message = EntryReadMessage.NotSaved) }
+
+                // Gone already - deleted or merged away
+                is EntryFailure.EntryNotFound -> navigator.navigate(MviNavEvent.NavigateBack)
+
+                // Not what deleting an entry throws
+                is EntryFailure.InvalidFields, is EntryFailure.GroupNotFound, is EntryFailure.Unexpected -> {
+                    log.unexpected(TAG, failure)
+                    reduce { state.copy(delete = null, message = EntryReadMessage.Unexpected) }
+                }
+            }
         }
     }
 
@@ -100,6 +142,11 @@ class EntryReadProcessor @AssistedInject constructor(
             groupRepository.tree(dbKey).groupChoice(opened.groupId)
         } catch (failure: GroupFailure) {
             loadFailed(failure)
+            return
+        }
+        if (group == null) {
+            // Not in the visible tree: in the recycle bin, put there not by this screen nor by its form
+            navigator.navigate(MviNavEvent.NavigateBack)
             return
         }
         val content = opened.content

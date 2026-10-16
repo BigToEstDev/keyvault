@@ -7,6 +7,7 @@ import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.TextInputDialog
 import ru.kino.dev.vault.group.GroupNameValidator
+import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.pres.grouplist.GroupDialog
 import ru.kino.dev.vault.pres.grouplist.NameProblem
 
@@ -41,18 +42,11 @@ internal fun GroupDialogs(
             onDismiss = onDismiss,
         )
 
-        is GroupDialog.DeleteEntry -> ConfirmDialog(
-            title = stringResource(R.string.entry_delete_title),
-            text = stringResource(
-                R.string.entry_delete_text,
-                dialog.title.ifEmpty { stringResource(R.string.entry_untitled) },
-            ),
-            confirmText = stringResource(R.string.group_delete_confirm),
-            dismissText = stringResource(R.string.action_cancel),
+        is GroupDialog.DeleteEntry -> EntryDeleteDialog(
+            title = dialog.title,
+            deleting = dialog.saving,
             onConfirm = onConfirm,
             onDismiss = onDismiss,
-            destructive = true,
-            loading = dialog.saving,
         )
 
         is GroupDialog.Delete -> ConfirmDialog(

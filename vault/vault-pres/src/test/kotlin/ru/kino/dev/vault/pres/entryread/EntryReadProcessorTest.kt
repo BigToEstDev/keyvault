@@ -8,9 +8,12 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
+import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryOpener
@@ -37,6 +40,7 @@ class EntryReadProcessorTest {
         ),
     )
     private val groups = FakeGroupRepository()
+    private val database = FakeVaultDatabase()
     private val log = RecordingLog()
 
     @Test
@@ -135,13 +139,69 @@ class EntryReadProcessorTest {
         )
     }
 
+    // Delete, from the menu of the top bar
+
+    @Test
+    fun `delete asks first, naming the entry`() = runTest {
+        val (state, _) = perform(EntryReadAction.Load, EntryReadAction.Delete)
+
+        assertEquals(DeleteDialog("Mail"), state.delete)
+    }
+
+    @Test
+    fun `nothing to delete before the entry is read`() = runTest {
+        val (state, _) = perform(EntryReadAction.Delete)
+
+        assertNull(state.delete)
+    }
+
+    @Test
+    fun `a deleted entry goes to the recycle bin, the file is written and the screen goes back`() = runTest {
+        val (_, events) = perform(EntryReadAction.Load, EntryReadAction.Delete, EntryReadAction.DeleteConfirm)
+
+        assertEquals(listOf(mail), entries.recycled)
+        assertEquals(listOf("save"), database.calls)
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `a deleted entry that is not written stays here, and the snackbar says so`() = runTest {
+        database.saveFailure = CoreException("Io", "disk full")
+
+        val (state, events) = perform(EntryReadAction.Load, EntryReadAction.Delete, EntryReadAction.DeleteConfirm)
+
+        assertNull(state.delete)
+        assertEquals(EntryReadMessage.NotSaved, state.message)
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `cancel closes the dialog, the entry stays`() = runTest {
+        val (state, _) = perform(EntryReadAction.Load, EntryReadAction.Delete, EntryReadAction.DeleteDismiss)
+
+        assertNull(state.delete)
+        assertTrue(entries.recycled.isEmpty())
+    }
+
+    @Test
+    fun `an entry in the recycle bin is not shown - the screen goes back`() = runTest {
+        // Deleted from its form over this screen: back here, it is in the bin - in a group put there
+        val old = groups.add("old", groups.rootId, "Old")
+        groups.moveToRecycleBin(DB, old)
+        entries.stored[mail] = entries.stored.getValue(mail).copy(groupId = old)
+
+        val (_, events) = perform(EntryReadAction.Load)
+
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(
         vararg actions: EntryReadAction,
         initial: EntryReadState = EntryReadState(),
     ): Pair<EntryReadState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryReadProcessor(DB, mail.value, opener, groups, navigator, log)
+        val processor = EntryReadProcessor(DB, mail.value, opener, groups, EntryEditor(entries, opener, database), navigator, log)
 
         processor.testWithInternalState(this, initial) {
             actions.forEach { containerHost.action(it).join() }

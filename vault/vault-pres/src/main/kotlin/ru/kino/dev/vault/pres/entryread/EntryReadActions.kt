@@ -15,9 +15,24 @@ sealed interface EntryReadAction {
     /** Shows or hides the value of the protected own field at [index]. */
     data class ToggleOwn(val index: Int) : EntryReadAction
 
+    /** "Delete" in the menu of the top bar: asks first. */
+    data object Delete : EntryReadAction
+
+    /** "Delete" in the dialog: the entry goes into the recycle bin, the screen goes back. */
+    data object DeleteConfirm : EntryReadAction
+
+    data object DeleteDismiss : EntryReadAction
+
     /** The snackbar took the message. */
     data object MessageShown : EntryReadAction
 }
 
+/**
+ * "Delete the entry?" - the entry called [title] as the file holds it.
+ *
+ * @param deleting the delete is under way: the dialog shows progress and takes nothing
+ */
+data class DeleteDialog(val title: String, val deleting: Boolean = false)
+
 /** What the snackbar says. */
-enum class EntryReadMessage { LoadFailed }
+enum class EntryReadMessage { LoadFailed, NotSaved, Unexpected }

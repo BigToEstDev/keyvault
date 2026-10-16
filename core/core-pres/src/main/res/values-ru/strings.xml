@@ -128,6 +128,8 @@
     <string name="vault_create_group">Создать группу</string>
     <string name="vault_create_entry">Создать запись</string>
     <string name="vault_card_edit">Редактировать</string>
+    <string name="vault_group_menu">Действия с группой</string>
+    <string name="entry_menu">Действия с записью</string>
     <string name="vault_card_delete">Удалить</string>
     <string name="vault_debug_lock">Заблокировать (debug)</string>
     <string name="group_dialog_create_title">Новая группа</string>

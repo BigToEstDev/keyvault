@@ -8,6 +8,7 @@ import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.ui.components.ConfirmDialog
+import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.ui.components.TextInputDialog
 import ru.kino.dev.vault.entry.NameProblem
 import ru.kino.dev.vault.pres.entryedit.EntryEditDialog
@@ -77,6 +78,13 @@ internal fun EntryEditDialogs(
             onSaveAsIs = onConfirm,
             onKeep = onKeepHidden,
             onCancel = onDismiss,
+        )
+
+        is EntryEditDialog.Delete -> EntryDeleteDialog(
+            title = dialog.title,
+            deleting = dialog.deleting,
+            onConfirm = onConfirm,
+            onDismiss = onDismiss,
         )
 
         EntryEditDialog.Leave -> ConfirmDialog(

@@ -28,11 +28,13 @@ import ru.kino.dev.ui.components.CountBadgeIcon
 import ru.kino.dev.ui.components.SearchBar
 import ru.kino.dev.ui.components.SkeletonText
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.vault.pres.common.MoreMenuButton
 import ru.kino.dev.vault.pres.grouplist.Crumb
 
 /**
  * The top of the list: at the root - the database, its entry count on a folder and its name; inside a group
- * - "back" and the path from the database down to the group, a skeleton of it while the tree is read. Under
+ * - "back", the path from the database down to the group, a skeleton of it while the tree is read, and the
+ * menu of the group - edit, delete - once it is read (pass-docs, Step 50, item 1). Under
  * either, the search field and the filter button to the right of it - in the accent, with a dot over it,
  * while a filter other than the default is on.
  *
@@ -50,6 +52,8 @@ internal fun GroupListTopBar(
     onFilters: () -> Unit,
     onBack: () -> Unit,
     onCrumb: (index: Int) -> Unit,
+    onEditGroup: () -> Unit,
+    onDeleteGroup: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val fallback = stringResource(R.string.entry_database_fallback)
@@ -81,6 +85,11 @@ internal fun GroupListTopBar(
                     )
                 } else {
                     Breadcrumbs(items = names, onClick = onCrumb, modifier = Modifier.weight(1f))
+                    MoreMenuButton(
+                        contentDescription = stringResource(R.string.vault_group_menu),
+                        onDelete = onDeleteGroup,
+                        onEdit = onEditGroup,
+                    )
                 }
             } else {
                 CountBadgeIcon(count = entryCount, modifier = Modifier.padding(horizontal = 8.dp))
