@@ -1,5 +1,6 @@
 package ru.kino.dev.vault.pres.grouplist
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -726,6 +727,7 @@ class GroupListProcessorTest {
     )
 
     /** The lock of the app, the timer never running out here - the tests lock by hand. */
+    @OptIn(ExperimentalCoroutinesApi::class) // the virtual time of the test scheduler
     private fun TestScope.lock(): AutoLock = AutoLock(
         database = database,
         guard = DatabaseGuard(),

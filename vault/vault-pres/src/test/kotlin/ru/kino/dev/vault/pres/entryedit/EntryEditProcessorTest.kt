@@ -359,8 +359,8 @@ class EntryEditProcessorTest {
             EntryEditAction.PresetChosen(null),
         )
 
-        assertEquals(StandardPreset.preset, state.content!!.preset)
-        assertEquals("bank.ru", state.content!!.value(StandardPreset.URL))
+        assertEquals(StandardPreset.preset, state.content?.preset)
+        assertEquals("bank.ru", state.content?.value(StandardPreset.URL))
         assertEquals(emptyList<EntryField>(), state.hidden)
     }
 
