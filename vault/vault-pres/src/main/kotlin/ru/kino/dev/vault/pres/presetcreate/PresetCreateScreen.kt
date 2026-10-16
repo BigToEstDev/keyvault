@@ -180,12 +180,15 @@ private fun PresetCard(
             )
         }
 
-        SecondaryButton(
-            text = stringResource(R.string.entry_add_field),
-            onClick = { action(PresetCreateAction.AddField(card)) },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = enabled,
-        )
+        // Past the most fields a card takes there is no button; a field deleted brings it back
+        if (state.canAddField(card)) {
+            SecondaryButton(
+                text = stringResource(R.string.entry_add_field),
+                onClick = { action(PresetCreateAction.AddField(card)) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
+            )
+        }
     }
 }
 

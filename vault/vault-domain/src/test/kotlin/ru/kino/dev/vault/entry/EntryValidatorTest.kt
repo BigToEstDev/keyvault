@@ -1,7 +1,9 @@
 package ru.kino.dev.vault.entry
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.core.preset.StandardPreset.PASSWORD
@@ -106,6 +108,16 @@ class EntryValidatorTest {
             ),
             EntryValidator.problems(edited, read = null),
         )
+    }
+
+    @Test
+    fun `up to 12 own fields can be added, more read are kept but no more added`() {
+        fun owning(count: Int) = filled.copy(ownFields = (1..count).map { field("F$it") })
+
+        assertTrue(EntryValidator.canAddField(owning(11)))
+        assertFalse(EntryValidator.canAddField(owning(12)))
+        assertFalse(EntryValidator.canAddField(owning(15)))
+        assertEquals(emptyList<FieldProblem>(), EntryValidator.problems(owning(15), read = owning(15)))
     }
 
     private fun field(key: String, value: String = "v") = EntryField(key, value, protected = false)

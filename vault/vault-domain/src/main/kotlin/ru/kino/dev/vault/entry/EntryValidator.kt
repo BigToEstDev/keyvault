@@ -1,5 +1,6 @@
 package ru.kino.dev.vault.entry
 
+import ru.kino.dev.core.preset.PresetLimits
 import ru.kino.dev.core.preset.PresetLink
 
 /**
@@ -14,6 +15,14 @@ object EntryValidator {
 
     /** The name of an own field as it is stored: without the spaces around it. */
     fun normalizeName(name: String): String = name.trim()
+
+    /**
+     * Whether a person can add one more own field to [content]: the card of own fields holds up to
+     * [PresetLimits.MAX_CARD_FIELDS]. One read with more - written by another program, or the fields left out
+     * of the preset added as own - keeps them all and is saved as it is; only no more are added
+     * (pass-docs, Step 40, fix 19.1).
+     */
+    fun canAddField(content: EntryContent): Boolean = content.ownFields.size < PresetLimits.MAX_CARD_FIELDS
 
     /**
      * The problem with [name] as the name of an own field of [content], or null when there is none - for

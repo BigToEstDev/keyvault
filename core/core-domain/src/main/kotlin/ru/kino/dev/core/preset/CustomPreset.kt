@@ -17,6 +17,9 @@ object CustomPreset {
     /** The keys a field of one's own takes in no preset - the standard fields every one of them has. */
     val FIXED_KEYS: Set<String> = setOf(StandardPreset.TITLE, USER_NAME, PASSWORD, NOTES)
 
+    /** The fields the first card opens with - the user name and the password - before the person's own. */
+    const val FIRST_CARD_FIXED: Int = 2
+
     private val USER_NAME_FIELD = PresetField(USER_NAME, required = true, writtenWhenEmpty = true)
     private val PASSWORD_FIELD = PresetField(PASSWORD, required = true, protected = true, writtenWhenEmpty = true)
     private val NOTES_CARD = PresetCard(listOf(PresetField(NOTES, writtenWhenEmpty = true)))
@@ -39,7 +42,7 @@ object CustomPreset {
     fun cards(preset: EntryPreset): List<List<String>> {
         require(!preset.isStandard) { "the standard preset is not one's own" }
         val own = preset.cards.dropLast(1)
-        return listOf(own.first().fields.drop(2).map { it.key }) + own.drop(1).map { card -> card.fields.map { it.key } }
+        return listOf(own.first().fields.drop(FIRST_CARD_FIXED).map { it.key }) + own.drop(1).map { card -> card.fields.map { it.key } }
     }
 }
 
@@ -51,4 +54,10 @@ object PresetLimits {
 
     /** The longest name of a preset, in characters. */
     const val MAX_NAME_LENGTH: Int = 64
+
+    /**
+     * The most fields a card takes - of a preset, or the own fields of an entry: no button to add one past it
+     * (pass-docs, Step 40, fix 19.1).
+     */
+    const val MAX_CARD_FIELDS: Int = 12
 }

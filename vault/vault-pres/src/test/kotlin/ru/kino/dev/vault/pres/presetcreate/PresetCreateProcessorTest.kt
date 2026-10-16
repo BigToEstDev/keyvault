@@ -107,6 +107,24 @@ class PresetCreateProcessorTest {
     }
 
     @Test
+    fun `a full card takes no more fields, a field deleted makes room again`() = runTest {
+        val full = (1..10).flatMap { addField(0, "F$it").toList() }.toTypedArray()
+
+        val (state, _) = perform(*full, PresetCreateAction.AddField(card = 0))
+
+        assertFalse(state.canAddField(0))
+        assertNull(state.dialog)
+
+        val (after, _) = perform(
+            *full,
+            PresetCreateAction.DeleteField(FieldPosition(0, 0)),
+            PresetCreateAction.DialogConfirm,
+        )
+
+        assertTrue(after.canAddField(0))
+    }
+
+    @Test
     fun `a card added is deleted after asking, with its fields`() = runTest {
         val (state, _) = perform(
             PresetCreateAction.AddCard,

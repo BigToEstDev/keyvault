@@ -578,6 +578,23 @@ class EntryEditProcessorTest {
     }
 
     @Test
+    fun `a full card of own fields takes no more`() = runTest {
+        val (state, _) = editing(*fillOwnCard(), EntryEditAction.AddField)
+
+        assertEquals(12, state.content?.ownFields?.size)
+        assertFalse(state.canAddField)
+        assertNull(state.dialog)
+    }
+
+    @Test
+    fun `a field deleted from a full card makes room again`() = runTest {
+        val (state, _) = editing(*fillOwnCard(), EntryEditAction.DeleteField(0), EntryEditAction.DialogConfirm)
+
+        assertEquals(11, state.content?.ownFields?.size)
+        assertTrue(state.canAddField)
+    }
+
+    @Test
     fun `a twin of another program is refused at save once anything changes`() = runTest {
         val twin = twin()
 
@@ -637,6 +654,11 @@ class EntryEditProcessorTest {
             field("PIN", "2"),
         ),
     ).value
+
+    /** The entry holds two own fields; ten more fill the card. */
+    private fun fillOwnCard() = (1..10).flatMap {
+        listOf(EntryEditAction.AddField, EntryEditAction.DialogNameChanged("F$it"), EntryEditAction.DialogConfirm)
+    }.toTypedArray()
 
     private fun filled() = arrayOf<EntryEditAction>(
         EntryEditAction.ValueChanged(StandardPreset.TITLE, "Bank"),

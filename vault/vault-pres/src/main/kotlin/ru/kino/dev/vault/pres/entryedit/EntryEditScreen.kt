@@ -213,12 +213,15 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             )
         }
 
-        SecondaryButton(
-            text = stringResource(R.string.entry_add_field),
-            onClick = { action(EntryEditAction.AddField) },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = enabled,
-        )
+        // Past the most fields a card takes there is no button; a field deleted brings it back
+        if (state.canAddField) {
+            SecondaryButton(
+                text = stringResource(R.string.entry_add_field),
+                onClick = { action(EntryEditAction.AddField) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
+            )
+        }
     }
 }
 
