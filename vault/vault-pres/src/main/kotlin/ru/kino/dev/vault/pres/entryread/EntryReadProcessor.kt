@@ -50,9 +50,9 @@ data class EntryReadState(
  * shown in clear stays shown while the entry is the same, and hides once it changed: the fields may have
  * moved.
  *
- * An entry in the recycle bin is not shown: deleted from its form, or elsewhere, the screen goes back - the
- * form is left over it, so this one flashes on the way (pass-docs, Step 50, item 2). Deleted here, the screen
- * goes back; deleted but not written, it stays and says so.
+ * An entry in the recycle bin is not shown: the screen goes back. The form deleting the entry goes past this
+ * screen itself; this is the guard for an entry put there otherwise (pass-docs, Step 50, item 2). Deleted
+ * here, the screen goes back; deleted but not written, it stays and says so.
  */
 @HiltViewModel(assistedFactory = EntryReadProcessor.Factory::class)
 class EntryReadProcessor @AssistedInject constructor(
@@ -145,7 +145,7 @@ class EntryReadProcessor @AssistedInject constructor(
             return
         }
         if (group == null) {
-            // Not in the visible tree: in the recycle bin - deleted from the form over this screen, or elsewhere
+            // Not in the visible tree: in the recycle bin, put there not by this screen nor by its form
             navigator.navigate(MviNavEvent.NavigateBack)
             return
         }

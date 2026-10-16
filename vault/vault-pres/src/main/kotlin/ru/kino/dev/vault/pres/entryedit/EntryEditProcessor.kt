@@ -35,6 +35,7 @@ import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.common.groupChoices
+import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.PresetCreateRoute
 
 /**
@@ -260,14 +261,14 @@ class EntryEditProcessor @AssistedInject constructor(
         reduce { state.copy(dialog = dialog.copy(deleting = true)) }
         try {
             editor.delete(dbKey, EntryId(id))
-            leave()
+            leaveDeleted(id)
         } catch (failure: EntryFailure) {
             when (failure) {
                 // In the recycle bin, but not in the file: the error is shown here (pass-docs, Step 50, item 2)
                 is EntryFailure.NotSaved -> reduce { state.copy(dialog = null, message = EntryEditMessage.NotSaved) }
 
                 // Gone already - deleted or merged away
-                is EntryFailure.EntryNotFound -> leave()
+                is EntryFailure.EntryNotFound -> leaveDeleted(id)
 
                 // Not what deleting an entry throws
                 is EntryFailure.InvalidFields, is EntryFailure.GroupNotFound, is EntryFailure.Unexpected -> {
@@ -429,6 +430,14 @@ class EntryEditProcessor @AssistedInject constructor(
 
     private suspend fun leave() {
         navigator.navigate(MviNavEvent.NavigateBack)
+    }
+
+    /**
+     * The entry [id] deleted: back to the list it was opened from - past its reading too, when the form was
+     * opened from it, so that screen does not flash on the way (pass-docs, Step 50, item 2).
+     */
+    private suspend fun leaveDeleted(id: String) {
+        navigator.navigate(MviNavEvent.NavigateBackTo(EntryReadRoute(dbKey, id), inclusive = true, orBack = true))
     }
 
     private companion object {

@@ -28,6 +28,7 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.common.GroupChoice
+import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.PresetCreateRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
@@ -652,7 +653,7 @@ class EntryEditProcessorTest {
     }
 
     @Test
-    fun `a deleted entry goes to the recycle bin with what was typed, unasked, and the screen goes back`() = runTest {
+    fun `a deleted entry goes to the recycle bin with what was typed, unasked, and the screen goes to the list`() = runTest {
         val (_, events) = editing(
             EntryEditAction.ValueChanged(StandardPreset.TITLE, "Typed"),
             EntryEditAction.Delete,
@@ -661,7 +662,11 @@ class EntryEditProcessorTest {
 
         assertEquals(listOf(mail), entries.recycled)
         assertEquals(listOf("save"), database.calls)
-        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+        // Past the reading of the entry, if the form was opened from it; plain "back" otherwise
+        assertEquals(
+            listOf(MviNavEvent.NavigateBackTo(EntryReadRoute(DB, mail.value), inclusive = true, orBack = true)),
+            events,
+        )
     }
 
     @Test

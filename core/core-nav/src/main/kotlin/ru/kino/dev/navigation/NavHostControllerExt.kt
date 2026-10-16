@@ -9,7 +9,7 @@ fun NavHostController.handle(event: MviNavEvent) {
         }
 
         is MviNavEvent.NavigateBackTo -> {
-            popBackStack(route = event.popUpTo, inclusive = event.inclusive)
+            if (!popBackStack(route = event.popUpTo, inclusive = event.inclusive) && event.orBack) popBackStack()
         }
 
         is MviNavEvent.NavigateTo -> {
