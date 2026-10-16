@@ -9,6 +9,7 @@ import ru.kino.dev.vault.entry.EntryRecord
 import ru.kino.dev.vault.entry.EntryRepository
 import ru.kino.dev.vault.entry.EntrySearch
 import ru.kino.dev.vault.entry.EntrySummary
+import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 import javax.inject.Inject
@@ -31,7 +32,11 @@ internal class EntryRepositoryImpl @Inject constructor(
 
     override suspend fun read(dbKey: String, entryId: EntryId): EntryRecord = entryCall {
         val entry = core.entry(dbKey, entryId.value)
-        EntryRecord(groupId = GroupId(entry.groupId), fields = entry.fields.map { it.toField() })
+        EntryRecord(
+            groupId = GroupId(entry.groupId),
+            fields = entry.fields.map { it.toField() },
+            times = EntryTimes(created = entry.createdAt, modified = entry.modifiedAt),
+        )
     }
 
     override suspend fun create(dbKey: String, groupId: GroupId, fields: List<EntryField>): EntryId =

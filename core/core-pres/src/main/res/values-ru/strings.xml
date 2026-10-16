@@ -153,6 +153,8 @@
     <string name="vault_message_filter_not_saved">Фильтр применён, но не будет запомнен</string>
 
     <string name="entry_untitled">Без названия</string>
+    <string name="entry_modified_at">Изменено: %1$s</string>
+    <string name="entry_created_at">Создано: %1$s</string>
     <string name="entry_delete_title">Удалить запись?</string>
     <string name="entry_delete_text">«%1$s» попадёт в корзину.</string>
     <string name="entry_preset_standard">Стандарт</string>

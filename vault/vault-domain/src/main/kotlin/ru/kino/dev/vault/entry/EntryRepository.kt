@@ -44,7 +44,17 @@ data class EntryRecord(
     val groupId: GroupId,
     /** In the order of the file */
     val fields: List<EntryField>,
+    val times: EntryTimes = EntryTimes(),
 )
 
-/** An entry as its screens show it ([EntryOpener]): where it is, and what it holds laid over its preset. */
-data class OpenedEntry(val groupId: GroupId, val content: EntryContent)
+/**
+ * When an entry was made and last changed, in seconds since the epoch, UTC; null - the time could not be
+ * read. A save that changes the entry changes [modified]; one that changes nothing writes nothing.
+ */
+data class EntryTimes(val created: Long? = null, val modified: Long? = null)
+
+/**
+ * An entry as its screens show it ([EntryOpener]): where it is, what it holds laid over its preset, and when
+ * it was made and changed.
+ */
+data class OpenedEntry(val groupId: GroupId, val content: EntryContent, val times: EntryTimes = EntryTimes())

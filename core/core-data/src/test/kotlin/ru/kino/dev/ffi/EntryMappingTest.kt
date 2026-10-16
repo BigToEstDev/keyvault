@@ -134,4 +134,16 @@ class EntryMappingTest {
             }
         """.trimIndent()
     }
+
+    @Test
+    fun `a time of the core is read as UTC, with or without fractions of a second`() {
+        assertEquals(1_767_323_045L, coreTimeToEpochSeconds("2026-01-02T03:04:05"))
+        assertEquals(1_767_323_045L, coreTimeToEpochSeconds("2026-01-02T03:04:05.123456"))
+    }
+
+    @Test
+    fun `a time that cannot be read is null, not a failure`() {
+        assertEquals(null, coreTimeToEpochSeconds("not a time"))
+        assertEquals(null, coreTimeToEpochSeconds(""))
+    }
 }

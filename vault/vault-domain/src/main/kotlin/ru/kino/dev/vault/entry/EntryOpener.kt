@@ -21,7 +21,7 @@ class EntryOpener(
 
     suspend fun open(dbKey: String, entryId: EntryId): OpenedEntry {
         val record = entries.read(dbKey, entryId)
-        return OpenedEntry(record.groupId, presetOf(record.fields).layout(record.fields))
+        return OpenedEntry(record.groupId, presetOf(record.fields).layout(record.fields), record.times)
     }
 
     private suspend fun presetOf(fields: List<EntryField>): EntryPreset {

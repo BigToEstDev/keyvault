@@ -17,6 +17,7 @@ import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryOpener
+import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
@@ -137,6 +138,31 @@ class EntryReadProcessorTest {
             listOf(MviNavEvent.NavigateTo(EntryEditRoute(DB, mail.value)), MviNavEvent.NavigateBack),
             events,
         )
+    }
+
+    @Test
+    fun `the entry is read with when it was made and last changed`() = runTest {
+        entries.stored[mail] = entries.stored.getValue(mail).copy(createdAt = 1_000L, modifiedAt = 2_000L)
+
+        val (state, _) = perform(EntryReadAction.Load)
+
+        assertEquals(EntryTimes(created = 1_000L, modified = 2_000L), state.times)
+    }
+
+    @Test
+    fun `back from its form, the entry shows the new time of its change`() = runTest {
+        val read = opener.open(DB, mail)
+        val shown = EntryReadState(
+            loading = false,
+            content = read.content,
+            group = GroupChoice(groups.rootId, listOf("Passwords")),
+            times = read.times,
+        )
+        entries.stored[mail] = entries.stored.getValue(mail).copy(modifiedAt = 9_000L)
+
+        val (state, _) = perform(EntryReadAction.Load, initial = shown)
+
+        assertEquals(9_000L, state.times.modified)
     }
 
     // Delete, from the menu of the top bar

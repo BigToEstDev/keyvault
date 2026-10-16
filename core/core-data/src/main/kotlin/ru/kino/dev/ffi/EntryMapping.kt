@@ -3,6 +3,9 @@ package ru.kino.dev.ffi
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
 import ru.kino.dev.core.EntrySummaryData
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeParseException
 
 /** The strings of the entry, in its order - all the rest of the form stays in this module. */
 internal fun EntryFormDataDto.fieldsToDomain(): List<EntryFieldData> =
@@ -19,6 +22,17 @@ internal fun EntryFormDataDto.fieldsToDomain(): List<EntryFieldData> =
 internal fun EntryFormDataDto.withFields(fields: List<EntryFieldData>) = copy(
     fields = fields.map { KeyValueDataDto(key = it.key, value = it.value, protected = it.protected, dataType = TEXT) },
 )
+
+/**
+ * A time of the core - a date and time without a zone, in UTC, as `2026-01-02T03:04:05` with or without
+ * fractions of a second - in seconds since the epoch. One that cannot be read is null: the entry is still
+ * read, only its time is not shown.
+ */
+internal fun coreTimeToEpochSeconds(time: String): Long? = try {
+    LocalDateTime.parse(time).toEpochSecond(ZoneOffset.UTC)
+} catch (_: DateTimeParseException) {
+    null
+}
 
 internal fun EntrySummaryDto.toDomain() = EntrySummaryData(
     id = uuid,

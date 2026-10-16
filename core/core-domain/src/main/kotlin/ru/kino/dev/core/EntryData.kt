@@ -17,12 +17,16 @@ data class EntryFieldData(
     override fun toString(): String = "EntryFieldData(key=$key, protected=$protected)"
 }
 
-/** An entry as its screens read it: where it is and what it holds. */
+/** An entry as its screens read it: where it is, what it holds and when it was made and changed. */
 data class EntryData(
     /** The group the entry is directly in */
     val groupId: String,
     /** Its strings, in its order */
     val fields: List<EntryFieldData>,
+    /** When the entry was created, in seconds since the epoch, UTC; null when the time cannot be read */
+    val createdAt: Long? = null,
+    /** When the entry was last changed, in seconds since the epoch, UTC; null when it cannot be read */
+    val modifiedAt: Long? = null,
 )
 
 /** An entry as a list shows it: enough for a card, nothing secret. */

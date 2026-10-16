@@ -238,7 +238,12 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
     override suspend fun entry(dbKey: String, entryId: String): EntryData =
         withContext(dispatcher) {
             val form = entryForm(dbKey, entryId)
-            EntryData(groupId = form.parentGroupUuid, fields = form.fieldsToDomain())
+            EntryData(
+                groupId = form.parentGroupUuid,
+                fields = form.fieldsToDomain(),
+                createdAt = coreTimeToEpochSeconds(form.creationTime),
+                modifiedAt = coreTimeToEpochSeconds(form.lastModificationTime),
+            )
         }
 
     override suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String =

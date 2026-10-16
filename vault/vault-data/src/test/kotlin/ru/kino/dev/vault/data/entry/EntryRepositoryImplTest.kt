@@ -3,6 +3,7 @@ package ru.kino.dev.vault.data.entry
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.EntryFieldData
@@ -13,6 +14,7 @@ import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryRecord
+import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 
@@ -73,7 +75,11 @@ class EntryRepositoryImplTest {
     @Test
     fun `an entry comes with its group and its fields as the core holds them`() = runTest {
         assertEquals(
-            EntryRecord(GroupId(WORK), listOf(EntryField("Title", "Bank", false), EntryField("PIN", "1", true))),
+            EntryRecord(
+                GroupId(WORK),
+                listOf(EntryField("Title", "Bank", false), EntryField("PIN", "1", true)),
+                EntryTimes(created = 1_700_000_002L, modified = 1_700_000_002L),
+            ),
             repository.read(DB, EntryId("bank")),
         )
     }
@@ -98,6 +104,17 @@ class EntryRepositoryImplTest {
     }
 
     @Test
+    fun `an updated entry holds the new time of its change, its creation as it was`() = runTest {
+        val before = repository.read(DB, EntryId("bank")).times
+
+        repository.update(DB, EntryId("bank"), listOf(EntryField("Title", "Bank", false)))
+
+        val after = repository.read(DB, EntryId("bank")).times
+        assertEquals(before.created, after.created)
+        assertTrue(checkNotNull(after.modified) > checkNotNull(before.modified))
+    }
+
+    @Test
     fun `an updated entry holds the new fields`() = runTest {
         val fields = listOf(EntryField("Title", "Bank", false), EntryField("PIN", "2", true))
 
@@ -108,11 +125,11 @@ class EntryRepositoryImplTest {
 
     @Test
     fun `a moved entry leaves its group for the other one, its fields as they were`() = runTest {
-        val before = repository.read(DB, EntryId("bank")).fields
+        val before = repository.read(DB, EntryId("bank"))
 
         repository.move(DB, EntryId("bank"), GroupId(ROOT))
 
-        assertEquals(EntryRecord(GroupId(ROOT), before), repository.read(DB, EntryId("bank")))
+        assertEquals(before.copy(groupId = GroupId(ROOT)), repository.read(DB, EntryId("bank")))
         assertEquals(listOf("Mail"), repository.entries(DB, GroupId(WORK)).map { it.title })
         assertEquals(listOf("Bank"), repository.entries(DB, GroupId(ROOT)).map { it.title })
     }

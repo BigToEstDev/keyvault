@@ -151,6 +151,8 @@
 
     <!-- vault: entries -->
     <string name="entry_untitled">Untitled</string>
+    <string name="entry_modified_at">Modified: %1$s</string>
+    <string name="entry_created_at">Created: %1$s</string>
     <string name="entry_delete_title">Delete the entry?</string>
     <string name="entry_delete_text">«%1$s» goes to the recycle bin.</string>
     <string name="entry_preset_standard">Standard</string>

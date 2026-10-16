@@ -193,8 +193,13 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         )
     }
 
-    /** An entry the fake holds: the group it is in, its strings in order, when it was made. */
-    data class FakeEntry(val groupId: String, val fields: List<EntryFieldData>, val createdAt: Long)
+    /** An entry the fake holds: the group it is in, its strings in order, when it was made and changed. */
+    data class FakeEntry(
+        val groupId: String,
+        val fields: List<EntryFieldData>,
+        val createdAt: Long,
+        val modifiedAt: Long = createdAt,
+    )
 
     /**
      * The entries of every database, by dbKey and then by id. The entry calls change them - and the
@@ -261,7 +266,7 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     override suspend fun entry(dbKey: String, entryId: String): EntryData {
         step("entry", dbKey)
         val entry = found(dbKey, entryId)
-        return EntryData(entry.groupId, entry.fields)
+        return EntryData(entry.groupId, entry.fields, entry.createdAt, entry.modifiedAt)
     }
 
     override suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String {
@@ -275,7 +280,8 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         step("updateEntry", dbKey)
         val entry = found(dbKey, entryId)
         refuseDuplicateKeys(fields)
-        stored(dbKey)[entryId] = entry.copy(fields = fields)
+        // The core stamps the change, as it does when it puts the old state into the history
+        stored(dbKey)[entryId] = entry.copy(fields = fields, modifiedAt = ++clock)
     }
 
     override suspend fun moveEntryToRecycleBin(dbKey: String, entryId: String) {
