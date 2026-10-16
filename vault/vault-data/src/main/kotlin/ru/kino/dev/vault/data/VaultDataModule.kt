@@ -25,6 +25,7 @@ import ru.kino.dev.vault.entry.EntryRepository
 import ru.kino.dev.vault.filter.VaultFilterRepository
 import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupRepository
+import ru.kino.dev.vault.history.EntryHistoryEditor
 import ru.kino.dev.vault.history.EntryHistoryReader
 import ru.kino.dev.vault.history.EntryHistoryRepository
 import ru.kino.dev.vault.lock.AutoLock
@@ -60,6 +61,13 @@ internal interface VaultDataModule {
             database: VaultDatabaseRepository,
             guard: DatabaseGuard,
         ): GroupEditor = GroupEditor(groups, database, guard)
+
+        @Provides
+        fun provideEntryHistoryEditor(
+            history: EntryHistoryRepository,
+            database: VaultDatabaseRepository,
+            guard: DatabaseGuard,
+        ): EntryHistoryEditor = EntryHistoryEditor(history, database, guard)
 
         @Provides
         fun provideEntryHistoryReader(entries: EntryRepository, history: EntryHistoryRepository): EntryHistoryReader =

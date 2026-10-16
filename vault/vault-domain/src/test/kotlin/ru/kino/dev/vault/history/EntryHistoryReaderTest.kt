@@ -19,7 +19,7 @@ class EntryHistoryReaderTest {
 
     @Test
     fun `the history comes with the name of the entry, the versions newest first and when it was made`() = runTest {
-        entries.stored[mail] = entries.stored.getValue(mail).copy(history = listOf(1_000L, 2_000L, 3_000L))
+        entries.putHistory(mail, 1_000L, 2_000L, 3_000L)
 
         val history = EntryHistoryReader(entries, FakeEntryHistoryRepository(entries)).read(DB, mail)
 
@@ -39,7 +39,7 @@ class EntryHistoryReaderTest {
 
     @Test
     fun `a version whose time cannot be read is left out, the others keep their index`() = runTest {
-        val versions = object : EntryHistoryRepository {
+        val versions = object : EntryHistoryRepository by FakeEntryHistoryRepository(entries) {
             override suspend fun versions(dbKey: String, entryId: EntryId) =
                 listOf(HistoryVersion(0, 1_000L), HistoryVersion(1, null), HistoryVersion(2, 3_000L))
         }

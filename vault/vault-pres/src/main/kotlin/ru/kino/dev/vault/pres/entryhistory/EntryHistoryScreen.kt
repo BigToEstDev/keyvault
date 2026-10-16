@@ -27,7 +27,10 @@ import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.history.EntryHistory
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.SkeletonCard
+import ru.kino.dev.vault.pres.common.deleteVersionMenuItem
 import ru.kino.dev.vault.pres.common.entryTimeText
+import ru.kino.dev.vault.pres.common.restoreMenuItem
+import ru.kino.dev.vault.pres.entryhistory.components.EntryHistoryDialogs
 import ru.kino.dev.vault.pres.entryhistory.components.HistoryCard
 
 @Composable
@@ -48,6 +51,8 @@ internal fun EntryHistoryScreen(
         stringResource(
             when (it) {
                 EntryHistoryMessage.LoadFailed -> R.string.entry_message_load_failed
+                EntryHistoryMessage.NotSaved -> R.string.vault_message_not_saved
+                EntryHistoryMessage.Unexpected -> R.string.error_unexpected
             },
         )
     }
@@ -75,20 +80,35 @@ internal fun EntryHistoryScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 when {
-                    history != null -> historyCards(history)
+                    history != null -> historyCards(history, processor::action)
                     state.loading -> items(SKELETON_ROWS) { SkeletonCard() }
                 }
             }
         }
+
+        EntryHistoryDialogs(
+            dialog = state.dialog,
+            onConfirm = { processor.action(EntryHistoryAction.DialogConfirm) },
+            onDismiss = { processor.action(EntryHistoryAction.DialogDismiss) },
+        )
     }
 }
 
-/** "Modified" for every old version, newest first, and "Created" last - when it could be read. */
-private fun LazyListScope.historyCards(history: EntryHistory) {
+/**
+ * "Modified" for every old version, newest first - with its menu on a long press - and "Created" last, when
+ * it could be read.
+ */
+private fun LazyListScope.historyCards(history: EntryHistory, action: (EntryHistoryAction) -> Unit) {
     items(history.versions, key = { it.index }) { version ->
         // The reader leaves out a version whose time cannot be read
         version.modified?.let { modified ->
-            HistoryCard(text = stringResource(R.string.entry_modified_at, entryTimeText(modified)))
+            HistoryCard(
+                text = stringResource(R.string.entry_modified_at, entryTimeText(modified)),
+                items = listOf(
+                    restoreMenuItem { action(EntryHistoryAction.Restore(version.index)) },
+                    deleteVersionMenuItem { action(EntryHistoryAction.DeleteVersion(version.index)) },
+                ),
+            )
         }
     }
     history.created?.let { created ->

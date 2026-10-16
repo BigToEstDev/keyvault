@@ -40,6 +40,31 @@ class EntryHistoryRepositoryImplTest {
     }
 
     @Test
+    fun `a version restored is the entry again, and the state before is in the history`() = runTest {
+        core.updateEntry(DB, "mail", listOf(EntryFieldData("Title", "Post", false)))
+
+        repository.restore(DB, EntryId("mail"), 0)
+
+        assertEquals(listOf(EntryFieldData("Title", "Mail", false)), core.entry(DB, "mail").fields)
+        assertEquals(2, repository.versions(DB, EntryId("mail")).size)
+    }
+
+    @Test
+    fun `a version deleted leaves the history`() = runTest {
+        core.updateEntry(DB, "mail", listOf(EntryFieldData("Title", "Post", false)))
+
+        repository.delete(DB, EntryId("mail"), 0)
+
+        assertEquals(emptyList<HistoryVersion>(), repository.versions(DB, EntryId("mail")))
+    }
+
+    @Test
+    fun `a version that is not there is EntryNotFound - the core does not say which is missing`() = runTest {
+        expectFailure<EntryFailure.EntryNotFound> { repository.restore(DB, EntryId("mail"), 5) }
+        expectFailure<EntryFailure.EntryNotFound> { repository.delete(DB, EntryId("mail"), 5) }
+    }
+
+    @Test
     fun `the history of an entry that is not there is EntryNotFound`() = runTest {
         val failure = expectFailure<EntryFailure.EntryNotFound> { repository.versions(DB, EntryId("missing")) }
 

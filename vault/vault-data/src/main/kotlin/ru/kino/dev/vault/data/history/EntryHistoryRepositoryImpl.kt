@@ -17,4 +17,14 @@ internal class EntryHistoryRepositoryImpl @Inject constructor(
     override suspend fun versions(dbKey: String, entryId: EntryId): List<HistoryVersion> = entryCall {
         core.entryHistory(dbKey, entryId.value).map { HistoryVersion(index = it.index, modified = it.modifiedAt) }
     }
+
+    // `NotFound` names neither the entry nor the version: both are EntryNotFound - the screen reads the
+    // history again and sees which
+    override suspend fun restore(dbKey: String, entryId: EntryId, index: Int) = entryCall {
+        core.restoreHistoryVersion(dbKey, entryId.value, index)
+    }
+
+    override suspend fun delete(dbKey: String, entryId: EntryId, index: Int) = entryCall {
+        core.deleteHistoryVersion(dbKey, entryId.value, index)
+    }
 }

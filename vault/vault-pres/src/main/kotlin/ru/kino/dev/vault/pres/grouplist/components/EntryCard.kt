@@ -8,6 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.vault.pres.common.MenuCard
+import ru.kino.dev.vault.pres.common.deleteMenuItem
+import ru.kino.dev.vault.pres.common.editMenuItem
 import ru.kino.dev.vault.pres.grouplist.EntryItem
 
 /**
@@ -24,14 +27,13 @@ internal fun EntryCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ListCard(
+    MenuCard(
         // The color of the folder of a group card, so the two kinds of cards match
         icon = { Icon(Icons.Filled.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         title = entry.title.ifEmpty { stringResource(R.string.entry_untitled) },
         subtitle = location,
+        items = listOf(editMenuItem(onEdit), deleteMenuItem(onDelete)),
         onOpen = onOpen,
-        onEdit = onEdit,
-        onDelete = onDelete,
         modifier = modifier,
     )
 }

@@ -278,3 +278,52 @@ fn deleting_the_history_of_an_entry_that_does_not_exist_is_refused() {
 
     close_database(&db_key);
 }
+
+/// How the app brings a version back: the version as a form, sent back as the entry. It has to be the
+/// entry again - same uuid, its group kept - with the state before it put into the history.
+#[test]
+fn a_version_sent_back_as_the_entry_is_the_entry_again_and_the_state_before_goes_into_the_history()
+{
+    let db_key = key_of("history-restore");
+    open_database(&db_key);
+
+    let uuid = entry_with_history(&db_key, 2);
+
+    let version = call_ok(
+        "history_entry_by_index",
+        json!({"db_key": db_key, "entry_uuid": uuid, "index": 0}),
+    );
+    assert_eq!(
+        version["uuid"].as_str(),
+        Some(uuid.as_str()),
+        "a version keeps the uuid of its entry"
+    );
+    call_ok(
+        "update_entry_from_form_data",
+        json!({"db_key": db_key, "form_data": version}),
+    );
+
+    let current = call_ok(
+        "get_entry_form_data_by_id",
+        json!({"db_key": db_key, "entry_uuid": uuid}),
+    );
+    let versions = call_ok(
+        "history_entries_summary",
+        json!({"db_key": db_key, "entry_uuid": uuid}),
+    );
+    let titles: Vec<&str> = versions
+        .as_array()
+        .expect("a list")
+        .iter()
+        .map(|v| v["title"].as_str().unwrap_or_default())
+        .collect();
+
+    assert_eq!(form_field(&current, "Title"), Some("Version 0"));
+    assert_eq!(
+        titles,
+        vec!["Version 0", "Version 1", "Version 2"],
+        "the state before - Version 2 - is the newest version now"
+    );
+
+    close_database(&db_key);
+}

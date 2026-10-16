@@ -132,6 +132,13 @@
     <string name="entry_menu">Действия с записью</string>
     <string name="entry_history">История</string>
     <string name="entry_history_title">История — %1$s</string>
+    <string name="history_restore">Вернуться к этой версии</string>
+    <string name="history_delete_version">Удалить версию</string>
+    <string name="history_restore_title">Вернуться к версии?</string>
+    <string name="history_restore_text">Запись станет такой, как %1$s. Текущее состояние останется в истории.</string>
+    <string name="history_restore_confirm">Вернуть</string>
+    <string name="history_delete_title">Удалить версию?</string>
+    <string name="history_delete_text">Версия от %1$s удалится из истории.</string>
     <string name="vault_card_delete">Удалить</string>
     <string name="vault_debug_lock">Заблокировать (debug)</string>
     <string name="group_dialog_create_title">Новая группа</string>

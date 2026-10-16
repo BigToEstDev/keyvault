@@ -3,6 +3,9 @@ package ru.kino.dev.vault.pres.grouplist.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import ru.kino.dev.ui.components.CountBadgeIcon
+import ru.kino.dev.vault.pres.common.MenuCard
+import ru.kino.dev.vault.pres.common.deleteMenuItem
+import ru.kino.dev.vault.pres.common.editMenuItem
 import ru.kino.dev.vault.pres.grouplist.GroupItem
 
 /**
@@ -19,13 +22,12 @@ internal fun GroupCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ListCard(
+    MenuCard(
         icon = { CountBadgeIcon(count = group.entryCount) },
         title = group.name,
         subtitle = location,
+        items = listOf(editMenuItem(onEdit), deleteMenuItem(onDelete)),
         onOpen = onOpen,
-        onEdit = onEdit,
-        onDelete = onDelete,
         modifier = modifier,
     )
 }

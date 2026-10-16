@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -38,6 +39,16 @@ internal fun deleteMenuItem(onClick: () -> Unit) =
 @Composable
 internal fun historyMenuItem(onClick: () -> Unit) =
     MenuItem(stringResource(R.string.entry_history), Icons.Filled.History, onClick)
+
+/** "Restore this version" - of a history (pass-docs, Step 51, item 4). */
+@Composable
+internal fun restoreMenuItem(onClick: () -> Unit) =
+    MenuItem(stringResource(R.string.history_restore), Icons.Filled.Restore, onClick)
+
+/** "Delete version" - of a history. */
+@Composable
+internal fun deleteVersionMenuItem(onClick: () -> Unit) =
+    MenuItem(stringResource(R.string.history_delete_version), Icons.Filled.Delete, onClick)
 
 /**
  * The menu of a group or an entry - [items] in their order - under its anchor: a card held long, or the

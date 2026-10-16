@@ -171,6 +171,19 @@ interface NativeCore {
      * them. An entry that is not there is refused with kind `NotFound`.
      */
     suspend fun entryHistory(dbKey: String, entryId: String): List<HistoryVersionData>
+
+    /**
+     * Makes the old version at [index] the entry again - whole, as it was: its strings, icon, tags,
+     * attachments; the group stays the entry's. The core puts the current state into the history, as on any
+     * update. A version or an entry that is not there is refused with kind `NotFound`. In memory only.
+     */
+    suspend fun restoreHistoryVersion(dbKey: String, entryId: String, index: Int)
+
+    /**
+     * Deletes the old version at [index]; the versions after it move up by one. A version or an entry that
+     * is not there is refused with kind `NotFound`. In memory only.
+     */
+    suspend fun deleteHistoryVersion(dbKey: String, entryId: String, index: Int)
 }
 
 /**

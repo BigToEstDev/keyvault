@@ -14,14 +14,30 @@ import ru.kino.dev.vault.group.GroupId
 class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : EntryRepository {
 
     /** An entry the fake holds: the group it is in, its fields in order, when it was made. */
-    /** @param history the old versions, by the time each was saved, oldest first */
+    /** @param history the old versions, oldest first */
     data class StoredEntry(
         val groupId: GroupId,
         val fields: List<EntryField>,
         val createdAt: Long,
         val modifiedAt: Long = createdAt,
-        val history: List<Long> = emptyList(),
-    )
+        val history: List<StoredVersion> = emptyList(),
+    ) {
+        // Like the core: the state before goes into the history, and the change is stamped at [now]
+        fun updatedTo(fields: List<EntryField>, now: Long) =
+            copy(fields = fields, modifiedAt = now, history = history + StoredVersion(this.fields, modifiedAt))
+    }
+
+    /** One old version of an entry: its fields, and when it was saved. */
+    data class StoredVersion(val fields: List<EntryField>, val savedAt: Long)
+
+    /** Gives the entry [id] old versions saved at [savedAt], oldest first - its fields as they are now. */
+    fun putHistory(id: EntryId, vararg savedAt: Long) {
+        val entry = stored.getValue(id)
+        stored[id] = entry.copy(history = savedAt.map { StoredVersion(entry.fields, it) })
+    }
+
+    /** The time the next change is stamped with, in seconds. */
+    fun tick(): Long = ++clock
 
     /** Method name to the failure it throws. */
     val failures = mutableMapOf<String, Exception>()
@@ -82,8 +98,7 @@ class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : En
         call("update")
         val entry = entry(entryId)
         refuseDuplicateKeys(fields)
-        // Like the core: the state before goes into the history, and the change is stamped
-        stored[entryId] = entry.copy(fields = fields, modifiedAt = ++clock, history = entry.history + entry.modifiedAt)
+        stored[entryId] = entry.updatedTo(fields, tick())
     }
 
     override suspend fun moveToRecycleBin(dbKey: String, entryId: EntryId) {

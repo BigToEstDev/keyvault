@@ -12,6 +12,15 @@ interface EntryHistoryRepository {
 
     /** The old versions of the entry, oldest first, as the core keeps them; the current state is not one. */
     suspend fun versions(dbKey: String, entryId: EntryId): List<HistoryVersion>
+
+    /**
+     * Makes the version at [index] the entry again, whole; the current state goes into the history. In
+     * memory only.
+     */
+    suspend fun restore(dbKey: String, entryId: EntryId, index: Int)
+
+    /** Deletes the version at [index]; the versions after it move up by one. In memory only. */
+    suspend fun delete(dbKey: String, entryId: EntryId, index: Int)
 }
 
 /**

@@ -312,6 +312,36 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
             ).mapIndexed { position, row -> row.toHistoryVersion(position) }
         }
 
+    override suspend fun restoreHistoryVersion(dbKey: String, entryId: String, index: Int) {
+        withContext(dispatcher) {
+            // The version comes as a whole form, its group the entry's; sent back as the entry, it is the entry
+            // again - and the core puts what was there into the history
+            val version = call(
+                FfiCommands.HISTORY_ENTRY_BY_INDEX,
+                HistoryIndexDto.serializer(),
+                HistoryIndexDto(dbKey = dbKey, entryUuid = entryId, index = index),
+                EntryFormDataDto.serializer(),
+            )
+            call(
+                FfiCommands.UPDATE_ENTRY_FROM_FORM_DATA,
+                EntryFormArgsDto.serializer(),
+                EntryFormArgsDto(dbKey, version),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun deleteHistoryVersion(dbKey: String, entryId: String, index: Int) {
+        withContext(dispatcher) {
+            call(
+                FfiCommands.DELETE_HISTORY_ENTRY_BY_INDEX,
+                HistoryIndexDto.serializer(),
+                HistoryIndexDto(dbKey = dbKey, entryUuid = entryId, index = index),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
     private fun entryForm(dbKey: String, entryId: String): EntryFormDataDto = call(
         FfiCommands.GET_ENTRY_FORM_DATA_BY_ID,
         EntryIdDto.serializer(),
