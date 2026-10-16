@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import ru.kino.dev.vault.pres.common.EditDeleteMenu
 
 /**
  * A card of the list - a group or an entry: an icon and a title. A tap opens it; a long press opens a menu -
@@ -89,8 +90,8 @@ internal fun ListCard(
         EditDeleteMenu(
             expanded = menu,
             onDismiss = { menu = false },
-            onEdit = onEdit,
             onDelete = onDelete,
+            onEdit = onEdit,
             offset = with(density) { DpOffset(pressedAt.x.toDp(), (pressedAt.y - cardHeight).toDp()) },
         )
     }

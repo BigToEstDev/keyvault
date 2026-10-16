@@ -218,9 +218,10 @@ class EntryEditProcessor @AssistedInject constructor(
 
             EntryEditAction.DialogConfirm -> confirm()
 
-            EntryEditAction.DialogDismiss -> when (state.dialog) {
+            EntryEditAction.DialogDismiss -> when (val dialog = state.dialog) {
                 // Nothing to stay for: the change is made, the screen goes as after a save
                 EntryEditDialog.NotSaved -> leave()
+                is EntryEditDialog.Delete -> if (!dialog.deleting) reduce { state.copy(dialog = null) }
                 else -> reduce { state.copy(dialog = null) }
             }
 
@@ -240,7 +241,40 @@ class EntryEditProcessor @AssistedInject constructor(
                 else -> leave()
             }
 
+            EntryEditAction.Delete -> state.initial?.let { read ->
+                // A new entry has nothing to delete; nor is a dialog put over another one
+                if (entryId != null && state.editable && state.dialog == null) {
+                    reduce { state.copy(dialog = EntryEditDialog.Delete(read.value(StandardPreset.TITLE))) }
+                }
+            }
+
             EntryEditAction.MessageShown -> reduce { state.copy(message = null) }
+        }
+    }
+
+    /** Into the recycle bin and the file; done, the screen goes back - what was typed goes with the entry. */
+    private suspend fun Syntax<EntryEditState, Nothing>.delete(dialog: EntryEditDialog.Delete) {
+        val id = entryId ?: return
+        if (dialog.deleting) return
+
+        reduce { state.copy(dialog = dialog.copy(deleting = true)) }
+        try {
+            editor.delete(dbKey, EntryId(id))
+            leave()
+        } catch (failure: EntryFailure) {
+            when (failure) {
+                // In the recycle bin, but not in the file: the error is shown here (pass-docs, Step 50, item 2)
+                is EntryFailure.NotSaved -> reduce { state.copy(dialog = null, message = EntryEditMessage.NotSaved) }
+
+                // Gone already - deleted or merged away
+                is EntryFailure.EntryNotFound -> leave()
+
+                // Not what deleting an entry throws
+                is EntryFailure.InvalidFields, is EntryFailure.GroupNotFound, is EntryFailure.Unexpected -> {
+                    log.unexpected(TAG, failure)
+                    reduce { state.copy(dialog = null, message = EntryEditMessage.Unexpected) }
+                }
+            }
         }
     }
 
@@ -325,6 +359,8 @@ class EntryEditProcessor @AssistedInject constructor(
             }
 
             EntryEditDialog.Leave, EntryEditDialog.NotSaved -> leave()
+
+            is EntryEditDialog.Delete -> delete(dialog)
         }
     }
 

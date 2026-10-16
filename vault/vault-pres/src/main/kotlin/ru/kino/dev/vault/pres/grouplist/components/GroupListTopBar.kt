@@ -1,7 +1,6 @@
 package ru.kino.dev.vault.pres.grouplist.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -19,10 +17,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -34,6 +28,7 @@ import ru.kino.dev.ui.components.CountBadgeIcon
 import ru.kino.dev.ui.components.SearchBar
 import ru.kino.dev.ui.components.SkeletonText
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.vault.pres.common.MoreMenuButton
 import ru.kino.dev.vault.pres.grouplist.Crumb
 
 /**
@@ -90,7 +85,11 @@ internal fun GroupListTopBar(
                     )
                 } else {
                     Breadcrumbs(items = names, onClick = onCrumb, modifier = Modifier.weight(1f))
-                    GroupMenuButton(onEdit = onEditGroup, onDelete = onDeleteGroup)
+                    MoreMenuButton(
+                        contentDescription = stringResource(R.string.vault_group_menu),
+                        onDelete = onDeleteGroup,
+                        onEdit = onEditGroup,
+                    )
                 }
             } else {
                 CountBadgeIcon(count = entryCount, modifier = Modifier.padding(horizontal = 8.dp))
@@ -119,18 +118,6 @@ internal fun GroupListTopBar(
                 FilterIcon(on = filterOn)
             }
         }
-    }
-}
-
-/** The menu of the group shown: the button and, open, the menu under it. Whether it is open is its own. */
-@Composable
-private fun GroupMenuButton(onEdit: () -> Unit, onDelete: () -> Unit) {
-    var menu by remember { mutableStateOf(false) }
-    Box {
-        IconButton(onClick = { menu = true }) {
-            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.vault_group_menu))
-        }
-        EditDeleteMenu(expanded = menu, onDismiss = { menu = false }, onEdit = onEdit, onDelete = onDelete)
     }
 }
 

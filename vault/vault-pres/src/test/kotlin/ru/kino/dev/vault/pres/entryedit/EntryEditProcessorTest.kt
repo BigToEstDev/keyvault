@@ -635,6 +635,62 @@ class EntryEditProcessorTest {
         assertNull(state.dialog)
     }
 
+    // Delete, from the menu of the top bar
+
+    @Test
+    fun `delete asks first, naming the entry as the file holds it`() = runTest {
+        val (state, _) = editing(EntryEditAction.ValueChanged(StandardPreset.TITLE, "Typed"), EntryEditAction.Delete)
+
+        assertEquals(EntryEditDialog.Delete("Mail"), state.dialog)
+    }
+
+    @Test
+    fun `a new entry has nothing to delete`() = runTest {
+        val (state, _) = creating(EntryEditAction.Delete)
+
+        assertNull(state.dialog)
+    }
+
+    @Test
+    fun `a deleted entry goes to the recycle bin with what was typed, unasked, and the screen goes back`() = runTest {
+        val (_, events) = editing(
+            EntryEditAction.ValueChanged(StandardPreset.TITLE, "Typed"),
+            EntryEditAction.Delete,
+            EntryEditAction.DialogConfirm,
+        )
+
+        assertEquals(listOf(mail), entries.recycled)
+        assertEquals(listOf("save"), database.calls)
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `a deleted entry that is not written stays on the form, and the snackbar says so`() = runTest {
+        database.saveFailure = CoreException("Io", "disk full")
+
+        val (state, events) = editing(EntryEditAction.Delete, EntryEditAction.DialogConfirm)
+
+        assertNull(state.dialog)
+        assertEquals(EntryEditMessage.NotSaved, state.message)
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `a delete under way does not close`() = runTest {
+        val read = opener.open(DB, mail).content
+        val (state, _) = editing(
+            EntryEditAction.DialogDismiss,
+            initial = EntryEditState(
+                creating = false,
+                content = read,
+                initial = read,
+                dialog = EntryEditDialog.Delete("Mail", deleting = true),
+            ),
+        )
+
+        assertEquals(EntryEditDialog.Delete("Mail", deleting = true), state.dialog)
+    }
+
     // Helpers
 
     private fun typed(key: String = StandardPreset.TITLE) = EntryEditAction.ValueChanged(key, "typed")

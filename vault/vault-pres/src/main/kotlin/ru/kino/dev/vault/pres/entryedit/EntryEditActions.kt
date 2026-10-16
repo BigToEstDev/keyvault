@@ -55,6 +55,9 @@ sealed interface EntryEditAction {
     /** "Back" - in the top bar or the system one. */
     data object Back : EntryEditAction
 
+    /** "Delete" in the menu of the top bar - an entry that is there, not a new one: asks first. */
+    data object Delete : EntryEditAction
+
     /** The snackbar took the message. */
     data object MessageShown : EntryEditAction
 }
@@ -86,9 +89,17 @@ sealed interface EntryEditDialog {
     /** "Leave without saving?" - "back" with changes. */
     data object Leave : EntryEditDialog
 
+    /**
+     * "Delete the entry?" - called [title] as the file holds it; what is typed goes with it, unasked
+     * (pass-docs, Step 50, item 2).
+     *
+     * @param deleting the delete is under way: the dialog shows progress and takes nothing
+     */
+    data class Delete(val title: String, val deleting: Boolean = false) : EntryEditDialog
+
     /** The change is made but the file is not written; the screen closes after it. */
     data object NotSaved : EntryEditDialog
 }
 
 /** What the snackbar says. */
-enum class EntryEditMessage { LoadFailed, Unexpected }
+enum class EntryEditMessage { LoadFailed, NotSaved, Unexpected }
