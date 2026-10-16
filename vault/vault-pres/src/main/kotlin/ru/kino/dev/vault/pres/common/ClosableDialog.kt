@@ -21,8 +21,7 @@ import androidx.compose.ui.window.Dialog
 import ru.kino.dev.core.pres.R
 
 /**
- * A dialog with a title and a "close" button in its corner, and [content] under them - the filters of the
- * list, the presets of an entry.
+ * A dialog with a title and a "close" button in its corner, and [content] under them - the filters of the list.
  */
 @Composable
 internal fun ClosableDialog(title: String, onClose: () -> Unit, content: @Composable ColumnScope.() -> Unit = {}) {

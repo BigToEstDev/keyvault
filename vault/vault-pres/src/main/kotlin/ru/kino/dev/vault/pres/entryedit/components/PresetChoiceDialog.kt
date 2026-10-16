@@ -1,6 +1,6 @@
 package ru.kino.dev.vault.pres.entryedit.components
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,10 +9,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetId
@@ -27,14 +29,17 @@ import ru.kino.dev.core.preset.PresetValidator
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.verticalFadingEdges
-import ru.kino.dev.vault.pres.common.ClosableDialog
 import ru.kino.dev.vault.pres.common.presetName
 
 /**
  * The choice of presets (pass-docs, vault-our.md "Фича создание кастомных пресетов"): the standard one, then
- * [presets] - those of one's own, in the order they were made. The one of the form - [selected], null for the
- * standard one - is marked; a tap picks one and closes. A long list scrolls inside a height of its own, so the
- * dialog does not spread over the screen. Under it - "+ create preset", while one more can be made.
+ * [presets] - those of one's own, in the order they were made. Each is a card; the one of the form - [selected],
+ * null for the standard one - is filled with the accent container; a tap picks one and closes. A long list
+ * scrolls inside a height of its own, so the dialog does not spread over the screen. Under it - "+ create
+ * preset", while one more can be made.
+ *
+ * A dialog of its own, not the filters' one: a list of cards under the title, not a form (pass-docs, Step 40,
+ * fix 17).
  */
 @Composable
 internal fun PresetChoiceDialog(
@@ -45,56 +50,90 @@ internal fun PresetChoiceDialog(
     onCreate: () -> Unit,
     onClose: () -> Unit,
 ) {
-    ClosableDialog(title = title, onClose = onClose) {
-        val scroll = rememberScrollState()
-        Column(
-            modifier = Modifier
-                .heightIn(max = LIST_MAX_HEIGHT)
-                .verticalFadingEdges(scroll)
-                .verticalScroll(scroll),
+    Dialog(onDismissRequest = onClose) {
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp,
         ) {
-            (listOf(StandardPreset.preset) + presets).forEachIndexed { index, preset ->
-                if (index > 0) HorizontalDivider()
-                PresetRow(name = presetName(preset), selected = preset.id == selected, onClick = { onChoose(preset.id) })
-            }
-        }
-        // No button past the most presets a person has (pass-docs, vault-our.md)
-        if (PresetValidator.canAdd(presets)) {
-            SecondaryButton(
-                text = stringResource(R.string.preset_create),
-                onClick = onCreate,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp, end = 16.dp),
-            )
+                    // The end is narrower - the "close" button sits there; the list keeps the start's width
+                    .padding(start = 24.dp, end = 8.dp, top = 16.dp, bottom = 24.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_close))
+                    }
+                }
+                val scroll = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .padding(top = 8.dp, end = 16.dp)
+                        .heightIn(max = LIST_MAX_HEIGHT)
+                        .verticalFadingEdges(scroll)
+                        .verticalScroll(scroll),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    (listOf(StandardPreset.preset) + presets).forEach { preset ->
+                        PresetCard(
+                            name = presetName(preset),
+                            selected = preset.id == selected,
+                            onClick = { onChoose(preset.id) },
+                        )
+                    }
+                }
+                // No button past the most presets a person has (pass-docs, vault-our.md)
+                if (PresetValidator.canAdd(presets)) {
+                    SecondaryButton(
+                        text = stringResource(R.string.preset_create),
+                        onClick = onCreate,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, end = 16.dp),
+                    )
+                }
+            }
         }
     }
 }
 
+/**
+ * A preset of the list: a plain tile, no outline. The chosen one is told by its fill - the accent container -
+ * and to TalkBack by the selected state, not by the color alone.
+ */
 @Composable
-private fun PresetRow(name: String, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            // The end is the dialog's own, narrower - the "close" button sits there
-            .padding(start = 0.dp, end = 16.dp, top = 14.dp, bottom = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun PresetCard(name: String, selected: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        selected = selected,
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = if (selected) colors.primaryContainer else colors.onSurface.copy(alpha = CARD_FILL_ALPHA),
+        contentColor = if (selected) colors.onPrimaryContainer else colors.onSurface,
     ) {
         Text(
             text = name,
             style = MaterialTheme.typography.bodyLarge,
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
         )
-        if (selected) {
-            // Marked, not announced: the name in the primary color says it too
-            Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        }
     }
 }
 
 /** The list scrolls past this - ten presets fit the most a person has, on a short screen it scrolls. */
 private val LIST_MAX_HEIGHT = 360.dp
+
+/** A card not chosen - barely set off the dialog, in either theme. */
+private const val CARD_FILL_ALPHA = 0.05f
