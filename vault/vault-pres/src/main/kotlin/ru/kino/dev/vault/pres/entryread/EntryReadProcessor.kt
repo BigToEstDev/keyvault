@@ -17,17 +17,20 @@ import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryOpener
+import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.common.groupChoice
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
+import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 
 /**
  * @param loading the entry is not read yet - the skeleton is shown
  * @param content the entry; null until it is read
  * @param group the group the entry is in, with the path down to it; null until it is read
+ * @param times when the entry was made and last changed; empty until it is read
  * @param shownOwn indexes of protected own fields shown in clear
  * @param delete the dialog asking to delete the entry
  * @param message for the snackbar, until it takes it
@@ -36,6 +39,7 @@ data class EntryReadState(
     val loading: Boolean = true,
     val content: EntryContent? = null,
     val group: GroupChoice? = null,
+    val times: EntryTimes = EntryTimes(),
     val passwordVisible: Boolean = false,
     val shownOwn: Set<Int> = emptySet(),
     val delete: DeleteDialog? = null,
@@ -89,8 +93,14 @@ class EntryReadProcessor @AssistedInject constructor(
                 state.copy(shownOwn = if (action.index in shown) shown - action.index else shown + action.index)
             }
 
+            EntryReadAction.History -> if (state.content != null) {
+                navigator.navigate(MviNavEvent.NavigateTo(EntryHistoryRoute(dbKey, entryId)))
+            }
+
             EntryReadAction.Delete -> state.content?.let { content ->
-                if (state.delete == null) reduce { state.copy(delete = DeleteDialog(content.value(StandardPreset.TITLE))) }
+                if (state.delete == null) {
+                    reduce { state.copy(delete = DeleteDialog(content.value(StandardPreset.TITLE))) }
+                }
             }
 
             EntryReadAction.DeleteConfirm -> delete()
@@ -153,9 +163,16 @@ class EntryReadProcessor @AssistedInject constructor(
 
         reduce {
             if (content == state.content) {
-                state.copy(loading = false, group = group)
+                state.copy(loading = false, group = group, times = opened.times)
             } else {
-                state.copy(loading = false, content = content, group = group, passwordVisible = false, shownOwn = emptySet())
+                state.copy(
+                    loading = false,
+                    content = content,
+                    group = group,
+                    times = opened.times,
+                    passwordVisible = false,
+                    shownOwn = emptySet(),
+                )
             }
         }
     }

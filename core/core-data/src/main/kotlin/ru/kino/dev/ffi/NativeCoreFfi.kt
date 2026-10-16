@@ -11,6 +11,7 @@ import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
 import ru.kino.dev.core.EntrySummaryData
 import ru.kino.dev.core.GroupTree
+import ru.kino.dev.core.HistoryVersionData
 import ru.kino.dev.core.KeyFile
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.NativeCore
@@ -238,7 +239,12 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
     override suspend fun entry(dbKey: String, entryId: String): EntryData =
         withContext(dispatcher) {
             val form = entryForm(dbKey, entryId)
-            EntryData(groupId = form.parentGroupUuid, fields = form.fieldsToDomain())
+            EntryData(
+                groupId = form.parentGroupUuid,
+                fields = form.fieldsToDomain(),
+                createdAt = coreTimeToEpochSeconds(form.creationTime),
+                modifiedAt = coreTimeToEpochSeconds(form.lastModificationTime),
+            )
         }
 
     override suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String =
@@ -291,6 +297,73 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
                 FfiCommands.MOVE_ENTRY,
                 MoveEntryDto.serializer(),
                 MoveEntryDto(dbKey = dbKey, entryUuid = entryId, newParentUuid = groupId),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun entryHistory(dbKey: String, entryId: String): List<HistoryVersionData> =
+        withContext(dispatcher) {
+            call(
+                FfiCommands.HISTORY_ENTRIES_SUMMARY,
+                EntryIdDto.serializer(),
+                EntryIdDto(dbKey = dbKey, entryUuid = entryId),
+                ListSerializer(EntrySummaryDto.serializer()),
+            ).mapIndexed { position, row -> row.toHistoryVersion(position) }
+        }
+
+    override suspend fun historyVersion(dbKey: String, entryId: String, index: Int): EntryData =
+        withContext(dispatcher) {
+            val version = call(
+                FfiCommands.HISTORY_ENTRY_BY_INDEX,
+                HistoryIndexDto.serializer(),
+                HistoryIndexDto(dbKey = dbKey, entryUuid = entryId, index = index),
+                EntryFormDataDto.serializer(),
+            )
+            EntryData(
+                groupId = version.parentGroupUuid,
+                fields = version.fieldsToDomain(),
+                createdAt = coreTimeToEpochSeconds(version.creationTime),
+                modifiedAt = coreTimeToEpochSeconds(version.lastModificationTime),
+            )
+        }
+
+    override suspend fun restoreHistoryVersion(dbKey: String, entryId: String, index: Int) {
+        withContext(dispatcher) {
+            // The version comes as a whole form, its group the entry's; sent back as the entry, it is the entry
+            // again - and the core puts what was there into the history
+            val version = call(
+                FfiCommands.HISTORY_ENTRY_BY_INDEX,
+                HistoryIndexDto.serializer(),
+                HistoryIndexDto(dbKey = dbKey, entryUuid = entryId, index = index),
+                EntryFormDataDto.serializer(),
+            )
+            call(
+                FfiCommands.UPDATE_ENTRY_FROM_FORM_DATA,
+                EntryFormArgsDto.serializer(),
+                EntryFormArgsDto(dbKey, version),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun deleteHistoryVersion(dbKey: String, entryId: String, index: Int) {
+        withContext(dispatcher) {
+            call(
+                FfiCommands.DELETE_HISTORY_ENTRY_BY_INDEX,
+                HistoryIndexDto.serializer(),
+                HistoryIndexDto(dbKey = dbKey, entryUuid = entryId, index = index),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun deleteHistory(dbKey: String, entryId: String) {
+        withContext(dispatcher) {
+            call(
+                FfiCommands.DELETE_HISTORY_ENTRIES,
+                EntryIdDto.serializer(),
+                EntryIdDto(dbKey = dbKey, entryUuid = entryId),
                 DoneDto.serializer(),
             )
         }

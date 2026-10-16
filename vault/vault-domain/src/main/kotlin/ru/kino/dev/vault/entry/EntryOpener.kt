@@ -19,10 +19,14 @@ class EntryOpener(
     private val presets: PresetRepository,
 ) {
 
-    suspend fun open(dbKey: String, entryId: EntryId): OpenedEntry {
-        val record = entries.read(dbKey, entryId)
-        return OpenedEntry(record.groupId, presetOf(record.fields).layout(record.fields))
-    }
+    suspend fun open(dbKey: String, entryId: EntryId): OpenedEntry = layOut(entries.read(dbKey, entryId))
+
+    /**
+     * [record] laid over its preset - the one its own link names. An old version links to the preset it had
+     * then, which may not be the entry's now.
+     */
+    suspend fun layOut(record: EntryRecord): OpenedEntry =
+        OpenedEntry(record.groupId, presetOf(record.fields).layout(record.fields), record.times)
 
     private suspend fun presetOf(fields: List<EntryField>): EntryPreset {
         val id = presetLink(fields) ?: return StandardPreset.preset

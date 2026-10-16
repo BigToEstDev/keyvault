@@ -29,6 +29,8 @@ import ru.kino.dev.ui.components.SearchBar
 import ru.kino.dev.ui.components.SkeletonText
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.pres.common.MoreMenuButton
+import ru.kino.dev.vault.pres.common.deleteMenuItem
+import ru.kino.dev.vault.pres.common.editMenuItem
 import ru.kino.dev.vault.pres.grouplist.Crumb
 
 /**
@@ -87,8 +89,7 @@ internal fun GroupListTopBar(
                     Breadcrumbs(items = names, onClick = onCrumb, modifier = Modifier.weight(1f))
                     MoreMenuButton(
                         contentDescription = stringResource(R.string.vault_group_menu),
-                        onDelete = onDeleteGroup,
-                        onEdit = onEditGroup,
+                        items = listOf(editMenuItem(onEditGroup), deleteMenuItem(onDeleteGroup)),
                     )
                 }
             } else {

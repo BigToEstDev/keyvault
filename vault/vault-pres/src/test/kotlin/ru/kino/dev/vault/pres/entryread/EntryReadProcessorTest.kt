@@ -17,11 +17,13 @@ import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryOpener
+import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
+import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
@@ -139,6 +141,45 @@ class EntryReadProcessorTest {
         )
     }
 
+    @Test
+    fun `the entry is read with when it was made and last changed`() = runTest {
+        entries.stored[mail] = entries.stored.getValue(mail).copy(createdAt = 1_000L, modifiedAt = 2_000L)
+
+        val (state, _) = perform(EntryReadAction.Load)
+
+        assertEquals(EntryTimes(created = 1_000L, modified = 2_000L), state.times)
+    }
+
+    @Test
+    fun `back from its form, the entry shows the new time of its change`() = runTest {
+        val read = opener.open(DB, mail)
+        val shown = EntryReadState(
+            loading = false,
+            content = read.content,
+            group = GroupChoice(groups.rootId, listOf("Passwords")),
+            times = read.times,
+        )
+        entries.stored[mail] = entries.stored.getValue(mail).copy(modifiedAt = 9_000L)
+
+        val (state, _) = perform(EntryReadAction.Load, initial = shown)
+
+        assertEquals(9_000L, state.times.modified)
+    }
+
+    @Test
+    fun `history in the menu opens the history of this entry`() = runTest {
+        val (_, events) = perform(EntryReadAction.Load, EntryReadAction.History)
+
+        assertEquals(listOf(MviNavEvent.NavigateTo(EntryHistoryRoute(DB, mail.value))), events)
+    }
+
+    @Test
+    fun `no history before the entry is read`() = runTest {
+        val (_, events) = perform(EntryReadAction.History)
+
+        assertTrue(events.isEmpty())
+    }
+
     // Delete, from the menu of the top bar
 
     @Test
@@ -201,7 +242,8 @@ class EntryReadProcessorTest {
         initial: EntryReadState = EntryReadState(),
     ): Pair<EntryReadState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryReadProcessor(DB, mail.value, opener, groups, EntryEditor(entries, opener, database), navigator, log)
+        val editor = EntryEditor(entries, opener, database)
+        val processor = EntryReadProcessor(DB, mail.value, opener, groups, editor, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             actions.forEach { containerHost.action(it).join() }

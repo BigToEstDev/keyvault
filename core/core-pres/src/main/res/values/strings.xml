@@ -129,6 +129,18 @@
     <string name="vault_card_edit">Edit</string>
     <string name="vault_group_menu">Group actions</string>
     <string name="entry_menu">Entry actions</string>
+    <string name="entry_history">History</string>
+    <string name="entry_history_title">History — %1$s</string>
+    <string name="history_restore">Restore this version</string>
+    <string name="history_delete_version">Delete version</string>
+    <string name="history_restore_title">Restore the version?</string>
+    <string name="history_restore_text">The entry will be as it was on %1$s. The current state stays in the history.</string>
+    <string name="history_restore_confirm">Restore</string>
+    <string name="history_delete_title">Delete the version?</string>
+    <string name="history_delete_text">The version of %1$s will be deleted from the history.</string>
+    <string name="history_delete_all">Delete history</string>
+    <string name="history_delete_all_title">Delete the history?</string>
+    <string name="history_delete_all_text">Every version of the entry will be deleted. The creation date stays.</string>
     <string name="vault_card_delete">Delete</string>
     <string name="vault_debug_lock">Lock (debug)</string>
     <string name="group_dialog_create_title">New group</string>
@@ -151,6 +163,8 @@
 
     <!-- vault: entries -->
     <string name="entry_untitled">Untitled</string>
+    <string name="entry_modified_at">Modified: %1$s</string>
+    <string name="entry_created_at">Created: %1$s</string>
     <string name="entry_delete_title">Delete the entry?</string>
     <string name="entry_delete_text">«%1$s» goes to the recycle bin.</string>
     <string name="entry_preset_standard">Standard</string>

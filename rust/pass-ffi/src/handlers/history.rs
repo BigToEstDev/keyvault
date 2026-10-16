@@ -30,7 +30,7 @@ struct HistoryIndexArgs {
     index: i32,
 }
 
-/// The versions of an entry, newest first, with enough of each to draw a row.
+/// The versions of an entry, oldest first - as kdbx keeps them - with enough of each to draw a row.
 pub(crate) fn history_entries_summary(
     args_json: &str,
     input: Option<Vec<u8>>,
@@ -58,8 +58,8 @@ pub(crate) fn history_entry_by_index(
     json_answer(&form)
 }
 
-/// Drops one old version. The core does not complain about an index that is not there, so the ui gets
-/// its answer from the summary it reloads afterwards.
+/// Drops one old version. An index with no version there, or an entry that is not there, is refused with
+/// `NotFound` and nothing is deleted; the ui reloads the summary afterwards, as the indexes move.
 pub(crate) fn delete_history_entry_by_index(
     args_json: &str,
     input: Option<Vec<u8>>,

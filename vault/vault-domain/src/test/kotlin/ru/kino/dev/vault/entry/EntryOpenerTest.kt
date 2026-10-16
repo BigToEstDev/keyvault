@@ -31,6 +31,16 @@ class EntryOpenerTest {
     }
 
     @Test
+    fun `an entry opens with when it was made and last changed`() = runTest {
+        val id = entries.add("mail", GroupId("work"), listOf(field(TITLE, "Mail")), createdAt = 1_000L)
+        entries.stored[id] = entries.stored.getValue(id).copy(modifiedAt = 2_000L)
+
+        val opened = opener.open(DB, id)
+
+        assertEquals(EntryTimes(created = 1_000L, modified = 2_000L), opened.times)
+    }
+
+    @Test
     fun `an entry linked to a preset of one's own opens with it`() = runTest {
         val id = entries.add("visa", GroupId("work"), listOf(field(TITLE, "Visa"), field("PIN", "1"), field(PresetLink.KEY, "card")))
 

@@ -215,3 +215,115 @@ fn the_history_of_an_entry_that_does_not_exist_says_so() {
 
     close_database(&db_key);
 }
+
+/// Asserts the call was refused with `NotFound` - and not answered `ok` with nothing deleted.
+fn assert_not_found(envelope: &str) {
+    assert!(
+        envelope.starts_with(r#"{"err":"#),
+        "nothing was deleted, so it has to come back as a refusal: {}",
+        envelope
+    );
+    assert!(envelope.contains("NotFound"), "{}", envelope);
+}
+
+#[test]
+fn deleting_a_version_that_is_not_there_is_refused_and_the_history_stays() {
+    let db_key = key_of("history-delete-missing-index");
+    open_database(&db_key);
+
+    let uuid = entry_with_history(&db_key, 2);
+
+    let past_the_end = call(
+        "delete_history_entry_by_index",
+        json!({"db_key": db_key, "entry_uuid": uuid, "index": 2}),
+    );
+    let negative = call(
+        "delete_history_entry_by_index",
+        json!({"db_key": db_key, "entry_uuid": uuid, "index": -1}),
+    );
+    let left = call_ok(
+        "history_entries_summary",
+        json!({"db_key": db_key, "entry_uuid": uuid}),
+    );
+
+    assert_not_found(&past_the_end);
+    assert_not_found(&negative);
+    assert_eq!(
+        left.as_array().expect("a list").len(),
+        2,
+        "the history is as it was: {}",
+        left
+    );
+
+    close_database(&db_key);
+}
+
+#[test]
+fn deleting_the_history_of_an_entry_that_does_not_exist_is_refused() {
+    let db_key = key_of("history-delete-missing-entry");
+    open_database(&db_key);
+
+    let stranger = "00000000-0000-4000-8000-000000000000";
+    let one = call(
+        "delete_history_entry_by_index",
+        json!({"db_key": db_key, "entry_uuid": stranger, "index": 0}),
+    );
+    let all = call(
+        "delete_history_entries",
+        json!({"db_key": db_key, "entry_uuid": stranger}),
+    );
+
+    assert_not_found(&one);
+    assert_not_found(&all);
+
+    close_database(&db_key);
+}
+
+/// How the app brings a version back: the version as a form, sent back as the entry. It has to be the
+/// entry again - same uuid, its group kept - with the state before it put into the history.
+#[test]
+fn a_version_sent_back_as_the_entry_is_the_entry_again_and_the_state_before_goes_into_the_history()
+{
+    let db_key = key_of("history-restore");
+    open_database(&db_key);
+
+    let uuid = entry_with_history(&db_key, 2);
+
+    let version = call_ok(
+        "history_entry_by_index",
+        json!({"db_key": db_key, "entry_uuid": uuid, "index": 0}),
+    );
+    assert_eq!(
+        version["uuid"].as_str(),
+        Some(uuid.as_str()),
+        "a version keeps the uuid of its entry"
+    );
+    call_ok(
+        "update_entry_from_form_data",
+        json!({"db_key": db_key, "form_data": version}),
+    );
+
+    let current = call_ok(
+        "get_entry_form_data_by_id",
+        json!({"db_key": db_key, "entry_uuid": uuid}),
+    );
+    let versions = call_ok(
+        "history_entries_summary",
+        json!({"db_key": db_key, "entry_uuid": uuid}),
+    );
+    let titles: Vec<&str> = versions
+        .as_array()
+        .expect("a list")
+        .iter()
+        .map(|v| v["title"].as_str().unwrap_or_default())
+        .collect();
+
+    assert_eq!(form_field(&current, "Title"), Some("Version 0"));
+    assert_eq!(
+        titles,
+        vec!["Version 0", "Version 1", "Version 2"],
+        "the state before - Version 2 - is the newest version now"
+    );
+
+    close_database(&db_key);
+}

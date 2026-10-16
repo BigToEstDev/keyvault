@@ -46,7 +46,7 @@ import ru.kino.dev.ui.components.SkeletonText
 /**
  * "Back" and the [title] of the screen - one line, cut short with an ellipsis. With [skeleton] the title is
  * not known yet - a bar painted with it stands in, so the title does not flash in (pass-docs, Step 40, fix 13).
- * With [onDelete] - the three dots at the end, "delete" under them (pass-docs, Step 50, item 2); not
+ * With [menu] - the three dots at the end and its items under them (pass-docs, Step 50, item 2); not
  * [menuEnabled] - while a change is under way.
  */
 @Composable
@@ -55,7 +55,7 @@ internal fun EntryTopBar(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     skeleton: Brush? = null,
-    onDelete: (() -> Unit)? = null,
+    menu: List<MenuItem> = emptyList(),
     menuEnabled: Boolean = true,
 ) {
     Row(
@@ -89,10 +89,10 @@ internal fun EntryTopBar(
                     .padding(start = 8.dp),
             )
         }
-        if (onDelete != null) {
+        if (menu.isNotEmpty()) {
             MoreMenuButton(
                 contentDescription = stringResource(R.string.entry_menu),
-                onDelete = onDelete,
+                items = menu,
                 enabled = menuEnabled,
             )
         }

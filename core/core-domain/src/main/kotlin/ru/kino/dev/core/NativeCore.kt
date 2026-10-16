@@ -165,6 +165,38 @@ interface NativeCore {
 
     /** Moves the entry into the group [groupId], with nothing else of it changed. In memory only. */
     suspend fun moveEntry(dbKey: String, entryId: String, groupId: String)
+
+    /**
+     * The old versions of the entry, oldest first, as the core keeps them; the current state is not among
+     * them. An entry that is not there is refused with kind `NotFound`.
+     */
+    suspend fun entryHistory(dbKey: String, entryId: String): List<HistoryVersionData>
+
+    /**
+     * The old version at [index] as an entry: its strings, and [EntryData.modifiedAt] - when it was saved; the
+     * group is the entry's now - a version does not keep one. A version or an entry that is not there is
+     * refused with kind `NotFound`.
+     */
+    suspend fun historyVersion(dbKey: String, entryId: String, index: Int): EntryData
+
+    /**
+     * Makes the old version at [index] the entry again - whole, as it was: its strings, icon, tags,
+     * attachments; the group stays the entry's. The core puts the current state into the history, as on any
+     * update. A version or an entry that is not there is refused with kind `NotFound`. In memory only.
+     */
+    suspend fun restoreHistoryVersion(dbKey: String, entryId: String, index: Int)
+
+    /**
+     * Deletes the old version at [index]; the versions after it move up by one. A version or an entry that
+     * is not there is refused with kind `NotFound`. In memory only.
+     */
+    suspend fun deleteHistoryVersion(dbKey: String, entryId: String, index: Int)
+
+    /**
+     * Deletes every old version of the entry; the entry itself and when it was made stay. An entry that is
+     * not there is refused with kind `NotFound`. In memory only.
+     */
+    suspend fun deleteHistory(dbKey: String, entryId: String)
 }
 
 /**

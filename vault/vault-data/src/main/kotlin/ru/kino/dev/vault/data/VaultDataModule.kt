@@ -18,12 +18,17 @@ import ru.kino.dev.vault.data.entry.EntryRepositoryImpl
 import ru.kino.dev.vault.data.filter.DataStoreVaultFilterRepository
 import ru.kino.dev.vault.data.filter.vaultFilterStore
 import ru.kino.dev.vault.data.group.GroupRepositoryImpl
+import ru.kino.dev.vault.data.history.EntryHistoryRepositoryImpl
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.entry.EntryRepository
 import ru.kino.dev.vault.filter.VaultFilterRepository
 import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupRepository
+import ru.kino.dev.vault.history.EntryHistoryEditor
+import ru.kino.dev.vault.history.EntryHistoryReader
+import ru.kino.dev.vault.history.EntryHistoryRepository
+import ru.kino.dev.vault.history.EntryVersionOpener
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.lock.DatabaseGuard
 import ru.kino.dev.vault.search.VaultSearch
@@ -45,6 +50,9 @@ internal interface VaultDataModule {
     @Binds
     fun bindEntryRepository(impl: EntryRepositoryImpl): EntryRepository
 
+    @Binds
+    fun bindEntryHistoryRepository(impl: EntryHistoryRepositoryImpl): EntryHistoryRepository
+
     companion object {
 
         // vault-domain is plain Kotlin and carries no injection annotations, so its use cases are built here
@@ -54,6 +62,21 @@ internal interface VaultDataModule {
             database: VaultDatabaseRepository,
             guard: DatabaseGuard,
         ): GroupEditor = GroupEditor(groups, database, guard)
+
+        @Provides
+        fun provideEntryHistoryEditor(
+            history: EntryHistoryRepository,
+            database: VaultDatabaseRepository,
+            guard: DatabaseGuard,
+        ): EntryHistoryEditor = EntryHistoryEditor(history, database, guard)
+
+        @Provides
+        fun provideEntryVersionOpener(history: EntryHistoryRepository, opener: EntryOpener): EntryVersionOpener =
+            EntryVersionOpener(history, opener)
+
+        @Provides
+        fun provideEntryHistoryReader(entries: EntryRepository, history: EntryHistoryRepository): EntryHistoryReader =
+            EntryHistoryReader(entries, history)
 
         @Provides
         fun provideEntryOpener(entries: EntryRepository, presets: PresetRepository): EntryOpener =

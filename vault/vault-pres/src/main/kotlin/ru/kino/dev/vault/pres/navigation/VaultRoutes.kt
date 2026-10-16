@@ -18,6 +18,17 @@ internal data class GroupRoute(val dbKey: String, val groupId: String)
 @Serializable
 internal data class EntryReadRoute(val dbKey: String, val entryId: String)
 
+/** The history of an entry: its old versions (pass-docs, Step 51). */
+@Serializable
+internal data class EntryHistoryRoute(val dbKey: String, val entryId: String)
+
+/**
+ * One old version of an entry - at [index] in its history, oldest first. A position, not an identity: the
+ * screen reads it once, when it opens (pass-docs, Step 51, item 6).
+ */
+@Serializable
+internal data class EntryVersionRoute(val dbKey: String, val entryId: String, val index: Int)
+
 /*
  * Creating and editing are one screen with two ways in: each route carries exactly what its mode needs, so
  * there is no "neither a group nor an entry" to guard against.

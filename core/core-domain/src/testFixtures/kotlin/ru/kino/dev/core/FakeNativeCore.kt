@@ -193,8 +193,20 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         )
     }
 
-    /** An entry the fake holds: the group it is in, its strings in order, when it was made. */
-    data class FakeEntry(val groupId: String, val fields: List<EntryFieldData>, val createdAt: Long)
+    /**
+     * An entry the fake holds: the group it is in, its strings in order, when it was made and changed, and
+     * its old versions, oldest first.
+     */
+    data class FakeEntry(
+        val groupId: String,
+        val fields: List<EntryFieldData>,
+        val createdAt: Long,
+        val modifiedAt: Long = createdAt,
+        val history: List<FakeVersion> = emptyList(),
+    )
+
+    /** One old version of an entry: its strings, and when it was saved. */
+    data class FakeVersion(val fields: List<EntryFieldData>, val savedAt: Long)
 
     /**
      * The entries of every database, by dbKey and then by id. The entry calls change them - and the
@@ -261,7 +273,7 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     override suspend fun entry(dbKey: String, entryId: String): EntryData {
         step("entry", dbKey)
         val entry = found(dbKey, entryId)
-        return EntryData(entry.groupId, entry.fields)
+        return EntryData(entry.groupId, entry.fields, entry.createdAt, entry.modifiedAt)
     }
 
     override suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String {
@@ -275,7 +287,7 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         step("updateEntry", dbKey)
         val entry = found(dbKey, entryId)
         refuseDuplicateKeys(fields)
-        stored(dbKey)[entryId] = entry.copy(fields = fields)
+        stored(dbKey)[entryId] = entry.updatedTo(fields)
     }
 
     override suspend fun moveEntryToRecycleBin(dbKey: String, entryId: String) {
@@ -308,6 +320,41 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         )
         stored(dbKey)[entryId] = entry.copy(groupId = groupId)
     }
+
+    override suspend fun entryHistory(dbKey: String, entryId: String): List<HistoryVersionData> {
+        step("entryHistory", dbKey)
+        return found(dbKey, entryId).history.mapIndexed { index, version -> HistoryVersionData(index, version.savedAt) }
+    }
+
+    override suspend fun historyVersion(dbKey: String, entryId: String, index: Int): EntryData {
+        step("historyVersion", dbKey)
+        val entry = found(dbKey, entryId)
+        val version = entry.history.getOrNull(index) ?: throw CoreException("NotFound", "no version $index")
+        return EntryData(entry.groupId, version.fields, entry.createdAt, version.savedAt)
+    }
+
+    override suspend fun restoreHistoryVersion(dbKey: String, entryId: String, index: Int) {
+        step("restoreHistoryVersion", dbKey)
+        val entry = found(dbKey, entryId)
+        val version = entry.history.getOrNull(index) ?: throw CoreException("NotFound", "no version $index")
+        stored(dbKey)[entryId] = entry.updatedTo(version.fields)
+    }
+
+    override suspend fun deleteHistoryVersion(dbKey: String, entryId: String, index: Int) {
+        step("deleteHistoryVersion", dbKey)
+        val entry = found(dbKey, entryId)
+        if (index !in entry.history.indices) throw CoreException("NotFound", "no version $index")
+        stored(dbKey)[entryId] = entry.copy(history = entry.history.filterIndexed { i, _ -> i != index })
+    }
+
+    override suspend fun deleteHistory(dbKey: String, entryId: String) {
+        step("deleteHistory", dbKey)
+        stored(dbKey)[entryId] = found(dbKey, entryId).copy(history = emptyList())
+    }
+
+    // Like the core: the state before goes into the history, and the change is stamped
+    private fun FakeEntry.updatedTo(fields: List<EntryFieldData>) =
+        copy(fields = fields, modifiedAt = ++clock, history = history + FakeVersion(this.fields, modifiedAt))
 
     private fun stored(dbKey: String): MutableMap<String, FakeEntry> {
         tree(dbKey)

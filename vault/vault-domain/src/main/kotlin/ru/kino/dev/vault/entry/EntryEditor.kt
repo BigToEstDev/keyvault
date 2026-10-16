@@ -4,7 +4,6 @@ import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.lock.DatabaseGuard
-import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Creating, changing and deleting entries, the way a person does it: one action, one write of the file.
@@ -78,13 +77,5 @@ class EntryEditor(
         if (problems.isNotEmpty()) throw EntryFailure.InvalidFields(problems)
     }
 
-    private suspend fun save(dbKey: String) {
-        try {
-            database.save(dbKey)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            throw EntryFailure.NotSaved(e)
-        }
-    }
+    private suspend fun save(dbKey: String) = database.saveChange(dbKey)
 }

@@ -1,4 +1,4 @@
-package ru.kino.dev.vault.pres.grouplist.components
+package ru.kino.dev.vault.pres.common
 
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -26,11 +26,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.vault.pres.common.EditDeleteMenu
 
 /**
- * A card of the list - a group or an entry: an icon and a title. A tap opens it; a long press opens a menu -
- * edit, delete - with its top corner where the finger is.
+ * A card with an icon and a title - a group or an entry of a list, a version of a history. A tap opens it,
+ * when there is [onOpen]; a long press opens the menu of [items] with its top corner where the finger is, when there is
+ * one.
  *
  * Whether the menu is open is the card's own: it is a moment of the gesture, not of the screen.
  *
@@ -38,14 +38,13 @@ import ru.kino.dev.vault.pres.common.EditDeleteMenu
  * its start when long, so the nearest group stays in sight
  */
 @Composable
-internal fun ListCard(
+internal fun MenuCard(
     icon: @Composable () -> Unit,
     title: String,
-    subtitle: String?,
-    onOpen: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
+    items: List<MenuItem>,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    onOpen: (() -> Unit)? = null,
 ) {
     var menu by remember { mutableStateOf(false) }
     var pressedAt by remember { mutableStateOf(Offset.Zero) }
@@ -61,7 +60,16 @@ internal fun ListCard(
                     .pointerInput(Unit) {
                         awaitEachGesture { pressedAt = awaitFirstDown(requireUnconsumed = false).position }
                     }
-                    .combinedClickable(onClick = onOpen, onLongClick = { menu = true })
+                    .then(
+                        if (onOpen != null || items.isNotEmpty()) {
+                            Modifier.combinedClickable(
+                                onClick = onOpen ?: {},
+                                onLongClick = if (items.isNotEmpty()) ({ menu = true }) else null,
+                            )
+                        } else {
+                            Modifier
+                        },
+                    )
                     .padding(horizontal = 16.dp, vertical = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -87,11 +95,10 @@ internal fun ListCard(
         }
         // The menu is placed below its anchor, the card, and moved by the offset: up by the card's height and
         // down to the finger, so its top corner is where the press was. Near an edge it is kept on screen
-        EditDeleteMenu(
+        ItemMenu(
             expanded = menu,
             onDismiss = { menu = false },
-            onDelete = onDelete,
-            onEdit = onEdit,
+            items = items,
             offset = with(density) { DpOffset(pressedAt.x.toDp(), (pressedAt.y - cardHeight).toDp()) },
         )
     }

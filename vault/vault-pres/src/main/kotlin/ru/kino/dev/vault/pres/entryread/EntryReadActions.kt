@@ -15,6 +15,9 @@ sealed interface EntryReadAction {
     /** Shows or hides the value of the protected own field at [index]. */
     data class ToggleOwn(val index: Int) : EntryReadAction
 
+    /** "History" in the menu of the top bar: the old versions of this entry. */
+    data object History : EntryReadAction
+
     /** "Delete" in the menu of the top bar: asks first. */
     data object Delete : EntryReadAction
 

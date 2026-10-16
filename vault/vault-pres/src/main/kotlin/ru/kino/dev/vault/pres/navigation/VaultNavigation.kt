@@ -7,7 +7,9 @@ import androidx.navigation.toRoute
 import ru.kino.dev.navigation.VaultGraph
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.vault.pres.entryedit.EntryEditScreen
+import ru.kino.dev.vault.pres.entryhistory.EntryHistoryScreen
 import ru.kino.dev.vault.pres.entryread.EntryReadScreen
+import ru.kino.dev.vault.pres.entryversion.EntryVersionScreen
 import ru.kino.dev.vault.pres.grouplist.GroupListScreen
 import ru.kino.dev.vault.pres.presetcreate.PresetCreateScreen
 
@@ -27,6 +29,14 @@ fun NavGraphBuilder.vaultGraph() {
         composable<EntryReadRoute> { entry ->
             val route = entry.toRoute<EntryReadRoute>()
             EntryReadScreen(dbKey = route.dbKey, entryId = route.entryId)
+        }
+        composable<EntryHistoryRoute> { entry ->
+            val route = entry.toRoute<EntryHistoryRoute>()
+            EntryHistoryScreen(dbKey = route.dbKey, entryId = route.entryId)
+        }
+        composable<EntryVersionRoute> { entry ->
+            val route = entry.toRoute<EntryVersionRoute>()
+            EntryVersionScreen(dbKey = route.dbKey, entryId = route.entryId, index = route.index)
         }
         composable<EntryCreateRoute> { entry ->
             val route = entry.toRoute<EntryCreateRoute>()

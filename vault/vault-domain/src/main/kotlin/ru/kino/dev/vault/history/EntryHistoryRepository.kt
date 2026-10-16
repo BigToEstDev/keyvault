@@ -1,0 +1,45 @@
+package ru.kino.dev.vault.history
+
+import ru.kino.dev.vault.entry.EntryRecord
+import ru.kino.dev.vault.entry.EntryTimes
+import ru.kino.dev.vault.group.EntryId
+
+/**
+ * The history of the entries of the open database: kdbx keeps the old versions of an entry inside it, and
+ * the core puts the previous state there on every update.
+ *
+ * Throws [ru.kino.dev.vault.entry.EntryFailure] and nothing else - the history is a part of the entry.
+ */
+interface EntryHistoryRepository {
+
+    /** The old versions of the entry, oldest first, as the core keeps them; the current state is not one. */
+    suspend fun versions(dbKey: String, entryId: EntryId): List<HistoryVersion>
+
+    /**
+     * The version at [index] as an entry: its fields, and [EntryTimes.modified] - when it was saved. Its group
+     * is the entry's now: a version does not keep one.
+     */
+    suspend fun version(dbKey: String, entryId: EntryId, index: Int): EntryRecord
+
+    /**
+     * Makes the version at [index] the entry again, whole; the current state goes into the history. In
+     * memory only.
+     */
+    suspend fun restore(dbKey: String, entryId: EntryId, index: Int)
+
+    /** Deletes the version at [index]; the versions after it move up by one. In memory only. */
+    suspend fun delete(dbKey: String, entryId: EntryId, index: Int)
+
+    /** Deletes every old version; the entry and when it was made stay. In memory only. */
+    suspend fun deleteAll(dbKey: String, entryId: EntryId)
+}
+
+/**
+ * One old version of an entry.
+ *
+ * @param index its position in the history, oldest first - not an identity: deleting a version moves the
+ *   rest, so the history is read again after every change
+ * @param modified when this version was saved, in seconds since the epoch, UTC; null - the time could not
+ *   be read
+ */
+data class HistoryVersion(val index: Int, val modified: Long?)
