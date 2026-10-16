@@ -129,6 +129,8 @@
     <string name="vault_card_edit">Edit</string>
     <string name="vault_group_menu">Group actions</string>
     <string name="entry_menu">Entry actions</string>
+    <string name="entry_history">History</string>
+    <string name="entry_history_title">History — %1$s</string>
     <string name="vault_card_delete">Delete</string>
     <string name="vault_debug_lock">Lock (debug)</string>
     <string name="group_dialog_create_title">New group</string>

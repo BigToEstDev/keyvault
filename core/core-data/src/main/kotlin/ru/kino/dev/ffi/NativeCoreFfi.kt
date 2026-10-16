@@ -11,6 +11,7 @@ import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
 import ru.kino.dev.core.EntrySummaryData
 import ru.kino.dev.core.GroupTree
+import ru.kino.dev.core.HistoryVersionData
 import ru.kino.dev.core.KeyFile
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.NativeCore
@@ -300,6 +301,16 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
             )
         }
     }
+
+    override suspend fun entryHistory(dbKey: String, entryId: String): List<HistoryVersionData> =
+        withContext(dispatcher) {
+            call(
+                FfiCommands.HISTORY_ENTRIES_SUMMARY,
+                EntryIdDto.serializer(),
+                EntryIdDto(dbKey = dbKey, entryUuid = entryId),
+                ListSerializer(EntrySummaryDto.serializer()),
+            ).mapIndexed { position, row -> row.toHistoryVersion(position) }
+        }
 
     private fun entryForm(dbKey: String, entryId: String): EntryFormDataDto = call(
         FfiCommands.GET_ENTRY_FORM_DATA_BY_ID,

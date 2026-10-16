@@ -29,6 +29,17 @@ data class EntryData(
     val modifiedAt: Long? = null,
 )
 
+/**
+ * One old version of an entry, as its history lists it: kdbx keeps them inside the entry, and the core
+ * puts the previous state there on every update.
+ */
+data class HistoryVersionData(
+    /** Its position in the history, oldest first - not an identity: deleting a version moves the rest */
+    val index: Int,
+    /** When this version was saved, in seconds since the epoch, UTC; null when the time cannot be read */
+    val modifiedAt: Long?,
+)
+
 /** An entry as a list shows it: enough for a card, nothing secret. */
 data class EntrySummaryData(
     val id: String,

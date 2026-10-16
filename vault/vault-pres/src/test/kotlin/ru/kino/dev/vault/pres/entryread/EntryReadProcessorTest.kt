@@ -23,6 +23,7 @@ import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
+import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
@@ -165,6 +166,20 @@ class EntryReadProcessorTest {
         assertEquals(9_000L, state.times.modified)
     }
 
+    @Test
+    fun `history in the menu opens the history of this entry`() = runTest {
+        val (_, events) = perform(EntryReadAction.Load, EntryReadAction.History)
+
+        assertEquals(listOf(MviNavEvent.NavigateTo(EntryHistoryRoute(DB, mail.value))), events)
+    }
+
+    @Test
+    fun `no history before the entry is read`() = runTest {
+        val (_, events) = perform(EntryReadAction.History)
+
+        assertTrue(events.isEmpty())
+    }
+
     // Delete, from the menu of the top bar
 
     @Test
@@ -227,7 +242,8 @@ class EntryReadProcessorTest {
         initial: EntryReadState = EntryReadState(),
     ): Pair<EntryReadState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryReadProcessor(DB, mail.value, opener, groups, EntryEditor(entries, opener, database), navigator, log)
+        val editor = EntryEditor(entries, opener, database)
+        val processor = EntryReadProcessor(DB, mail.value, opener, groups, editor, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             actions.forEach { containerHost.action(it).join() }

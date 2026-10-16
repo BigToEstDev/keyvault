@@ -165,6 +165,12 @@ interface NativeCore {
 
     /** Moves the entry into the group [groupId], with nothing else of it changed. In memory only. */
     suspend fun moveEntry(dbKey: String, entryId: String, groupId: String)
+
+    /**
+     * The old versions of the entry, oldest first, as the core keeps them; the current state is not among
+     * them. An entry that is not there is refused with kind `NotFound`.
+     */
+    suspend fun entryHistory(dbKey: String, entryId: String): List<HistoryVersionData>
 }
 
 /**

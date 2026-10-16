@@ -193,12 +193,16 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         )
     }
 
-    /** An entry the fake holds: the group it is in, its strings in order, when it was made and changed. */
+    /**
+     * An entry the fake holds: the group it is in, its strings in order, when it was made and changed, and
+     * its old versions - by the time each was saved, oldest first.
+     */
     data class FakeEntry(
         val groupId: String,
         val fields: List<EntryFieldData>,
         val createdAt: Long,
         val modifiedAt: Long = createdAt,
+        val history: List<Long> = emptyList(),
     )
 
     /**
@@ -280,8 +284,9 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         step("updateEntry", dbKey)
         val entry = found(dbKey, entryId)
         refuseDuplicateKeys(fields)
-        // The core stamps the change, as it does when it puts the old state into the history
-        stored(dbKey)[entryId] = entry.copy(fields = fields, modifiedAt = ++clock)
+        // Like the core: the state before goes into the history, and the change is stamped
+        stored(dbKey)[entryId] =
+            entry.copy(fields = fields, modifiedAt = ++clock, history = entry.history + entry.modifiedAt)
     }
 
     override suspend fun moveEntryToRecycleBin(dbKey: String, entryId: String) {
@@ -313,6 +318,11 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
                 (groupId to target.copy(entryIds = target.entryIds + entryId)),
         )
         stored(dbKey)[entryId] = entry.copy(groupId = groupId)
+    }
+
+    override suspend fun entryHistory(dbKey: String, entryId: String): List<HistoryVersionData> {
+        step("entryHistory", dbKey)
+        return found(dbKey, entryId).history.mapIndexed { index, savedAt -> HistoryVersionData(index, savedAt) }
     }
 
     private fun stored(dbKey: String): MutableMap<String, FakeEntry> {

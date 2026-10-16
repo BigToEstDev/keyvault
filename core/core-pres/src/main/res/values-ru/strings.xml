@@ -130,6 +130,8 @@
     <string name="vault_card_edit">Редактировать</string>
     <string name="vault_group_menu">Действия с группой</string>
     <string name="entry_menu">Действия с записью</string>
+    <string name="entry_history">История</string>
+    <string name="entry_history_title">История — %1$s</string>
     <string name="vault_card_delete">Удалить</string>
     <string name="vault_debug_lock">Заблокировать (debug)</string>
     <string name="group_dialog_create_title">Новая группа</string>

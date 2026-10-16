@@ -3,6 +3,7 @@ package ru.kino.dev.ffi
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
 import ru.kino.dev.core.EntrySummaryData
+import ru.kino.dev.core.HistoryVersionData
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
@@ -33,6 +34,15 @@ internal fun coreTimeToEpochSeconds(time: String): Long? = try {
 } catch (_: DateTimeParseException) {
     null
 }
+
+/**
+ * A row of `history_entries_summary` as one old version: its index - the core gives it, its position
+ * stands in otherwise - and when it was saved, which the core puts into `secondary_title`.
+ */
+internal fun EntrySummaryDto.toHistoryVersion(position: Int) = HistoryVersionData(
+    index = historyIndex ?: position,
+    modifiedAt = secondaryTitle?.let(::coreTimeToEpochSeconds),
+)
 
 internal fun EntrySummaryDto.toDomain() = EntrySummaryData(
     id = uuid,

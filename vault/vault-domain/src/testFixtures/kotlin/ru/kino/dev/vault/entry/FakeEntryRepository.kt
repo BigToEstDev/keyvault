@@ -14,11 +14,13 @@ import ru.kino.dev.vault.group.GroupId
 class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : EntryRepository {
 
     /** An entry the fake holds: the group it is in, its fields in order, when it was made. */
+    /** @param history the old versions, by the time each was saved, oldest first */
     data class StoredEntry(
         val groupId: GroupId,
         val fields: List<EntryField>,
         val createdAt: Long,
         val modifiedAt: Long = createdAt,
+        val history: List<Long> = emptyList(),
     )
 
     /** Method name to the failure it throws. */
@@ -80,8 +82,8 @@ class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : En
         call("update")
         val entry = entry(entryId)
         refuseDuplicateKeys(fields)
-        // The core stamps the change
-        stored[entryId] = entry.copy(fields = fields, modifiedAt = ++clock)
+        // Like the core: the state before goes into the history, and the change is stamped
+        stored[entryId] = entry.copy(fields = fields, modifiedAt = ++clock, history = entry.history + entry.modifiedAt)
     }
 
     override suspend fun moveToRecycleBin(dbKey: String, entryId: EntryId) {

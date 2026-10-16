@@ -48,8 +48,10 @@ import ru.kino.dev.vault.pres.common.EntrySection
 import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
 import ru.kino.dev.vault.pres.common.EntryTopBar
+import ru.kino.dev.vault.pres.common.deleteMenuItem
 import ru.kino.dev.vault.pres.common.entryTimeText
 import ru.kino.dev.vault.pres.common.fieldLabel
+import ru.kino.dev.vault.pres.common.historyMenuItem
 import ru.kino.dev.vault.pres.common.subtitle
 import ru.kino.dev.vault.pres.common.title
 
@@ -93,10 +95,13 @@ internal fun EntryReadScreen(
                     onBack = { processor.action(EntryReadAction.Back) },
                     skeleton = skeleton,
                     // Once the entry is read: there is nothing to delete before
-                    onDelete = if (state.content != null) {
-                        { processor.action(EntryReadAction.Delete) }
+                    menu = if (state.content != null) {
+                        listOf(
+                            historyMenuItem { processor.action(EntryReadAction.History) },
+                            deleteMenuItem { processor.action(EntryReadAction.Delete) },
+                        )
                     } else {
-                        null
+                        emptyList()
                     },
                 )
             },

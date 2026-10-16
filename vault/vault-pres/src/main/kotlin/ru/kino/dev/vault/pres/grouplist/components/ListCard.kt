@@ -26,7 +26,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.vault.pres.common.EditDeleteMenu
+import ru.kino.dev.vault.pres.common.ItemMenu
+import ru.kino.dev.vault.pres.common.deleteMenuItem
+import ru.kino.dev.vault.pres.common.editMenuItem
 
 /**
  * A card of the list - a group or an entry: an icon and a title. A tap opens it; a long press opens a menu -
@@ -87,11 +89,10 @@ internal fun ListCard(
         }
         // The menu is placed below its anchor, the card, and moved by the offset: up by the card's height and
         // down to the finger, so its top corner is where the press was. Near an edge it is kept on screen
-        EditDeleteMenu(
+        ItemMenu(
             expanded = menu,
             onDismiss = { menu = false },
-            onDelete = onDelete,
-            onEdit = onEdit,
+            items = listOf(editMenuItem(onEdit), deleteMenuItem(onDelete)),
             offset = with(density) { DpOffset(pressedAt.x.toDp(), (pressedAt.y - cardHeight).toDp()) },
         )
     }

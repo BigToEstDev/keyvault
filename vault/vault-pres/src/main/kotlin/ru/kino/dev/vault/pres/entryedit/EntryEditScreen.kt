@@ -44,6 +44,7 @@ import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.SaveFab
+import ru.kino.dev.vault.pres.common.deleteMenuItem
 import ru.kino.dev.vault.pres.common.fieldLabel
 import ru.kino.dev.vault.pres.common.option
 import ru.kino.dev.vault.pres.common.presetName
@@ -92,10 +93,10 @@ internal fun EntryEditScreen(
                     title = stringResource(if (state.creating) R.string.entry_title_new else R.string.entry_title_edit),
                     onBack = { processor.action(EntryEditAction.Back) },
                     // An entry that is there, once read; a new one has nothing to delete
-                    onDelete = if (!state.creating && state.content != null) {
-                        { processor.action(EntryEditAction.Delete) }
+                    menu = if (!state.creating && state.content != null) {
+                        listOf(deleteMenuItem { processor.action(EntryEditAction.Delete) })
                     } else {
-                        null
+                        emptyList()
                     },
                     menuEnabled = !state.saving,
                 )

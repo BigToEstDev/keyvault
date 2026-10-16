@@ -24,6 +24,7 @@ import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.common.groupChoice
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
+import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 
 /**
  * @param loading the entry is not read yet - the skeleton is shown
@@ -92,8 +93,14 @@ class EntryReadProcessor @AssistedInject constructor(
                 state.copy(shownOwn = if (action.index in shown) shown - action.index else shown + action.index)
             }
 
+            EntryReadAction.History -> if (state.content != null) {
+                navigator.navigate(MviNavEvent.NavigateTo(EntryHistoryRoute(dbKey, entryId)))
+            }
+
             EntryReadAction.Delete -> state.content?.let { content ->
-                if (state.delete == null) reduce { state.copy(delete = DeleteDialog(content.value(StandardPreset.TITLE))) }
+                if (state.delete == null) {
+                    reduce { state.copy(delete = DeleteDialog(content.value(StandardPreset.TITLE))) }
+                }
             }
 
             EntryReadAction.DeleteConfirm -> delete()

@@ -1,4 +1,4 @@
-package ru.kino.dev.vault.pres.grouplist.components
+package ru.kino.dev.vault.pres.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

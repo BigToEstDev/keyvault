@@ -43,7 +43,7 @@ import ru.kino.dev.vault.pres.grouplist.components.FilterDialog
 import ru.kino.dev.vault.pres.grouplist.components.GroupCard
 import ru.kino.dev.vault.pres.grouplist.components.GroupDialogs
 import ru.kino.dev.vault.pres.grouplist.components.GroupListTopBar
-import ru.kino.dev.vault.pres.grouplist.components.SkeletonCard
+import ru.kino.dev.vault.pres.common.SkeletonCard
 
 /** @param groupId null for the root of the database */
 @Composable

@@ -7,6 +7,7 @@ import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import ru.kino.dev.core.EntryFieldData
+import ru.kino.dev.core.HistoryVersionData
 
 class EntryMappingTest {
 
@@ -145,5 +146,26 @@ class EntryMappingTest {
     fun `a time that cannot be read is null, not a failure`() {
         assertEquals(null, coreTimeToEpochSeconds("not a time"))
         assertEquals(null, coreTimeToEpochSeconds(""))
+    }
+
+    @Test
+    fun `a row of the history is a version with its index and the time it was saved`() {
+        val row = EntrySummaryDto(
+            uuid = "e",
+            parentGroupUuid = "g",
+            title = "Mail",
+            secondaryTitle = "2026-01-02T03:04:05",
+            iconId = 0,
+            historyIndex = 3,
+        )
+
+        assertEquals(HistoryVersionData(index = 3, modifiedAt = 1_767_323_045L), row.toHistoryVersion(position = 0))
+    }
+
+    @Test
+    fun `a row without an index takes its position, one without a time has none`() {
+        val row = EntrySummaryDto(uuid = "e", parentGroupUuid = "g", iconId = 0)
+
+        assertEquals(HistoryVersionData(index = 1, modifiedAt = null), row.toHistoryVersion(position = 1))
     }
 }
