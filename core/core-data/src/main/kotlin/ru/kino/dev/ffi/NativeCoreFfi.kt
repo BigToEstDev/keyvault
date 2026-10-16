@@ -342,6 +342,17 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
         }
     }
 
+    override suspend fun deleteHistory(dbKey: String, entryId: String) {
+        withContext(dispatcher) {
+            call(
+                FfiCommands.DELETE_HISTORY_ENTRIES,
+                EntryIdDto.serializer(),
+                EntryIdDto(dbKey = dbKey, entryUuid = entryId),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
     private fun entryForm(dbKey: String, entryId: String): EntryFormDataDto = call(
         FfiCommands.GET_ENTRY_FORM_DATA_BY_ID,
         EntryIdDto.serializer(),

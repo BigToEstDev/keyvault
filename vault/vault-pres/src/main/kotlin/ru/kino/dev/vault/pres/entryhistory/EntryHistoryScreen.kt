@@ -27,6 +27,7 @@ import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.history.EntryHistory
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.SkeletonCard
+import ru.kino.dev.vault.pres.common.deleteHistoryMenuItem
 import ru.kino.dev.vault.pres.common.deleteVersionMenuItem
 import ru.kino.dev.vault.pres.common.entryTimeText
 import ru.kino.dev.vault.pres.common.restoreMenuItem
@@ -70,6 +71,13 @@ internal fun EntryHistoryScreen(
                     title = title?.let { stringResource(R.string.entry_history_title, it) }.orEmpty(),
                     onBack = { processor.action(EntryHistoryAction.Back) },
                     skeleton = if (history == null && state.loading) skeletonBrush() else null,
+                    // Only with versions to delete: "Created" is the entry's own and stays
+                    menu = if (history?.versions?.isNotEmpty() == true) {
+                        listOf(deleteHistoryMenuItem { processor.action(EntryHistoryAction.DeleteHistory) })
+                    } else {
+                        emptyList()
+                    },
+                    menuEnabled = state.dialog?.saving != true,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },

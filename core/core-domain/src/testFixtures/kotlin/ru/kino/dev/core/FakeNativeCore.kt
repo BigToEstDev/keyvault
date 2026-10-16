@@ -340,6 +340,11 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         stored(dbKey)[entryId] = entry.copy(history = entry.history.filterIndexed { i, _ -> i != index })
     }
 
+    override suspend fun deleteHistory(dbKey: String, entryId: String) {
+        step("deleteHistory", dbKey)
+        stored(dbKey)[entryId] = found(dbKey, entryId).copy(history = emptyList())
+    }
+
     // Like the core: the state before goes into the history, and the change is stamped
     private fun FakeEntry.updatedTo(fields: List<EntryFieldData>) =
         copy(fields = fields, modifiedAt = ++clock, history = history + FakeVersion(this.fields, modifiedAt))

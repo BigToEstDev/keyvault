@@ -30,4 +30,10 @@ class EntryHistoryEditor(
         history.delete(dbKey, entryId, index)
         database.saveChange(dbKey)
     }
+
+    /** Deletes every old version and saves; when the entry was made stays (pass-docs, Step 51, item 5). */
+    suspend fun deleteAll(dbKey: String, entryId: EntryId): Unit = guard.exclusive {
+        history.deleteAll(dbKey, entryId)
+        database.saveChange(dbKey)
+    }
 }

@@ -45,6 +45,19 @@ class EntryHistoryEditorTest {
     }
 
     @Test
+    fun `the whole history deleted, the entry stays as it is, the file is written`() = runTest {
+        entries.update(DB, mail, listOf(title("Post")))
+        entries.update(DB, mail, listOf(title("Box")))
+
+        editor.deleteAll(DB, mail)
+
+        val entry = entries.stored.getValue(mail)
+        assertTrue(entry.history.isEmpty())
+        assertEquals(listOf(title("Box")), entry.fields)
+        assertEquals(listOf("save"), database.calls)
+    }
+
+    @Test
     fun `a change not written is NotSaved, made in memory all the same`() = runTest {
         entries.update(DB, mail, listOf(title("Post")))
         database.saveFailure = CoreException("Io", "disk full")

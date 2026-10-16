@@ -175,6 +175,55 @@ class EntryHistoryProcessorTest {
         assertEquals(EntryHistoryDialog.Delete(0, 1_000L, saving = true), state.dialog)
     }
 
+    // The whole history, from the menu of the top bar
+
+    @Test
+    fun `delete history asks first`() = runTest {
+        entries.putHistory(mail, 1_000L)
+
+        val (state, _) = perform(EntryHistoryAction.Load, EntryHistoryAction.DeleteHistory)
+
+        assertEquals(EntryHistoryDialog.DeleteAll(), state.dialog)
+    }
+
+    @Test
+    fun `no history to delete - no dialog`() = runTest {
+        val (state, _) = perform(EntryHistoryAction.Load, EntryHistoryAction.DeleteHistory)
+
+        assertNull(state.dialog)
+    }
+
+    @Test
+    fun `the whole history deleted, the screen goes back to the entry`() = runTest {
+        entries.putHistory(mail, 1_000L, 2_000L)
+
+        val (_, events) = perform(
+            EntryHistoryAction.Load,
+            EntryHistoryAction.DeleteHistory,
+            EntryHistoryAction.DialogConfirm,
+        )
+
+        assertTrue(entries.stored.getValue(mail).history.isEmpty())
+        assertEquals(listOf("save"), database.calls)
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `the whole history deleted but not written stays here and says so`() = runTest {
+        entries.putHistory(mail, 1_000L)
+        database.saveFailure = CoreException("Io", "disk full")
+
+        val (state, events) = perform(
+            EntryHistoryAction.Load,
+            EntryHistoryAction.DeleteHistory,
+            EntryHistoryAction.DialogConfirm,
+        )
+
+        assertEquals(EntryHistoryMessage.NotSaved, state.message)
+        assertEquals(emptyList<Any>(), state.history?.versions)
+        assertTrue(events.isEmpty())
+    }
+
     @Test
     fun `no dialog for a version the history shown does not have`() = runTest {
         val (state, _) = perform(EntryHistoryAction.Load, EntryHistoryAction.Restore(7))

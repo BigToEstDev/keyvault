@@ -34,4 +34,10 @@ class FakeEntryHistoryRepository(private val entries: FakeEntryRepository) : Ent
         if (index !in entry.history.indices) throw EntryFailure.EntryNotFound()
         entries.stored[entryId] = entry.copy(history = entry.history.filterIndexed { i, _ -> i != index })
     }
+
+    override suspend fun deleteAll(dbKey: String, entryId: EntryId) {
+        failures["deleteAll"]?.let { throw it }
+        val entry = entries.stored[entryId] ?: throw EntryFailure.EntryNotFound()
+        entries.stored[entryId] = entry.copy(history = emptyList())
+    }
 }

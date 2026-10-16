@@ -45,6 +45,11 @@ internal fun historyMenuItem(onClick: () -> Unit) =
 internal fun restoreMenuItem(onClick: () -> Unit) =
     MenuItem(stringResource(R.string.history_restore), Icons.Filled.Restore, onClick)
 
+/** "Delete history" - every old version of an entry (pass-docs, Step 51, item 5). */
+@Composable
+internal fun deleteHistoryMenuItem(onClick: () -> Unit) =
+    MenuItem(stringResource(R.string.history_delete_all), Icons.Filled.Delete, onClick)
+
 /** "Delete version" - of a history. */
 @Composable
 internal fun deleteVersionMenuItem(onClick: () -> Unit) =

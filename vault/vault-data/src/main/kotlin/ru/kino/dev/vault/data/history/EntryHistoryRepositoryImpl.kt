@@ -27,4 +27,8 @@ internal class EntryHistoryRepositoryImpl @Inject constructor(
     override suspend fun delete(dbKey: String, entryId: EntryId, index: Int) = entryCall {
         core.deleteHistoryVersion(dbKey, entryId.value, index)
     }
+
+    override suspend fun deleteAll(dbKey: String, entryId: EntryId) = entryCall {
+        core.deleteHistory(dbKey, entryId.value)
+    }
 }

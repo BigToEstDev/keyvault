@@ -184,6 +184,12 @@ interface NativeCore {
      * is not there is refused with kind `NotFound`. In memory only.
      */
     suspend fun deleteHistoryVersion(dbKey: String, entryId: String, index: Int)
+
+    /**
+     * Deletes every old version of the entry; the entry itself and when it was made stay. An entry that is
+     * not there is refused with kind `NotFound`. In memory only.
+     */
+    suspend fun deleteHistory(dbKey: String, entryId: String)
 }
 
 /**

@@ -59,6 +59,21 @@ class EntryHistoryRepositoryImplTest {
     }
 
     @Test
+    fun `the whole history deleted, the entry stays`() = runTest {
+        core.updateEntry(DB, "mail", listOf(EntryFieldData("Title", "Post", false)))
+
+        repository.deleteAll(DB, EntryId("mail"))
+
+        assertEquals(emptyList<HistoryVersion>(), repository.versions(DB, EntryId("mail")))
+        assertEquals(listOf(EntryFieldData("Title", "Post", false)), core.entry(DB, "mail").fields)
+    }
+
+    @Test
+    fun `deleting the history of an entry that is not there is EntryNotFound`() = runTest {
+        expectFailure<EntryFailure.EntryNotFound> { repository.deleteAll(DB, EntryId("missing")) }
+    }
+
+    @Test
     fun `a version that is not there is EntryNotFound - the core does not say which is missing`() = runTest {
         expectFailure<EntryFailure.EntryNotFound> { repository.restore(DB, EntryId("mail"), 5) }
         expectFailure<EntryFailure.EntryNotFound> { repository.delete(DB, EntryId("mail"), 5) }

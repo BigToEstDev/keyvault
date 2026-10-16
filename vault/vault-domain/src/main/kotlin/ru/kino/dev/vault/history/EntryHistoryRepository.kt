@@ -21,6 +21,9 @@ interface EntryHistoryRepository {
 
     /** Deletes the version at [index]; the versions after it move up by one. In memory only. */
     suspend fun delete(dbKey: String, entryId: EntryId, index: Int)
+
+    /** Deletes every old version; the entry and when it was made stay. In memory only. */
+    suspend fun deleteAll(dbKey: String, entryId: EntryId)
 }
 
 /**

@@ -40,7 +40,7 @@ data class EntryHistoryState(
  *
  * A version restored - the screen goes back to the entry, which reads itself anew; one deleted - the history
  * is read again, the indexes moved. A change not written to the file is said here, and the history is read
- * again (pass-docs, Step 51, item 4).
+ * again (pass-docs, Step 51, item 4). The whole history deleted - back to the entry (item 5).
  */
 @HiltViewModel(assistedFactory = EntryHistoryProcessor.Factory::class)
 class EntryHistoryProcessor @AssistedInject constructor(
@@ -75,6 +75,11 @@ class EntryHistoryProcessor @AssistedInject constructor(
                 if (state.dialog == null) {
                     reduce { state.copy(dialog = EntryHistoryDialog.Delete(action.index, modified)) }
                 }
+            }
+
+            EntryHistoryAction.DeleteHistory -> {
+                val anyVersion = state.history?.versions?.isNotEmpty() == true
+                if (state.dialog == null && anyVersion) reduce { state.copy(dialog = EntryHistoryDialog.DeleteAll()) }
             }
 
             EntryHistoryAction.DialogConfirm -> confirm()
@@ -118,6 +123,11 @@ class EntryHistoryProcessor @AssistedInject constructor(
                     reduce { state.copy(dialog = null) }
                     load()
                 }
+
+                is EntryHistoryDialog.DeleteAll -> {
+                    editor.deleteAll(dbKey, EntryId(entryId))
+                    navigator.navigate(MviNavEvent.NavigateBack)
+                }
             }
         } catch (failure: EntryFailure) {
             failed(failure)
@@ -154,4 +164,5 @@ class EntryHistoryProcessor @AssistedInject constructor(
 private fun EntryHistoryDialog.underWay(): EntryHistoryDialog = when (this) {
     is EntryHistoryDialog.Restore -> copy(saving = true)
     is EntryHistoryDialog.Delete -> copy(saving = true)
+    is EntryHistoryDialog.DeleteAll -> copy(saving = true)
 }

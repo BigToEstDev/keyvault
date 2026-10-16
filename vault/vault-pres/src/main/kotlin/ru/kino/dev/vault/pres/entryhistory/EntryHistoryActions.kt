@@ -13,6 +13,9 @@ sealed interface EntryHistoryAction {
     /** "Delete version" in the menu of a card: asks first. */
     data class DeleteVersion(val index: Int) : EntryHistoryAction
 
+    /** "Delete history" in the menu of the top bar: asks first. */
+    data object DeleteHistory : EntryHistoryAction
+
     data object DialogConfirm : EntryHistoryAction
 
     data object DialogDismiss : EntryHistoryAction
@@ -21,27 +24,23 @@ sealed interface EntryHistoryAction {
     data object MessageShown : EntryHistoryAction
 }
 
-/** The dialog over the history, if any - about the version at [index], saved at [modified]. */
+/** The dialog over the history, if any. */
 sealed interface EntryHistoryDialog {
-    val index: Int
-    val modified: Long
 
     /** The change is under way: the dialog shows progress and takes nothing. */
     val saving: Boolean
 
-    /** "Restore the version?" - the entry becomes that version, the current state stays in the history. */
-    data class Restore(
-        override val index: Int,
-        override val modified: Long,
-        override val saving: Boolean = false,
-    ) : EntryHistoryDialog
+    /**
+     * "Restore the version?" - the version at [index], saved at [modified], becomes the entry; the current
+     * state stays in the history.
+     */
+    data class Restore(val index: Int, val modified: Long, override val saving: Boolean = false) : EntryHistoryDialog
 
-    /** "Delete the version?" */
-    data class Delete(
-        override val index: Int,
-        override val modified: Long,
-        override val saving: Boolean = false,
-    ) : EntryHistoryDialog
+    /** "Delete the version?" - the version at [index], saved at [modified]. */
+    data class Delete(val index: Int, val modified: Long, override val saving: Boolean = false) : EntryHistoryDialog
+
+    /** "Delete the history?" - every version; when the entry was made stays. */
+    data class DeleteAll(override val saving: Boolean = false) : EntryHistoryDialog
 }
 
 /** What the snackbar says. */
