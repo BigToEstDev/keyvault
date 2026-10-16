@@ -127,6 +127,7 @@
     <string name="vault_create_group">Create group</string>
     <string name="vault_create_entry">Create entry</string>
     <string name="vault_card_edit">Edit</string>
+    <string name="vault_group_menu">Group actions</string>
     <string name="vault_card_delete">Delete</string>
     <string name="vault_debug_lock">Lock (debug)</string>
     <string name="group_dialog_create_title">New group</string>

@@ -246,6 +246,92 @@ class GroupListProcessorTest {
         assertFalse(state.groups.any { it.id == home })
     }
 
+    // The group shown, from the menu of the top bar
+
+    @Test
+    fun `edit in the menu of the top bar renames the group shown, from its name`() = runTest {
+        val (state, _) = perform(groupId = mail.value, GroupListAction.Load, GroupListAction.RenameCurrent)
+
+        assertEquals(GroupDialog.Rename(mail, "Mail"), state.dialog)
+    }
+
+    @Test
+    fun `delete in the menu of the top bar asks first, naming the group shown`() = runTest {
+        val (state, _) = perform(groupId = mail.value, GroupListAction.Load, GroupListAction.DeleteCurrent)
+
+        assertEquals(GroupDialog.Delete(mail, "Mail"), state.dialog)
+    }
+
+    @Test
+    fun `the root is the database - the menu of the top bar does nothing there`() = runTest {
+        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.RenameCurrent, GroupListAction.DeleteCurrent)
+
+        assertNull(state.dialog)
+    }
+
+    @Test
+    fun `nothing to edit before the tree is read`() = runTest {
+        val (state, _) = perform(groupId = mail.value, GroupListAction.DeleteCurrent)
+
+        assertNull(state.dialog)
+    }
+
+    @Test
+    fun `the group shown renamed - the path shows the new name`() = runTest {
+        val (state, events) = perform(
+            groupId = mail.value,
+            GroupListAction.Load,
+            GroupListAction.RenameCurrent,
+            GroupListAction.DialogNameChanged("Post"),
+            GroupListAction.DialogConfirm,
+        )
+
+        assertEquals("Post", state.path.last().name)
+        assertEquals("Post", groups.name(mail))
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `the group shown deleted - the screen goes to its parent`() = runTest {
+        val (_, events) = perform(
+            groupId = mail.value,
+            GroupListAction.Load,
+            GroupListAction.DeleteCurrent,
+            GroupListAction.DialogConfirm,
+        )
+
+        assertEquals(listOf(MviNavEvent.NavigateBackTo(GroupRoute(DB, work.value))), events)
+        assertEquals(listOf("save"), database.calls)
+    }
+
+    @Test
+    fun `a group of the root deleted from inside goes to the root`() = runTest {
+        val (_, events) = perform(
+            groupId = work.value,
+            GroupListAction.Load,
+            GroupListAction.DeleteCurrent,
+            GroupListAction.DialogConfirm,
+        )
+
+        assertEquals(listOf(MviNavEvent.NavigateBackTo(VaultRootRoute(DB))), events)
+    }
+
+    @Test
+    fun `the group shown deleted but not written stays here, and the snackbar says so`() = runTest {
+        database.saveFailure = CoreException("Io", "disk full")
+
+        val (state, events) = perform(
+            groupId = mail.value,
+            GroupListAction.Load,
+            GroupListAction.DeleteCurrent,
+            GroupListAction.DialogConfirm,
+        )
+
+        assertNull(state.dialog)
+        assertEquals(GroupListMessage.NotSaved, state.message)
+        assertTrue(events.isEmpty())
+    }
+
     @Test
     fun `the snackbar taking the message clears it`() = runTest {
         groups.failures["tree"] = GroupFailure.Unexpected()

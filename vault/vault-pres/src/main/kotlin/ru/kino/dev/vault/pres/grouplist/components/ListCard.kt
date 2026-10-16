@@ -8,13 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,11 +23,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.core.pres.R
 
 /**
  * A card of the list - a group or an entry: an icon and a title. A tap opens it; a long press opens a menu -
@@ -94,27 +86,12 @@ internal fun ListCard(
         }
         // The menu is placed below its anchor, the card, and moved by the offset: up by the card's height and
         // down to the finger, so its top corner is where the press was. Near an edge it is kept on screen
-        DropdownMenu(
+        EditDeleteMenu(
             expanded = menu,
-            onDismissRequest = { menu = false },
+            onDismiss = { menu = false },
+            onEdit = onEdit,
+            onDelete = onDelete,
             offset = with(density) { DpOffset(pressedAt.x.toDp(), (pressedAt.y - cardHeight).toDp()) },
-        ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.vault_card_edit)) },
-                leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                onClick = {
-                    menu = false
-                    onEdit()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.vault_card_delete)) },
-                leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                onClick = {
-                    menu = false
-                    onDelete()
-                },
-            )
-        }
+        )
     }
 }

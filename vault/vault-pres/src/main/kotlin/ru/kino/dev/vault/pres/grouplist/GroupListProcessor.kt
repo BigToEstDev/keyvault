@@ -81,6 +81,9 @@ data class GroupListState(
 
     val isSearch: Boolean get() = query.isNotBlank()
 
+    /** The group shown here, once the tree is read; null at the root - the database, not a group. */
+    val current: Crumb? get() = if (isRoot) null else path.lastOrNull()
+
     val filtersOpen: Boolean get() = filterDraft != null
 
     /** Nothing in the list. */
@@ -244,6 +247,14 @@ class GroupListProcessor @AssistedInject constructor(
             }
 
             is GroupListAction.DeleteGroup -> state.groups.find { it.id == action.id }?.let { group ->
+                reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name)) }
+            }
+
+            GroupListAction.RenameCurrent -> state.current?.let { group ->
+                reduce { state.copy(dialog = GroupDialog.Rename(group.id, group.name)) }
+            }
+
+            GroupListAction.DeleteCurrent -> state.current?.let { group ->
                 reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name)) }
             }
 
@@ -420,7 +431,8 @@ class GroupListProcessor @AssistedInject constructor(
                 is GroupDialog.DeleteEntry -> entryEditor.delete(dbKey, dialog.entryId)
             }
             reduce { state.copy(dialog = null) }
-            load()
+            // This group is in the recycle bin now: nothing to show here, the screen goes to its parent
+            if (dialog.isDeleting(current)) openCrumb(state.path.lastIndex - 1) else load()
         } catch (failure: GroupFailure) {
             failed(failure)
         } catch (failure: EntryFailure) {
@@ -458,10 +470,13 @@ class GroupListProcessor @AssistedInject constructor(
 
             is GroupFailure.NameTaken -> reduce { state.copy(dialog = state.dialog?.refused(NameProblem.Taken)) }
 
-            // Made, but not in the file: the list shows the change, the snackbar says it is not written
+            // Made, but not in the file: the list shows the change, the snackbar says it is not written. This
+            // group deleted stays on screen: reading again would find it gone and go to the root, the snackbar
+            // with it - the error is shown here (pass-docs, Step 50, item 1)
             is GroupFailure.NotSaved -> {
+                val deletedHere = state.dialog?.isDeleting(state.path.lastOrNull()?.id) == true
                 reduce { state.copy(dialog = null, message = GroupListMessage.NotSaved) }
-                load()
+                if (!deletedHere) load()
             }
 
             // The group asked about is gone; reading the tree again shows what is there - or goes to the
@@ -495,6 +510,9 @@ class GroupListProcessor @AssistedInject constructor(
         val SEARCH_DELAY = 300.milliseconds
     }
 }
+
+/** The dialog deletes the group [groupId] - the one shown, when it is that one. */
+private fun GroupDialog.isDeleting(groupId: GroupId?): Boolean = this is GroupDialog.Delete && this.groupId == groupId
 
 private fun GroupDialog.typed(name: String): GroupDialog = when (this) {
     is GroupDialog.Create -> if (saving) this else copy(name = name, problem = null)

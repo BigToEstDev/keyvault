@@ -81,6 +81,8 @@ internal fun GroupListScreen(
                     onFilters = { processor.action(GroupListAction.OpenFilters) },
                     onBack = { processor.action(GroupListAction.Back) },
                     onCrumb = { processor.action(GroupListAction.OpenCrumb(it)) },
+                    onEditGroup = { processor.action(GroupListAction.RenameCurrent) },
+                    onDeleteGroup = { processor.action(GroupListAction.DeleteCurrent) },
                 )
             },
             // The fab is not in the scaffold (see below), so the snackbar is lifted over it here

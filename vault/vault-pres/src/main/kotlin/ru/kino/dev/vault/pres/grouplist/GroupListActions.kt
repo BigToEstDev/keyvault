@@ -54,6 +54,12 @@ sealed interface GroupListAction {
 
     data class DeleteGroup(val id: GroupId) : GroupListAction
 
+    /** "Edit" in the menu of the top bar: the group shown here, not one of its cards. */
+    data object RenameCurrent : GroupListAction
+
+    /** "Delete" in the menu of the top bar: the group shown here; deleted, the screen goes to its parent. */
+    data object DeleteCurrent : GroupListAction
+
     data class DialogNameChanged(val name: String) : GroupListAction
 
     data object DialogConfirm : GroupListAction
