@@ -9,17 +9,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -35,8 +31,8 @@ import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.SkeletonField
-import ru.kino.dev.ui.components.SkeletonText
 
 /*
  * What reading and editing an entry share: the screens are one layout - the same top bar, the same cards,
@@ -44,10 +40,8 @@ import ru.kino.dev.ui.components.SkeletonText
  */
 
 /**
- * "Back" and the [title] of the screen - one line, cut short with an ellipsis. With [skeleton] the title is
- * not known yet - a bar painted with it stands in, so the title does not flash in (pass-docs, Step 40, fix 13).
- * With [menu] - the three dots at the end and its items under them (pass-docs, Step 50, item 2); not
- * [menuEnabled] - while a change is under way.
+ * The [BackTopBar] of the entry screens. With [menu] - the three dots at the end and its items under them
+ * (pass-docs, Step 50, item 2); not [menuEnabled] - while a change is under way.
  */
 @Composable
 internal fun EntryTopBar(
@@ -58,37 +52,7 @@ internal fun EntryTopBar(
     menu: List<MenuItem> = emptyList(),
     menuEnabled: Boolean = true,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(horizontal = 8.dp, vertical = 8.dp)
-            .heightIn(min = 48.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
-        }
-        if (skeleton != null) {
-            SkeletonText(
-                brush = skeleton,
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 8.dp),
-            )
-        } else {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 8.dp),
-            )
-        }
+    BackTopBar(title = title, onBack = onBack, modifier = modifier, skeleton = skeleton) {
         if (menu.isNotEmpty()) {
             MoreMenuButton(
                 contentDescription = stringResource(R.string.entry_menu),
