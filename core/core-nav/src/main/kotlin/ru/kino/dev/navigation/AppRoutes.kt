@@ -26,3 +26,10 @@ data class LockedRoute(val dbKey: String)
 /** The root group of the open database - the first screen of `vault`. Its groups below are `vault`'s own. */
 @Serializable
 data class VaultRootRoute(val dbKey: String)
+
+/**
+ * The settings, from the main screen of `vault`. Inside the graph of `vault`: the database is open there, and
+ * the lock pops them with it. No dbKey yet - nothing on the screen needs the database (pass-docs, Step 52).
+ */
+@Serializable
+data object SettingsRoute

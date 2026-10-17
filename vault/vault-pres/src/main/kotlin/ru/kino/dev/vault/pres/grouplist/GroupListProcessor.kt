@@ -15,6 +15,7 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
@@ -227,6 +228,8 @@ class GroupListProcessor @AssistedInject constructor(
             }
 
             GroupListAction.CreateEntry -> createEntry()
+
+            GroupListAction.OpenSettings -> navigator.navigate(MviNavEvent.NavigateTo(SettingsRoute))
 
             is GroupListAction.OpenEntry -> {
                 clearSearch()

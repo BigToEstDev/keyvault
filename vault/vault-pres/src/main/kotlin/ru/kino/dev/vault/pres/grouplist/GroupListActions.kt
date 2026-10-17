@@ -44,6 +44,9 @@ sealed interface GroupListAction {
 
     data object CreateEntry : GroupListAction
 
+    /** The gear of the root: the settings (pass-docs, Step 52). */
+    data object OpenSettings : GroupListAction
+
     data class OpenEntry(val id: EntryId) : GroupListAction
 
     data class EditEntry(val id: EntryId) : GroupListAction

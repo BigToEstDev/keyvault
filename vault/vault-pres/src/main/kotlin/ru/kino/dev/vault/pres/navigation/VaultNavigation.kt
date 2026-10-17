@@ -16,8 +16,11 @@ import ru.kino.dev.vault.pres.presetcreate.PresetCreateScreen
 /**
  * The screens of `vault` - the database is open. Entered at its root, with its dbKey; every group below is
  * the same screen again, one place on the back stack per level.
+ *
+ * @param nested the screens of other modules that belong to the open database - the settings: inside this
+ * graph the lock pops them with `vault`, and `vault` does not depend on those modules (pass-docs, Step 52)
  */
-fun NavGraphBuilder.vaultGraph() {
+fun NavGraphBuilder.vaultGraph(nested: NavGraphBuilder.() -> Unit = {}) {
     navigation<VaultGraph>(startDestination = VaultRootRoute::class) {
         composable<VaultRootRoute> { entry ->
             GroupListScreen(dbKey = entry.toRoute<VaultRootRoute>().dbKey, groupId = null)
@@ -47,5 +50,6 @@ fun NavGraphBuilder.vaultGraph() {
             EntryEditScreen(dbKey = route.dbKey, groupId = null, entryId = route.entryId)
         }
         composable<PresetCreateRoute> { PresetCreateScreen() }
+        nested()
     }
 }

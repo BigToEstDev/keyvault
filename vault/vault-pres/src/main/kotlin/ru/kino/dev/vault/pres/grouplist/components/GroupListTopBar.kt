@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -34,7 +35,8 @@ import ru.kino.dev.vault.pres.common.editMenuItem
 import ru.kino.dev.vault.pres.grouplist.Crumb
 
 /**
- * The top of the list: at the root - the database, its entry count on a folder and its name; inside a group
+ * The top of the list: at the root - the database, its entry count on a folder and its name, and the gear of
+ * the settings at the end (pass-docs, Step 52); inside a group
  * - "back", the path from the database down to the group, a skeleton of it while the tree is read, and the
  * menu of the group - edit, delete - once it is read (pass-docs, Step 50, item 1). Under
  * either, the search field and the filter button to the right of it - in the accent, with a dot over it,
@@ -52,6 +54,7 @@ internal fun GroupListTopBar(
     filterOn: Boolean,
     onQueryChange: (String) -> Unit,
     onFilters: () -> Unit,
+    onSettings: () -> Unit,
     onBack: () -> Unit,
     onCrumb: (index: Int) -> Unit,
     onEditGroup: () -> Unit,
@@ -100,8 +103,13 @@ internal fun GroupListTopBar(
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(start = 16.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 16.dp),
                 )
+                IconButton(onClick = onSettings) {
+                    Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.vault_settings))
+                }
             }
         }
         Row(

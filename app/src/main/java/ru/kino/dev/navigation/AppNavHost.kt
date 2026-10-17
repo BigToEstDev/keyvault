@@ -20,6 +20,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import ru.kino.dev.settings.pres.navigation.settingsGraph
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.pres.navigation.vaultGraph
 import ru.kino.dev.welcome.pres.navigation.welcomeGraph
@@ -76,7 +77,7 @@ fun AppNavHost(navigator: Navigator, autoLock: AutoLock, start: WelcomeStart) {
             popExitTransition = { slideOutOfContainer(direction(pop = true), tween(SLIDE_MILLIS)) },
         ) {
             welcomeGraph(navController, start)
-            vaultGraph()
+            vaultGraph { settingsGraph() }
         }
         // While the lock is on its way `vault` is not to be seen - the locked screen is, once it is up
         if (covering && current?.isInVault() == true) {

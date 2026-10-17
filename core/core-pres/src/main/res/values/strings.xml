@@ -108,6 +108,7 @@
 
     <!-- vault: groups -->
     <string name="vault_search">Search</string>
+    <string name="vault_settings">Settings</string>
     <string name="vault_filters">Filters</string>
     <string name="vault_filters_on">Filters are on</string>
     <string name="vault_filter_visibility">Show</string>
@@ -217,4 +218,7 @@
     <string name="entry_not_saved_title">The file was not written</string>
     <string name="entry_not_saved_text">The entry is changed, but the database file was not written. It is written with the next change you save.</string>
     <string name="entry_message_load_failed">Could not read the entry</string>
+
+    <!-- settings -->
+    <string name="settings_title">Settings</string>
 </resources>
