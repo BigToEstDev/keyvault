@@ -27,7 +27,7 @@ internal fun PresetCreateDialogs(
             value = dialog.name,
             onValueChange = onNameChange,
             label = stringResource(R.string.entry_field_name),
-            confirmText = stringResource(R.string.entry_add_field_confirm),
+            confirmText = stringResource(R.string.action_add),
             dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
@@ -49,7 +49,7 @@ internal fun PresetCreateDialogs(
         is PresetCreateDialog.DeleteField -> ConfirmDialog(
             title = stringResource(R.string.entry_delete_field_title),
             text = stringResource(R.string.entry_delete_field_text, dialog.name),
-            confirmText = stringResource(R.string.entry_field_delete),
+            confirmText = stringResource(R.string.action_delete),
             dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
@@ -59,7 +59,7 @@ internal fun PresetCreateDialogs(
         is PresetCreateDialog.DeleteCard -> ConfirmDialog(
             title = stringResource(R.string.preset_delete_card_title),
             text = stringResource(R.string.preset_delete_card_text),
-            confirmText = stringResource(R.string.entry_field_delete),
+            confirmText = stringResource(R.string.action_delete),
             dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,

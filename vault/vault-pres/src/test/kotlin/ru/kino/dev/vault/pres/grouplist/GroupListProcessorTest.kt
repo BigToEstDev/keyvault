@@ -15,6 +15,7 @@ import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entry.EntryEditor
@@ -624,6 +625,13 @@ class GroupListProcessorTest {
         )
 
         assertFalse(state.fabExpanded)
+    }
+
+    @Test
+    fun `the gear opens the settings`() = runTest {
+        val (_, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenSettings)
+
+        assertEquals(listOf(MviNavEvent.NavigateTo(SettingsRoute)), events)
     }
 
     @Test

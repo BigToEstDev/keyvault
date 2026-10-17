@@ -56,8 +56,8 @@ internal fun FilterDialog(
                 enabled = !saving,
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                PrimaryButton(text = stringResource(R.string.vault_filter_apply), onClick = onApply, loading = saving)
-                SecondaryButton(text = stringResource(R.string.vault_filter_reset), onClick = onReset, enabled = !saving)
+                PrimaryButton(text = stringResource(R.string.action_apply), onClick = onApply, loading = saving)
+                SecondaryButton(text = stringResource(R.string.action_reset), onClick = onReset, enabled = !saving)
             }
         }
     }

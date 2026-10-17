@@ -28,12 +28,12 @@ internal data class MenuItem(val text: String, val icon: ImageVector, val onClic
 /** "Edit" - a group or an entry. */
 @Composable
 internal fun editMenuItem(onClick: () -> Unit) =
-    MenuItem(stringResource(R.string.vault_card_edit), Icons.Filled.Edit, onClick)
+    MenuItem(stringResource(R.string.action_edit), Icons.Filled.Edit, onClick)
 
 /** "Delete" - a group or an entry. */
 @Composable
 internal fun deleteMenuItem(onClick: () -> Unit) =
-    MenuItem(stringResource(R.string.vault_card_delete), Icons.Filled.Delete, onClick)
+    MenuItem(stringResource(R.string.action_delete), Icons.Filled.Delete, onClick)
 
 /** "History" - the old versions of an entry (pass-docs, Step 51, item 3). */
 @Composable

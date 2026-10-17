@@ -45,4 +45,5 @@ dependencies {
     implementation(projects.vault.vaultData)
     implementation(projects.welcome.welcomePres)
     implementation(projects.vault.vaultPres)
+    implementation(projects.settings.settingsPres)
 }

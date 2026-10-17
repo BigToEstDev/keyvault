@@ -79,6 +79,7 @@ internal fun GroupListScreen(
                     filterOn = !state.filter.isDefault,
                     onQueryChange = { processor.action(GroupListAction.QueryChanged(it)) },
                     onFilters = { processor.action(GroupListAction.OpenFilters) },
+                    onSettings = { processor.action(GroupListAction.OpenSettings) },
                     onBack = { processor.action(GroupListAction.Back) },
                     onCrumb = { processor.action(GroupListAction.OpenCrumb(it)) },
                     onEditGroup = { processor.action(GroupListAction.RenameCurrent) },
@@ -154,7 +155,7 @@ private fun FabDismissLayer(onDismiss: () -> Unit) {
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClickLabel = stringResource(R.string.fab_close),
+                onClickLabel = stringResource(R.string.action_close),
                 onClick = onDismiss,
             ),
     )

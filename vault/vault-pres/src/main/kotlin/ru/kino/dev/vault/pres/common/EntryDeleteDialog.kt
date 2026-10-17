@@ -17,7 +17,7 @@ internal fun EntryDeleteDialog(title: String, deleting: Boolean, onConfirm: () -
     ConfirmDialog(
         title = stringResource(R.string.entry_delete_title),
         text = stringResource(R.string.entry_delete_text, title.ifEmpty { stringResource(R.string.entry_untitled) }),
-        confirmText = stringResource(R.string.group_delete_confirm),
+        confirmText = stringResource(R.string.action_delete),
         dismissText = stringResource(R.string.action_cancel),
         onConfirm = onConfirm,
         onDismiss = onDismiss,

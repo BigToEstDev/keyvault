@@ -52,7 +52,7 @@ internal fun GroupDialogs(
         is GroupDialog.Delete -> ConfirmDialog(
             title = stringResource(R.string.group_delete_title),
             text = stringResource(R.string.group_delete_text, dialog.name),
-            confirmText = stringResource(R.string.group_delete_confirm),
+            confirmText = stringResource(R.string.action_delete),
             dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
@@ -77,7 +77,7 @@ private fun NameDialog(
         value = name,
         onValueChange = onNameChange,
         label = stringResource(R.string.group_dialog_name),
-        confirmText = stringResource(R.string.group_dialog_save),
+        confirmText = stringResource(R.string.action_save),
         dismissText = stringResource(R.string.action_cancel),
         onConfirm = onConfirm,
         onDismiss = onDismiss,

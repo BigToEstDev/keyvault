@@ -24,7 +24,7 @@ internal fun EntryHistoryDialogs(dialog: EntryHistoryDialog?, onConfirm: () -> U
         is EntryHistoryDialog.Delete -> ConfirmDialog(
             title = stringResource(R.string.history_delete_title),
             text = stringResource(R.string.history_delete_text, entryTimeText(dialog.modified)),
-            confirmText = stringResource(R.string.group_delete_confirm),
+            confirmText = stringResource(R.string.action_delete),
             dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
@@ -35,7 +35,7 @@ internal fun EntryHistoryDialogs(dialog: EntryHistoryDialog?, onConfirm: () -> U
         is EntryHistoryDialog.DeleteAll -> ConfirmDialog(
             title = stringResource(R.string.history_delete_all_title),
             text = stringResource(R.string.history_delete_all_text),
-            confirmText = stringResource(R.string.group_delete_confirm),
+            confirmText = stringResource(R.string.action_delete),
             dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
