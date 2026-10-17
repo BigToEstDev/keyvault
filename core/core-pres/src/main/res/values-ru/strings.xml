@@ -4,7 +4,6 @@
     <string name="password_show">Показать пароль</string>
     <string name="password_hide">Скрыть пароль</string>
     <string name="field_error_show">Показать ошибку</string>
-    <string name="copy_value">Копировать</string>
     <string name="copied">Скопировано</string>
 
     <!-- Common actions -->
@@ -14,6 +13,14 @@
     <string name="action_save">Сохранить</string>
     <string name="action_ok">ОК</string>
     <string name="action_next">Далее</string>
+    <string name="action_back">Назад</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_edit">Редактировать</string>
+    <string name="action_rename">Переименовать</string>
+    <string name="action_add">Добавить</string>
+    <string name="action_apply">Применить</string>
+    <string name="action_reset">Сбросить</string>
+    <string name="action_copy">Копировать</string>
     <string name="action_pick_another_file">Выбрать другой файл</string>
     <string name="action_pick_another_key_file">Выбрать другой key-файл</string>
 
@@ -100,8 +107,6 @@
     <string name="biometric_notice_failed">Не удалось войти по биометрии — войдите паролем</string>
 
     <!-- vault -->
-    <string name="fab_open">Добавить</string>
-    <string name="fab_close">Закрыть</string>
     <string name="search_clear">Очистить поиск</string>
 
     <string name="vault_search">Поиск</string>
@@ -114,20 +119,16 @@
     <string name="vault_filter_order">Сортировка записей по дате создания</string>
     <string name="vault_filter_newest_first">Сначала новые</string>
     <string name="vault_filter_oldest_first">Сначала старые</string>
-    <string name="vault_filter_apply">Применить</string>
-    <string name="vault_filter_reset">Сбросить</string>
     <string name="vault_search_nothing_found">По запросу «%1$s» ничего не найдено</string>
     <string name="vault_search_hint_fields">Ищем по названию и пользователю</string>
     <string name="vault_search_check_spelling">Проверьте написание</string>
     <string name="vault_search_check_spelling_and_filter">Проверьте написание и фильтр</string>
     <string name="vault_filter_no_groups">Нет групп</string>
     <string name="vault_filter_no_entries">Нет записей</string>
-    <string name="vault_back">Назад</string>
     <string name="vault_group_empty">Здесь пока ничего нет</string>
     <string name="vault_empty_hint">Нажмите +, чтобы добавить запись</string>
     <string name="vault_create_group">Создать группу</string>
     <string name="vault_create_entry">Создать запись</string>
-    <string name="vault_card_edit">Редактировать</string>
     <string name="vault_group_menu">Действия с группой</string>
     <string name="entry_menu">Действия с записью</string>
     <string name="entry_history">История</string>
@@ -142,12 +143,10 @@
     <string name="history_delete_all">Удалить историю</string>
     <string name="history_delete_all_title">Удалить историю?</string>
     <string name="history_delete_all_text">Все версии записи удалятся. Дата создания останется.</string>
-    <string name="vault_card_delete">Удалить</string>
     <string name="vault_debug_lock">Заблокировать (debug)</string>
     <string name="group_dialog_create_title">Новая группа</string>
     <string name="group_dialog_rename_title">Переименовать группу</string>
     <string name="group_dialog_name">Название</string>
-    <string name="group_dialog_save">Сохранить</string>
     <string name="group_name_empty">Введите название</string>
     <plurals name="group_name_too_long">
         <item quantity="one">Не длиннее %1$d символа</item>
@@ -158,7 +157,6 @@
     <string name="group_name_taken">Группа с таким названием уже есть</string>
     <string name="group_delete_title">Удалить группу?</string>
     <string name="group_delete_text">«%1$s» и всё, что в ней, попадёт в корзину.</string>
-    <string name="group_delete_confirm">Удалить</string>
     <string name="vault_message_not_saved">Изменение сделано, но файл не записан</string>
     <string name="vault_message_load_failed">Не удалось прочитать группу</string>
     <string name="vault_message_search_failed">Не удалось выполнить поиск</string>
@@ -211,11 +209,8 @@
     <string name="entry_field_name_empty">Введите название</string>
     <string name="entry_field_name_taken">В записи уже есть поле с таким названием</string>
     <string name="entry_field_menu">Действия с полем</string>
-    <string name="entry_field_rename">Переименовать</string>
-    <string name="entry_field_delete">Удалить</string>
     <string name="entry_add_field">+ Добавить поле</string>
     <string name="entry_add_field_title">Новое поле</string>
-    <string name="entry_add_field_confirm">Добавить</string>
     <string name="entry_rename_field_title">Переименовать поле</string>
     <string name="entry_delete_field_title">Удалить поле?</string>
     <string name="entry_delete_field_text">«%1$s» и его значение будут удалены из записи.</string>

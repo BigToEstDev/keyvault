@@ -57,6 +57,6 @@ fun rememberSensitiveClipboard(): SensitiveClipboard {
 @Composable
 fun CopyButton(onCopy: () -> Unit, enabled: Boolean = true) {
     IconButton(onClick = onCopy, enabled = enabled) {
-        Icon(imageVector = Icons.Filled.ContentCopy, contentDescription = stringResource(R.string.copy_value))
+        Icon(imageVector = Icons.Filled.ContentCopy, contentDescription = stringResource(R.string.action_copy))
     }
 }

@@ -44,7 +44,7 @@ internal fun FieldMenuButton(enabled: Boolean, onRename: () -> Unit, onDelete: (
         }
         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.entry_field_rename)) },
+                text = { Text(stringResource(R.string.action_rename)) },
                 leadingIcon = { Icon(Icons.Filled.DriveFileRenameOutline, contentDescription = null) },
                 onClick = {
                     menu = false
@@ -52,7 +52,7 @@ internal fun FieldMenuButton(enabled: Boolean, onRename: () -> Unit, onDelete: (
                 },
             )
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.entry_field_delete)) },
+                text = { Text(stringResource(R.string.action_delete)) },
                 leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
                 onClick = {
                     menu = false

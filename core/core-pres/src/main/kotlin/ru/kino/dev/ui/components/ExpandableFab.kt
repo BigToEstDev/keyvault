@@ -70,7 +70,7 @@ fun ExpandableFab(
         FloatingActionButton(onClick = onToggle) {
             Icon(
                 imageVector = Icons.Filled.Add,
-                contentDescription = stringResource(if (expanded) R.string.fab_close else R.string.fab_open),
+                contentDescription = stringResource(if (expanded) R.string.action_close else R.string.action_add),
                 modifier = Modifier.rotate(rotation),
             )
         }

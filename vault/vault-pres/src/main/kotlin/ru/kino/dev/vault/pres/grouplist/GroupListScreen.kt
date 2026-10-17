@@ -154,7 +154,7 @@ private fun FabDismissLayer(onDismiss: () -> Unit) {
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClickLabel = stringResource(R.string.fab_close),
+                onClickLabel = stringResource(R.string.action_close),
                 onClick = onDismiss,
             ),
     )

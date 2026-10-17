@@ -5,7 +5,6 @@
     <string name="password_show">Show password</string>
     <string name="password_hide">Hide password</string>
     <string name="field_error_show">Show error</string>
-    <string name="copy_value">Copy</string>
     <string name="copied">Copied</string>
 
     <!-- Common actions -->
@@ -15,6 +14,14 @@
     <string name="action_save">Save</string>
     <string name="action_ok">OK</string>
     <string name="action_next">Next</string>
+    <string name="action_back">Back</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_add">Add</string>
+    <string name="action_apply">Apply</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_copy">Copy</string>
     <string name="action_pick_another_file">Choose another file</string>
     <string name="action_pick_another_key_file">Choose another key file</string>
 
@@ -97,8 +104,6 @@
     <string name="biometric_notice_failed">Could not sign in with biometrics - use the password</string>
 
     <!-- Components -->
-    <string name="fab_open">Add</string>
-    <string name="fab_close">Close</string>
     <string name="search_clear">Clear search</string>
 
     <!-- vault: groups -->
@@ -112,8 +117,6 @@
     <string name="vault_filter_order">Entries by creation date</string>
     <string name="vault_filter_newest_first">Newest first</string>
     <string name="vault_filter_oldest_first">Oldest first</string>
-    <string name="vault_filter_apply">Apply</string>
-    <string name="vault_filter_reset">Reset</string>
     <string name="vault_search_nothing_found">Nothing found for “%1$s”</string>
     <string name="vault_search_hint_fields">We search titles and user names</string>
     <string name="vault_search_check_spelling">Check the spelling</string>
@@ -121,12 +124,10 @@
     <string name="vault_location_separator" translatable="false">" › "</string>
     <string name="vault_filter_no_groups">No groups</string>
     <string name="vault_filter_no_entries">No entries</string>
-    <string name="vault_back">Back</string>
     <string name="vault_group_empty">Nothing here yet</string>
     <string name="vault_empty_hint">Tap + to add an entry</string>
     <string name="vault_create_group">Create group</string>
     <string name="vault_create_entry">Create entry</string>
-    <string name="vault_card_edit">Edit</string>
     <string name="vault_group_menu">Group actions</string>
     <string name="entry_menu">Entry actions</string>
     <string name="entry_history">History</string>
@@ -141,12 +142,10 @@
     <string name="history_delete_all">Delete history</string>
     <string name="history_delete_all_title">Delete the history?</string>
     <string name="history_delete_all_text">Every version of the entry will be deleted. The creation date stays.</string>
-    <string name="vault_card_delete">Delete</string>
     <string name="vault_debug_lock">Lock (debug)</string>
     <string name="group_dialog_create_title">New group</string>
     <string name="group_dialog_rename_title">Rename group</string>
     <string name="group_dialog_name">Name</string>
-    <string name="group_dialog_save">Save</string>
     <string name="group_name_empty">Enter a name</string>
     <plurals name="group_name_too_long">
         <item quantity="one">No longer than %1$d character</item>
@@ -155,7 +154,6 @@
     <string name="group_name_taken">A group with this name is already here</string>
     <string name="group_delete_title">Delete the group?</string>
     <string name="group_delete_text">«%1$s» and everything in it goes to the recycle bin.</string>
-    <string name="group_delete_confirm">Delete</string>
     <string name="vault_message_not_saved">The change is made, but the file was not written</string>
     <string name="vault_message_load_failed">Could not read the group</string>
     <string name="vault_message_search_failed">Could not search</string>
@@ -205,11 +203,8 @@
     <string name="entry_field_name_empty">Enter a name</string>
     <string name="entry_field_name_taken">The entry already has a field with this name</string>
     <string name="entry_field_menu">Field actions</string>
-    <string name="entry_field_rename">Rename</string>
-    <string name="entry_field_delete">Delete</string>
     <string name="entry_add_field">+ Add field</string>
     <string name="entry_add_field_title">New field</string>
-    <string name="entry_add_field_confirm">Add</string>
     <string name="entry_rename_field_title">Rename field</string>
     <string name="entry_delete_field_title">Delete the field?</string>
     <string name="entry_delete_field_text">«%1$s» and its value leave the entry.</string>

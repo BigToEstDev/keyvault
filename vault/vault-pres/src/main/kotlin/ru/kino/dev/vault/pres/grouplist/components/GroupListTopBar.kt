@@ -76,7 +76,7 @@ internal fun GroupListTopBar(
         ) {
             if (!isRoot) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.vault_back))
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                 }
                 if (path.isEmpty()) {
                     // The tree is not read yet: a skeleton for the path, so it does not flash in
