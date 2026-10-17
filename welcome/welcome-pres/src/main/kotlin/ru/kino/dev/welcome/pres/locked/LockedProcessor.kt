@@ -158,8 +158,9 @@ class LockedProcessor @AssistedInject constructor(
         reduce { state.copy(entry = entry.copy(busy = true, problem = null, biometricNotice = null)) }
         try {
             database.unlock(dbKey, password, entry.keyFileUri)
-            reduce { state.copy(entry = PasswordEntry()) }
-            // `vault` was popped by the lock: it starts again at the root (pass-docs, Step 46)
+            // The screen stays as it is, waiting, until it is gone; what was typed goes with the processor - the
+            // locked screen is popped. `vault` was popped by the lock: it starts again at the root (pass-docs,
+            // Step 46; Step 40, fix 20)
             navigator.navigate(
                 MviNavEvent.NavigateTo(VaultRootRoute(dbKey), popUpTo = LockedRoute(dbKey), inclusive = true),
             )

@@ -47,7 +47,8 @@ fun AppNavHost(navigator: Navigator, autoLock: AutoLock, start: WelcomeStart) {
     }
 
     // Locked: the locked screen with nothing under it - `vault` is popped whole, its screens and what they
-    // hold go, and unlocking starts at the root (pass-docs, Step 46)
+    // hold go, and unlocking starts at the root (pass-docs, Step 46). Not single top: every lock is a new
+    // locked screen with a new processor, nothing typed for the one before (pass-docs, Step 40, fix 20)
     LaunchedEffect(autoLock) {
         autoLock.locked.collect { dbKey ->
             navController.handle(MviNavEvent.NavigateTo(LockedRoute(dbKey), popUpTo = VaultGraph, inclusive = true))

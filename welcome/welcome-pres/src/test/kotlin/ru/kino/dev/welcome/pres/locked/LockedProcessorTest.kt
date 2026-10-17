@@ -66,6 +66,21 @@ class LockedProcessorTest {
     }
 
     @Test
+    fun `unlocked, the screen stays waiting as it was until it is gone - not wiped for the slide`() = runTest {
+        val (processor, events) = processor()
+        val typed = lockedState().let { it.copy(entry = it.entry.copy(password = "pw", biometricOn = true)) }
+
+        processor.testWithInternalState(this, typed) {
+            containerHost.action(LockedAction.Submit).join()
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            cancelAndIgnoreRemainingItems()
+        }
+
+        assertEquals(typed.copy(entry = typed.entry.copy(busy = true)), processor.container.stateFlow.value)
+        assertEquals(listOf(TO_VAULT_ROOT), events)
+    }
+
+    @Test
     fun `an unreachable key file is answered under the key file, and another one is unlocked with`() = runTest {
         database.failure = WelcomeFailure.FileUnreachable(PickedFile.KeyFile)
         val (processor, events) = processor()
