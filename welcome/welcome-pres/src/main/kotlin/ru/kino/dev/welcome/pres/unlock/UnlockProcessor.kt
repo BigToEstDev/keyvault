@@ -234,8 +234,9 @@ class UnlockProcessor @AssistedInject constructor(
         reduce { state.copy(entry = entry.copy(busy = true, problem = null, biometricNotice = null)) }
         try {
             val dbKey = database.open(uri, password, entry.keyFileUri)
-            // Nothing typed stays behind, though the screen is about to go
-            reduce { state.copy(entry = PasswordEntry()) }
+            // The screen stays as it is, waiting, until it is gone: wiped, it would show itself unopened for the
+            // slide into `vault`. What was typed goes with the processor - the graph is popped whole
+            // (pass-docs, Step 40, fix 20)
             navigator.navigate(
                 MviNavEvent.NavigateTo(VaultRootRoute(dbKey), popUpTo = WelcomeGraph, inclusive = true),
             )

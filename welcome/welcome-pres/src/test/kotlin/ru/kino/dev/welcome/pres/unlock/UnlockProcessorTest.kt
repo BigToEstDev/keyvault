@@ -94,6 +94,24 @@ class UnlockProcessorTest {
     }
 
     @Test
+    fun `opened, the screen stays waiting as it was until it is gone - not wiped for the slide`() = runTest {
+        val (processor, events) = processor()
+        val typed = biometricState().let { it.copy(entry = it.entry.copy(password = "pw")) }
+
+        processor.testWithInternalState(this, typed) {
+            containerHost.action(UnlockAction.Submit).join()
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            cancelAndIgnoreRemainingItems()
+        }
+
+        assertEquals(typed.copy(entry = typed.entry.copy(busy = true)), processor.container.stateFlow.value)
+        assertEquals(
+            listOf(MviNavEvent.NavigateTo(VaultRootRoute(DB), popUpTo = WelcomeGraph, inclusive = true)),
+            events,
+        )
+    }
+
+    @Test
     fun `while opening the screen waits, and a second submit starts nothing`() = runTest {
         val gate = CompletableDeferred<Unit>()
         database.gate = gate
