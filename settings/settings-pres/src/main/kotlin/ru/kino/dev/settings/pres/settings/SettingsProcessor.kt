@@ -7,9 +7,10 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.settings.pres.navigation.route
 import javax.inject.Inject
 
-/** No data yet: the cards are fixed, the settings behind them come in the next items (pass-docs, Step 54). */
+/** No data: the cards are fixed, the screens behind them come one by one (pass-docs, Step 55). */
 data object SettingsState
 
 /**
@@ -26,6 +27,8 @@ class SettingsProcessor @Inject constructor(
     fun action(action: SettingsAction): Job = intent {
         when (action) {
             SettingsAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
+
+            is SettingsAction.Open -> action.item.route?.let { navigator.navigate(MviNavEvent.NavigateTo(it)) }
         }
     }
 }

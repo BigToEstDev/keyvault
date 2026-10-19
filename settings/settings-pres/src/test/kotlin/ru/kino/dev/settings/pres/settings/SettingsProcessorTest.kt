@@ -9,6 +9,7 @@ import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.settings.pres.navigation.AppearanceRoute
 
 class SettingsProcessorTest {
 
@@ -24,5 +25,33 @@ class SettingsProcessorTest {
         }
 
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `a card with a screen behind it opens the screen`() = runTest {
+        val navigator = Navigator()
+        val events = mutableListOf<MviNavEvent>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
+
+        SettingsProcessor(navigator).testWithInternalState(this) {
+            containerHost.action(SettingsAction.Open(SettingsItem.Appearance)).join()
+        }
+
+        assertEquals(listOf(MviNavEvent.NavigateTo(AppearanceRoute)), events)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `a card with no screen made yet opens nothing`() = runTest {
+        val navigator = Navigator()
+        val events = mutableListOf<MviNavEvent>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
+
+        SettingsProcessor(navigator).testWithInternalState(this) {
+            containerHost.action(SettingsAction.Open(SettingsItem.Security)).join()
+        }
+
+        assertEquals(emptyList<MviNavEvent>(), events)
     }
 }

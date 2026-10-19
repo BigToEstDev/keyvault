@@ -14,13 +14,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import ru.kino.dev.core.pres.R
 
 /** Where a setting is kept: on this device, or in the database file - the two sections of the screen. */
-internal enum class SettingsSection(@param:StringRes val title: Int, @param:StringRes val hint: Int) {
+enum class SettingsSection(@param:StringRes val title: Int, @param:StringRes val hint: Int) {
     App(R.string.settings_section_app, R.string.settings_section_app_hint),
     Database(R.string.settings_section_database, R.string.settings_section_database_hint),
 }
 
 /** A card of the settings screen, in the order of the screen (pass-docs, `settings/settings.md`). */
-internal enum class SettingsItem(
+enum class SettingsItem(
     val section: SettingsSection,
     val icon: ImageVector,
     @param:StringRes val title: Int,
