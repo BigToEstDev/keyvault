@@ -6,6 +6,7 @@ plugins {
 dependencies {
     implementation(projects.core.corePres)
     implementation(projects.core.coreNav)
+    implementation(projects.settings.settingsDomain)
 
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)

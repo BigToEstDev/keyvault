@@ -248,4 +248,10 @@
     <string name="settings_security">Безопасность</string>
     <string name="settings_security_text">Пароль, key-файл, шифрование</string>
     <string name="settings_about">О приложении</string>
+    <string name="settings_theme">Тема</string>
+    <string name="settings_theme_mode">Режим</string>
+    <string name="settings_theme_system">Системная</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_message_not_saved">Настройка не сохранилась</string>
 </resources>

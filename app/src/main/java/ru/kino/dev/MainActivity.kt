@@ -1,10 +1,14 @@
 package ru.kino.dev
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.WindowManager
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
@@ -12,6 +16,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import ru.kino.dev.navigation.AppNavHost
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.settings.appearance.ThemeMode
+import ru.kino.dev.settings.pres.theme.AppThemeHolder
 import ru.kino.dev.ui.theme.KeyVaultTheme
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.welcome.pres.start.WelcomeStartResolver
@@ -32,10 +38,15 @@ class MainActivity : FragmentActivity() {
 
     private val startResolver: WelcomeStartResolver by viewModels()
 
+    private val theme: AppThemeHolder by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super: the splash replaces the launch theme. It stays up until the start route is known -
-        // reading the remembered database takes a moment, and there is nothing to show before it
-        installSplashScreen().setKeepOnScreenCondition { startResolver.start.value == null }
+        // reading the remembered database takes a moment, and there is nothing to show before it - and the
+        // mode of the theme, so the app does not flash in the other one (pass-docs, Step 55)
+        installSplashScreen().setKeepOnScreenCondition {
+            startResolver.start.value == null || theme.themeMode.value == null
+        }
         super.onCreate(savedInstanceState)
 
         // The whole app, not a screen: there are more screens with secrets than without, and a switch in
@@ -47,11 +58,28 @@ class MainActivity : FragmentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            KeyVaultTheme {
+            val mode by theme.themeMode.collectAsStateWithLifecycle()
+            val darkTheme = when (mode ?: return@setContent) {
+                ThemeMode.System -> isSystemInDarkTheme()
+                ThemeMode.Light -> false
+                ThemeMode.Dark -> true
+            }
+            // The icons of the system bars follow the theme of the app, not the system's
+            LaunchedEffect(darkTheme) { systemBars(darkTheme) }
+
+            KeyVaultTheme(darkTheme = darkTheme) {
                 val start by startResolver.start.collectAsStateWithLifecycle()
                 start?.let { AppNavHost(navigator = navigator, autoLock = autoLock, start = it) }
             }
         }
+    }
+
+    // The scrims are the defaults of `enableEdgeToEdge`: only how dark the theme is decided here
+    private fun systemBars(darkTheme: Boolean) {
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { darkTheme },
+            navigationBarStyle = SystemBarStyle.auto(LIGHT_SCRIM, DARK_SCRIM) { darkTheme },
+        )
     }
 
     // Before the first frame after coming back: a timer slept through in the background locks now, and
@@ -66,5 +94,11 @@ class MainActivity : FragmentActivity() {
     override fun onUserInteraction() {
         super.onUserInteraction()
         autoLock.touched()
+    }
+
+    private companion object {
+        // The scrims `enableEdgeToEdge` puts under three-button navigation by default
+        val LIGHT_SCRIM = Color.argb(0xe6, 0xFF, 0xFF, 0xFF)
+        val DARK_SCRIM = Color.argb(0x80, 0x1b, 0x1b, 0x1b)
     }
 }

@@ -43,7 +43,10 @@ dependencies {
     // Feature data modules: nothing here calls them, but Hilt only sees the bindings of what the app depends on
     implementation(projects.welcome.welcomeData)
     implementation(projects.vault.vaultData)
+    implementation(projects.settings.settingsData)
     implementation(projects.welcome.welcomePres)
     implementation(projects.vault.vaultPres)
     implementation(projects.settings.settingsPres)
+    // The theme of the whole app is a setting: the activity reads it
+    implementation(projects.settings.settingsDomain)
 }

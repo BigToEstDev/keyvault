@@ -19,7 +19,8 @@ import androidx.compose.ui.unit.dp
 
 /**
  * A card of the settings screen: an icon, the [title], what is inside in [text] - when there is one - and an
- * arrow. Not clickable yet - the screens behind come in the next items (pass-docs, Step 54).
+ * arrow. A tap opens the screen behind it with [onClick]; without one the card does not take taps - the
+ * screen is not made yet (pass-docs, Step 55).
  */
 @Composable
 internal fun SettingsCard(
@@ -27,41 +28,49 @@ internal fun SettingsCard(
     title: String,
     modifier: Modifier = Modifier,
     text: String? = null,
+    onClick: (() -> Unit)? = null,
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Row(
+    if (onClick != null) {
+        Card(onClick = onClick, modifier = modifier.fillMaxWidth()) { CardContent(icon, title, text) }
+    } else {
+        Card(modifier = modifier.fillMaxWidth()) { CardContent(icon, title, text) }
+    }
+}
+
+@Composable
+private fun CardContent(icon: ImageVector, title: String, text: String?) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null)
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .weight(1f)
+                .padding(horizontal = 24.dp),
         ) {
-            Icon(icon, contentDescription = null)
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 24.dp),
-            ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (text != null) {
                 Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 1,
+                    text = text,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (text != null) {
-                    Text(
-                        text = text,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
             }
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
