@@ -9,7 +9,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import javax.inject.Inject
 
-/** Nothing on the screen yet: the settings come in the next steps (pass-docs, Step 52). */
+/** No data yet: the cards are fixed, the settings behind them come in the next items (pass-docs, Step 54). */
 data object SettingsState
 
 /**

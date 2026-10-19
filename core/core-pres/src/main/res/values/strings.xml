@@ -221,4 +221,25 @@
 
     <!-- settings -->
     <string name="settings_title">Settings</string>
+    <string name="settings_section_app">App</string>
+    <string name="settings_section_app_hint">Stored on this device</string>
+    <string name="settings_section_database">Database</string>
+    <string name="settings_section_database_hint">Stored in the database file</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_appearance_text">Theme, language, entry view</string>
+    <string name="settings_lock">Lock and unlock</string>
+    <string name="settings_lock_text">Auto-lock, biometrics</string>
+    <string name="settings_privacy">Data protection</string>
+    <string name="settings_privacy_text">Screenshots</string>
+    <string name="settings_presets">Presets</string>
+    <string name="settings_presets_text">Your entry presets</string>
+    <string name="settings_file">Database file</string>
+    <string name="settings_file_text">Name, format</string>
+    <string name="settings_entries">Entries</string>
+    <string name="settings_entries_text">Hidden fields, history</string>
+    <string name="settings_recycle_bin">Recycle bin</string>
+    <string name="settings_recycle_bin_text">Deleted groups and entries</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_security_text">Password, key file, encryption</string>
+    <string name="settings_about">About</string>
 </resources>
