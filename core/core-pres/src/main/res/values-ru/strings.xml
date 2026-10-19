@@ -227,4 +227,25 @@
 
     <!-- settings -->
     <string name="settings_title">Настройки</string>
+    <string name="settings_section_app">Приложение</string>
+    <string name="settings_section_app_hint">Хранится на устройстве</string>
+    <string name="settings_section_database">База</string>
+    <string name="settings_section_database_hint">Хранится в файле базы</string>
+    <string name="settings_appearance">Внешний вид</string>
+    <string name="settings_appearance_text">Тема, язык, вид записей</string>
+    <string name="settings_lock">Блокировка и вход</string>
+    <string name="settings_lock_text">Автоблокировка, биометрия</string>
+    <string name="settings_privacy">Защита данных</string>
+    <string name="settings_privacy_text">Снимки экрана</string>
+    <string name="settings_presets">Пресеты</string>
+    <string name="settings_presets_text">Свои пресеты записей</string>
+    <string name="settings_file">Файл базы</string>
+    <string name="settings_file_text">Название, формат</string>
+    <string name="settings_entries">Записи</string>
+    <string name="settings_entries_text">Скрытые поля, история</string>
+    <string name="settings_recycle_bin">Корзина</string>
+    <string name="settings_recycle_bin_text">Удалённые группы и записи</string>
+    <string name="settings_security">Безопасность</string>
+    <string name="settings_security_text">Пароль, key-файл, шифрование</string>
+    <string name="settings_about">О приложении</string>
 </resources>
