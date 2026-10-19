@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.Card
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -22,13 +24,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.settings.appearance.ThemeMode
+import ru.kino.dev.settings.pres.settings.components.SettingsCard
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.RadioGroup
 import ru.kino.dev.ui.components.SnackbarMessage
 
-/** How the app looks: the group "Theme" with its "Mode" (pass-docs, Step 55). */
+/** How the app looks: the group "Theme" - the theme of the app and the color theme to come (pass-docs, Step 55). */
 @Composable
 internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) {
     val state by processor.collectAsState()
@@ -78,6 +81,15 @@ internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) 
                             modifier = Modifier.padding(16.dp),
                         )
                     }
+                }
+                // Choosing a color theme comes later: the card is there, but takes no taps (pass-docs, Step 55, item 2)
+                item(key = "colors") {
+                    SettingsCard(
+                        icon = Icons.Filled.Palette,
+                        title = stringResource(R.string.settings_color_theme),
+                        text = stringResource(R.string.settings_coming_soon),
+                        enabled = false,
+                    )
                 }
             }
         }

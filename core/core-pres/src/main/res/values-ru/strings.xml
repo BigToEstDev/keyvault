@@ -253,5 +253,7 @@
     <string name="settings_theme_system">Системная</string>
     <string name="settings_theme_light">Светлая</string>
     <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_color_theme">Цветовая тема</string>
+    <string name="settings_coming_soon">Скоро</string>
     <string name="settings_message_not_saved">Настройка не сохранилась</string>
 </resources>
