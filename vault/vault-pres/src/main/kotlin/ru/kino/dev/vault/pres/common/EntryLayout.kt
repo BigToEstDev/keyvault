@@ -65,15 +65,16 @@ internal fun EntryTopBar(
 
 /**
  * A section of the entry: its fields one under another, in a card outlined in the accent of the palette over a
- * light fill - lighter than the backdrop in either theme. The default fill of a card is not of our palette and
- * looks muddy over the gradient (pass-docs, Step 40, fix 3).
+ * fill of the palette - lighter than the backdrop in either theme. The default fill of a card is not of our
+ * palette and looks muddy over the gradient (pass-docs, Step 40, fix 3); a faint text color in the dark theme
+ * was all but gone (pass-docs, Step 56, item 2).
  */
 @Composable
 internal fun EntrySection(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val colors = MaterialTheme.colorScheme
-    // Light over a dark backdrop is its text color, faint; over a light one - the surface, nearly whole
+    // Over a dark backdrop - the variant of the surface, whole; over a light one - the surface, nearly whole
     val fill = if (colors.background.luminance() < HALF) {
-        colors.onSurface.copy(alpha = DARK_FILL_ALPHA)
+        colors.surfaceVariant
     } else {
         colors.surface.copy(alpha = LIGHT_FILL_ALPHA)
     }
@@ -199,7 +200,6 @@ private const val DISABLED_CONTENT_ALPHA = 0.38f
 private const val DISABLED_OUTLINE_ALPHA = 0.12f
 
 /** The fill of a section over the dark theme and over the light one. */
-private const val DARK_FILL_ALPHA = 0.08f
 private const val LIGHT_FILL_ALPHA = 0.85f
 private const val HALF = 0.5f
 

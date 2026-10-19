@@ -3,8 +3,10 @@ package ru.kino.dev.ui.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -21,7 +23,9 @@ import androidx.compose.ui.unit.dp
  * The backdrop of every screen: the background color, two soft glows in opposite corners and a few faint
  * outline shapes. Decoration only - it draws behind [content] and takes no input.
  *
- * Colors come from the theme, so it follows light and dark on its own.
+ * Colors come from the theme, so it follows light and dark on its own. What lies on it is painted
+ * `onBackground`: the screens put a transparent `Scaffold` over it, which takes the color from here - without
+ * it icons with no tint of their own are black, in the dark theme too (pass-docs, Step 56, item 1).
  */
 @Composable
 fun GradientBackground(
@@ -43,8 +47,9 @@ fun GradientBackground(
                 drawGlow(glowBottom, center = Offset(-size.width * 0.05f, size.height * 1.02f))
                 drawOutlines(outline)
             },
-        content = content,
-    )
+    ) {
+        CompositionLocalProvider(LocalContentColor provides colors.onBackground) { content() }
+    }
 }
 
 private fun DrawScope.drawGlow(color: Color, center: Offset) {
