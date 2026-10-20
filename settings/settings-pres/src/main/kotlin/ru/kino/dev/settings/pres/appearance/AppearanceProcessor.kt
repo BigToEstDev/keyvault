@@ -13,7 +13,7 @@ import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.AppearanceRepository
 import ru.kino.dev.settings.appearance.ThemeMode
-import java.io.IOException
+import ru.kino.dev.settings.pres.common.keepSetting
 import javax.inject.Inject
 
 /**
@@ -107,26 +107,11 @@ class AppearanceProcessor @Inject constructor(
         }
     }
 
-    /**
-     * Shows [chosen] at once and writes it. Not written - shows what [kept] holds, the truth of the file rather
-     * than what was shown before: of a few quick taps one may fail while another went through. Nothing until
-     * the setting is read, or when it is the same.
-     */
     private suspend fun <T : Any> Syntax<AppearanceState, Nothing>.keep(
         chosen: T,
         current: T?,
         kept: Flow<T>,
         show: AppearanceState.(T) -> AppearanceState,
         save: suspend (T) -> Unit,
-    ) {
-        if (current == null || chosen == current) return
-
-        reduce { state.show(chosen) }
-        try {
-            save(chosen)
-        } catch (_: IOException) {
-            val actual = kept.first()
-            reduce { state.show(actual).copy(message = AppearanceMessage.NotSaved) }
-        }
-    }
+    ) = keepSetting(chosen, current, kept, show, { copy(message = AppearanceMessage.NotSaved) }, save)
 }

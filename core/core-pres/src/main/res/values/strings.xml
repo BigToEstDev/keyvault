@@ -262,5 +262,10 @@
     <string name="settings_entry_count_hint">The number on the icon of a group</string>
     <string name="settings_entry_count_nested">Count nested groups</string>
     <string name="settings_entry_count_nested_hint">The entries of the groups inside too</string>
+    <string name="settings_lock_group">Locking</string>
+    <string name="settings_auto_lock">Auto-lock</string>
+    <string name="settings_auto_lock_hint">Locks the database after this long without a touch</string>
+    <string name="settings_seconds_short">%1$d s</string>
+    <string name="settings_minutes_short">%1$d min</string>
     <string name="settings_message_not_saved">The setting was not saved</string>
 </resources>

@@ -1,0 +1,125 @@
+package ru.kino.dev.settings.pres.lock
+
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Test
+import org.orbitmvi.orbit.test.testWithInternalState
+import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.settings.lock.AutoLockTimeout
+import ru.kino.dev.settings.lock.LockSettingsRepository
+import java.io.IOException
+
+class LockProcessorTest {
+
+    @Test
+    fun `the screen shown reads the chosen time`() = runTest {
+        val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes10)
+
+        LockProcessor(repository, Navigator()).testWithInternalState(this) {
+            containerHost.action(LockAction.Load).join()
+
+            expectInternalState { copy(timeout = AutoLockTimeout.Minutes10) }
+        }
+    }
+
+    @Test
+    fun `auto-lock tapped opens the wheel`() = runTest {
+        val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
+
+        LockProcessor(repository, Navigator()).testWithInternalState(this, LockState(AutoLockTimeout.Minutes5)) {
+            containerHost.action(LockAction.ChooseTimeout).join()
+
+            expectInternalState { copy(choosingTimeout = true) }
+        }
+    }
+
+    @Test
+    fun `the wheel does not open before the time is read`() = runTest {
+        val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
+
+        LockProcessor(repository, Navigator()).testWithInternalState(this) {
+            containerHost.action(LockAction.ChooseTimeout).join()
+        }
+    }
+
+    @Test
+    fun `a time chosen closes the wheel and is kept at once`() = runTest {
+        val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
+        val initial = LockState(AutoLockTimeout.Minutes5, choosingTimeout = true)
+
+        LockProcessor(repository, Navigator()).testWithInternalState(this, initial) {
+            containerHost.action(LockAction.SelectTimeout(AutoLockTimeout.Seconds30)).join()
+
+            expectInternalState { copy(choosingTimeout = false) }
+            expectInternalState { copy(timeout = AutoLockTimeout.Seconds30) }
+        }
+
+        assertEquals(listOf(AutoLockTimeout.Seconds30), repository.saved)
+    }
+
+    @Test
+    fun `a time not written shows what is kept, with a message`() = runTest {
+        val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes15, failSave = true)
+        val initial = LockState(AutoLockTimeout.Minutes5, choosingTimeout = true)
+
+        LockProcessor(repository, Navigator()).testWithInternalState(this, initial) {
+            containerHost.action(LockAction.SelectTimeout(AutoLockTimeout.Minute1)).join()
+
+            expectInternalState { copy(choosingTimeout = false) }
+            expectInternalState { copy(timeout = AutoLockTimeout.Minute1) }
+            expectInternalState { copy(timeout = AutoLockTimeout.Minutes15, message = LockMessage.NotSaved) }
+        }
+    }
+
+    @Test
+    fun `the same time chosen is not written again`() = runTest {
+        val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
+        val initial = LockState(AutoLockTimeout.Minutes5, choosingTimeout = true)
+
+        LockProcessor(repository, Navigator()).testWithInternalState(this, initial) {
+            containerHost.action(LockAction.SelectTimeout(AutoLockTimeout.Minutes5)).join()
+
+            expectInternalState { copy(choosingTimeout = false) }
+        }
+
+        assertEquals(emptyList<AutoLockTimeout>(), repository.saved)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `back leaves the screen`() = runTest {
+        val navigator = Navigator()
+        val events = mutableListOf<MviNavEvent>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
+
+        LockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), navigator).testWithInternalState(this) {
+            containerHost.action(LockAction.Back).join()
+        }
+
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    private class FakeLockSettingsRepository(
+        initial: AutoLockTimeout,
+        private val failSave: Boolean = false,
+    ) : LockSettingsRepository {
+
+        private val timeout = MutableStateFlow(initial)
+
+        val saved = mutableListOf<AutoLockTimeout>()
+
+        override val autoLockTimeout: Flow<AutoLockTimeout> = timeout
+
+        override suspend fun save(timeout: AutoLockTimeout) {
+            if (failSave) throw IOException("disk full")
+            saved += timeout
+            this.timeout.value = timeout
+        }
+    }
+}

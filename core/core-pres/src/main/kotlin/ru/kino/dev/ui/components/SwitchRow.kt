@@ -58,4 +58,5 @@ fun SwitchRow(
     }
 }
 
-private const val DISABLED_ALPHA = 0.38f
+/** A disabled element of Material 3: its content in `onSurface` at 38%. Shared by the rows of settings. */
+internal const val DISABLED_ALPHA = 0.38f

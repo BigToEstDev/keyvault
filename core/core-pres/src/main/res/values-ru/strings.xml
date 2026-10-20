@@ -265,5 +265,10 @@
     <string name="settings_entry_count_hint">Число на значке группы</string>
     <string name="settings_entry_count_nested">Считать с вложенными</string>
     <string name="settings_entry_count_nested_hint">Записи вложенных групп тоже</string>
+    <string name="settings_lock_group">Блокировка</string>
+    <string name="settings_auto_lock">Автоблокировка</string>
+    <string name="settings_auto_lock_hint">Без касаний столько времени — база блокируется</string>
+    <string name="settings_seconds_short">%1$d с</string>
+    <string name="settings_minutes_short">%1$d мин</string>
     <string name="settings_message_not_saved">Настройка не сохранилась</string>
 </resources>
