@@ -1,7 +1,6 @@
 package ru.kino.dev.vault.data
 
 import android.content.Context
-import android.os.SystemClock
 import android.util.Log
 import dagger.Binds
 import dagger.Module
@@ -13,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import ru.kino.dev.core.preset.PresetRepository
+import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.data.entry.EntryRepositoryImpl
 import ru.kino.dev.vault.data.filter.DataStoreVaultFilterRepository
@@ -33,8 +33,6 @@ import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.lock.DatabaseGuard
 import ru.kino.dev.vault.search.VaultSearch
 import javax.inject.Singleton
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
 
 /** Binds the repositories of `vault` to their implementations, and builds its use cases and its lock. */
 @Module
@@ -97,19 +95,19 @@ internal interface VaultDataModule {
 
         @Provides
         @Singleton
-        fun provideAutoLock(database: VaultDatabaseRepository, guard: DatabaseGuard): AutoLock = AutoLock(
+        fun provideAutoLock(
+            database: VaultDatabaseRepository,
+            guard: DatabaseGuard,
+            timer: InactivityTimer,
+        ): AutoLock = AutoLock(
             database = database,
             guard = guard,
-            // Counts while the phone sleeps, unlike the clock coroutines wait by
-            clock = { SystemClock.elapsedRealtime().milliseconds },
+            // The count and its time are the settings' (pass-docs, Step 59)
+            timer = timer,
             // The app's own: the lock outlives any screen
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-            timeout = AUTO_LOCK_TIMEOUT,
             onFailure = { Log.e(TAG, "the core refused to lock the database", it) },
         )
-
-        /** No touch this long, and the database locks - the owner's (pass-docs, Step 46); later in settings. */
-        private val AUTO_LOCK_TIMEOUT = 5.minutes
 
         private const val TAG = "AutoLock"
 

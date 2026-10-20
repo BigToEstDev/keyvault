@@ -19,6 +19,7 @@ import ru.kino.dev.navigation.AppNavHost
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
+import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
 import ru.kino.dev.ui.theme.AppLocale
 import ru.kino.dev.ui.theme.KeyVaultTheme
@@ -40,6 +41,10 @@ class MainActivity : FragmentActivity() {
 
     @Inject
     lateinit var autoLock: AutoLock
+
+    // Told what the app sees; `vault` listens to it (pass-docs, Step 59)
+    @Inject
+    lateinit var timer: InactivityTimer
 
     private val startResolver: WelcomeStartResolver by viewModels()
 
@@ -108,14 +113,14 @@ class MainActivity : FragmentActivity() {
     // `vault` is covered before it could be seen (pass-docs, Step 46)
     override fun onStart() {
         super.onStart()
-        autoLock.cameBack()
+        timer.cameBack()
     }
 
     // Every touch and key of the app, whatever screen takes it - the person is here. The callback of the
     // Activity for exactly this: a touch counts once, as it starts, not on every move (pass-docs, Step 40, fix 14)
     override fun onUserInteraction() {
         super.onUserInteraction()
-        autoLock.touched()
+        timer.touched()
     }
 
     private companion object {
