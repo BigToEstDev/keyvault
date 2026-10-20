@@ -26,6 +26,9 @@ sealed interface EntryReadAction {
 
     data object DeleteDismiss : EntryReadAction
 
+    /** Lock the database now, not waiting for the timer - the lock button (pass-docs, Step 59). */
+    data object Lock : EntryReadAction
+
     /** The snackbar took the message. */
     data object MessageShown : EntryReadAction
 }

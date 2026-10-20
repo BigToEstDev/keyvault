@@ -16,18 +16,21 @@ import javax.inject.Inject
 /**
  * @param timeout the chosen time of the auto-lock; null until read - its choice is disabled
  * @param lockOnLeave whether leaving the app locks at once; null until read - its choice is disabled
+ * @param lockButton whether the screens have the lock button; null until read - its choice is disabled
  * @param choosingTimeout the wheel of the times is open
  * @param message for the snackbar, until it takes it
  */
 data class LockState(
     val timeout: AutoLockTimeout? = null,
     val lockOnLeave: Boolean? = null,
+    val lockButton: Boolean? = null,
     val choosingTimeout: Boolean = false,
     val message: LockMessage? = null,
 )
 
 /**
- * How the database locks (pass-docs, Step 59): the time of the auto-lock, locking on leaving the app. A choice
+ * How the database locks (pass-docs, Step 59): the time of the auto-lock, locking on leaving the app, the lock
+ * button. A choice
  * is kept at once - the timer of the app takes it from the repository; a new time counts from then on.
  */
 @HiltViewModel
@@ -43,7 +46,8 @@ class LockProcessor @Inject constructor(
             LockAction.Load -> {
                 val timeout = repository.autoLockTimeout.first()
                 val lockOnLeave = repository.lockOnLeave.first()
-                reduce { state.copy(timeout = timeout, lockOnLeave = lockOnLeave) }
+                val lockButton = repository.lockButton.first()
+                reduce { state.copy(timeout = timeout, lockOnLeave = lockOnLeave, lockButton = lockButton) }
             }
 
             LockAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
@@ -70,6 +74,14 @@ class LockProcessor @Inject constructor(
                 show = { copy(lockOnLeave = it) },
                 notSaved = { copy(message = LockMessage.NotSaved) },
             ) { repository.saveLockOnLeave(it) }
+
+            is LockAction.SetLockButton -> keepSetting(
+                chosen = action.on,
+                current = state.lockButton,
+                kept = repository.lockButton,
+                show = { copy(lockButton = it) },
+                notSaved = { copy(message = LockMessage.NotSaved) },
+            ) { repository.saveLockButton(it) }
 
             LockAction.MessageShown -> reduce { state.copy(message = null) }
         }

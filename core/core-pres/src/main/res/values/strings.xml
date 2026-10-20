@@ -143,7 +143,7 @@
     <string name="history_delete_all">Delete history</string>
     <string name="history_delete_all_title">Delete the history?</string>
     <string name="history_delete_all_text">Every version of the entry will be deleted. The creation date stays.</string>
-    <string name="vault_debug_lock">Lock (debug)</string>
+    <string name="vault_lock">Lock</string>
     <string name="group_dialog_create_title">New group</string>
     <string name="group_dialog_rename_title">Rename group</string>
     <string name="group_dialog_name">Name</string>
@@ -269,5 +269,7 @@
     <string name="settings_minutes_short">%1$d min</string>
     <string name="settings_lock_on_leave">Lock on leaving the app</string>
     <string name="settings_lock_on_leave_hint">At once when the app is put away or the screen goes off</string>
+    <string name="settings_lock_button">“Lock” button</string>
+    <string name="settings_lock_button_hint">Locks the database at once, without waiting for the auto-lock</string>
     <string name="settings_message_not_saved">The setting was not saved</string>
 </resources>

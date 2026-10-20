@@ -144,7 +144,7 @@
     <string name="history_delete_all">Удалить историю</string>
     <string name="history_delete_all_title">Удалить историю?</string>
     <string name="history_delete_all_text">Все версии записи удалятся. Дата создания останется.</string>
-    <string name="vault_debug_lock">Заблокировать (debug)</string>
+    <string name="vault_lock">Заблокировать</string>
     <string name="group_dialog_create_title">Новая группа</string>
     <string name="group_dialog_rename_title">Переименовать группу</string>
     <string name="group_dialog_name">Название</string>
@@ -272,5 +272,7 @@
     <string name="settings_minutes_short">%1$d мин</string>
     <string name="settings_lock_on_leave">Блокировать при уходе из приложения</string>
     <string name="settings_lock_on_leave_hint">Сразу при сворачивании или выключении экрана</string>
+    <string name="settings_lock_button">Кнопка «Заблокировать»</string>
+    <string name="settings_lock_button_hint">Блокирует базу сразу, не дожидаясь автоблокировки</string>
     <string name="settings_message_not_saved">Настройка не сохранилась</string>
 </resources>

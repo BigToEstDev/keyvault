@@ -21,6 +21,7 @@ import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupRepository
+import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.common.groupChoice
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
@@ -33,6 +34,7 @@ import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
  * @param times when the entry was made and last changed; empty until it is read
  * @param shownOwn indexes of protected own fields shown in clear
  * @param delete the dialog asking to delete the entry
+ * @param locking the lock asked by the lock button is under way
  * @param message for the snackbar, until it takes it
  */
 data class EntryReadState(
@@ -43,6 +45,7 @@ data class EntryReadState(
     val passwordVisible: Boolean = false,
     val shownOwn: Set<Int> = emptySet(),
     val delete: DeleteDialog? = null,
+    val locking: Boolean = false,
     val message: EntryReadMessage? = null,
 )
 
@@ -65,6 +68,7 @@ class EntryReadProcessor @AssistedInject constructor(
     private val opener: EntryOpener,
     private val groupRepository: GroupRepository,
     private val editor: EntryEditor,
+    private val autoLock: AutoLock,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryReadState, EntryReadState, Nothing> {
@@ -107,7 +111,19 @@ class EntryReadProcessor @AssistedInject constructor(
 
             EntryReadAction.DeleteDismiss -> if (state.delete?.deleting == false) reduce { state.copy(delete = null) }
 
+            EntryReadAction.Lock -> lock()
+
             EntryReadAction.MessageShown -> reduce { state.copy(message = null) }
+        }
+    }
+
+    private suspend fun Syntax<EntryReadState, Nothing>.lock() {
+        if (state.locking) return
+
+        reduce { state.copy(locking = true) }
+        // The locked screen is put up by the app, with `vault` gone under it; the refusal is logged by the lock
+        if (!autoLock.lockNow()) {
+            reduce { state.copy(locking = false, message = EntryReadMessage.Unexpected) }
         }
     }
 

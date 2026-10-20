@@ -37,13 +37,13 @@ import ru.kino.dev.ui.components.ExpandableFab
 import ru.kino.dev.ui.components.FabItem
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
-import ru.kino.dev.vault.pres.grouplist.components.DebugLockFab
 import ru.kino.dev.vault.pres.grouplist.components.EntryCard
 import ru.kino.dev.vault.pres.grouplist.components.FilterDialog
 import ru.kino.dev.vault.pres.grouplist.components.GroupCard
 import ru.kino.dev.vault.pres.grouplist.components.GroupDialogs
 import ru.kino.dev.vault.pres.grouplist.components.GroupListTopBar
 import ru.kino.dev.vault.pres.grouplist.components.shown
+import ru.kino.dev.vault.pres.common.LockFab
 import ru.kino.dev.vault.pres.common.SkeletonCard
 
 /** @param groupId null for the root of the database */
@@ -93,14 +93,11 @@ internal fun GroupListScreen(
             GroupListContent(state = state, padding = padding, action = processor::action)
         }
 
-        // In the opposite corner from "add", away from the real buttons; the same margin as the fab
-        DebugLockFab(
+        // In the opposite corner from "add" (pass-docs, Step 59)
+        LockFab(
             locking = state.locking,
             onLock = { processor.action(GroupListAction.Lock) },
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .navigationBarsPadding()
-                .padding(FAB_MARGIN),
+            modifier = Modifier.align(Alignment.BottomStart),
         )
 
         // Over everything but the fab: a tap past the open menu closes it and goes no further

@@ -31,8 +31,8 @@ import ru.kino.dev.ui.components.ValueRow
 import ru.kino.dev.ui.components.WheelPickerDialog
 
 /**
- * How the database locks and how one gets in: the group "Locking" - the auto-lock, locking on leaving the app
- * (pass-docs, Step 59).
+ * How the database locks and how one gets in: the group "Locking" - the auto-lock, locking on leaving the app,
+ * the lock button (pass-docs, Step 59).
  */
 @Composable
 internal fun LockScreen(processor: LockProcessor = hiltViewModel()) {
@@ -90,6 +90,17 @@ internal fun LockScreen(processor: LockProcessor = hiltViewModel()) {
                             checked = state.lockOnLeave ?: false,
                             onCheckedChange = { processor.action(LockAction.SetLockOnLeave(it)) },
                             enabled = state.lockOnLeave != null,
+                        )
+                    }
+                }
+                item(key = "lock-button") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        SwitchRow(
+                            title = stringResource(R.string.settings_lock_button),
+                            text = stringResource(R.string.settings_lock_button_hint),
+                            checked = state.lockButton ?: false,
+                            onCheckedChange = { processor.action(LockAction.SetLockButton(it)) },
+                            enabled = state.lockButton != null,
                         )
                     }
                 }

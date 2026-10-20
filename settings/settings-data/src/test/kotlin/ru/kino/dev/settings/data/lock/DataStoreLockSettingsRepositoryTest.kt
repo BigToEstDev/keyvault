@@ -61,6 +61,22 @@ class DataStoreLockSettingsRepositoryTest {
         assertEquals(true, repository.lockOnLeave.first())
     }
 
+    @Test
+    fun `the lock button is not shown until chosen`() = runTest {
+        val repository = DataStoreLockSettingsRepository(store(newFile()))
+
+        assertEquals(false, repository.lockButton.first())
+    }
+
+    @Test
+    fun `the lock button switched on is what is read next`() = runTest {
+        val repository = DataStoreLockSettingsRepository(store(newFile()))
+
+        repository.saveLockButton(true)
+
+        assertEquals(true, repository.lockButton.first())
+    }
+
     private fun newFile(): File = File(folder.newFolder(), "app_settings.preferences_pb")
 
     private fun TestScope.store(file: File): DataStore<Preferences> =

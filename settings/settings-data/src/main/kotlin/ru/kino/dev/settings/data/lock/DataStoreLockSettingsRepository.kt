@@ -39,6 +39,10 @@ internal class DataStoreLockSettingsRepository(
         .map { it[LOCK_ON_LEAVE_KEY] ?: false }
         .distinctUntilChanged()
 
+    override val lockButton: Flow<Boolean> = preferences
+        .map { it[LOCK_BUTTON_KEY] ?: false }
+        .distinctUntilChanged()
+
     override suspend fun save(timeout: AutoLockTimeout) {
         store.edit { it[AUTO_LOCK_TIMEOUT_KEY] = AUTO_LOCK_TIMEOUT.getValue(timeout) }
     }
@@ -47,9 +51,14 @@ internal class DataStoreLockSettingsRepository(
         store.edit { it[LOCK_ON_LEAVE_KEY] = on }
     }
 
+    override suspend fun saveLockButton(on: Boolean) {
+        store.edit { it[LOCK_BUTTON_KEY] = on }
+    }
+
     internal companion object {
         val AUTO_LOCK_TIMEOUT_KEY: Preferences.Key<String> = stringPreferencesKey("auto_lock_timeout")
         val LOCK_ON_LEAVE_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("lock_on_leave")
+        val LOCK_BUTTON_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("lock_button")
 
         val AUTO_LOCK_TIMEOUT = mapOf(
             AutoLockTimeout.Seconds30 to "30s",

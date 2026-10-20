@@ -21,6 +21,9 @@ sealed interface LockAction {
     /** "Lock on leaving the app" switched: kept at once. */
     data class SetLockOnLeave(val on: Boolean) : LockAction
 
+    /** "Lock button" switched: kept at once. */
+    data class SetLockButton(val on: Boolean) : LockAction
+
     /** The snackbar took the message. */
     data object MessageShown : LockAction
 }

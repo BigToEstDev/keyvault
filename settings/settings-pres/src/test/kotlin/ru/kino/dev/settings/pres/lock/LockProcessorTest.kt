@@ -24,7 +24,7 @@ class LockProcessorTest {
         LockProcessor(repository, Navigator()).testWithInternalState(this) {
             containerHost.action(LockAction.Load).join()
 
-            expectInternalState { copy(timeout = AutoLockTimeout.Minutes10, lockOnLeave = false) }
+            expectInternalState { copy(timeout = AutoLockTimeout.Minutes10, lockOnLeave = false, lockButton = false) }
         }
     }
 
@@ -118,6 +118,33 @@ class LockProcessorTest {
             }
     }
 
+    @Test
+    fun `the lock button switched is kept at once`() = runTest {
+        val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
+
+        LockProcessor(repository, Navigator())
+            .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockButton = false)) {
+                containerHost.action(LockAction.SetLockButton(true)).join()
+
+                expectInternalState { copy(lockButton = true) }
+            }
+
+        assertEquals(listOf(true), repository.savedLockButton)
+    }
+
+    @Test
+    fun `the lock button not written shows what is kept, with a message`() = runTest {
+        val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5, failSave = true)
+
+        LockProcessor(repository, Navigator())
+            .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockButton = false)) {
+                containerHost.action(LockAction.SetLockButton(true)).join()
+
+                expectInternalState { copy(lockButton = true) }
+                expectInternalState { copy(lockButton = false, message = LockMessage.NotSaved) }
+            }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `back leaves the screen`() = runTest {
@@ -145,9 +172,15 @@ class LockProcessorTest {
 
         val savedLockOnLeave = mutableListOf<Boolean>()
 
+        private val button = MutableStateFlow(false)
+
+        val savedLockButton = mutableListOf<Boolean>()
+
         override val autoLockTimeout: Flow<AutoLockTimeout> = timeout
 
         override val lockOnLeave: Flow<Boolean> = leaving
+
+        override val lockButton: Flow<Boolean> = button
 
         override suspend fun save(timeout: AutoLockTimeout) {
             if (failSave) throw IOException("disk full")
@@ -159,6 +192,12 @@ class LockProcessorTest {
             if (failSave) throw IOException("disk full")
             savedLockOnLeave += on
             leaving.value = on
+        }
+
+        override suspend fun saveLockButton(on: Boolean) {
+            if (failSave) throw IOException("disk full")
+            savedLockButton += on
+            button.value = on
         }
     }
 }

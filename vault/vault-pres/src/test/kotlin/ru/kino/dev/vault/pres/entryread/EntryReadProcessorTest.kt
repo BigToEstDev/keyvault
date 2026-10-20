@@ -1,5 +1,6 @@
 package ru.kino.dev.vault.pres.entryread
 
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -12,6 +13,7 @@ import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
@@ -21,6 +23,8 @@ import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
+import ru.kino.dev.vault.lock.AutoLock
+import ru.kino.dev.vault.lock.DatabaseGuard
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
@@ -236,14 +240,49 @@ class EntryReadProcessorTest {
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
     }
 
+    @Test
+    fun `the lock button locks the database for real and leaves the locked screen to the app`() = runTest {
+        val lock = lock()
+        lock.watch(DB)
+
+        val (state, events) = perform(EntryReadAction.Lock, autoLock = lock)
+
+        assertEquals(listOf("lock"), database.calls)
+        assertEquals(DB, lock.locked.first())
+        assertTrue(state.locking)
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `a lock the core refuses says so and lets the button be tapped again`() = runTest {
+        database.lockFailure = CoreException("DbKeyNotFound", "not open")
+        val lock = lock()
+        lock.watch(DB)
+
+        val (state, _) = perform(EntryReadAction.Lock, autoLock = lock)
+
+        assertFalse(state.locking)
+        assertEquals(EntryReadMessage.Unexpected, state.message)
+    }
+
+    /** The lock of the app, the timer never running out here - the tests lock by hand. */
+    private fun TestScope.lock(): AutoLock = AutoLock(
+        database = database,
+        guard = DatabaseGuard(),
+        timer = FakeInactivityTimer(),
+        scope = backgroundScope,
+        onFailure = { log.unexpected("AutoLock", it) },
+    )
+
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(
         vararg actions: EntryReadAction,
         initial: EntryReadState = EntryReadState(),
+        autoLock: AutoLock = lock(),
     ): Pair<EntryReadState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val editor = EntryEditor(entries, opener, database)
-        val processor = EntryReadProcessor(DB, mail.value, opener, groups, editor, navigator, log)
+        val processor = EntryReadProcessor(DB, mail.value, opener, groups, editor, autoLock, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             actions.forEach { containerHost.action(it).join() }

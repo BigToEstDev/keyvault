@@ -39,6 +39,7 @@ import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.pres.common.EntryReadFields
 import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTopBar
+import ru.kino.dev.vault.pres.common.LockFab
 import ru.kino.dev.vault.pres.common.deleteMenuItem
 import ru.kino.dev.vault.pres.common.entryTimeText
 import ru.kino.dev.vault.pres.common.historyMenuItem
@@ -127,6 +128,13 @@ internal fun EntryReadScreen(
                 }
             }
         }
+
+        // Out of the scaffold's slot, which "edit" holds - in the other corner (pass-docs, Step 59)
+        LockFab(
+            locking = state.locking,
+            onLock = { processor.action(EntryReadAction.Lock) },
+            modifier = Modifier.align(Alignment.BottomStart),
+        )
 
         state.delete?.let { dialog ->
             EntryDeleteDialog(

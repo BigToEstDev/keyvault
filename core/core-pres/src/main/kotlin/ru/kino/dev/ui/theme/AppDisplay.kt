@@ -11,6 +11,7 @@ import androidx.compose.runtime.compositionLocalOf
  * @param userNameInList the card of an entry has its user name under the title
  * @param entryCount the icon of a group has the number of its entries on a badge
  * @param entryCountNested that number counts the entries of the groups below too, not only its own
+ * @param lockButton the screens of the open database have the button that locks it now (Step 59)
  */
 @Immutable
 data class AppDisplay(
@@ -18,6 +19,7 @@ data class AppDisplay(
     val userNameInList: Boolean = false,
     val entryCount: Boolean = true,
     val entryCountNested: Boolean = true,
+    val lockButton: Boolean = false,
 )
 
 /** The [AppDisplay] chosen; the defaults until `app` provides one. */
