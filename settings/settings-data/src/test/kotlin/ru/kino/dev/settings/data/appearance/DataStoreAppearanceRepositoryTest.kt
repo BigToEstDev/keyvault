@@ -14,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
 import java.io.File
 
@@ -67,6 +68,32 @@ class DataStoreAppearanceRepositoryTest {
         store.edit { it[DataStoreAppearanceRepository.THEME_MODE_KEY] = "sepia" }
 
         assertEquals(ThemeMode.System, DataStoreAppearanceRepository(store).themeMode.first())
+    }
+
+    @Test
+    fun `no language chosen yet reads as the system one`() = runTest {
+        val repository = DataStoreAppearanceRepository(store(newFile()))
+
+        assertEquals(AppLanguage.System, repository.language.first())
+    }
+
+    @Test
+    fun `a saved language is what is read next, kept as a code of its own`() = runTest {
+        val store = store(newFile())
+        val repository = DataStoreAppearanceRepository(store)
+
+        repository.save(AppLanguage.Russian)
+
+        assertEquals(AppLanguage.Russian, repository.language.first())
+        assertEquals("ru", store.data.first()[DataStoreAppearanceRepository.LANGUAGE_KEY])
+    }
+
+    @Test
+    fun `a language code this version does not know reads as the system one`() = runTest {
+        val store = store(newFile())
+        store.edit { it[DataStoreAppearanceRepository.LANGUAGE_KEY] = "fr" }
+
+        assertEquals(AppLanguage.System, DataStoreAppearanceRepository(store).language.first())
     }
 
     private fun newFile(): File = File(folder.newFolder(), "app_settings.preferences_pb")

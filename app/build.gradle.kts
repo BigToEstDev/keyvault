@@ -16,6 +16,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // The language is chosen in the app, not only by the system: every language goes into the base, or a
+    // bundle from the store would bring only the language of the system (pass-docs, Step 57)
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
 //    buildTypes {
 //        release {
 //            proguardFiles(

@@ -1,5 +1,6 @@
 package ru.kino.dev.settings.pres.appearance
 
+import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
 
 sealed interface AppearanceAction {
@@ -11,6 +12,9 @@ sealed interface AppearanceAction {
 
     /** A mode tapped in "Mode": kept at once. */
     data class SelectTheme(val mode: ThemeMode) : AppearanceAction
+
+    /** A language picked in "Language": kept at once. */
+    data class SelectLanguage(val language: AppLanguage) : AppearanceAction
 
     /** The snackbar took the message. */
     data object MessageShown : AppearanceAction

@@ -16,11 +16,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import ru.kino.dev.navigation.AppNavHost
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
+import ru.kino.dev.ui.theme.AppLocale
 import ru.kino.dev.ui.theme.KeyVaultTheme
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.welcome.pres.start.WelcomeStartResolver
+import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -43,9 +46,9 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super: the splash replaces the launch theme. It stays up until the start route is known -
         // reading the remembered database takes a moment, and there is nothing to show before it - and the
-        // mode of the theme, so the app does not flash in the other one (pass-docs, Step 55)
+        // mode of the theme and the language, so the app does not flash in the other ones (pass-docs, Step 55, 57)
         installSplashScreen().setKeepOnScreenCondition {
-            startResolver.start.value == null || theme.themeMode.value == null
+            startResolver.start.value == null || theme.themeMode.value == null || theme.language.value == null
         }
         super.onCreate(savedInstanceState)
 
@@ -67,12 +70,23 @@ class MainActivity : FragmentActivity() {
             // The icons of the system bars follow the theme of the app, not the system's
             LaunchedEffect(darkTheme) { systemBars(darkTheme) }
 
-            KeyVaultTheme(darkTheme = darkTheme) {
-                val start by startResolver.start.collectAsStateWithLifecycle()
-                start?.let { AppNavHost(navigator = navigator, autoLock = autoLock, start = it) }
+            val language by theme.language.collectAsStateWithLifecycle()
+            AppLocale(locale = (language ?: return@setContent).locale) {
+                KeyVaultTheme(darkTheme = darkTheme) {
+                    val start by startResolver.start.collectAsStateWithLifecycle()
+                    start?.let { AppNavHost(navigator = navigator, autoLock = autoLock, start = it) }
+                }
             }
         }
     }
+
+    // Null - the language of the system; the others are the languages the app has strings for
+    private val AppLanguage.locale: Locale?
+        get() = when (this) {
+            AppLanguage.System -> null
+            AppLanguage.English -> Locale.ENGLISH
+            AppLanguage.Russian -> Locale.forLanguageTag("ru")
+        }
 
     // The scrims are the defaults of `enableEdgeToEdge`: only how dark the theme is decided here
     private fun systemBars(darkTheme: Boolean) {
