@@ -19,25 +19,27 @@ import java.util.Locale
  * [LocalConfiguration], so both are replaced. The context wraps the activity rather than being a new
  * configuration context: `BiometricPrompt` and the like look for the activity through it. Strings taken
  * outside the composition - from the application context - stay in the language of the system.
+ *
+ * [content] sits under the same provider whatever the [locale], the system one too: a branch without it
+ * would be another tree for Compose - switching to or from the system language would build the navigation
+ * anew, at its start (pass-docs, Step 57).
  */
 // Lint sees this module alone: the bundle keeps every language in its base - `app/build.gradle.kts`, `bundle`
 @SuppressLint("AppBundleLocaleChanges")
 @Composable
 fun AppLocale(locale: Locale?, content: @Composable () -> Unit) {
-    if (locale == null) {
-        content()
-        return
-    }
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val localized = remember(context, configuration, locale) {
-        ContextThemeWrapper(context, context.theme).apply {
-            applyOverrideConfiguration(Configuration(configuration).apply { setLocales(LocaleList(locale)) })
+        locale?.let {
+            ContextThemeWrapper(context, context.theme).apply {
+                applyOverrideConfiguration(Configuration(configuration).apply { setLocales(LocaleList(it)) })
+            }
         }
     }
     CompositionLocalProvider(
-        LocalContext provides localized,
-        LocalConfiguration provides localized.resources.configuration,
+        LocalContext provides (localized ?: context),
+        LocalConfiguration provides (localized?.resources?.configuration ?: configuration),
         content = content,
     )
 }
