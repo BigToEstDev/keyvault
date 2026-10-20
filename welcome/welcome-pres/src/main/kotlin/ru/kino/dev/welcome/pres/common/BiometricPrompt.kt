@@ -11,7 +11,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import ru.kino.dev.core.pres.R
-import ru.kino.dev.welcome.BiometricSession
+import ru.kino.dev.settings.biometric.BiometricSession
 
 /** How the system prompt ended. */
 sealed interface BiometricOutcome {

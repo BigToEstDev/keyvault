@@ -8,12 +8,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CredentialLimits
-import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.WelcomeGraph
+import ru.kino.dev.settings.biometric.FakeBiometrics
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
-import ru.kino.dev.welcome.pres.FakeBiometrics
 import ru.kino.dev.welcome.pres.FakeErrorLog
 import ru.kino.dev.welcome.pres.FakeWelcomeDatabase
 import ru.kino.dev.welcome.pres.FakeWelcomeFiles
@@ -23,8 +23,8 @@ import ru.kino.dev.welcome.pres.create.CreateStage
 import ru.kino.dev.welcome.pres.create.CreateSteps
 import ru.kino.dev.welcome.pres.create.Overwrite
 import ru.kino.dev.welcome.pres.navigation.BiometricSetupRoute
-import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
 import ru.kino.dev.welcome.pres.navigation.KeyFileBackupRoute
+import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
 import ru.kino.dev.welcome.pres.recordNavigation
 
 class MasterPasswordProcessorTest {

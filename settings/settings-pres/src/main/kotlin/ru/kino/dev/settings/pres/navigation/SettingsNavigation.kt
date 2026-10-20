@@ -4,6 +4,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.settings.pres.appearance.AppearanceScreen
+import ru.kino.dev.settings.pres.lock.LockScreen
 import ru.kino.dev.settings.pres.settings.SettingsScreen
 
 /**
@@ -13,4 +14,5 @@ import ru.kino.dev.settings.pres.settings.SettingsScreen
 fun NavGraphBuilder.settingsGraph() {
     composable<SettingsRoute> { SettingsScreen() }
     composable<AppearanceRoute> { AppearanceScreen() }
+    composable<LockRoute> { LockScreen() }
 }

@@ -9,11 +9,12 @@ import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.LockedRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.VaultRootRoute
+import ru.kino.dev.settings.biometric.FakeBiometrics
+import ru.kino.dev.settings.signin.FakeSignInSettingsRepository
 import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
 import ru.kino.dev.welcome.pres.FakeCurrentDatabase
-import ru.kino.dev.welcome.pres.FakeBiometrics
 import ru.kino.dev.welcome.pres.FakeErrorLog
 import ru.kino.dev.welcome.pres.FakeWelcomeDatabase
 import ru.kino.dev.welcome.pres.FakeWelcomeFiles
@@ -32,10 +33,11 @@ class LockedProcessorTest {
     private val biometrics = FakeBiometrics(journal)
     private val current = FakeCurrentDatabase(CurrentDatabase(DB, "passwords.kdbx", "Passwords", KEY, "my.keyx"))
 
-    private fun TestScope.processor() =
+    private fun TestScope.processor(signIn: FakeSignInSettingsRepository = FakeSignInSettingsRepository()) =
         recordNavigation().let { (navigator, events) ->
             val log = FakeErrorLog()
-            LockedProcessor(DB, database, files, current, navigator, log, BiometricSignIn(biometrics, log)) to events
+            LockedProcessor(DB, database, files, current, navigator, log, BiometricSignIn(biometrics, log), signIn) to
+                events
         }
 
     @Test
@@ -109,6 +111,34 @@ class LockedProcessorTest {
     }
 
     @Test
+    fun `wrong credentials wipe the password when the settings say so`() = runTest {
+        database.failure = WelcomeFailure.InvalidCredentials()
+        val (processor, _) = processor(FakeSignInSettingsRepository(clearPasswordOnError = true))
+        val typed = lockedState().let { it.copy(entry = it.entry.copy(password = "pw")) }
+
+        processor.testWithInternalState(this, typed) {
+            containerHost.action(LockedAction.Submit)
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            expectInternalState {
+                copy(entry = entry.copy(busy = false, password = "", problem = EntryProblem.InvalidCredentials))
+            }
+        }
+    }
+
+    @Test
+    fun `wrong credentials keep the password when the settings do not wipe it`() = runTest {
+        database.failure = WelcomeFailure.InvalidCredentials()
+        val (processor, _) = processor()
+        val typed = lockedState().let { it.copy(entry = it.entry.copy(password = "pw")) }
+
+        processor.testWithInternalState(this, typed) {
+            containerHost.action(LockedAction.Submit)
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            expectInternalState { copy(entry = entry.copy(busy = false, problem = EntryProblem.InvalidCredentials)) }
+        }
+    }
+
+    @Test
     fun `wrong credentials stay on the lock`() = runTest {
         database.failure = WelcomeFailure.InvalidCredentials()
         val (processor, events) = processor()
@@ -120,6 +150,39 @@ class LockedProcessorTest {
         }
 
         assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `with the auto prompt on, biometrics are asked as the lock is shown`() = runTest {
+        biometrics.passwords[DB] = "stored"
+        val (processor, _) = processor(FakeSignInSettingsRepository(autoBiometricPrompt = true))
+
+        processor.testWithInternalState(this) {
+            runOnCreate().join()
+            expectInternalState(lockedState().let { it.copy(entry = it.entry.copy(biometricOn = true)) })
+            awaitSideEffect() as LockedSideEffect.ShowBiometricPrompt
+        }
+    }
+
+    @Test
+    fun `with the auto prompt off, biometrics wait for the button`() = runTest {
+        biometrics.passwords[DB] = "stored"
+        val (processor, _) = processor()
+
+        processor.testWithInternalState(this) {
+            runOnCreate().join()
+            expectInternalState(lockedState().let { it.copy(entry = it.entry.copy(biometricOn = true)) })
+        }
+    }
+
+    @Test
+    fun `the auto prompt asks nothing when biometrics are off for the database`() = runTest {
+        val (processor, _) = processor(FakeSignInSettingsRepository(autoBiometricPrompt = true))
+
+        processor.testWithInternalState(this) {
+            runOnCreate().join()
+            expectInternalState(lockedState())
+        }
     }
 
     @Test

@@ -6,7 +6,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -14,76 +13,37 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.vault.FakeVaultDatabase
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
+/** The lock; the count is the timer's - its own tests are in `settings-data`. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AutoLockTest {
 
     private val database = FakeVaultDatabase()
     private val guard = DatabaseGuard()
+    private val timer = FakeInactivityTimer()
     private val failures = mutableListOf<CoreException>()
 
-    /** The clock of the tests, moved by hand: the virtual time, plus what the phone slept through. */
-    private var slept = Duration.ZERO
-
     @Test
-    fun `no touch for the timeout locks the database and says so`() = runTest {
-        val lock = autoLock()
-        lock.watch(DB)
+    fun `a database shown starts the timer`() = runTest {
+        autoLock().watch(DB)
 
-        advanceTimeBy(TIMEOUT - 1.seconds)
-        assertTrue(database.calls.isEmpty())
-
-        advanceTimeBy(2.seconds)
-        assertEquals(listOf("lock"), database.calls)
-        assertTrue(lock.covering.value)
-        assertEquals(DB, lock.locked.first())
+        assertTrue(timer.running)
     }
 
     @Test
-    fun `a touch starts the timeout over`() = runTest {
+    fun `the timer running out covers at once, locks and says so`() = runTest {
         val lock = autoLock()
         lock.watch(DB)
 
-        advanceTimeBy(TIMEOUT - 1.seconds)
-        lock.touched()
-        advanceTimeBy(TIMEOUT - 1.seconds)
-        assertTrue(database.calls.isEmpty())
-
-        advanceTimeBy(2.seconds)
-        assertEquals(listOf("lock"), database.calls)
-    }
-
-    @Test
-    fun `coming back after the timeout was slept through locks at once, covered`() = runTest {
-        val lock = autoLock()
-        lock.watch(DB)
-
-        // The process was frozen: the clock went on, the timer did not
-        slept = TIMEOUT
-        lock.cameBack()
+        timer.expire()
+        // Covered before the lock is under way: coming back, the screens are not drawn first
         assertTrue(lock.covering.value)
         runCurrent()
 
         assertEquals(listOf("lock"), database.calls)
         assertEquals(DB, lock.locked.first())
-    }
-
-    @Test
-    fun `coming back before the timeout does nothing`() = runTest {
-        val lock = autoLock()
-        lock.watch(DB)
-
-        slept = TIMEOUT - 1.seconds
-        lock.cameBack()
-        runCurrent()
-
-        assertFalse(lock.covering.value)
-        assertTrue(database.calls.isEmpty())
     }
 
     @Test
@@ -107,27 +67,21 @@ class AutoLockTest {
     fun `with no database watched there is nothing to lock`() = runTest {
         val lock = autoLock()
 
-        advanceTimeBy(TIMEOUT * 2)
-        slept = TIMEOUT
-        lock.cameBack()
-        runCurrent()
-
         assertFalse(lock.lockNow())
         assertTrue(database.calls.isEmpty())
     }
 
     @Test
-    fun `a locked database is not watched until vault shows it again`() = runTest {
+    fun `a locked database stops the timer and is not watched until vault shows it again`() = runTest {
         val lock = autoLock()
         lock.watch(DB)
         assertTrue(lock.lockNow())
-
-        advanceTimeBy(TIMEOUT * 2)
-        assertEquals(listOf("lock"), database.calls)
+        assertFalse(timer.running)
 
         lock.watch(DB)
         assertFalse(lock.covering.value)
-        advanceTimeBy(TIMEOUT + 1.seconds)
+        timer.expire()
+        runCurrent()
         assertEquals(listOf("lock", "lock"), database.calls)
     }
 
@@ -141,21 +95,18 @@ class AutoLockTest {
 
         assertFalse(lock.covering.value)
         assertEquals(1, failures.size)
-        advanceTimeBy(TIMEOUT * 2)
-        assertEquals(listOf("lock"), database.calls)
+        assertFalse(timer.running)
     }
 
     private fun TestScope.autoLock() = AutoLock(
         database = database,
         guard = guard,
-        clock = { testScheduler.currentTime.milliseconds + slept },
+        timer = timer,
         scope = backgroundScope,
-        timeout = TIMEOUT,
         onFailure = { failures += it },
     )
 
     private companion object {
         const val DB = "content://docs/passwords.kdbx"
-        val TIMEOUT = 5.minutes
     }
 }

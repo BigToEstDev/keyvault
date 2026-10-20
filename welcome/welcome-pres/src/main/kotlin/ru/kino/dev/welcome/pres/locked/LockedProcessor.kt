@@ -16,6 +16,7 @@ import ru.kino.dev.navigation.LockedRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.VaultRootRoute
+import ru.kino.dev.settings.signin.SignInSettingsRepository
 import ru.kino.dev.welcome.CurrentDatabaseRepository
 import ru.kino.dev.welcome.WelcomeDatabaseRepository
 import ru.kino.dev.welcome.WelcomeFailure
@@ -53,6 +54,7 @@ class LockedProcessor @AssistedInject constructor(
     private val navigator: Navigator,
     private val log: ErrorLog,
     private val biometric: BiometricSignIn,
+    private val signIn: SignInSettingsRepository,
 ) : ViewModel(), OrbitContainerHost<LockedState, LockedState, LockedSideEffect> {
 
     @AssistedFactory
@@ -74,6 +76,8 @@ class LockedProcessor @AssistedInject constructor(
                 ),
             )
         }
+        // Once, as the lock is shown - not again after a cancel: the button stays (pass-docs, Step 59)
+        if (biometricOn && signIn.autoBiometricPrompt.first()) startBiometric()
     }
 
     fun action(action: LockedAction): Job = when (action) {
@@ -179,7 +183,9 @@ class LockedProcessor @AssistedInject constructor(
                 return
             }
             if (failure is WelcomeFailure.Unexpected) log.unexpected(TAG, failure)
-            reduce { state.copy(entry = state.entry.copy(busy = false, problem = failure.toProblem())) }
+            // A wrong password - or key file: the core does not tell which - wiped when the settings say so
+            val clear = failure is WelcomeFailure.InvalidCredentials && signIn.clearPasswordOnError.first()
+            reduce { state.copy(entry = state.entry.failed(failure.toProblem(), clearPassword = clear)) }
         }
     }
 

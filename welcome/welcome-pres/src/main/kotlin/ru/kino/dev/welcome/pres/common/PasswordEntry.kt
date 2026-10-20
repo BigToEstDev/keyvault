@@ -31,6 +31,13 @@ data class PasswordEntry(
     fun typed(password: String): PasswordEntry =
         copy(password = password, problem = problem.takeUnless { it == EntryProblem.InvalidCredentials })
 
+    /**
+     * The call is over and failed with [problem]. [clearPassword] - the typed password goes too, when the settings
+     * say so after a wrong one (pass-docs, Step 59); the key file stays.
+     */
+    fun failed(problem: EntryProblem, clearPassword: Boolean = false): PasswordEntry =
+        copy(busy = false, problem = problem, password = if (clearPassword) "" else password)
+
     fun withKeyFile(uri: String?, name: String?): PasswordEntry =
         copy(keyFileUri = uri, keyFileName = name, problem = problem.takeUnless { it.isAboutKeyFile })
 }

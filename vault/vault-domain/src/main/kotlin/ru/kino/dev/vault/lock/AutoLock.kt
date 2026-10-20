@@ -1,11 +1,8 @@
 package ru.kino.dev.vault.lock
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,21 +10,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.vault.VaultDatabaseRepository
-import kotlin.time.Duration
-
-/** The time since some fixed point, counting while the phone sleeps - so a lock is due after a night. */
-fun interface ElapsedClock {
-    fun now(): Duration
-}
 
 /**
- * Locks the open database once nobody has touched the app for [timeout] (pass-docs, Step 46).
- *
- * One rule: put away, the screen off, another app on top - no touches all the same, and the same timer runs
- * out. The timer lives in the process; a process killed takes the database with it, and the next start asks
- * for the password anyway. A process frozen in the background sleeps through its timer - so coming back
- * checks the clock and locks before anything is shown.
+ * Locks the open database when the [timer] of the settings says nobody touched the app long enough
+ * (pass-docs, Step 46, Step 59). The count is the timer's; here - what a lock is.
  *
  * Locking waits for a change being written ([DatabaseGuard]). Once locked, the database is forgotten here
  * until `vault` shows it again ([watch]); [locked] tells the app to put the locked screen up, and
@@ -38,9 +26,8 @@ fun interface ElapsedClock {
 class AutoLock(
     private val database: VaultDatabaseRepository,
     private val guard: DatabaseGuard,
-    private val clock: ElapsedClock,
+    private val timer: InactivityTimer,
     private val scope: CoroutineScope,
-    private val timeout: Duration,
     private val onFailure: (CoreException) -> Unit,
 ) {
     private val _covering = MutableStateFlow(false)
@@ -58,37 +45,20 @@ class AutoLock(
 
     private val state = Any()
 
-    // Written under [state]; read without it on the touch path, where a stale value is a touch late at most
     @Volatile
     private var dbKey: String? = null
 
-    @Volatile
-    private var lastTouch: Duration = Duration.ZERO
+    init {
+        timer.setOnExpired(::expired)
+    }
 
-    private var timer: Job? = null
-
-    /** `vault` shows the database [dbKey]: from now on it is locked after [timeout] without a touch. */
+    /** `vault` shows the database [dbKey]: from now on it is locked once the timer runs out. */
     fun watch(dbKey: String) {
         synchronized(state) {
             this.dbKey = dbKey
-            lastTouch = clock.now()
             _covering.value = false
-            timer?.cancel()
-            timer = scope.launch { countDown(dbKey) }
         }
-    }
-
-    /** A touch or a key - the person is here. */
-    fun touched() {
-        lastTouch = clock.now()
-    }
-
-    /** The app is on the screen again: if the timer was slept through, the lock is due now. */
-    fun cameBack() {
-        val key = dbKey ?: return
-        if (clock.now() - lastTouch < timeout) return
-        _covering.value = true
-        scope.launch { lock(key) }
+        timer.start()
     }
 
     /** Locks now, not waiting for the timer. False when there was nothing to lock, or the core refused. */
@@ -99,28 +69,20 @@ class AutoLock(
         return scope.async { lock(key) }.await()
     }
 
-    private suspend fun countDown(key: String) {
-        while (true) {
-            val left = timeout - (clock.now() - lastTouch)
-            if (left <= Duration.ZERO) {
-                _covering.value = true
-                lock(key)
-                return
-            }
-            delay(left)
-        }
+    // Told on the thread that saw it - coming back included, before the screens are drawn: covered at once
+    private fun expired() {
+        val key = dbKey ?: return
+        _covering.value = true
+        scope.launch { lock(key) }
     }
 
     private suspend fun lock(key: String): Boolean {
-        val running = currentCoroutineContext()[Job]
         synchronized(state) {
             // Locked already, by another way to it, or another database is open now
             if (dbKey != key) return false
             dbKey = null
-            // Not the timer the lock runs in: cancelling that one would cancel the lock
-            timer?.takeIf { it != running }?.cancel()
-            timer = null
         }
+        timer.stop()
         return try {
             guard.exclusive { database.lock(key) }
             _locked.send(key)

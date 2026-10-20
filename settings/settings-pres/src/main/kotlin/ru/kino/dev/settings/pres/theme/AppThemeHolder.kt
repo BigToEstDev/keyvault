@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.stateIn
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.AppearanceRepository
 import ru.kino.dev.settings.appearance.ThemeMode
+import ru.kino.dev.settings.lock.LockSettingsRepository
 import ru.kino.dev.ui.theme.AppDisplay
 import javax.inject.Inject
 
@@ -23,6 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AppThemeHolder @Inject constructor(
     repository: AppearanceRepository,
+    lock: LockSettingsRepository,
 ) : ViewModel() {
 
     /** Null while the setting is being read; a new value as soon as it is changed in the settings. */
@@ -42,12 +44,14 @@ class AppThemeHolder @Inject constructor(
         repository.userNameInList,
         repository.entryCount,
         repository.entryCountNested,
-    ) { passwordColoring, userNameInList, entryCount, entryCountNested ->
+        lock.lockButton,
+    ) { passwordColoring, userNameInList, entryCount, entryCountNested, lockButton ->
         AppDisplay(
             passwordColoring = passwordColoring,
             userNameInList = userNameInList,
             entryCount = entryCount,
             entryCountNested = entryCountNested,
+            lockButton = lockButton,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }

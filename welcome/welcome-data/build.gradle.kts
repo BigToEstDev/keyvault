@@ -5,10 +5,10 @@ plugins {
 
 dependencies {
     api(projects.welcome.welcomeDomain)
+    // Biometrics are of settings: a database remembered anew forgets the stale ones (pass-docs, Step 59)
+    implementation(projects.settings.settingsDomain)
 
     implementation(libs.hilt)
-    // Strong biometrics: BiometricManager, BiometricPrompt
-    implementation(libs.androidx.biometric)
     ksp(libs.hilt.compiler)
 
     // The remembered database: one json string in preferences, the whole schema

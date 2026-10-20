@@ -9,12 +9,12 @@ import ru.kino.dev.core.NativeCore
 import ru.kino.dev.core.NewDatabase
 import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.readKeyFile
-import ru.kino.dev.welcome.BiometricFailure
+import ru.kino.dev.settings.biometric.BiometricCleanup
+import ru.kino.dev.settings.biometric.BiometricFailure
 import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.CurrentDatabaseRepository
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeDatabaseRepository
-import ru.kino.dev.welcome.data.biometric.BiometricCleanup
 import javax.inject.Inject
 import javax.inject.Singleton
 

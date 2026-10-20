@@ -1,6 +1,5 @@
 package ru.kino.dev.vault.pres.grouplist
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -17,6 +16,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.navigation.VaultRootRoute
+import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
@@ -44,8 +44,6 @@ import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
 import ru.kino.dev.vault.search.VaultSearch
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 
 class GroupListProcessorTest {
 
@@ -838,13 +836,11 @@ class GroupListProcessorTest {
     )
 
     /** The lock of the app, the timer never running out here - the tests lock by hand. */
-    @OptIn(ExperimentalCoroutinesApi::class) // the virtual time of the test scheduler
     private fun TestScope.lock(): AutoLock = AutoLock(
         database = database,
         guard = DatabaseGuard(),
-        clock = { testScheduler.currentTime.milliseconds },
+        timer = FakeInactivityTimer(),
         scope = backgroundScope,
-        timeout = Duration.INFINITE,
         onFailure = { log.unexpected("AutoLock", it) },
     ).also { autoLock = it }
 

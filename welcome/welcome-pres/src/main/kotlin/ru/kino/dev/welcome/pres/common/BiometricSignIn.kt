@@ -1,9 +1,9 @@
 package ru.kino.dev.welcome.pres.common
 
 import ru.kino.dev.log.ErrorLog
-import ru.kino.dev.welcome.BiometricFailure
-import ru.kino.dev.welcome.BiometricRepository
-import ru.kino.dev.welcome.BiometricSession
+import ru.kino.dev.settings.biometric.BiometricFailure
+import ru.kino.dev.settings.biometric.BiometricRepository
+import ru.kino.dev.settings.biometric.BiometricSession
 import javax.inject.Inject
 
 /** What the screen says about biometrics, under the button. */

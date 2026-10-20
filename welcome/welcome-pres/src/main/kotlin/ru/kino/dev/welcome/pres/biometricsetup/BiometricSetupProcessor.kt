@@ -9,12 +9,12 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.log.ErrorLog
-import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.WelcomeGraph
-import ru.kino.dev.welcome.BiometricFailure
-import ru.kino.dev.welcome.BiometricRepository
+import ru.kino.dev.settings.biometric.BiometricFailure
+import ru.kino.dev.settings.biometric.BiometricRepository
 import ru.kino.dev.welcome.pres.common.BiometricOutcome
 import ru.kino.dev.welcome.pres.create.CreateDraft
 
