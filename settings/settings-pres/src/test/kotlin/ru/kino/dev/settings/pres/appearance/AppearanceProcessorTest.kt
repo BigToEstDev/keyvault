@@ -11,6 +11,7 @@ import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.AppearanceRepository
 import ru.kino.dev.settings.appearance.ThemeMode
 import java.io.IOException
@@ -101,10 +102,14 @@ class AppearanceProcessorTest {
 
         override val themeMode: Flow<ThemeMode> = mode
 
+        override val language: Flow<AppLanguage> = MutableStateFlow(AppLanguage.System)
+
         override suspend fun save(mode: ThemeMode) {
             if (failSave) throw IOException("disk full")
             saved += mode
             this.mode.value = mode
         }
+
+        override suspend fun save(language: AppLanguage) = Unit
     }
 }
