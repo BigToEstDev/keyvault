@@ -1,14 +1,11 @@
 package ru.kino.dev.ui.components
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +27,6 @@ fun SwitchRow(
     text: String? = null,
     enabled: Boolean = true,
 ) {
-    val alpha = if (enabled) 1f else DISABLED_ALPHA
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -39,24 +35,8 @@ fun SwitchRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
-            )
-            text?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha),
-                )
-            }
-        }
+        SettingRowText(title, text, enabled, modifier = Modifier.weight(1f).padding(end = 16.dp))
         // The row takes the tap and says what it is; the switch only draws it
         Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
 }
-
-/** A disabled element of Material 3: its content in `onSurface` at 38%. Shared by the rows of settings. */
-internal const val DISABLED_ALPHA = 0.38f

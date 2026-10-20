@@ -1,7 +1,6 @@
 package ru.kino.dev.ui.components
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -38,20 +37,7 @@ fun ValueRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
-            )
-            text?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha),
-                )
-            }
-        }
+        SettingRowText(title, text, enabled, modifier = Modifier.weight(1f).padding(end = 16.dp))
         Text(
             text = value,
             style = MaterialTheme.typography.bodyLarge,
