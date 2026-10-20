@@ -84,7 +84,7 @@ internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) 
                             selected = state.themeMode ?: ThemeMode.System,
                             label = { stringResource(it.label) },
                             onSelect = { processor.action(AppearanceAction.SelectTheme(it)) },
-                            enabled = state.themeMode != null && !state.saving,
+                            enabled = state.themeMode != null,
                             modifier = Modifier.padding(16.dp),
                         )
                     }
@@ -110,7 +110,7 @@ internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) 
                             onSelect = { processor.action(AppearanceAction.SelectLanguage(it)) },
                             label = stringResource(R.string.settings_language),
                             // Until read nothing is chosen for real: the choice is disabled meanwhile
-                            enabled = state.language != null && !state.saving,
+                            enabled = state.language != null,
                             modifier = Modifier.padding(16.dp),
                         )
                     }
@@ -126,7 +126,7 @@ internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) 
                             // Until read nothing is chosen for real: the switch is disabled meanwhile, shown on
                             checked = state.passwordColoring ?: true,
                             onCheckedChange = { processor.action(AppearanceAction.SetPasswordColoring(it)) },
-                            enabled = state.passwordColoring != null && !state.saving,
+                            enabled = state.passwordColoring != null,
                         )
                     }
                 }
@@ -137,7 +137,7 @@ internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) 
                             text = stringResource(R.string.settings_user_name_in_list_hint),
                             checked = state.userNameInList ?: false,
                             onCheckedChange = { processor.action(AppearanceAction.SetUserNameInList(it)) },
-                            enabled = state.userNameInList != null && !state.saving,
+                            enabled = state.userNameInList != null,
                         )
                     }
                 }
