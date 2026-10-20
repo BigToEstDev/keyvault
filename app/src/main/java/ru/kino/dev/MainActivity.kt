@@ -116,6 +116,13 @@ class MainActivity : FragmentActivity() {
         timer.cameBack()
     }
 
+    // Put away or the screen off - leaving, which may lock at once (pass-docs, Step 59). Not a turn of the
+    // screen: the activity is built anew then, and the person is still here
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) timer.wentAway()
+    }
+
     // Every touch and key of the app, whatever screen takes it - the person is here. The callback of the
     // Activity for exactly this: a touch counts once, as it starts, not on every move (pass-docs, Step 40, fix 14)
     override fun onUserInteraction() {

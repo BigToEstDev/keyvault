@@ -8,6 +8,12 @@ interface LockSettingsRepository {
     /** The chosen time without a touch, [AutoLockTimeout.Default] until one is chosen; a new value on every change. */
     val autoLockTimeout: Flow<AutoLockTimeout>
 
+    /** Whether the app going off the screen locks at once, not waiting for the time; off until chosen. */
+    val lockOnLeave: Flow<Boolean>
+
     /** Keeps [timeout]; throws an `IOException` when it could not be written. */
     suspend fun save(timeout: AutoLockTimeout)
+
+    /** Keeps whether leaving locks; throws an `IOException` when it could not be written. */
+    suspend fun saveLockOnLeave(on: Boolean)
 }

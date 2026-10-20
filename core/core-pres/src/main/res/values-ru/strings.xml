@@ -270,5 +270,7 @@
     <string name="settings_auto_lock_hint">Без касаний столько времени — база блокируется</string>
     <string name="settings_seconds_short">%1$d с</string>
     <string name="settings_minutes_short">%1$d мин</string>
+    <string name="settings_lock_on_leave">Блокировать при уходе из приложения</string>
+    <string name="settings_lock_on_leave_hint">Сразу при сворачивании или выключении экрана</string>
     <string name="settings_message_not_saved">Настройка не сохранилась</string>
 </resources>

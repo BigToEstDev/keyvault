@@ -18,6 +18,9 @@ sealed interface LockAction {
     /** A time chosen on the wheel: kept at once. */
     data class SelectTimeout(val timeout: AutoLockTimeout) : LockAction
 
+    /** "Lock on leaving the app" switched: kept at once. */
+    data class SetLockOnLeave(val on: Boolean) : LockAction
+
     /** The snackbar took the message. */
     data object MessageShown : LockAction
 }

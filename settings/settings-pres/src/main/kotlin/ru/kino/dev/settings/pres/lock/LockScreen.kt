@@ -26,10 +26,14 @@ import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
+import ru.kino.dev.ui.components.SwitchRow
 import ru.kino.dev.ui.components.ValueRow
 import ru.kino.dev.ui.components.WheelPickerDialog
 
-/** How the database locks and how one gets in: the group "Locking" - the auto-lock for now (pass-docs, Step 59). */
+/**
+ * How the database locks and how one gets in: the group "Locking" - the auto-lock, locking on leaving the app
+ * (pass-docs, Step 59).
+ */
 @Composable
 internal fun LockScreen(processor: LockProcessor = hiltViewModel()) {
     val state by processor.collectAsState()
@@ -75,6 +79,17 @@ internal fun LockScreen(processor: LockProcessor = hiltViewModel()) {
                             value = state.timeout?.let { timeoutLabel(it) }.orEmpty(),
                             onClick = { processor.action(LockAction.ChooseTimeout) },
                             enabled = state.timeout != null,
+                        )
+                    }
+                }
+                item(key = "lock-on-leave") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        SwitchRow(
+                            title = stringResource(R.string.settings_lock_on_leave),
+                            text = stringResource(R.string.settings_lock_on_leave_hint),
+                            checked = state.lockOnLeave ?: false,
+                            onCheckedChange = { processor.action(LockAction.SetLockOnLeave(it)) },
+                            enabled = state.lockOnLeave != null,
                         )
                     }
                 }

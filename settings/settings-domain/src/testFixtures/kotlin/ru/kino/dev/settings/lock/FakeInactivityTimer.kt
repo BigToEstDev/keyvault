@@ -30,6 +30,10 @@ class FakeInactivityTimer : InactivityTimer {
 
     override fun cameBack() = Unit
 
+    override fun wentAway() = Unit
+
+    override fun leavingForSystemScreen() = Unit
+
     /** The time ran out - told only while it is running, as the real one. */
     fun expire() {
         if (!running) return

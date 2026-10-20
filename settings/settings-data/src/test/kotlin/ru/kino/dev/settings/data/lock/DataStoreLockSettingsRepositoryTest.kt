@@ -45,6 +45,22 @@ class DataStoreLockSettingsRepositoryTest {
         assertEquals(AutoLockTimeout.Minutes5, DataStoreLockSettingsRepository(store).autoLockTimeout.first())
     }
 
+    @Test
+    fun `leaving does not lock until chosen`() = runTest {
+        val repository = DataStoreLockSettingsRepository(store(newFile()))
+
+        assertEquals(false, repository.lockOnLeave.first())
+    }
+
+    @Test
+    fun `locking on leaving switched on is what is read next`() = runTest {
+        val repository = DataStoreLockSettingsRepository(store(newFile()))
+
+        repository.saveLockOnLeave(true)
+
+        assertEquals(true, repository.lockOnLeave.first())
+    }
+
     private fun newFile(): File = File(folder.newFolder(), "app_settings.preferences_pb")
 
     private fun TestScope.store(file: File): DataStore<Preferences> =

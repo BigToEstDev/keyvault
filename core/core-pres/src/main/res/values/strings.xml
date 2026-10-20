@@ -267,5 +267,7 @@
     <string name="settings_auto_lock_hint">Locks the database after this long without a touch</string>
     <string name="settings_seconds_short">%1$d s</string>
     <string name="settings_minutes_short">%1$d min</string>
+    <string name="settings_lock_on_leave">Lock on leaving the app</string>
+    <string name="settings_lock_on_leave_hint">At once when the app is put away or the screen goes off</string>
     <string name="settings_message_not_saved">The setting was not saved</string>
 </resources>

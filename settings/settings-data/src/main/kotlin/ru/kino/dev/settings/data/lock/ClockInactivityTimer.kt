@@ -11,7 +11,8 @@ import ru.kino.dev.settings.lock.InactivityTimer
 import kotlin.time.Duration
 
 /**
- * The [InactivityTimer] of the app: counts on [clock], waits in [scope], takes its time from [timeouts].
+ * The [InactivityTimer] of the app: counts on [clock], waits in [scope], takes its time from [timeouts] and
+ * whether leaving locks from [lockOnLeave].
  *
  * The count lives in the process; a process killed takes the database with it, and the next start asks for the
  * password anyway. Until the setting is read it counts the default. A new time is counted from the moment it
@@ -21,6 +22,7 @@ internal class ClockInactivityTimer(
     private val clock: ElapsedClock,
     private val scope: CoroutineScope,
     timeouts: Flow<Duration>,
+    lockOnLeave: Flow<Boolean>,
 ) : InactivityTimer {
 
     private val state = Any()
@@ -38,6 +40,14 @@ internal class ClockInactivityTimer(
     @Volatile
     private var onExpired: (() -> Unit)? = null
 
+    // Off until read: the setting is off until chosen
+    @Volatile
+    private var leavingLocks = false
+
+    // The app went to a screen of the system itself: that going away is not leaving
+    @Volatile
+    private var toSystemScreen = false
+
     private var countdown: Job? = null
 
     init {
@@ -50,6 +60,7 @@ internal class ClockInactivityTimer(
                 }
             }
         }
+        scope.launch { lockOnLeave.collect { leavingLocks = it } }
     }
 
     override fun setOnExpired(listener: (() -> Unit)?) {
@@ -76,7 +87,17 @@ internal class ClockInactivityTimer(
     }
 
     override fun cameBack() {
+        toSystemScreen = false
         if (running && clock.now() - lastTouch >= timeout) expire()
+    }
+
+    override fun wentAway() {
+        if (toSystemScreen || !leavingLocks) return
+        expire()
+    }
+
+    override fun leavingForSystemScreen() {
+        toSystemScreen = true
     }
 
     // Under [state]

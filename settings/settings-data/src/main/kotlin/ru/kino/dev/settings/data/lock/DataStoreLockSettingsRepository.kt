@@ -2,6 +2,7 @@ package ru.kino.dev.settings.data.lock
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -24,20 +25,31 @@ internal class DataStoreLockSettingsRepository(
     private val store: DataStore<Preferences>,
 ) : LockSettingsRepository {
 
-    override val autoLockTimeout: Flow<AutoLockTimeout> = store.data
+    private val preferences: Flow<Preferences> = store.data
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+
+    override val autoLockTimeout: Flow<AutoLockTimeout> = preferences
         .map { preferences ->
             AUTO_LOCK_TIMEOUT.entries.firstOrNull { it.value == preferences[AUTO_LOCK_TIMEOUT_KEY] }?.key
                 ?: AutoLockTimeout.Default
         }
         .distinctUntilChanged()
 
+    override val lockOnLeave: Flow<Boolean> = preferences
+        .map { it[LOCK_ON_LEAVE_KEY] ?: false }
+        .distinctUntilChanged()
+
     override suspend fun save(timeout: AutoLockTimeout) {
         store.edit { it[AUTO_LOCK_TIMEOUT_KEY] = AUTO_LOCK_TIMEOUT.getValue(timeout) }
     }
 
+    override suspend fun saveLockOnLeave(on: Boolean) {
+        store.edit { it[LOCK_ON_LEAVE_KEY] = on }
+    }
+
     internal companion object {
         val AUTO_LOCK_TIMEOUT_KEY: Preferences.Key<String> = stringPreferencesKey("auto_lock_timeout")
+        val LOCK_ON_LEAVE_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("lock_on_leave")
 
         val AUTO_LOCK_TIMEOUT = mapOf(
             AutoLockTimeout.Seconds30 to "30s",

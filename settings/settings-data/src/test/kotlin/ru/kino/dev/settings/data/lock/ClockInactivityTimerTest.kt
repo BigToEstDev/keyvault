@@ -21,6 +21,8 @@ class ClockInactivityTimerTest {
 
     private val timeouts = MutableStateFlow(5.minutes)
 
+    private val lockOnLeave = MutableStateFlow(false)
+
     private var expired = 0
 
     @Test
@@ -115,10 +117,59 @@ class ClockInactivityTimerTest {
         assertEquals(2, expired)
     }
 
+    @Test
+    fun `going away with locking on leaving runs out at once`() = runTest {
+        lockOnLeave.value = true
+        val timer = timer()
+        timer.start()
+
+        timer.wentAway()
+
+        assertEquals(1, expired)
+    }
+
+    @Test
+    fun `going away without it does nothing, the count goes on`() = runTest {
+        val timer = timer()
+        timer.start()
+
+        timer.wentAway()
+        assertEquals(0, expired)
+
+        advanceTimeBy(5.minutes + 1.seconds)
+        assertEquals(1, expired)
+    }
+
+    @Test
+    fun `going away with nothing to lock does nothing`() = runTest {
+        lockOnLeave.value = true
+        val timer = timer()
+
+        timer.wentAway()
+
+        assertEquals(0, expired)
+    }
+
+    @Test
+    fun `going to a screen of the system is not leaving, until the app is back`() = runTest {
+        lockOnLeave.value = true
+        val timer = timer()
+        timer.start()
+
+        timer.leavingForSystemScreen()
+        timer.wentAway()
+        assertEquals(0, expired)
+
+        timer.cameBack()
+        timer.wentAway()
+        assertEquals(1, expired)
+    }
+
     private fun TestScope.timer() = ClockInactivityTimer(
         clock = { testScheduler.currentTime.milliseconds + slept },
         scope = backgroundScope,
         timeouts = timeouts,
+        lockOnLeave = lockOnLeave,
     ).also {
         it.setOnExpired { expired++ }
         runCurrent()

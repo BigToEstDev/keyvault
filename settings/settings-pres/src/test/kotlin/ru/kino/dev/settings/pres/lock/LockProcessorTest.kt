@@ -24,7 +24,7 @@ class LockProcessorTest {
         LockProcessor(repository, Navigator()).testWithInternalState(this) {
             containerHost.action(LockAction.Load).join()
 
-            expectInternalState { copy(timeout = AutoLockTimeout.Minutes10) }
+            expectInternalState { copy(timeout = AutoLockTimeout.Minutes10, lockOnLeave = false) }
         }
     }
 
@@ -91,6 +91,33 @@ class LockProcessorTest {
         assertEquals(emptyList<AutoLockTimeout>(), repository.saved)
     }
 
+    @Test
+    fun `locking on leaving switched is kept at once`() = runTest {
+        val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
+
+        LockProcessor(repository, Navigator())
+            .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockOnLeave = false)) {
+                containerHost.action(LockAction.SetLockOnLeave(true)).join()
+
+                expectInternalState { copy(lockOnLeave = true) }
+            }
+
+        assertEquals(listOf(true), repository.savedLockOnLeave)
+    }
+
+    @Test
+    fun `locking on leaving not written shows what is kept, with a message`() = runTest {
+        val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5, failSave = true)
+
+        LockProcessor(repository, Navigator())
+            .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockOnLeave = false)) {
+                containerHost.action(LockAction.SetLockOnLeave(true)).join()
+
+                expectInternalState { copy(lockOnLeave = true) }
+                expectInternalState { copy(lockOnLeave = false, message = LockMessage.NotSaved) }
+            }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `back leaves the screen`() = runTest {
@@ -114,12 +141,24 @@ class LockProcessorTest {
 
         val saved = mutableListOf<AutoLockTimeout>()
 
+        private val leaving = MutableStateFlow(false)
+
+        val savedLockOnLeave = mutableListOf<Boolean>()
+
         override val autoLockTimeout: Flow<AutoLockTimeout> = timeout
+
+        override val lockOnLeave: Flow<Boolean> = leaving
 
         override suspend fun save(timeout: AutoLockTimeout) {
             if (failSave) throw IOException("disk full")
             saved += timeout
             this.timeout.value = timeout
+        }
+
+        override suspend fun saveLockOnLeave(on: Boolean) {
+            if (failSave) throw IOException("disk full")
+            savedLockOnLeave += on
+            leaving.value = on
         }
     }
 }

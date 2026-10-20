@@ -48,6 +48,7 @@ internal object SettingsDataModule {
         // The app's own: the count outlives any screen
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
         timeouts = settings.autoLockTimeout.map { it.duration },
+        lockOnLeave = settings.lockOnLeave,
     )
 }
 
