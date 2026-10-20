@@ -275,6 +275,16 @@
     <string name="settings_lock_button">Кнопка «Заблокировать»</string>
     <string name="settings_lock_button_hint">Блокирует базу сразу, не дожидаясь автоблокировки</string>
     <string name="settings_sign_in_group">Вход</string>
+    <string name="settings_biometric">Биометрия</string>
+    <string name="settings_biometric_hint">Вход по отпечатку для этой базы</string>
+    <string name="settings_biometric_no_hardware">На телефоне нет надёжной биометрии</string>
+    <string name="settings_biometric_no_password">У базы нет пароля — только key-файл</string>
+    <string name="settings_biometric_password_title">Пароль базы</string>
+    <string name="settings_biometric_wrong_password">Неверный пароль</string>
+    <string name="settings_biometric_forget_title">Забыть биометрию для этой базы?</string>
+    <string name="settings_biometric_forget_text">Вход по отпечатку будет недоступен, пока не включите снова</string>
+    <string name="settings_biometric_forget">Забыть</string>
+    <string name="settings_message_biometric_failed">Не удалось изменить биометрию</string>
     <string name="settings_auto_biometric_prompt">Автозапрос биометрии</string>
     <string name="settings_auto_biometric_prompt_hint">Сам показывает запрос биометрии на экране входа</string>
     <string name="settings_clear_password">Очищать пароль после ошибки</string>

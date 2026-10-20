@@ -12,6 +12,10 @@ class FakeInactivityTimer : InactivityTimer {
     var touches: Int = 0
         private set
 
+    /** How many times the app said it opens a screen of the system itself. */
+    var systemScreens: Int = 0
+        private set
+
     override fun setOnExpired(listener: (() -> Unit)?) {
         onExpired = listener
     }
@@ -32,7 +36,9 @@ class FakeInactivityTimer : InactivityTimer {
 
     override fun wentAway() = Unit
 
-    override fun leavingForSystemScreen() = Unit
+    override fun leavingForSystemScreen() {
+        systemScreens++
+    }
 
     /** The time ran out - told only while it is running, as the real one. */
     fun expire() {

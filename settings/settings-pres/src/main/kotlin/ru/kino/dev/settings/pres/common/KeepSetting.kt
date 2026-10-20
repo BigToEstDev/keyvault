@@ -12,7 +12,7 @@ import java.io.IOException
  * was shown before: of a few quick taps one may fail while another went through - and [notSaved] for the
  * snackbar. Nothing until the setting is read ([current] null), or when it is the same.
  */
-internal suspend fun <S : Any, T : Any> Syntax<S, Nothing>.keepSetting(
+internal suspend fun <S : Any, SE : Any, T : Any> Syntax<S, SE>.keepSetting(
     chosen: T,
     current: T?,
     kept: Flow<T>,

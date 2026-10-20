@@ -7,6 +7,8 @@ dependencies {
     implementation(projects.core.corePres)
     implementation(projects.core.coreNav)
     implementation(projects.settings.settingsDomain)
+    // The password of the open database checked before it is kept for biometrics (pass-docs, Step 59)
+    implementation(projects.vault.vaultDomain)
 
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)

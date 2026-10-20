@@ -11,7 +11,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -29,6 +33,8 @@ import androidx.compose.ui.unit.dp
  *
  * @param error marks the field as wrong and puts a "!" in it; the text is a bubble under the field - see
  * [TextField]
+ * @param secret a password rather than a name: a [PasswordField] with its eye, no capitals, no corrections
+ * (pass-docs, Step 59, item 7)
  */
 @Composable
 fun TextInputDialog(
@@ -42,8 +48,10 @@ fun TextInputDialog(
     onDismiss: () -> Unit,
     error: String? = null,
     loading: Boolean = false,
+    secret: Boolean = false,
 ) {
     val focus = remember { FocusRequester() }
+    var visible by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = { if (!loading) onDismiss() },
@@ -56,21 +64,36 @@ fun TextInputDialog(
                 focus.requestFocus()
                 keyboard?.show()
             }
-            TextField(
-                value = value,
-                onValueChange = onValueChange,
-                label = label,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focus),
-                enabled = !loading,
-                error = error,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    imeAction = ImeAction.Done,
-                ),
-                keyboardActions = KeyboardActions(onDone = { if (!loading) onConfirm() }),
-            )
+            val modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focus)
+            if (secret) {
+                PasswordField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    label = label,
+                    visible = visible,
+                    onToggleVisible = { visible = !visible },
+                    modifier = modifier,
+                    error = error,
+                    enabled = !loading,
+                    onImeAction = { if (!loading) onConfirm() },
+                )
+            } else {
+                TextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    label = label,
+                    modifier = modifier,
+                    enabled = !loading,
+                    error = error,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        imeAction = ImeAction.Done,
+                    ),
+                    keyboardActions = KeyboardActions(onDone = { if (!loading) onConfirm() }),
+                )
+            }
         },
         confirmButton = {
             TextButton(onClick = onConfirm, enabled = !loading) {

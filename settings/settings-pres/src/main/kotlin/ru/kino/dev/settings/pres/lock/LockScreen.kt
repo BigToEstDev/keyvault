@@ -20,25 +20,44 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.settings.lock.AutoLockTimeout
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
+import ru.kino.dev.ui.biometric.BiometricPurpose
+import ru.kino.dev.ui.biometric.rememberBiometricPrompt
 import ru.kino.dev.ui.components.BackTopBar
+import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.SwitchRow
+import ru.kino.dev.ui.components.TextInputDialog
 import ru.kino.dev.ui.components.ValueRow
 import ru.kino.dev.ui.components.WheelPickerDialog
 
 /**
  * How the database locks and how one gets in: the group "Locking" - the auto-lock, locking on leaving the app,
- * the lock button; the group "Sign-in" - asking for biometrics by
- * themselves, wiping a wrong password (pass-docs, Step 59).
+ * the lock button; the group "Sign-in" - biometrics of the database, asking for them by themselves, wiping a wrong
+ * password (pass-docs, Step 59).
  */
 @Composable
-internal fun LockScreen(processor: LockProcessor = hiltViewModel()) {
+internal fun LockScreen(
+    dbKey: String,
+    processor: LockProcessor = hiltViewModel<LockProcessor, LockProcessor.Factory>(
+        creationCallback = { factory -> factory.create(dbKey) },
+    ),
+) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
+    val showPrompt = rememberBiometricPrompt()
+
+    processor.collectSideEffect { effect ->
+        when (effect) {
+            is LockSideEffect.ShowBiometricPrompt -> showPrompt(effect.session.cipher, BiometricPurpose.Enable) {
+                processor.action(LockAction.BiometricPromptFinished(effect.session, it))
+            }
+        }
+    }
 
     LaunchedEffect(Unit) { processor.action(LockAction.Load) }
 
@@ -46,6 +65,7 @@ internal fun LockScreen(processor: LockProcessor = hiltViewModel()) {
         stringResource(
             when (it) {
                 LockMessage.NotSaved -> R.string.settings_message_not_saved
+                LockMessage.BiometricFailed -> R.string.settings_message_biometric_failed
             },
         )
     }
@@ -109,6 +129,25 @@ internal fun LockScreen(processor: LockProcessor = hiltViewModel()) {
                     // Set apart from the group above, as the sections of the main screen
                     SettingsSectionHeader(title = stringResource(R.string.settings_sign_in_group), top = 8.dp)
                 }
+                item(key = "biometric") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        val row = state.biometric
+                        SwitchRow(
+                            title = stringResource(R.string.settings_biometric),
+                            text = stringResource(
+                                when (row?.unavailable) {
+                                    BiometricUnavailable.NoHardware -> R.string.settings_biometric_no_hardware
+                                    BiometricUnavailable.NoPassword -> R.string.settings_biometric_no_password
+                                    null -> R.string.settings_biometric_hint
+                                },
+                            ),
+                            checked = row?.on ?: false,
+                            onCheckedChange = { processor.action(LockAction.SetBiometric(it)) },
+                            // On, it can always be turned off - forgetting needs neither the sensor nor a password
+                            enabled = row != null && (row.unavailable == null || row.on),
+                        )
+                    }
+                }
                 item(key = "auto-biometric-prompt") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
@@ -133,6 +172,33 @@ internal fun LockScreen(processor: LockProcessor = hiltViewModel()) {
                 }
             }
         }
+    }
+
+    state.biometricPassword?.let { dialog ->
+        TextInputDialog(
+            title = stringResource(R.string.settings_biometric_password_title),
+            value = dialog.password,
+            onValueChange = { processor.action(LockAction.BiometricPasswordChanged(it)) },
+            label = stringResource(R.string.entry_field_password),
+            confirmText = stringResource(R.string.action_next),
+            dismissText = stringResource(R.string.action_cancel),
+            onConfirm = { processor.action(LockAction.BiometricPasswordConfirm) },
+            onDismiss = { processor.action(LockAction.BiometricPasswordDismiss) },
+            error = if (dialog.wrong) stringResource(R.string.settings_biometric_wrong_password) else null,
+            loading = dialog.checking,
+            secret = true,
+        )
+    }
+
+    if (state.forgettingBiometric) {
+        ConfirmDialog(
+            title = stringResource(R.string.settings_biometric_forget_title),
+            text = stringResource(R.string.settings_biometric_forget_text),
+            confirmText = stringResource(R.string.settings_biometric_forget),
+            dismissText = stringResource(R.string.action_cancel),
+            onConfirm = { processor.action(LockAction.BiometricForgetConfirm) },
+            onDismiss = { processor.action(LockAction.BiometricForgetDismiss) },
+        )
     }
 
     val timeout = state.timeout

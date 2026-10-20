@@ -272,6 +272,16 @@
     <string name="settings_lock_button">“Lock” button</string>
     <string name="settings_lock_button_hint">Locks the database at once, without waiting for the auto-lock</string>
     <string name="settings_sign_in_group">Sign-in</string>
+    <string name="settings_biometric">Biometrics</string>
+    <string name="settings_biometric_hint">Sign in to this database with a fingerprint</string>
+    <string name="settings_biometric_no_hardware">No strong biometrics on this phone</string>
+    <string name="settings_biometric_no_password">The database has no password - only a key file</string>
+    <string name="settings_biometric_password_title">Database password</string>
+    <string name="settings_biometric_wrong_password">Wrong password</string>
+    <string name="settings_biometric_forget_title">Forget biometrics for this database?</string>
+    <string name="settings_biometric_forget_text">Signing in with a fingerprint will not work until you turn it on again</string>
+    <string name="settings_biometric_forget">Forget</string>
+    <string name="settings_message_biometric_failed">Biometrics could not be changed</string>
     <string name="settings_auto_biometric_prompt">Ask for biometrics at once</string>
     <string name="settings_auto_biometric_prompt_hint">Shows the biometric prompt by itself on the sign-in screen</string>
     <string name="settings_clear_password">Clear the password after an error</string>
