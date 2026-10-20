@@ -35,4 +35,6 @@ dependencies {
     api(libs.androidx.navigation.compose)
     api(libs.androidx.compose.ui.tooling.preview)
     debugApi(libs.androidx.compose.ui.tooling)
+
+    testImplementation(libs.junit)
 }

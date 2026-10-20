@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
@@ -16,6 +17,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
+import ru.kino.dev.ui.theme.AppDisplay
+import ru.kino.dev.ui.theme.LocalAppColors
+import ru.kino.dev.ui.theme.LocalAppDisplay
 
 /**
  * The text field of the app, without state of its own: the value, the error and whether it is hidden all
@@ -29,6 +33,9 @@ import androidx.compose.ui.text.withStyle
  * @param hint shown under the field, error or not
  * @param readOnly shows the value without letting it change - a screen that reads, not edits
  * @param hidden shows the value as dots - a secret
+ * @param secret the value is a secret - a password, a protected field: shown in clear, its letters, digits and
+ * symbols each take their own color when [AppDisplay.passwordColoring] is on (pass-docs, Step 58); the dots
+ * of a hidden one are not colored
  * @param singleLine false lets the text wrap and the field grow with it - notes
  * @param minLines how tall a multi-line field starts
  * @param actions buttons at the end of the field, after the "!" of the error
@@ -45,6 +52,7 @@ fun TextField(
     enabled: Boolean = true,
     readOnly: Boolean = false,
     hidden: Boolean = false,
+    secret: Boolean = false,
     singleLine: Boolean = true,
     minLines: Int = 1,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
@@ -52,6 +60,13 @@ fun TextField(
     actions: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val errorState = rememberFieldErrorState(error)
+    val colors = LocalAppColors.current
+    val transformation = when {
+        hidden -> PasswordVisualTransformation()
+        secret && LocalAppDisplay.current.passwordColoring ->
+            remember(colors) { SecretColorTransformation(colors.passwordDigit, colors.passwordSymbol) }
+        else -> VisualTransformation.None
+    }
 
     OutlinedTextField(
         value = value,
@@ -68,7 +83,7 @@ fun TextField(
         minLines = minLines,
         isError = error != null,
         supportingText = hint?.let { { Text(it) } },
-        visualTransformation = if (hidden) PasswordVisualTransformation() else VisualTransformation.None,
+        visualTransformation = transformation,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         trailingIcon = if (error == null && actions == null) {

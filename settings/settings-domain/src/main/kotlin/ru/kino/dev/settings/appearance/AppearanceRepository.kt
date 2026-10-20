@@ -11,9 +11,21 @@ interface AppearanceRepository {
     /** The chosen language, [AppLanguage.System] until one is chosen; a new value on every change. */
     val language: Flow<AppLanguage>
 
+    /** Whether a secret shown in clear is colored by its letters, digits and symbols; on until chosen. */
+    val passwordColoring: Flow<Boolean>
+
+    /** Whether the card of an entry in the list shows its user name; off until chosen. */
+    val userNameInList: Flow<Boolean>
+
     /** Keeps [mode]; throws an `IOException` when it could not be written. */
     suspend fun save(mode: ThemeMode)
 
     /** Keeps [language]; throws an `IOException` when it could not be written. */
     suspend fun save(language: AppLanguage)
+
+    /** Keeps whether passwords are colored; throws an `IOException` when it could not be written. */
+    suspend fun savePasswordColoring(on: Boolean)
+
+    /** Keeps whether the list shows user names; throws an `IOException` when it could not be written. */
+    suspend fun saveUserNameInList(on: Boolean)
 }

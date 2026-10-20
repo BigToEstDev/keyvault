@@ -5,17 +5,19 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.AppearanceRepository
 import ru.kino.dev.settings.appearance.ThemeMode
+import ru.kino.dev.ui.theme.AppDisplay
 import javax.inject.Inject
 
 /**
- * The mode of the theme and the language for the whole app - the activity paints every screen with them,
- * `welcome` too (pass-docs, Step 55, Step 57).
+ * The mode of the theme, the language and what the screens show for the whole app - the activity paints every
+ * screen with them, `welcome` too (pass-docs, Step 55, Step 57, Step 58).
  *
- * Not a screen: the activity keeps the system splash on until both have a value, so the app does not
+ * Not a screen: the activity keeps the system splash on until all have a value, so the app does not
  * flash in the other theme or language first.
  */
 @HiltViewModel
@@ -30,4 +32,15 @@ class AppThemeHolder @Inject constructor(
     /** Null while the setting is being read; a new value as soon as it is changed in the settings. */
     val language: StateFlow<AppLanguage?> = repository.language
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /**
+     * What the screens show - all the switches of it at once, so a new one does not reach the activity. Null
+     * while they are being read; a new value as soon as one is changed in the settings.
+     */
+    val display: StateFlow<AppDisplay?> = combine(
+        repository.passwordColoring,
+        repository.userNameInList,
+    ) { passwordColoring, userNameInList ->
+        AppDisplay(passwordColoring = passwordColoring, userNameInList = userNameInList)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }

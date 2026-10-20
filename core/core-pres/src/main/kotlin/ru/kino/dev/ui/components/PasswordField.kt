@@ -50,6 +50,7 @@ fun PasswordField(
         enabled = enabled,
         readOnly = readOnly,
         hidden = !visible,
+        secret = true,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
             autoCorrectEnabled = false,

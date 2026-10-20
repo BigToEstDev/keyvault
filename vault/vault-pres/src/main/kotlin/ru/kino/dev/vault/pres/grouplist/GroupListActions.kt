@@ -91,6 +91,8 @@ data class EntryItem(
     val id: EntryId,
     /** Empty when the entry has none: the card shows its own "untitled" */
     val title: String,
+    /** Empty when the entry has none - in a file of another app: the card has no line for it then */
+    val userName: String = "",
     /** Found by a search: the names from the group searched in down to the one it is in. Null otherwise */
     val location: List<String>? = null,
 )

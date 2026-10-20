@@ -8,13 +8,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.ui.theme.LocalAppDisplay
 import ru.kino.dev.vault.pres.common.MenuCard
 import ru.kino.dev.vault.pres.common.deleteMenuItem
 import ru.kino.dev.vault.pres.common.editMenuItem
 import ru.kino.dev.vault.pres.grouplist.EntryItem
 
 /**
- * An entry in the list: the icon of an entry and the title - "untitled" when it has none.
+ * An entry in the list: the icon of an entry and the title - "untitled" when it has none; under it the user
+ * name, when the settings say so and the entry has one (pass-docs, Step 58).
  *
  * @param location where it lies, when a search found it
  */
@@ -31,6 +33,7 @@ internal fun EntryCard(
         // The color of the folder of a group card, so the two kinds of cards match
         icon = { Icon(Icons.Filled.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         title = entry.title.ifEmpty { stringResource(R.string.entry_untitled) },
+        detail = entry.userName.takeIf { LocalAppDisplay.current.userNameInList && it.isNotEmpty() },
         subtitle = location,
         items = listOf(editMenuItem(onEdit), deleteMenuItem(onDelete)),
         onOpen = onOpen,

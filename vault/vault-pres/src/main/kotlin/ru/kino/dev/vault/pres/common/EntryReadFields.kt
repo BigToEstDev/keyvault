@@ -122,6 +122,7 @@ private fun OwnFields(
             value = field.value,
             clipboard = clipboard,
             hidden = field.protected && !shown,
+            secret = field.protected,
             onToggleShown = if (field.protected) {
                 { onToggleOwn(index) }
             } else {
@@ -134,6 +135,8 @@ private fun OwnFields(
 
 /**
  * A field that only shows its value, with "copy" - when [clipboard] is given - and the eye of a protected one.
+ *
+ * @param secret a protected one: shown in clear, it is colored as a password is (pass-docs, Step 58)
  */
 @Composable
 private fun ReadField(
@@ -143,6 +146,7 @@ private fun ReadField(
     modifier: Modifier = Modifier,
     multiLine: Boolean = false,
     hidden: Boolean = false,
+    secret: Boolean = false,
     shown: Boolean = false,
     onToggleShown: (() -> Unit)? = null,
 ) {
@@ -153,6 +157,7 @@ private fun ReadField(
         modifier = modifier.fillMaxWidth(),
         readOnly = true,
         hidden = hidden,
+        secret = secret,
         singleLine = !multiLine,
         actions = if (clipboard == null && onToggleShown == null) {
             null

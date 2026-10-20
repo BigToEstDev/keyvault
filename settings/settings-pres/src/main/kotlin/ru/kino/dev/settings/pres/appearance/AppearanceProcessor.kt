@@ -18,18 +18,23 @@ import javax.inject.Inject
 /**
  * @param themeMode the chosen mode; null until read - the choices are disabled
  * @param language the chosen language; null until read - the choices are disabled
+ * @param passwordColoring whether passwords are colored; null until read - the choices are disabled
+ * @param userNameInList whether the list shows user names; null until read - the choices are disabled
  * @param saving a choice is being written - the choices are disabled
  * @param message for the snackbar, until it takes it
  */
 data class AppearanceState(
     val themeMode: ThemeMode? = null,
     val language: AppLanguage? = null,
+    val passwordColoring: Boolean? = null,
+    val userNameInList: Boolean? = null,
     val saving: Boolean = false,
     val message: AppearanceMessage? = null,
 )
 
 /**
- * How the app looks (pass-docs, Step 55, Step 57): the mode of the theme and the language. A choice is kept
+ * How the app looks (pass-docs, Step 55, Step 57, Step 58): the mode of the theme, the language, the coloring
+ * of passwords, the user names in the list. A choice is kept
  * at once - the whole app takes it from the repository; one not written goes back to what it was, with a
  * snackbar.
  */
@@ -46,7 +51,16 @@ class AppearanceProcessor @Inject constructor(
             AppearanceAction.Load -> {
                 val mode = repository.themeMode.first()
                 val language = repository.language.first()
-                reduce { state.copy(themeMode = mode, language = language) }
+                val passwordColoring = repository.passwordColoring.first()
+                val userNameInList = repository.userNameInList.first()
+                reduce {
+                    state.copy(
+                        themeMode = mode,
+                        language = language,
+                        passwordColoring = passwordColoring,
+                        userNameInList = userNameInList,
+                    )
+                }
             }
 
             AppearanceAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
@@ -56,6 +70,14 @@ class AppearanceProcessor @Inject constructor(
 
             is AppearanceAction.SelectLanguage ->
                 keep(action.language, state.language, { copy(language = it) }) { repository.save(it) }
+
+            is AppearanceAction.SetPasswordColoring ->
+                keep(action.on, state.passwordColoring, { copy(passwordColoring = it) }) {
+                    repository.savePasswordColoring(it)
+                }
+
+            is AppearanceAction.SetUserNameInList ->
+                keep(action.on, state.userNameInList, { copy(userNameInList = it) }) { repository.saveUserNameInList(it) }
 
             AppearanceAction.MessageShown -> reduce { state.copy(message = null) }
         }

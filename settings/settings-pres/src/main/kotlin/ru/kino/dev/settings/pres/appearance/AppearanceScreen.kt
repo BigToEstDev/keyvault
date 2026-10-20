@@ -33,10 +33,11 @@ import ru.kino.dev.ui.components.DropdownOption
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.RadioGroup
 import ru.kino.dev.ui.components.SnackbarMessage
+import ru.kino.dev.ui.components.SwitchRow
 
 /**
  * How the app looks: the group "Theme" - the theme of the app and the color theme to come (pass-docs, Step 55);
- * the group "Language" (Step 57).
+ * the group "Language" (Step 57); the group "Entries" (Step 58).
  */
 @Composable
 internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) {
@@ -111,6 +112,32 @@ internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) 
                             // Until read nothing is chosen for real: the choice is disabled meanwhile
                             enabled = state.language != null && !state.saving,
                             modifier = Modifier.padding(16.dp),
+                        )
+                    }
+                }
+                item(key = "entries-header") {
+                    SettingsSectionHeader(title = stringResource(R.string.settings_entries), top = 8.dp)
+                }
+                item(key = "password-coloring") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        SwitchRow(
+                            title = stringResource(R.string.settings_password_coloring),
+                            text = stringResource(R.string.settings_password_coloring_hint),
+                            // Until read nothing is chosen for real: the switch is disabled meanwhile, shown on
+                            checked = state.passwordColoring ?: true,
+                            onCheckedChange = { processor.action(AppearanceAction.SetPasswordColoring(it)) },
+                            enabled = state.passwordColoring != null && !state.saving,
+                        )
+                    }
+                }
+                item(key = "user-name-in-list") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        SwitchRow(
+                            title = stringResource(R.string.settings_user_name_in_list),
+                            text = stringResource(R.string.settings_user_name_in_list_hint),
+                            checked = state.userNameInList ?: false,
+                            onCheckedChange = { processor.action(AppearanceAction.SetUserNameInList(it)) },
+                            enabled = state.userNameInList != null && !state.saving,
                         )
                     }
                 }

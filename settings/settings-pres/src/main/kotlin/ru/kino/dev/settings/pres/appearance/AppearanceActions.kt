@@ -16,6 +16,12 @@ sealed interface AppearanceAction {
     /** A language picked in "Language": kept at once. */
     data class SelectLanguage(val language: AppLanguage) : AppearanceAction
 
+    /** "Password coloring" switched: kept at once. */
+    data class SetPasswordColoring(val on: Boolean) : AppearanceAction
+
+    /** "User name in the list" switched: kept at once. */
+    data class SetUserNameInList(val on: Boolean) : AppearanceAction
+
     /** The snackbar took the message. */
     data object MessageShown : AppearanceAction
 }
