@@ -32,7 +32,8 @@ import ru.kino.dev.ui.components.WheelPickerDialog
 
 /**
  * How the database locks and how one gets in: the group "Locking" - the auto-lock, locking on leaving the app,
- * the lock button; the group "Sign-in" - wiping a wrong password (pass-docs, Step 59).
+ * the lock button; the group "Sign-in" - asking for biometrics by
+ * themselves, wiping a wrong password (pass-docs, Step 59).
  */
 @Composable
 internal fun LockScreen(processor: LockProcessor = hiltViewModel()) {
@@ -107,6 +108,17 @@ internal fun LockScreen(processor: LockProcessor = hiltViewModel()) {
                 item(key = "sign-in") {
                     // Set apart from the group above, as the sections of the main screen
                     SettingsSectionHeader(title = stringResource(R.string.settings_sign_in_group), top = 8.dp)
+                }
+                item(key = "auto-biometric-prompt") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        SwitchRow(
+                            title = stringResource(R.string.settings_auto_biometric_prompt),
+                            text = stringResource(R.string.settings_auto_biometric_prompt_hint),
+                            checked = state.autoBiometricPrompt ?: false,
+                            onCheckedChange = { processor.action(LockAction.SetAutoBiometricPrompt(it)) },
+                            enabled = state.autoBiometricPrompt != null,
+                        )
+                    }
                 }
                 item(key = "clear-password") {
                     Card(modifier = Modifier.fillMaxWidth()) {

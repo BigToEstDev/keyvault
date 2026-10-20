@@ -19,6 +19,7 @@ import javax.inject.Inject
  * @param lockOnLeave whether leaving the app locks at once; null until read - its choice is disabled
  * @param lockButton whether the screens have the lock button; null until read - its choice is disabled
  * @param clearPasswordOnError whether a wrong password is wiped; null until read - its choice is disabled
+ * @param autoBiometricPrompt whether biometrics are asked by themselves; null until read - its choice is disabled
  * @param choosingTimeout the wheel of the times is open
  * @param message for the snackbar, until it takes it
  */
@@ -27,13 +28,15 @@ data class LockState(
     val lockOnLeave: Boolean? = null,
     val lockButton: Boolean? = null,
     val clearPasswordOnError: Boolean? = null,
+    val autoBiometricPrompt: Boolean? = null,
     val choosingTimeout: Boolean = false,
     val message: LockMessage? = null,
 )
 
 /**
  * How the database locks (pass-docs, Step 59): the time of the auto-lock, locking on leaving the app, the lock
- * button; and how one gets in - wiping a wrong password. A choice
+ * button; and how one gets in - asking for biometrics by
+ * themselves, wiping a wrong password. A choice
  * is kept at once - the timer of the app takes it from the repository; a new time counts from then on.
  */
 @HiltViewModel
@@ -52,12 +55,14 @@ class LockProcessor @Inject constructor(
                 val lockOnLeave = repository.lockOnLeave.first()
                 val lockButton = repository.lockButton.first()
                 val clearPasswordOnError = signIn.clearPasswordOnError.first()
+                val autoBiometricPrompt = signIn.autoBiometricPrompt.first()
                 reduce {
                     state.copy(
                         timeout = timeout,
                         lockOnLeave = lockOnLeave,
                         lockButton = lockButton,
                         clearPasswordOnError = clearPasswordOnError,
+                        autoBiometricPrompt = autoBiometricPrompt,
                     )
                 }
             }
@@ -102,6 +107,14 @@ class LockProcessor @Inject constructor(
                 show = { copy(clearPasswordOnError = it) },
                 notSaved = { copy(message = LockMessage.NotSaved) },
             ) { signIn.saveClearPasswordOnError(it) }
+
+            is LockAction.SetAutoBiometricPrompt -> keepSetting(
+                chosen = action.on,
+                current = state.autoBiometricPrompt,
+                kept = signIn.autoBiometricPrompt,
+                show = { copy(autoBiometricPrompt = it) },
+                notSaved = { copy(message = LockMessage.NotSaved) },
+            ) { signIn.saveAutoBiometricPrompt(it) }
 
             LockAction.MessageShown -> reduce { state.copy(message = null) }
         }

@@ -27,6 +27,9 @@ sealed interface LockAction {
     /** "Clear the password after an error" switched: kept at once. */
     data class SetClearPasswordOnError(val on: Boolean) : LockAction
 
+    /** "Ask for biometrics by itself" switched: kept at once. */
+    data class SetAutoBiometricPrompt(val on: Boolean) : LockAction
+
     /** The snackbar took the message. */
     data object MessageShown : LockAction
 }

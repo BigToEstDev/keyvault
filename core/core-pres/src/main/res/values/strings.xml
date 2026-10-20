@@ -272,6 +272,8 @@
     <string name="settings_lock_button">“Lock” button</string>
     <string name="settings_lock_button_hint">Locks the database at once, without waiting for the auto-lock</string>
     <string name="settings_sign_in_group">Sign-in</string>
+    <string name="settings_auto_biometric_prompt">Ask for biometrics at once</string>
+    <string name="settings_auto_biometric_prompt_hint">Shows the biometric prompt by itself on the sign-in screen</string>
     <string name="settings_clear_password">Clear the password after an error</string>
     <string name="settings_clear_password_hint">Wipes a wrong password - type it again</string>
     <string name="settings_message_not_saved">The setting was not saved</string>

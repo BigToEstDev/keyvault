@@ -153,6 +153,39 @@ class LockedProcessorTest {
     }
 
     @Test
+    fun `with the auto prompt on, biometrics are asked as the lock is shown`() = runTest {
+        biometrics.passwords[DB] = "stored"
+        val (processor, _) = processor(FakeSignInSettingsRepository(autoBiometricPrompt = true))
+
+        processor.testWithInternalState(this) {
+            runOnCreate().join()
+            expectInternalState(lockedState().let { it.copy(entry = it.entry.copy(biometricOn = true)) })
+            awaitSideEffect() as LockedSideEffect.ShowBiometricPrompt
+        }
+    }
+
+    @Test
+    fun `with the auto prompt off, biometrics wait for the button`() = runTest {
+        biometrics.passwords[DB] = "stored"
+        val (processor, _) = processor()
+
+        processor.testWithInternalState(this) {
+            runOnCreate().join()
+            expectInternalState(lockedState().let { it.copy(entry = it.entry.copy(biometricOn = true)) })
+        }
+    }
+
+    @Test
+    fun `the auto prompt asks nothing when biometrics are off for the database`() = runTest {
+        val (processor, _) = processor(FakeSignInSettingsRepository(autoBiometricPrompt = true))
+
+        processor.testWithInternalState(this) {
+            runOnCreate().join()
+            expectInternalState(lockedState())
+        }
+    }
+
+    @Test
     fun `biometrics unlock with the stored password through the usual unlock`() = runTest {
         biometrics.passwords[DB] = "stored"
         val (processor, events) = processor()

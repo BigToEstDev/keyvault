@@ -76,6 +76,8 @@ class LockedProcessor @AssistedInject constructor(
                 ),
             )
         }
+        // Once, as the lock is shown - not again after a cancel: the button stays (pass-docs, Step 59)
+        if (biometricOn && signIn.autoBiometricPrompt.first()) startBiometric()
     }
 
     fun action(action: LockedAction): Job = when (action) {

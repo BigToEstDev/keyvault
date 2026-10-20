@@ -8,6 +8,12 @@ interface SignInSettingsRepository {
     /** Whether a wrong password is wiped from its field; off until chosen. */
     val clearPasswordOnError: Flow<Boolean>
 
+    /** Whether the screens of signing in ask for biometrics by themselves, not only on the button; off until chosen. */
+    val autoBiometricPrompt: Flow<Boolean>
+
     /** Keeps whether a wrong password is wiped; throws an `IOException` when it could not be written. */
     suspend fun saveClearPasswordOnError(on: Boolean)
+
+    /** Keeps whether biometrics are asked by themselves; throws an `IOException` when it could not be written. */
+    suspend fun saveAutoBiometricPrompt(on: Boolean)
 }

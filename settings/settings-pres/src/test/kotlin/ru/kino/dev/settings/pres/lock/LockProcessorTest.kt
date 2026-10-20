@@ -30,6 +30,7 @@ class LockProcessorTest {
                     lockOnLeave = false,
                     lockButton = false,
                     clearPasswordOnError = false,
+                    autoBiometricPrompt = false,
                 ) }
         }
     }
@@ -175,6 +176,33 @@ class LockProcessorTest {
 
                 expectInternalState { copy(clearPasswordOnError = true) }
                 expectInternalState { copy(clearPasswordOnError = false, message = LockMessage.NotSaved) }
+            }
+    }
+
+    @Test
+    fun `the auto prompt switched is kept at once`() = runTest {
+        val signIn = FakeSignInSettingsRepository()
+
+        LockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), signIn, Navigator())
+            .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, autoBiometricPrompt = false)) {
+                containerHost.action(LockAction.SetAutoBiometricPrompt(true)).join()
+
+                expectInternalState { copy(autoBiometricPrompt = true) }
+            }
+
+        assertEquals(listOf(true), signIn.savedAutoBiometricPrompt)
+    }
+
+    @Test
+    fun `the auto prompt not written shows what is kept, with a message`() = runTest {
+        val signIn = FakeSignInSettingsRepository(failSave = true)
+
+        LockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), signIn, Navigator())
+            .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, autoBiometricPrompt = false)) {
+                containerHost.action(LockAction.SetAutoBiometricPrompt(true)).join()
+
+                expectInternalState { copy(autoBiometricPrompt = true) }
+                expectInternalState { copy(autoBiometricPrompt = false, message = LockMessage.NotSaved) }
             }
     }
 

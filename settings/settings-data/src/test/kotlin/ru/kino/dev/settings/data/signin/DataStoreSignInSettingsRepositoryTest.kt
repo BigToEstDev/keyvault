@@ -33,6 +33,22 @@ class DataStoreSignInSettingsRepositoryTest {
         assertEquals(true, repository.clearPasswordOnError.first())
     }
 
+    @Test
+    fun `biometrics are not asked by themselves until chosen`() = runTest {
+        val repository = DataStoreSignInSettingsRepository(store(newFile()))
+
+        assertEquals(false, repository.autoBiometricPrompt.first())
+    }
+
+    @Test
+    fun `the auto prompt switched on is what is read next`() = runTest {
+        val repository = DataStoreSignInSettingsRepository(store(newFile()))
+
+        repository.saveAutoBiometricPrompt(true)
+
+        assertEquals(true, repository.autoBiometricPrompt.first())
+    }
+
     private fun newFile(): File = File(folder.newFolder(), "app_settings.preferences_pb")
 
     private fun TestScope.store(file: File): DataStore<Preferences> =

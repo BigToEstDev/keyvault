@@ -27,11 +27,20 @@ internal class DataStoreSignInSettingsRepository(
         .map { it[CLEAR_PASSWORD_ON_ERROR_KEY] ?: false }
         .distinctUntilChanged()
 
+    override val autoBiometricPrompt: Flow<Boolean> = preferences
+        .map { it[AUTO_BIOMETRIC_PROMPT_KEY] ?: false }
+        .distinctUntilChanged()
+
     override suspend fun saveClearPasswordOnError(on: Boolean) {
         store.edit { it[CLEAR_PASSWORD_ON_ERROR_KEY] = on }
     }
 
+    override suspend fun saveAutoBiometricPrompt(on: Boolean) {
+        store.edit { it[AUTO_BIOMETRIC_PROMPT_KEY] = on }
+    }
+
     internal companion object {
         val CLEAR_PASSWORD_ON_ERROR_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("clear_password_on_error")
+        val AUTO_BIOMETRIC_PROMPT_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("auto_biometric_prompt")
     }
 }

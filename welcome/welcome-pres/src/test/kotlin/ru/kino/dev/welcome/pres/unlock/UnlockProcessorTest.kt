@@ -352,6 +352,28 @@ class UnlockProcessorTest {
     }
 
     @Test
+    fun `with the auto prompt on, biometrics are asked as the screen is shown`() = runTest {
+        biometrics.passwords[DB] = "pw"
+        val (processor, _) = processor(signIn = FakeSignInSettingsRepository(autoBiometricPrompt = true))
+
+        processor.testWithInternalState(this) {
+            runOnCreate().join()
+            expectInternalState(rememberedState().let { it.copy(entry = it.entry.copy(biometricOn = true)) })
+            awaitSideEffect() as UnlockSideEffect.ShowBiometricPrompt
+        }
+    }
+
+    @Test
+    fun `the auto prompt asks nothing for a database without biometrics`() = runTest {
+        val (processor, _) = processor(signIn = FakeSignInSettingsRepository(autoBiometricPrompt = true))
+
+        processor.testWithInternalState(this) {
+            runOnCreate().join()
+            expectInternalState(rememberedState())
+        }
+    }
+
+    @Test
     fun `biometrics give the password, and it opens the usual way, with the key file`() = runTest {
         biometrics.passwords[DB] = "stored"
         val (processor, events) = processor()

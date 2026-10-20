@@ -85,6 +85,10 @@ class UnlockProcessor @AssistedInject constructor(
                 showDatabase(remembered.uri)
             }
         }
+        // Once, as the screen is shown, for the remembered database there - not for one picked later, not again
+        // after a cancel: the button stays (pass-docs, Step 59)
+        val entry = state.entry
+        if (entry.biometricOn && entry.problem == null && signIn.autoBiometricPrompt.first()) startBiometric()
     }
 
     fun action(action: UnlockAction): Job = when (action) {
