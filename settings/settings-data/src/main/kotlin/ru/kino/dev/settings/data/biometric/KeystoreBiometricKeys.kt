@@ -1,4 +1,4 @@
-package ru.kino.dev.welcome.data.biometric
+package ru.kino.dev.settings.data.biometric
 
 import android.content.Context
 import android.os.Build
@@ -8,7 +8,7 @@ import android.security.keystore.KeyProperties
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import dagger.hilt.android.qualifiers.ApplicationContext
-import ru.kino.dev.welcome.BiometricFailure
+import ru.kino.dev.settings.biometric.BiometricFailure
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -70,6 +70,7 @@ internal class KeystoreBiometricKeys @Inject constructor(
 
     private companion object {
         const val ANDROID_KEYSTORE = "AndroidKeyStore"
+        // The name of Step 33, kept when the code moved to `settings`: another one loses the keys of every phone
         const val KEY_ALIAS = "welcome_biometric_password"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
         const val KEY_BITS = 256

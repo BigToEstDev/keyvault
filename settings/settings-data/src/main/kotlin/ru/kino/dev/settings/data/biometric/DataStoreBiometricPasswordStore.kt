@@ -1,4 +1,4 @@
-package ru.kino.dev.welcome.data.biometric
+package ru.kino.dev.settings.data.biometric
 
 import android.content.Context
 import androidx.datastore.core.DataStore

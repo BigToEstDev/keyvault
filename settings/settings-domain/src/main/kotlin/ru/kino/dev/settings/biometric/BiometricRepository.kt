@@ -1,4 +1,4 @@
-package ru.kino.dev.welcome
+package ru.kino.dev.settings.biometric
 
 import javax.crypto.Cipher
 
@@ -13,7 +13,8 @@ import javax.crypto.Cipher
  * shows the prompt with its cipher, and the call after it works only with a session the prompt let
  * through.
  *
- * Failures are [BiometricFailure].
+ * Failures are [BiometricFailure]. Of `settings`, since Step 59: `welcome` signs in with it, the settings turn it on
+ * and off.
  */
 interface BiometricRepository {
 
@@ -48,7 +49,8 @@ interface BiometricRepository {
      * to unlock with until biometrics are turned on again.
      *
      * Called when the stored password no longer opens the database, and - by contract - by the settings
-     * when they change or remove the password of the database (pass-docs, `decisions.md`, "Безопасность").
+     * when they change or remove the password of the database (pass-docs, `welcome/decisions.md`,
+     * "Безопасность").
      */
     suspend fun forget(dbUri: String)
 }

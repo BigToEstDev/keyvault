@@ -1,4 +1,4 @@
-package ru.kino.dev.welcome.data.biometric
+package ru.kino.dev.settings.data.biometric
 
 import javax.crypto.Cipher
 
@@ -17,7 +17,7 @@ internal interface BiometricKeys {
     /**
      * A cipher to decrypt with, for what was encrypted with [iv].
      *
-     * @throws ru.kino.dev.welcome.BiometricFailure.KeyInvalidated when the key is gone or invalidated by a
+     * @throws ru.kino.dev.settings.biometric.BiometricFailure.KeyInvalidated when the key is gone or invalidated by a
      * change of the biometrics of the phone
      */
     fun decryptCipher(iv: ByteArray): Cipher
@@ -37,17 +37,4 @@ internal interface BiometricPasswordStore {
     suspend fun write(password: StoredPassword)
 
     suspend fun clear()
-}
-
-/**
- * Forgetting the biometrics of a database that is no longer the remembered one - used by the repository that
- * remembers databases.
- */
-internal interface BiometricCleanup {
-
-    /** Forgets what is stored unless it belongs to [dbUri]. */
-    suspend fun forgetOtherThan(dbUri: String)
-
-    /** Forgets what is stored, whichever database it belongs to - a new database was created. */
-    suspend fun forgetAll()
 }

@@ -1,10 +1,11 @@
-package ru.kino.dev.welcome.data.biometric
+package ru.kino.dev.settings.data.biometric
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import ru.kino.dev.welcome.BiometricFailure
-import ru.kino.dev.welcome.BiometricRepository
-import ru.kino.dev.welcome.BiometricSession
+import ru.kino.dev.settings.biometric.BiometricCleanup
+import ru.kino.dev.settings.biometric.BiometricFailure
+import ru.kino.dev.settings.biometric.BiometricRepository
+import ru.kino.dev.settings.biometric.BiometricSession
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException

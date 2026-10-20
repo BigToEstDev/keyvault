@@ -1,6 +1,6 @@
 package ru.kino.dev.welcome.pres.locked
 
-import ru.kino.dev.welcome.BiometricSession
+import ru.kino.dev.settings.biometric.BiometricSession
 import ru.kino.dev.welcome.pres.common.BiometricOutcome
 
 sealed interface LockedAction {

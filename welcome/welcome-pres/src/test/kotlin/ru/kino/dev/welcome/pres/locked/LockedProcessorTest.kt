@@ -9,12 +9,12 @@ import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.LockedRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.VaultRootRoute
+import ru.kino.dev.settings.biometric.FakeBiometrics
 import ru.kino.dev.settings.signin.FakeSignInSettingsRepository
 import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
 import ru.kino.dev.welcome.pres.FakeCurrentDatabase
-import ru.kino.dev.welcome.pres.FakeBiometrics
 import ru.kino.dev.welcome.pres.FakeErrorLog
 import ru.kino.dev.welcome.pres.FakeWelcomeDatabase
 import ru.kino.dev.welcome.pres.FakeWelcomeFiles

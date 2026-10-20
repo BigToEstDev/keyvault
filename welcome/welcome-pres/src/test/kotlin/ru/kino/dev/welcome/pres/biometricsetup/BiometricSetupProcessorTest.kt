@@ -6,10 +6,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
-import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.WelcomeGraph
-import ru.kino.dev.welcome.pres.FakeBiometrics
+import ru.kino.dev.settings.biometric.FakeBiometrics
 import ru.kino.dev.welcome.pres.FakeErrorLog
 import ru.kino.dev.welcome.pres.common.BiometricOutcome
 import ru.kino.dev.welcome.pres.create.CreateDraft
