@@ -59,6 +59,9 @@ commands! {
     KdbxContextStatuses => "kdbx_context_statuses",
     // Follows a biometric prompt that already succeeded on the Android side
     UnlockKdbxOnBiometricAuthentication => "unlock_kdbx_on_biometric_authentication",
+    // The password of an open database checked alone, and what its key is made of (Step 60)
+    VerifyPassword => "verify_password",
+    CredentialsUsed => "credentials_used",
 
     // Groups: the tree the ui draws, one group for its edit screen, and the operations that change it
     GroupsSummaryData => "groups_summary_data",

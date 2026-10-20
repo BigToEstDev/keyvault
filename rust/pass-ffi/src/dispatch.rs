@@ -67,6 +67,8 @@ fn dispatch(
         Command::UnlockKdbxOnBiometricAuthentication => {
             lifecycle::unlock_on_biometric(args_json, input)
         }
+        Command::VerifyPassword => lifecycle::verify_password(args_json, input),
+        Command::CredentialsUsed => lifecycle::credentials_used(args_json, input),
 
         Command::GroupsSummaryData => groups::groups_summary_data(args_json, input),
         Command::GetGroupById => groups::get_group_by_id(args_json, input),

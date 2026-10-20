@@ -139,9 +139,22 @@ struct RenameArgs {
     new_db_key: String,
 }
 
+/// Arguments of `verify_password`: the password alone - the key file, when the database has one, is the
+/// core's to know.
+#[derive(Deserialize)]
+struct VerifyPasswordArgs {
+    db_key: String,
+    password: String,
+}
+
 #[derive(Serialize)]
 struct Locked {
     locked: bool,
+}
+
+#[derive(Serialize)]
+struct Matches {
+    matches: bool,
 }
 
 #[derive(Serialize)]
@@ -196,6 +209,36 @@ pub(crate) fn is_opened(args_json: &str, input: Option<Vec<u8>>) -> Result<Answe
     json_answer(&Opened {
         opened: db_service::is_db_opened(&args.db_key),
     })
+}
+
+/// Whether the password is the one of the open database - checked alone against the hash the core kept,
+/// without the key file and without the KDF, so it answers at once. What the app asks before it keeps the
+/// password for biometrics (Step 60). A wrong one is the answer `false`, not a failure.
+pub(crate) fn verify_password(
+    args_json: &str,
+    input: Option<Vec<u8>>,
+) -> Result<Answer, ErrorPayload> {
+    reject_bytes(Command::VerifyPassword, input)?;
+    let args: VerifyPasswordArgs = args(args_json)?;
+
+    let matches = db_service::verify_password(&args.db_key, &args.password)
+        .map_err(|e| ErrorPayload::of(&e))?;
+
+    json_answer(&Matches { matches })
+}
+
+/// What the key of the open database is made of: a password, a key file or both. A database without a
+/// password is not offered biometrics - there is nothing to keep (Step 60).
+pub(crate) fn credentials_used(
+    args_json: &str,
+    input: Option<Vec<u8>>,
+) -> Result<Answer, ErrorPayload> {
+    reject_bytes(Command::CredentialsUsed, input)?;
+    let args: DbKeyArgs = args(args_json)?;
+
+    let used = db_service::credentials_used(&args.db_key).map_err(|e| ErrorPayload::of(&e))?;
+
+    json_answer(&used)
 }
 
 /// Tells the core that the file now lives under another uri - after "save as", or after the user moved

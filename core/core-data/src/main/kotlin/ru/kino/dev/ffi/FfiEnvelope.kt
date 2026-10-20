@@ -555,6 +555,24 @@ internal data class RenameDbKeyDto(
 @Serializable
 internal data class LockedDto(val locked: Boolean)
 
+/** Arguments of `verify_password`: the password alone, the key file is the core's to know (Step 60). */
+@Serializable
+internal data class VerifyPasswordDto(
+    @SerialName("db_key") val dbKey: String,
+    val password: String,
+)
+
+/** Result of `verify_password`. */
+@Serializable
+internal data class MatchesDto(val matches: Boolean)
+
+/** Result of `credentials_used`. */
+@Serializable
+internal data class CredentialsUsedDto(
+    val password: Boolean,
+    @SerialName("key_file") val keyFile: Boolean,
+)
+
 /**
  * Result of `is_db_opened`.
  *
