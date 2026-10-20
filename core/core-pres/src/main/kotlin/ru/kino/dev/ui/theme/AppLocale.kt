@@ -1,5 +1,6 @@
 package ru.kino.dev.ui.theme
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.os.LocaleList
 import android.view.ContextThemeWrapper
@@ -19,6 +20,8 @@ import java.util.Locale
  * configuration context: `BiometricPrompt` and the like look for the activity through it. Strings taken
  * outside the composition - from the application context - stay in the language of the system.
  */
+// Lint sees this module alone: the bundle keeps every language in its base - `app/build.gradle.kts`, `bundle`
+@SuppressLint("AppBundleLocaleChanges")
 @Composable
 fun AppLocale(locale: Locale?, content: @Composable () -> Unit) {
     if (locale == null) {

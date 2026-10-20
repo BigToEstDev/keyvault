@@ -249,5 +249,10 @@
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_color_theme">Color theme</string>
     <string name="settings_coming_soon">Coming soon</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System</string>
+    <!-- Each language by its own name: one finds one's language whatever the app is in now -->
+    <string name="settings_language_english" translatable="false">English</string>
+    <string name="settings_language_russian" translatable="false">Русский</string>
     <string name="settings_message_not_saved">The setting was not saved</string>
 </resources>

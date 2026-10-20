@@ -23,15 +23,21 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.pres.settings.components.SettingsCard
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
 import ru.kino.dev.ui.components.BackTopBar
+import ru.kino.dev.ui.components.Dropdown
+import ru.kino.dev.ui.components.DropdownOption
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.RadioGroup
 import ru.kino.dev.ui.components.SnackbarMessage
 
-/** How the app looks: the group "Theme" - the theme of the app and the color theme to come (pass-docs, Step 55). */
+/**
+ * How the app looks: the group "Theme" - the theme of the app and the color theme to come (pass-docs, Step 55);
+ * the group "Language" (Step 57).
+ */
 @Composable
 internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) {
     val state by processor.collectAsState()
@@ -91,6 +97,23 @@ internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) 
                         enabled = false,
                     )
                 }
+                item(key = "language-header") {
+                    // Set apart from the group above, as the sections of the main screen
+                    SettingsSectionHeader(title = stringResource(R.string.settings_language), top = 8.dp)
+                }
+                item(key = "language") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Dropdown(
+                            selected = state.language,
+                            options = AppLanguage.entries.map { DropdownOption(it, stringResource(it.label)) },
+                            onSelect = { processor.action(AppearanceAction.SelectLanguage(it)) },
+                            label = stringResource(R.string.settings_language),
+                            // Until read nothing is chosen for real: the choice is disabled meanwhile
+                            enabled = state.language != null && !state.saving,
+                            modifier = Modifier.padding(16.dp),
+                        )
+                    }
+                }
             }
         }
     }
@@ -101,4 +124,11 @@ private val ThemeMode.label: Int
         ThemeMode.System -> R.string.settings_theme_system
         ThemeMode.Light -> R.string.settings_theme_light
         ThemeMode.Dark -> R.string.settings_theme_dark
+    }
+
+private val AppLanguage.label: Int
+    get() = when (this) {
+        AppLanguage.System -> R.string.settings_language_system
+        AppLanguage.English -> R.string.settings_language_english
+        AppLanguage.Russian -> R.string.settings_language_russian
     }

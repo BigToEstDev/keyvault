@@ -19,13 +19,13 @@ import java.io.IOException
 class AppearanceProcessorTest {
 
     @Test
-    fun `the screen shown reads the chosen mode`() = runTest {
-        val repository = FakeAppearanceRepository(ThemeMode.Dark)
+    fun `the screen shown reads the chosen mode and language`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.Dark, AppLanguage.Russian)
 
         AppearanceProcessor(repository, Navigator()).testWithInternalState(this) {
             containerHost.action(AppearanceAction.Load).join()
 
-            expectInternalState { copy(themeMode = ThemeMode.Dark) }
+            expectInternalState { copy(themeMode = ThemeMode.Dark, language = AppLanguage.Russian) }
         }
     }
 
@@ -77,6 +77,48 @@ class AppearanceProcessorTest {
         assertEquals(emptyList<ThemeMode>(), repository.saved)
     }
 
+    @Test
+    fun `a language chosen is kept at once`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System)
+
+        AppearanceProcessor(repository, Navigator())
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System)) {
+                containerHost.action(AppearanceAction.SelectLanguage(AppLanguage.English)).join()
+
+                expectInternalState { copy(language = AppLanguage.English, saving = true) }
+                expectInternalState { copy(saving = false) }
+            }
+
+        assertEquals(listOf(AppLanguage.English), repository.savedLanguages)
+    }
+
+    @Test
+    fun `a language not written goes back to the one before, with a message`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
+
+        AppearanceProcessor(repository, Navigator())
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System)) {
+                containerHost.action(AppearanceAction.SelectLanguage(AppLanguage.Russian)).join()
+
+                expectInternalState { copy(language = AppLanguage.Russian, saving = true) }
+                expectInternalState {
+                    copy(language = AppLanguage.System, saving = false, message = AppearanceMessage.NotSaved)
+                }
+            }
+    }
+
+    @Test
+    fun `the language already chosen is not written again`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System, AppLanguage.Russian)
+
+        AppearanceProcessor(repository, Navigator())
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.Russian)) {
+                containerHost.action(AppearanceAction.SelectLanguage(AppLanguage.Russian)).join()
+            }
+
+        assertEquals(emptyList<AppLanguage>(), repository.savedLanguages)
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `back leaves the screen`() = runTest {
@@ -93,16 +135,21 @@ class AppearanceProcessorTest {
 
     private class FakeAppearanceRepository(
         initial: ThemeMode,
+        initialLanguage: AppLanguage = AppLanguage.System,
         private val failSave: Boolean = false,
     ) : AppearanceRepository {
 
         private val mode = MutableStateFlow(initial)
 
+        private val chosenLanguage = MutableStateFlow(initialLanguage)
+
         val saved = mutableListOf<ThemeMode>()
+
+        val savedLanguages = mutableListOf<AppLanguage>()
 
         override val themeMode: Flow<ThemeMode> = mode
 
-        override val language: Flow<AppLanguage> = MutableStateFlow(AppLanguage.System)
+        override val language: Flow<AppLanguage> = chosenLanguage
 
         override suspend fun save(mode: ThemeMode) {
             if (failSave) throw IOException("disk full")
@@ -110,6 +157,10 @@ class AppearanceProcessorTest {
             this.mode.value = mode
         }
 
-        override suspend fun save(language: AppLanguage) = Unit
+        override suspend fun save(language: AppLanguage) {
+            if (failSave) throw IOException("disk full")
+            savedLanguages += language
+            chosenLanguage.value = language
+        }
     }
 }

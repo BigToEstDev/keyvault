@@ -9,25 +9,29 @@ import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.AppearanceRepository
 import ru.kino.dev.settings.appearance.ThemeMode
 import java.io.IOException
 import javax.inject.Inject
 
 /**
- * @param themeMode the chosen mode; null until read - the choice is disabled
- * @param saving a choice is being written - the choice is disabled
+ * @param themeMode the chosen mode; null until read - the choices are disabled
+ * @param language the chosen language; null until read - the choices are disabled
+ * @param saving a choice is being written - the choices are disabled
  * @param message for the snackbar, until it takes it
  */
 data class AppearanceState(
     val themeMode: ThemeMode? = null,
+    val language: AppLanguage? = null,
     val saving: Boolean = false,
     val message: AppearanceMessage? = null,
 )
 
 /**
- * How the app looks (pass-docs, Step 55): the mode of the theme for now. A choice is kept at once - the
- * whole app takes it from the repository; one not written goes back to what it was, with a snackbar.
+ * How the app looks (pass-docs, Step 55, Step 57): the mode of the theme and the language. A choice is kept
+ * at once - the whole app takes it from the repository; one not written goes back to what it was, with a
+ * snackbar.
  */
 @HiltViewModel
 class AppearanceProcessor @Inject constructor(
@@ -41,27 +45,40 @@ class AppearanceProcessor @Inject constructor(
         when (action) {
             AppearanceAction.Load -> {
                 val mode = repository.themeMode.first()
-                reduce { state.copy(themeMode = mode) }
+                val language = repository.language.first()
+                reduce { state.copy(themeMode = mode, language = language) }
             }
 
             AppearanceAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
 
-            is AppearanceAction.SelectTheme -> select(action.mode)
+            is AppearanceAction.SelectTheme ->
+                keep(action.mode, state.themeMode, { copy(themeMode = it) }) { repository.save(it) }
+
+            is AppearanceAction.SelectLanguage ->
+                keep(action.language, state.language, { copy(language = it) }) { repository.save(it) }
 
             AppearanceAction.MessageShown -> reduce { state.copy(message = null) }
         }
     }
 
-    private suspend fun Syntax<AppearanceState, Nothing>.select(mode: ThemeMode) {
-        val previous = state.themeMode ?: return
-        if (state.saving || mode == previous) return
+    /**
+     * Shows [chosen] at once and writes it; back to [previous] when it could not be written. Nothing until
+     * the setting is read, while another choice is being written, or when it is the same.
+     */
+    private suspend fun <T : Any> Syntax<AppearanceState, Nothing>.keep(
+        chosen: T,
+        previous: T?,
+        show: AppearanceState.(T) -> AppearanceState,
+        save: suspend (T) -> Unit,
+    ) {
+        if (previous == null || state.saving || chosen == previous) return
 
-        reduce { state.copy(themeMode = mode, saving = true) }
+        reduce { state.show(chosen).copy(saving = true) }
         try {
-            repository.save(mode)
+            save(chosen)
             reduce { state.copy(saving = false) }
         } catch (_: IOException) {
-            reduce { state.copy(themeMode = previous, saving = false, message = AppearanceMessage.NotSaved) }
+            reduce { state.show(previous).copy(saving = false, message = AppearanceMessage.NotSaved) }
         }
     }
 }
