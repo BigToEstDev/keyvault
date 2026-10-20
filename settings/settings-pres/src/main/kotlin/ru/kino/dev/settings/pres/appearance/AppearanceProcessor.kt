@@ -21,6 +21,8 @@ import javax.inject.Inject
  * @param language the chosen language; null until read - its choice is disabled
  * @param passwordColoring whether passwords are colored; null until read - its choice is disabled
  * @param userNameInList whether the list shows user names; null until read - its choice is disabled
+ * @param entryCount whether groups show their number; null until read - its choice is disabled
+ * @param entryCountNested whether the number counts the groups below; null until read - its choice is disabled
  * @param message for the snackbar, until it takes it
  */
 data class AppearanceState(
@@ -28,12 +30,14 @@ data class AppearanceState(
     val language: AppLanguage? = null,
     val passwordColoring: Boolean? = null,
     val userNameInList: Boolean? = null,
+    val entryCount: Boolean? = null,
+    val entryCountNested: Boolean? = null,
     val message: AppearanceMessage? = null,
 )
 
 /**
  * How the app looks (pass-docs, Step 55, Step 57, Step 58): the mode of the theme, the language, the coloring
- * of passwords, the user names in the list. A choice is shown at once and written in the background - only
+ * of passwords, the user names in the list, the number of entries of a group. A choice is shown at once and written in the background - only
  * the store of the app settings, not the database: the screen does not wait for it, nothing is disabled
  * meanwhile (pass-docs, Step 56, item 4). The whole app takes it from the repository; one not written shows
  * what the repository holds, with a snackbar.
@@ -53,12 +57,16 @@ class AppearanceProcessor @Inject constructor(
                 val language = repository.language.first()
                 val passwordColoring = repository.passwordColoring.first()
                 val userNameInList = repository.userNameInList.first()
+                val entryCount = repository.entryCount.first()
+                val entryCountNested = repository.entryCountNested.first()
                 reduce {
                     state.copy(
                         themeMode = mode,
                         language = language,
                         passwordColoring = passwordColoring,
                         userNameInList = userNameInList,
+                        entryCount = entryCount,
+                        entryCountNested = entryCountNested,
                     )
                 }
             }
@@ -83,6 +91,16 @@ class AppearanceProcessor @Inject constructor(
             is AppearanceAction.SetUserNameInList ->
                 keep(action.on, state.userNameInList, repository.userNameInList, { copy(userNameInList = it) }) {
                     repository.saveUserNameInList(it)
+                }
+
+            is AppearanceAction.SetEntryCount ->
+                keep(action.on, state.entryCount, repository.entryCount, { copy(entryCount = it) }) {
+                    repository.saveEntryCount(it)
+                }
+
+            is AppearanceAction.SetEntryCountNested ->
+                keep(action.on, state.entryCountNested, repository.entryCountNested, { copy(entryCountNested = it) }) {
+                    repository.saveEntryCountNested(it)
                 }
 
             AppearanceAction.MessageShown -> reduce { state.copy(message = null) }

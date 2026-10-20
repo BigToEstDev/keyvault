@@ -9,11 +9,15 @@ import androidx.compose.runtime.compositionLocalOf
  *
  * @param passwordColoring letters, digits and symbols of a secret shown in clear - each in its own color
  * @param userNameInList the card of an entry has its user name under the title
+ * @param entryCount the icon of a group has the number of its entries on a badge
+ * @param entryCountNested that number counts the entries of the groups below too, not only its own
  */
 @Immutable
 data class AppDisplay(
     val passwordColoring: Boolean = true,
     val userNameInList: Boolean = false,
+    val entryCount: Boolean = true,
+    val entryCountNested: Boolean = true,
 )
 
 /** The [AppDisplay] chosen; the defaults until `app` provides one. */

@@ -25,20 +25,20 @@ class VaultTreeTest {
 
     @Test
     fun `a group counts its own entries and those of every group below it`() {
-        assertEquals(5, tree.entryCount(WORK))
-        assertEquals(3, tree.entryCount(MAIL))
-        assertEquals(0, tree.entryCount(HOME))
+        assertEquals(EntryCount(direct = 2, nested = 5), tree.entryCount(WORK))
+        assertEquals(EntryCount(direct = 3, nested = 3), tree.entryCount(MAIL))
+        assertEquals(EntryCount(direct = 0, nested = 0), tree.entryCount(HOME))
     }
 
     @Test
     fun `the root counts the whole database except the recycle bin`() {
-        assertEquals(6, tree.entryCount(ROOT))
+        assertEquals(EntryCount(direct = 1, nested = 6), tree.entryCount(ROOT))
     }
 
     @Test
     fun `a group that is not there counts nothing`() {
-        assertEquals(0, tree.entryCount(OLD))
-        assertEquals(0, tree.entryCount(GroupId("missing")))
+        assertEquals(EntryCount.None, tree.entryCount(OLD))
+        assertEquals(EntryCount.None, tree.entryCount(GroupId("missing")))
     }
 
     @Test

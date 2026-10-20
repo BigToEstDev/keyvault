@@ -50,7 +50,7 @@ class VaultTree(
     }
 
     /** Entries of every visible group, its visible groups below included - counted once for the tree. */
-    private val entryCounts: Map<GroupId, Int> by lazy {
+    private val nestedCounts: Map<GroupId, Int> by lazy {
         val counts = HashMap<GroupId, Int>()
         // Reverse of the walk from the root: every group comes after the groups inside it
         for (id in visible.reversed()) {
@@ -90,10 +90,11 @@ class VaultTree(
     fun isWithin(id: GroupId, scopeId: GroupId): Boolean = path(id).any { it.id == scopeId }
 
     /**
-     * The number of entries in [id] and in every visible group below it. For the root it is every entry of
-     * the database outside the recycle bin.
+     * The entries of [id]: right in it, and in it and every visible group below it. For the root the second is
+     * every entry of the database outside the recycle bin. [EntryCount.None] when [id] is not visible.
      */
-    fun entryCount(id: GroupId): Int = entryCounts[id] ?: 0
+    fun entryCount(id: GroupId): EntryCount =
+        group(id)?.let { EntryCount(direct = it.entryIds.size, nested = nestedCounts[id] ?: 0) } ?: EntryCount.None
 
     /** The groups from the root down to [id], both ends included; empty when [id] is not visible. */
     fun path(id: GroupId): List<VaultGroup> {

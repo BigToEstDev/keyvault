@@ -49,7 +49,7 @@ import ru.kino.dev.vault.pres.grouplist.Crumb
 internal fun GroupListTopBar(
     isRoot: Boolean,
     path: List<Crumb>,
-    entryCount: Int,
+    entryCount: Int?,
     query: String,
     filterOn: Boolean,
     onQueryChange: (String) -> Unit,

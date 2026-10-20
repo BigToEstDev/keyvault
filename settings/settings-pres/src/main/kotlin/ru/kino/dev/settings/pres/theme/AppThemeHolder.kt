@@ -40,7 +40,14 @@ class AppThemeHolder @Inject constructor(
     val display: StateFlow<AppDisplay?> = combine(
         repository.passwordColoring,
         repository.userNameInList,
-    ) { passwordColoring, userNameInList ->
-        AppDisplay(passwordColoring = passwordColoring, userNameInList = userNameInList)
+        repository.entryCount,
+        repository.entryCountNested,
+    ) { passwordColoring, userNameInList, entryCount, entryCountNested ->
+        AppDisplay(
+            passwordColoring = passwordColoring,
+            userNameInList = userNameInList,
+            entryCount = entryCount,
+            entryCountNested = entryCountNested,
+        )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }

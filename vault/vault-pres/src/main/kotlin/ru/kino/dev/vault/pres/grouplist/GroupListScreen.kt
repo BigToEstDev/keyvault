@@ -43,6 +43,7 @@ import ru.kino.dev.vault.pres.grouplist.components.FilterDialog
 import ru.kino.dev.vault.pres.grouplist.components.GroupCard
 import ru.kino.dev.vault.pres.grouplist.components.GroupDialogs
 import ru.kino.dev.vault.pres.grouplist.components.GroupListTopBar
+import ru.kino.dev.vault.pres.grouplist.components.shown
 import ru.kino.dev.vault.pres.common.SkeletonCard
 
 /** @param groupId null for the root of the database */
@@ -74,7 +75,7 @@ internal fun GroupListScreen(
                 GroupListTopBar(
                     isRoot = state.isRoot,
                     path = state.path,
-                    entryCount = state.entryCount,
+                    entryCount = state.entryCount.shown(),
                     query = state.query,
                     filterOn = !state.filter.isDefault,
                     onQueryChange = { processor.action(GroupListAction.QueryChanged(it)) },

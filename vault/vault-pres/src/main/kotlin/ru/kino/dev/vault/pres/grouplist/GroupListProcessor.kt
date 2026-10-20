@@ -25,6 +25,7 @@ import ru.kino.dev.vault.filter.VaultFilter
 import ru.kino.dev.vault.filter.VaultFilterRepository
 import ru.kino.dev.vault.filter.Visibility
 import ru.kino.dev.vault.filter.applyTo
+import ru.kino.dev.vault.group.EntryCount
 import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
@@ -44,7 +45,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * the top bar of a group below it never shows the root's while it loads (pass-docs, Step 40, fix 13)
  * @param loading the tree and the entries are not read yet - the skeleton is shown
  * @param path from the root down to this group; empty until the tree is read
- * @param entryCount entries in this group and below it; at the root - the whole database
+ * @param entryCount entries of this group - its own, and with those below; at the root - the whole database
  * @param listed what is directly in this group, before the filter
  * @param query typed into the search field; not blank - the list is what it finds
  * @param searching a search waits for the typing to stop, or for its answer - the skeleton is shown
@@ -58,7 +59,7 @@ data class GroupListState(
     val isRoot: Boolean = true,
     val loading: Boolean = true,
     val path: List<Crumb> = emptyList(),
-    val entryCount: Int = 0,
+    val entryCount: EntryCount = EntryCount.None,
     val listed: ListSource = ListSource(),
     val query: String = "",
     val searching: Boolean = false,
@@ -358,7 +359,7 @@ class GroupListProcessor @AssistedInject constructor(
                         GroupItem(
                             id = it.id,
                             name = it.name,
-                            entryCount = result.entryCounts[it.id] ?: 0,
+                            entryCount = result.entryCounts[it.id] ?: EntryCount.None,
                             location = it.parentId?.let(result.locations::get),
                         )
                     },

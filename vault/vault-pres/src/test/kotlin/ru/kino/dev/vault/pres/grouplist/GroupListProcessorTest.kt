@@ -30,6 +30,7 @@ import ru.kino.dev.vault.filter.VaultFilter
 import ru.kino.dev.vault.filter.Visibility
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupEditor
+import ru.kino.dev.vault.group.EntryCount
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
@@ -89,8 +90,8 @@ class GroupListProcessorTest {
         assertFalse(state.loading)
         assertEquals(listOf("Passwords"), state.path.map { it.name })
         assertTrue(state.isRoot)
-        assertEquals(listOf(GroupItem(work, "Work", 5), GroupItem(home, "Home", 0)), state.groups)
-        assertEquals(6, state.entryCount)
+        assertEquals(listOf(GroupItem(work, "Work", EntryCount(2, 5)), GroupItem(home, "Home", EntryCount.None)), state.groups)
+        assertEquals(EntryCount(direct = 1, nested = 6), state.entryCount)
     }
 
     @Test
@@ -99,8 +100,8 @@ class GroupListProcessorTest {
 
         assertEquals(listOf("Passwords", "Work"), state.path.map { it.name })
         assertFalse(state.isRoot)
-        assertEquals(listOf(GroupItem(mail, "Mail", 3)), state.groups)
-        assertEquals(5, state.entryCount)
+        assertEquals(listOf(GroupItem(mail, "Mail", EntryCount(3, 3))), state.groups)
+        assertEquals(5, state.entryCount.nested)
     }
 
     @Test
@@ -243,7 +244,7 @@ class GroupListProcessorTest {
         )
 
         assertFalse(state.groups.any { it.id == work })
-        assertEquals(1, state.entryCount)
+        assertEquals(1, state.entryCount.nested)
         assertEquals(listOf("save"), database.calls)
     }
 
@@ -468,7 +469,7 @@ class GroupListProcessorTest {
 
         assertTrue(state.isSearch)
         assertFalse(state.searching)
-        assertEquals(listOf(GroupItem(mail, "Mail", 3, location = listOf("Passwords", "Work"))), state.groups)
+        assertEquals(listOf(GroupItem(mail, "Mail", EntryCount(3, 3), location = listOf("Passwords", "Work"))), state.groups)
         assertEquals(listOf("Mailbox"), state.entries.map { it.title })
     }
 

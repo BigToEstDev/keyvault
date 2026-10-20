@@ -17,6 +17,12 @@ interface AppearanceRepository {
     /** Whether the card of an entry in the list shows its user name; off until chosen. */
     val userNameInList: Flow<Boolean>
 
+    /** Whether the icon of a group has the number of its entries; on until chosen. */
+    val entryCount: Flow<Boolean>
+
+    /** Whether that number counts the groups below too; on until chosen. */
+    val entryCountNested: Flow<Boolean>
+
     /** Keeps [mode]; throws an `IOException` when it could not be written. */
     suspend fun save(mode: ThemeMode)
 
@@ -28,4 +34,10 @@ interface AppearanceRepository {
 
     /** Keeps whether the list shows user names; throws an `IOException` when it could not be written. */
     suspend fun saveUserNameInList(on: Boolean)
+
+    /** Keeps whether groups show their number; throws an `IOException` when it could not be written. */
+    suspend fun saveEntryCount(on: Boolean)
+
+    /** Keeps whether the number counts the groups below; throws an `IOException` when it could not be written. */
+    suspend fun saveEntryCountNested(on: Boolean)
 }
