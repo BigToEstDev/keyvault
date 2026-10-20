@@ -232,7 +232,7 @@ class GroupListProcessor @AssistedInject constructor(
 
             GroupListAction.CreateEntry -> createEntry()
 
-            GroupListAction.OpenSettings -> navigator.navigate(MviNavEvent.NavigateTo(SettingsRoute))
+            GroupListAction.OpenSettings -> navigator.navigate(MviNavEvent.NavigateTo(SettingsRoute(dbKey)))
 
             is GroupListAction.OpenEntry -> {
                 clearSearch()

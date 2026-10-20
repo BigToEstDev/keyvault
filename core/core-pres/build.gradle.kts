@@ -36,5 +36,8 @@ dependencies {
     api(libs.androidx.compose.ui.tooling.preview)
     debugApi(libs.androidx.compose.ui.tooling)
 
+    // The system prompt of strong biometrics - one for welcome and settings (pass-docs, Step 59)
+    implementation(libs.androidx.biometric)
+
     testImplementation(libs.junit)
 }

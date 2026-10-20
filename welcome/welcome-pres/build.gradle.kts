@@ -11,8 +11,6 @@ dependencies {
     implementation(projects.settings.settingsDomain)
 
     implementation(libs.hilt)
-    // Strong biometrics: BiometricManager, BiometricPrompt
-    implementation(libs.androidx.biometric)
     ksp(libs.hilt.compiler)
 
     testImplementation(libs.junit)
