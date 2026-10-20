@@ -11,12 +11,14 @@ import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.lock.AutoLockTimeout
 import ru.kino.dev.settings.lock.LockSettingsRepository
 import ru.kino.dev.settings.pres.common.keepSetting
+import ru.kino.dev.settings.signin.SignInSettingsRepository
 import javax.inject.Inject
 
 /**
  * @param timeout the chosen time of the auto-lock; null until read - its choice is disabled
  * @param lockOnLeave whether leaving the app locks at once; null until read - its choice is disabled
  * @param lockButton whether the screens have the lock button; null until read - its choice is disabled
+ * @param clearPasswordOnError whether a wrong password is wiped; null until read - its choice is disabled
  * @param choosingTimeout the wheel of the times is open
  * @param message for the snackbar, until it takes it
  */
@@ -24,18 +26,20 @@ data class LockState(
     val timeout: AutoLockTimeout? = null,
     val lockOnLeave: Boolean? = null,
     val lockButton: Boolean? = null,
+    val clearPasswordOnError: Boolean? = null,
     val choosingTimeout: Boolean = false,
     val message: LockMessage? = null,
 )
 
 /**
  * How the database locks (pass-docs, Step 59): the time of the auto-lock, locking on leaving the app, the lock
- * button. A choice
+ * button; and how one gets in - wiping a wrong password. A choice
  * is kept at once - the timer of the app takes it from the repository; a new time counts from then on.
  */
 @HiltViewModel
 class LockProcessor @Inject constructor(
     private val repository: LockSettingsRepository,
+    private val signIn: SignInSettingsRepository,
     private val navigator: Navigator,
 ) : ViewModel(), OrbitContainerHost<LockState, LockState, Nothing> {
 
@@ -47,7 +51,15 @@ class LockProcessor @Inject constructor(
                 val timeout = repository.autoLockTimeout.first()
                 val lockOnLeave = repository.lockOnLeave.first()
                 val lockButton = repository.lockButton.first()
-                reduce { state.copy(timeout = timeout, lockOnLeave = lockOnLeave, lockButton = lockButton) }
+                val clearPasswordOnError = signIn.clearPasswordOnError.first()
+                reduce {
+                    state.copy(
+                        timeout = timeout,
+                        lockOnLeave = lockOnLeave,
+                        lockButton = lockButton,
+                        clearPasswordOnError = clearPasswordOnError,
+                    )
+                }
             }
 
             LockAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
@@ -82,6 +94,14 @@ class LockProcessor @Inject constructor(
                 show = { copy(lockButton = it) },
                 notSaved = { copy(message = LockMessage.NotSaved) },
             ) { repository.saveLockButton(it) }
+
+            is LockAction.SetClearPasswordOnError -> keepSetting(
+                chosen = action.on,
+                current = state.clearPasswordOnError,
+                kept = signIn.clearPasswordOnError,
+                show = { copy(clearPasswordOnError = it) },
+                notSaved = { copy(message = LockMessage.NotSaved) },
+            ) { signIn.saveClearPasswordOnError(it) }
 
             LockAction.MessageShown -> reduce { state.copy(message = null) }
         }

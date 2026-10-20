@@ -13,6 +13,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.lock.AutoLockTimeout
 import ru.kino.dev.settings.lock.LockSettingsRepository
+import ru.kino.dev.settings.signin.FakeSignInSettingsRepository
 import java.io.IOException
 
 class LockProcessorTest {
@@ -21,10 +22,15 @@ class LockProcessorTest {
     fun `the screen shown reads the chosen time`() = runTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes10)
 
-        LockProcessor(repository, Navigator()).testWithInternalState(this) {
+        LockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this) {
             containerHost.action(LockAction.Load).join()
 
-            expectInternalState { copy(timeout = AutoLockTimeout.Minutes10, lockOnLeave = false, lockButton = false) }
+            expectInternalState { copy(
+                    timeout = AutoLockTimeout.Minutes10,
+                    lockOnLeave = false,
+                    lockButton = false,
+                    clearPasswordOnError = false,
+                ) }
         }
     }
 
@@ -32,7 +38,7 @@ class LockProcessorTest {
     fun `auto-lock tapped opens the wheel`() = runTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
 
-        LockProcessor(repository, Navigator()).testWithInternalState(this, LockState(AutoLockTimeout.Minutes5)) {
+        LockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this, LockState(AutoLockTimeout.Minutes5)) {
             containerHost.action(LockAction.ChooseTimeout).join()
 
             expectInternalState { copy(choosingTimeout = true) }
@@ -43,7 +49,7 @@ class LockProcessorTest {
     fun `the wheel does not open before the time is read`() = runTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
 
-        LockProcessor(repository, Navigator()).testWithInternalState(this) {
+        LockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this) {
             containerHost.action(LockAction.ChooseTimeout).join()
         }
     }
@@ -53,7 +59,7 @@ class LockProcessorTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
         val initial = LockState(AutoLockTimeout.Minutes5, choosingTimeout = true)
 
-        LockProcessor(repository, Navigator()).testWithInternalState(this, initial) {
+        LockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this, initial) {
             containerHost.action(LockAction.SelectTimeout(AutoLockTimeout.Seconds30)).join()
 
             expectInternalState { copy(choosingTimeout = false) }
@@ -68,7 +74,7 @@ class LockProcessorTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes15, failSave = true)
         val initial = LockState(AutoLockTimeout.Minutes5, choosingTimeout = true)
 
-        LockProcessor(repository, Navigator()).testWithInternalState(this, initial) {
+        LockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this, initial) {
             containerHost.action(LockAction.SelectTimeout(AutoLockTimeout.Minute1)).join()
 
             expectInternalState { copy(choosingTimeout = false) }
@@ -82,7 +88,7 @@ class LockProcessorTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
         val initial = LockState(AutoLockTimeout.Minutes5, choosingTimeout = true)
 
-        LockProcessor(repository, Navigator()).testWithInternalState(this, initial) {
+        LockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this, initial) {
             containerHost.action(LockAction.SelectTimeout(AutoLockTimeout.Minutes5)).join()
 
             expectInternalState { copy(choosingTimeout = false) }
@@ -95,7 +101,7 @@ class LockProcessorTest {
     fun `locking on leaving switched is kept at once`() = runTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
 
-        LockProcessor(repository, Navigator())
+        LockProcessor(repository, FakeSignInSettingsRepository(), Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockOnLeave = false)) {
                 containerHost.action(LockAction.SetLockOnLeave(true)).join()
 
@@ -109,7 +115,7 @@ class LockProcessorTest {
     fun `locking on leaving not written shows what is kept, with a message`() = runTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5, failSave = true)
 
-        LockProcessor(repository, Navigator())
+        LockProcessor(repository, FakeSignInSettingsRepository(), Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockOnLeave = false)) {
                 containerHost.action(LockAction.SetLockOnLeave(true)).join()
 
@@ -122,7 +128,7 @@ class LockProcessorTest {
     fun `the lock button switched is kept at once`() = runTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
 
-        LockProcessor(repository, Navigator())
+        LockProcessor(repository, FakeSignInSettingsRepository(), Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockButton = false)) {
                 containerHost.action(LockAction.SetLockButton(true)).join()
 
@@ -136,12 +142,39 @@ class LockProcessorTest {
     fun `the lock button not written shows what is kept, with a message`() = runTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5, failSave = true)
 
-        LockProcessor(repository, Navigator())
+        LockProcessor(repository, FakeSignInSettingsRepository(), Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockButton = false)) {
                 containerHost.action(LockAction.SetLockButton(true)).join()
 
                 expectInternalState { copy(lockButton = true) }
                 expectInternalState { copy(lockButton = false, message = LockMessage.NotSaved) }
+            }
+    }
+
+    @Test
+    fun `clearing the password switched is kept at once`() = runTest {
+        val signIn = FakeSignInSettingsRepository()
+
+        LockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), signIn, Navigator())
+            .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, clearPasswordOnError = false)) {
+                containerHost.action(LockAction.SetClearPasswordOnError(true)).join()
+
+                expectInternalState { copy(clearPasswordOnError = true) }
+            }
+
+        assertEquals(listOf(true), signIn.savedClearPasswordOnError)
+    }
+
+    @Test
+    fun `clearing the password not written shows what is kept, with a message`() = runTest {
+        val signIn = FakeSignInSettingsRepository(failSave = true)
+
+        LockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), signIn, Navigator())
+            .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, clearPasswordOnError = false)) {
+                containerHost.action(LockAction.SetClearPasswordOnError(true)).join()
+
+                expectInternalState { copy(clearPasswordOnError = true) }
+                expectInternalState { copy(clearPasswordOnError = false, message = LockMessage.NotSaved) }
             }
     }
 
@@ -152,7 +185,7 @@ class LockProcessorTest {
         val events = mutableListOf<MviNavEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
-        LockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), navigator).testWithInternalState(this) {
+        LockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), FakeSignInSettingsRepository(), navigator).testWithInternalState(this) {
             containerHost.action(LockAction.Back).join()
         }
 

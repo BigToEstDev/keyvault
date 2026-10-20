@@ -274,5 +274,8 @@
     <string name="settings_lock_on_leave_hint">Сразу при сворачивании или выключении экрана</string>
     <string name="settings_lock_button">Кнопка «Заблокировать»</string>
     <string name="settings_lock_button_hint">Блокирует базу сразу, не дожидаясь автоблокировки</string>
+    <string name="settings_sign_in_group">Вход</string>
+    <string name="settings_clear_password">Очищать пароль после ошибки</string>
+    <string name="settings_clear_password_hint">Стирает неверно введённый пароль — вводить заново</string>
     <string name="settings_message_not_saved">Настройка не сохранилась</string>
 </resources>

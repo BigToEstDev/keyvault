@@ -11,6 +11,7 @@ import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.WelcomeGraph
+import ru.kino.dev.settings.signin.FakeSignInSettingsRepository
 import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
@@ -37,10 +38,12 @@ class UnlockProcessorTest {
     private val current = FakeCurrentDatabase(REMEMBERED)
     private val log = FakeErrorLog()
     private val biometrics = FakeBiometrics(journal)
+    private val signIn = FakeSignInSettingsRepository()
 
-    private fun TestScope.processor(pickedUri: String? = null) =
+    private fun TestScope.processor(pickedUri: String? = null, signIn: FakeSignInSettingsRepository = this@UnlockProcessorTest.signIn) =
         recordNavigation().let { (navigator, events) ->
-            UnlockProcessor(pickedUri, database, files, current, navigator, log, BiometricSignIn(biometrics, log)) to events
+            UnlockProcessor(pickedUri, database, files, current, navigator, log, BiometricSignIn(biometrics, log), signIn) to
+                events
         }
 
     @Test
@@ -184,6 +187,34 @@ class UnlockProcessorTest {
         database.failure = WelcomeFailure.Unexpected()
         assertFailureShows(EntryProblem.Unexpected)
         assertEquals(1, log.logged.size)
+    }
+
+    @Test
+    fun `wrong credentials wipe the password when the settings say so - the key file stays`() = runTest {
+        database.failure = WelcomeFailure.InvalidCredentials()
+        val (processor, _) = processor(signIn = FakeSignInSettingsRepository(clearPasswordOnError = true))
+        val typed = rememberedState().let { it.copy(entry = it.entry.copy(password = "pw")) }
+
+        processor.testWithInternalState(this, typed) {
+            containerHost.action(UnlockAction.Submit)
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            expectInternalState {
+                copy(entry = entry.copy(busy = false, password = "", problem = EntryProblem.InvalidCredentials))
+            }
+        }
+    }
+
+    @Test
+    fun `other failures keep the password even when the settings wipe a wrong one`() = runTest {
+        database.failure = WelcomeFailure.CorruptedFile()
+        val (processor, _) = processor(signIn = FakeSignInSettingsRepository(clearPasswordOnError = true))
+        val typed = rememberedState().let { it.copy(entry = it.entry.copy(password = "pw")) }
+
+        processor.testWithInternalState(this, typed) {
+            containerHost.action(UnlockAction.Submit)
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            expectInternalState { copy(entry = entry.copy(busy = false, problem = EntryProblem.CorruptedFile)) }
+        }
     }
 
     @Test

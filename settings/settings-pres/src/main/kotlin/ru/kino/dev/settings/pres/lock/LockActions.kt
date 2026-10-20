@@ -24,6 +24,9 @@ sealed interface LockAction {
     /** "Lock button" switched: kept at once. */
     data class SetLockButton(val on: Boolean) : LockAction
 
+    /** "Clear the password after an error" switched: kept at once. */
+    data class SetClearPasswordOnError(val on: Boolean) : LockAction
+
     /** The snackbar took the message. */
     data object MessageShown : LockAction
 }

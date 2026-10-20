@@ -9,6 +9,7 @@ import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.LockedRoute
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.VaultRootRoute
+import ru.kino.dev.settings.signin.FakeSignInSettingsRepository
 import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
@@ -32,10 +33,11 @@ class LockedProcessorTest {
     private val biometrics = FakeBiometrics(journal)
     private val current = FakeCurrentDatabase(CurrentDatabase(DB, "passwords.kdbx", "Passwords", KEY, "my.keyx"))
 
-    private fun TestScope.processor() =
+    private fun TestScope.processor(signIn: FakeSignInSettingsRepository = FakeSignInSettingsRepository()) =
         recordNavigation().let { (navigator, events) ->
             val log = FakeErrorLog()
-            LockedProcessor(DB, database, files, current, navigator, log, BiometricSignIn(biometrics, log)) to events
+            LockedProcessor(DB, database, files, current, navigator, log, BiometricSignIn(biometrics, log), signIn) to
+                events
         }
 
     @Test
@@ -106,6 +108,34 @@ class LockedProcessorTest {
 
         assertEquals(NEW_KEY, database.keyFileReceived)
         assertEquals(listOf(TO_VAULT_ROOT), events)
+    }
+
+    @Test
+    fun `wrong credentials wipe the password when the settings say so`() = runTest {
+        database.failure = WelcomeFailure.InvalidCredentials()
+        val (processor, _) = processor(FakeSignInSettingsRepository(clearPasswordOnError = true))
+        val typed = lockedState().let { it.copy(entry = it.entry.copy(password = "pw")) }
+
+        processor.testWithInternalState(this, typed) {
+            containerHost.action(LockedAction.Submit)
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            expectInternalState {
+                copy(entry = entry.copy(busy = false, password = "", problem = EntryProblem.InvalidCredentials))
+            }
+        }
+    }
+
+    @Test
+    fun `wrong credentials keep the password when the settings do not wipe it`() = runTest {
+        database.failure = WelcomeFailure.InvalidCredentials()
+        val (processor, _) = processor()
+        val typed = lockedState().let { it.copy(entry = it.entry.copy(password = "pw")) }
+
+        processor.testWithInternalState(this, typed) {
+            containerHost.action(LockedAction.Submit)
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            expectInternalState { copy(entry = entry.copy(busy = false, problem = EntryProblem.InvalidCredentials)) }
+        }
     }
 
     @Test

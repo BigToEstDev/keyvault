@@ -18,8 +18,10 @@ import ru.kino.dev.settings.appearance.AppearanceRepository
 import ru.kino.dev.settings.data.appearance.DataStoreAppearanceRepository
 import ru.kino.dev.settings.data.lock.ClockInactivityTimer
 import ru.kino.dev.settings.data.lock.DataStoreLockSettingsRepository
+import ru.kino.dev.settings.data.signin.DataStoreSignInSettingsRepository
 import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.settings.lock.LockSettingsRepository
+import ru.kino.dev.settings.signin.SignInSettingsRepository
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -38,6 +40,10 @@ internal object SettingsDataModule {
     @Provides
     fun provideLockSettingsRepository(@ApplicationContext context: Context): LockSettingsRepository =
         DataStoreLockSettingsRepository(context.appSettingsStore)
+
+    @Provides
+    fun provideSignInSettingsRepository(@ApplicationContext context: Context): SignInSettingsRepository =
+        DataStoreSignInSettingsRepository(context.appSettingsStore)
 
     // One for the app: the app tells it what it sees, `vault` listens (pass-docs, Step 59)
     @Provides
