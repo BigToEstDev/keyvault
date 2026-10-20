@@ -27,6 +27,10 @@ internal object FfiCommands {
     // Follows a biometric prompt that already succeeded on this side
     const val UNLOCK_ON_BIOMETRIC = "unlock_kdbx_on_biometric_authentication"
 
+    // The password of an open database checked alone, and what its key is made of (pass-docs, Step 60)
+    const val VERIFY_PASSWORD = "verify_password"
+    const val CREDENTIALS_USED = "credentials_used"
+
     // Groups: the tree the ui draws, one group for its edit screen, and the operations that change it
     const val GROUPS_SUMMARY_DATA = "groups_summary_data"
     const val GET_GROUP_BY_ID = "get_group_by_id"
@@ -100,6 +104,8 @@ internal object FfiCommands {
         RENAME_DB_KEY,
         CONTEXT_STATUSES,
         UNLOCK_ON_BIOMETRIC,
+        VERIFY_PASSWORD,
+        CREDENTIALS_USED,
         GROUPS_SUMMARY_DATA,
         GET_GROUP_BY_ID,
         NEW_BLANK_GROUP,

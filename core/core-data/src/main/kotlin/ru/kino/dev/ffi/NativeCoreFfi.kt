@@ -6,6 +6,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import ru.kino.dev.core.CreatedDatabase
 import ru.kino.dev.core.CredentialLimits
+import ru.kino.dev.core.CredentialsUsed
 import ru.kino.dev.core.EntryData
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
@@ -118,6 +119,24 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
             ),
         )
         FfiEnvelope.unwrap(envelope, KdbxLoadedDto.serializer()).toDomain()
+    }
+
+    override suspend fun verifyPassword(dbKey: String, password: String): Boolean = withContext(dispatcher) {
+        val envelope = PassFfi.invoke(
+            FfiCommands.VERIFY_PASSWORD,
+            encode(VerifyPasswordDto.serializer(), VerifyPasswordDto(dbKey = dbKey, password = password)),
+        )
+        FfiEnvelope.unwrap(envelope, MatchesDto.serializer()).matches
+    }
+
+    override suspend fun credentialsUsed(dbKey: String): CredentialsUsed = withContext(dispatcher) {
+        val envelope = PassFfi.invoke(
+            FfiCommands.CREDENTIALS_USED,
+            encode(DbKeyDto.serializer(), DbKeyDto(dbKey)),
+        )
+        FfiEnvelope.unwrap(envelope, CredentialsUsedDto.serializer()).let {
+            CredentialsUsed(password = it.password, keyFile = it.keyFile)
+        }
     }
 
     override suspend fun verifyFileChecksum(dbKey: String, bytes: ByteArray) {

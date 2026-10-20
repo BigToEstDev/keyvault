@@ -6,6 +6,7 @@
   "close_kdbx",
   "collect_entry_group_tags",
   "create_and_write_to_writer",
+  "credentials_used",
   "db_checksum_hash",
   "delete_entry_otp",
   "delete_history_entries",
@@ -51,5 +52,6 @@
   "unlock_kdbx_on_biometric_authentication",
   "update_entry_from_form_data",
   "update_group",
-  "verify_db_file_checksum"
+  "verify_db_file_checksum",
+  "verify_password"
 ]

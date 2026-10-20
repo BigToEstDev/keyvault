@@ -74,6 +74,17 @@ interface NativeCore {
     suspend fun closeDatabase(dbKey: String)
 
     /**
+     * Whether [password] is the password of the open database - checked alone against what the core kept,
+     * the key file not asked for, so it answers at once; locked or not, nothing changes. What the app asks
+     * before it keeps the password for biometrics (pass-docs, Step 60). A database without a password
+     * matches none.
+     */
+    suspend fun verifyPassword(dbKey: String, password: String): Boolean
+
+    /** What the key of the open database is made of - a database without a password gets no biometrics. */
+    suspend fun credentialsUsed(dbKey: String): CredentialsUsed
+
+    /**
      * Compares [bytes] with the checksum taken when the file was last read or written.
      *
      * Throws [CoreException] with kind `DbFileContentChangeDetected` when they differ - somebody else
@@ -231,6 +242,9 @@ data class CreatedDatabase(
 
     override fun hashCode(): Int = 31 * database.hashCode() + bytes.contentHashCode()
 }
+
+/** What the key of an open database is made of: a password, a key file or both (pass-docs, Step 60). */
+data class CredentialsUsed(val password: Boolean, val keyFile: Boolean)
 
 /** An open database, as the core describes it. */
 data class OpenedDatabase(

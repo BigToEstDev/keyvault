@@ -53,6 +53,12 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     /** The password of the last open, unlock or create. */
     var passwordReceived: String? = null
 
+    /** The password [verifyPassword] takes, of every database here. */
+    var password: String? = "pw"
+
+    /** What [credentialsUsed] answers, of every database here. */
+    var credentials = CredentialsUsed(password = true, keyFile = false)
+
     /**
      * Every key file handed in, as the same instances: a test checks after the call that the caller wiped
      * them.
@@ -90,6 +96,18 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         step("openDatabase", dbKey)
 
         return OpenedDatabase(dbKey, databaseName, fileName, keyFile?.name).also { opened[dbKey] = it }
+    }
+
+    override suspend fun verifyPassword(dbKey: String, password: String): Boolean {
+        step("verifyPassword", dbKey)
+        if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
+        return this.password == password
+    }
+
+    override suspend fun credentialsUsed(dbKey: String): CredentialsUsed {
+        step("credentialsUsed", dbKey)
+        if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
+        return credentials
     }
 
     override suspend fun lockDatabase(dbKey: String) {

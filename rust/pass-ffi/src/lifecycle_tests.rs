@@ -258,6 +258,47 @@ fn a_database_is_locked_and_unlocked_with_the_same_credentials() {
 // The question exists to be asked about a database that may be gone - after the process was killed,
 // the app has a uri in its list and nothing in the core
 #[test]
+fn the_password_of_an_open_database_is_checked_alone() {
+    prepare();
+    let db_key = key_of("verify-password");
+    let created = run_with_bytes("create_and_write_to_writer", &new_db_args(&db_key), None);
+    assert!(
+        created.envelope.starts_with(r#"{"ok":"#),
+        "{}",
+        created.envelope
+    );
+
+    let args =
+        |password: &str| serde_json::json!({ "db_key": db_key, "password": password }).to_string();
+    let right = run_with_bytes("verify_password", &args(TEST_PASSWORD), None);
+    assert_shape("verify_password", &right.envelope);
+    assert!(
+        right.envelope.contains(r#""matches":true"#),
+        "{}",
+        right.envelope
+    );
+
+    // A wrong one is an answer, not a failure: the screen shows it under the field
+    let wrong = run_with_bytes("verify_password", &args("not the password"), None);
+    assert!(
+        wrong.envelope.contains(r#""matches":false"#),
+        "{}",
+        wrong.envelope
+    );
+
+    let used = run_with_bytes("credentials_used", &db_key_args(&db_key), None);
+    assert_shape("credentials_used", &used.envelope);
+    assert!(
+        used.envelope.contains(r#""password":true"#)
+            && used.envelope.contains(r#""key_file":false"#),
+        "{}",
+        used.envelope
+    );
+
+    run_with_bytes("close_kdbx", &db_key_args(&db_key), None);
+}
+
+#[test]
 fn asking_whether_a_database_is_open_never_fails() {
     prepare();
 
