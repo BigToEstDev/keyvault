@@ -14,6 +14,8 @@ import kotlinx.coroutines.SupervisorJob
 import ru.kino.dev.core.preset.PresetRepository
 import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.credentials.DatabaseCredentials
+import ru.kino.dev.vault.data.credentials.DatabaseCredentialsImpl
 import ru.kino.dev.vault.data.entry.EntryRepositoryImpl
 import ru.kino.dev.vault.data.filter.DataStoreVaultFilterRepository
 import ru.kino.dev.vault.data.filter.vaultFilterStore
@@ -50,6 +52,9 @@ internal interface VaultDataModule {
 
     @Binds
     fun bindEntryHistoryRepository(impl: EntryHistoryRepositoryImpl): EntryHistoryRepository
+
+    @Binds
+    fun bindDatabaseCredentials(impl: DatabaseCredentialsImpl): DatabaseCredentials
 
     companion object {
 
