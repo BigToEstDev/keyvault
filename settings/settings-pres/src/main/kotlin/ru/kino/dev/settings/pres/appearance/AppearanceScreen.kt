@@ -130,6 +130,17 @@ internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) 
                         )
                     }
                 }
+                item(key = "user-name-in-list") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        SwitchRow(
+                            title = stringResource(R.string.settings_user_name_in_list),
+                            text = stringResource(R.string.settings_user_name_in_list_hint),
+                            checked = state.userNameInList ?: false,
+                            onCheckedChange = { processor.action(AppearanceAction.SetUserNameInList(it)) },
+                            enabled = state.userNameInList != null && !state.saving,
+                        )
+                    }
+                }
             }
         }
     }

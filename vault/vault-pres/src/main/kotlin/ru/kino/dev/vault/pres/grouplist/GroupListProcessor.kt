@@ -78,7 +78,9 @@ data class GroupListState(
     val groups: List<GroupItem> = shown.groups
 
     /** The entries the list shows, after the groups: by when they were created, as the filter says. */
-    val entries: List<EntryItem> = shown.entries.map { EntryItem(it.id, it.title, found?.locations?.get(it.groupId)) }
+    val entries: List<EntryItem> = shown.entries.map {
+        EntryItem(it.id, it.title, it.userName, found?.locations?.get(it.groupId))
+    }
 
     val isSearch: Boolean get() = query.isNotBlank()
 

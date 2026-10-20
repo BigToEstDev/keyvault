@@ -42,6 +42,10 @@ internal class DataStoreAppearanceRepository(
         .map { it[PASSWORD_COLORING_KEY] ?: true }
         .distinctUntilChanged()
 
+    override val userNameInList: Flow<Boolean> = preferences
+        .map { it[USER_NAME_IN_LIST_KEY] ?: false }
+        .distinctUntilChanged()
+
     override suspend fun save(mode: ThemeMode) {
         store.edit { it[THEME_MODE_KEY] = THEME_MODE.getValue(mode) }
     }
@@ -54,10 +58,15 @@ internal class DataStoreAppearanceRepository(
         store.edit { it[PASSWORD_COLORING_KEY] = on }
     }
 
+    override suspend fun saveUserNameInList(on: Boolean) {
+        store.edit { it[USER_NAME_IN_LIST_KEY] = on }
+    }
+
     internal companion object {
         val THEME_MODE_KEY: Preferences.Key<String> = stringPreferencesKey("theme_mode")
         val LANGUAGE_KEY: Preferences.Key<String> = stringPreferencesKey("language")
         val PASSWORD_COLORING_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("password_coloring")
+        val USER_NAME_IN_LIST_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("user_name_in_list")
 
         val THEME_MODE = mapOf(
             ThemeMode.System to "system",

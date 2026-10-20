@@ -43,6 +43,7 @@ internal fun MenuCard(
     title: String,
     items: List<MenuItem>,
     modifier: Modifier = Modifier,
+    detail: String? = null,
     subtitle: String? = null,
     onOpen: (() -> Unit)? = null,
 ) {
@@ -81,6 +82,16 @@ internal fun MenuCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    // Cut at the end: its start is what reads - a user name
+                    if (detail != null) {
+                        Text(
+                            text = detail,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     if (subtitle != null) {
                         Text(
                             text = subtitle,

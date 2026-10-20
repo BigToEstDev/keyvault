@@ -112,6 +112,22 @@ class DataStoreAppearanceRepositoryTest {
         assertEquals(false, repository.passwordColoring.first())
     }
 
+    @Test
+    fun `user names are not in the list until chosen`() = runTest {
+        val repository = DataStoreAppearanceRepository(store(newFile()))
+
+        assertEquals(false, repository.userNameInList.first())
+    }
+
+    @Test
+    fun `user names switched on are what is read next`() = runTest {
+        val repository = DataStoreAppearanceRepository(store(newFile()))
+
+        repository.saveUserNameInList(true)
+
+        assertEquals(true, repository.userNameInList.first())
+    }
+
     private fun newFile(): File = File(folder.newFolder(), "app_settings.preferences_pb")
 
     private fun TestScope.store(

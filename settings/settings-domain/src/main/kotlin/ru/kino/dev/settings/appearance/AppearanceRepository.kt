@@ -14,6 +14,9 @@ interface AppearanceRepository {
     /** Whether a secret shown in clear is colored by its letters, digits and symbols; on until chosen. */
     val passwordColoring: Flow<Boolean>
 
+    /** Whether the card of an entry in the list shows its user name; off until chosen. */
+    val userNameInList: Flow<Boolean>
+
     /** Keeps [mode]; throws an `IOException` when it could not be written. */
     suspend fun save(mode: ThemeMode)
 
@@ -22,4 +25,7 @@ interface AppearanceRepository {
 
     /** Keeps whether passwords are colored; throws an `IOException` when it could not be written. */
     suspend fun savePasswordColoring(on: Boolean)
+
+    /** Keeps whether the list shows user names; throws an `IOException` when it could not be written. */
+    suspend fun saveUserNameInList(on: Boolean)
 }

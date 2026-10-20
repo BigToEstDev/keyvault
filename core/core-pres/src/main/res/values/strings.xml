@@ -256,5 +256,7 @@
     <string name="settings_language_russian" translatable="false">Русский</string>
     <string name="settings_password_coloring">Password coloring</string>
     <string name="settings_password_coloring_hint">Letters, digits and symbols in different colors</string>
+    <string name="settings_user_name_in_list">User name in the list</string>
+    <string name="settings_user_name_in_list_hint">Under the title of an entry</string>
     <string name="settings_message_not_saved">The setting was not saved</string>
 </resources>

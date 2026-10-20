@@ -20,7 +20,6 @@ import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
-import ru.kino.dev.ui.theme.AppDisplay
 import ru.kino.dev.ui.theme.AppLocale
 import ru.kino.dev.ui.theme.KeyVaultTheme
 import ru.kino.dev.ui.theme.LocalAppDisplay
@@ -52,7 +51,7 @@ class MainActivity : FragmentActivity() {
         // appearance, so the app does not flash in the other theme or language first (pass-docs, Step 55, 57, 58)
         installSplashScreen().setKeepOnScreenCondition {
             startResolver.start.value == null || theme.themeMode.value == null || theme.language.value == null ||
-                theme.passwordColoring.value == null
+                theme.display.value == null
         }
         super.onCreate(savedInstanceState)
 
@@ -75,11 +74,11 @@ class MainActivity : FragmentActivity() {
             LaunchedEffect(darkTheme) { systemBars(darkTheme) }
 
             val language by theme.language.collectAsStateWithLifecycle()
-            val passwordColoring by theme.passwordColoring.collectAsStateWithLifecycle()
-            val display = AppDisplay(passwordColoring = passwordColoring ?: return@setContent)
+            val display by theme.display.collectAsStateWithLifecycle()
+            val shown = display ?: return@setContent
             AppLocale(locale = (language ?: return@setContent).locale) {
                 // What the screens show, as chosen in the settings: the features read it, not `settings`
-                CompositionLocalProvider(LocalAppDisplay provides display) {
+                CompositionLocalProvider(LocalAppDisplay provides shown) {
                     KeyVaultTheme(darkTheme = darkTheme) {
                         val start by startResolver.start.collectAsStateWithLifecycle()
                         start?.let { AppNavHost(navigator = navigator, autoLock = autoLock, start = it) }

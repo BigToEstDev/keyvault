@@ -26,7 +26,12 @@ class AppearanceProcessorTest {
             containerHost.action(AppearanceAction.Load).join()
 
             expectInternalState {
-                copy(themeMode = ThemeMode.Dark, language = AppLanguage.Russian, passwordColoring = true)
+                copy(
+                    themeMode = ThemeMode.Dark,
+                    language = AppLanguage.Russian,
+                    passwordColoring = true,
+                    userNameInList = false,
+                )
             }
         }
     }
@@ -149,6 +154,34 @@ class AppearanceProcessorTest {
             }
     }
 
+    @Test
+    fun `user names in the list switched are kept at once`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System)
+
+        AppearanceProcessor(repository, Navigator())
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, userNameInList = false)) {
+                containerHost.action(AppearanceAction.SetUserNameInList(true)).join()
+
+                expectInternalState { copy(userNameInList = true, saving = true) }
+                expectInternalState { copy(saving = false) }
+            }
+
+        assertEquals(listOf(true), repository.savedUserNameInList)
+    }
+
+    @Test
+    fun `user names in the list not written go back, with a message`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
+
+        AppearanceProcessor(repository, Navigator())
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, userNameInList = false)) {
+                containerHost.action(AppearanceAction.SetUserNameInList(true)).join()
+
+                expectInternalState { copy(userNameInList = true, saving = true) }
+                expectInternalState { copy(userNameInList = false, saving = false, message = AppearanceMessage.NotSaved) }
+            }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `back leaves the screen`() = runTest {
@@ -181,11 +214,17 @@ class AppearanceProcessorTest {
 
         private val coloring = MutableStateFlow(true)
 
+        val savedUserNameInList = mutableListOf<Boolean>()
+
+        private val userNames = MutableStateFlow(false)
+
         override val themeMode: Flow<ThemeMode> = mode
 
         override val language: Flow<AppLanguage> = chosenLanguage
 
         override val passwordColoring: Flow<Boolean> = coloring
+
+        override val userNameInList: Flow<Boolean> = userNames
 
         override suspend fun save(mode: ThemeMode) {
             if (failSave) throw IOException("disk full")
@@ -203,6 +242,12 @@ class AppearanceProcessorTest {
             if (failSave) throw IOException("disk full")
             savedColoring += on
             coloring.value = on
+        }
+
+        override suspend fun saveUserNameInList(on: Boolean) {
+            if (failSave) throw IOException("disk full")
+            savedUserNameInList += on
+            userNames.value = on
         }
     }
 }

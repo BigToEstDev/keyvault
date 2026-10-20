@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.AppearanceRepository
 import ru.kino.dev.settings.appearance.ThemeMode
+import ru.kino.dev.ui.theme.AppDisplay
 import javax.inject.Inject
 
 /**
@@ -31,7 +33,14 @@ class AppThemeHolder @Inject constructor(
     val language: StateFlow<AppLanguage?> = repository.language
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    /** Null while the setting is being read; a new value as soon as it is changed in the settings. */
-    val passwordColoring: StateFlow<Boolean?> = repository.passwordColoring
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    /**
+     * What the screens show - all the switches of it at once, so a new one does not reach the activity. Null
+     * while they are being read; a new value as soon as one is changed in the settings.
+     */
+    val display: StateFlow<AppDisplay?> = combine(
+        repository.passwordColoring,
+        repository.userNameInList,
+    ) { passwordColoring, userNameInList ->
+        AppDisplay(passwordColoring = passwordColoring, userNameInList = userNameInList)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }
