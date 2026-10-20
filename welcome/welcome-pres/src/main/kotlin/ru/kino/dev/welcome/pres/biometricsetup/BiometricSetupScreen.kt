@@ -25,10 +25,10 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.ui.biometric.BiometricPurpose
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.SecondaryButton
-import ru.kino.dev.welcome.pres.common.BiometricPurpose
 import ru.kino.dev.welcome.pres.common.rememberBiometricPrompt
 import ru.kino.dev.welcome.pres.create.CreateDraft
 

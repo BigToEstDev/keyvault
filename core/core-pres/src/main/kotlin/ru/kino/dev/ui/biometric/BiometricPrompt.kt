@@ -1,29 +1,27 @@
-package ru.kino.dev.welcome.pres.common
+package ru.kino.dev.ui.biometric
 
 import androidx.activity.compose.LocalActivity
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricPrompt
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import ru.kino.dev.core.pres.R
-import ru.kino.dev.settings.biometric.BiometricSession
+import javax.crypto.Cipher
 
 /** How the system prompt ended. */
-sealed interface BiometricOutcome {
+sealed interface BiometricPromptResult {
 
-    /** The biometrics matched, and the session's cipher is unlocked for one use. */
-    data class Succeeded(val session: BiometricSession) : BiometricOutcome
+    /** The biometrics matched, and the cipher handed to the prompt is unlocked for one use. */
+    data object Succeeded : BiometricPromptResult
 
     /** The user chose the password, or put the prompt away - nothing to say. */
-    data object Cancelled : BiometricOutcome
+    data object Cancelled : BiometricPromptResult
 
     /** The system refused - too many attempts, the sensor busy; the password still works. */
-    data object Failed : BiometricOutcome
+    data object Failed : BiometricPromptResult
 }
 
 /** What the prompt is shown for - its texts. */
@@ -33,14 +31,14 @@ enum class BiometricPurpose {
 }
 
 /**
- * Shows the system `BiometricPrompt` for a session handed out by the repository - strong biometrics only,
- * with the session's cipher as the crypto object, so that only a real match unlocks it. Launched by the
- * screen when its processor asks with a side effect; the outcome goes back as an action.
+ * Shows the system `BiometricPrompt` - strong biometrics only, with [Cipher] as the crypto object, so that only
+ * a real match unlocks it. One for every screen that asks for biometrics - signing in in `welcome`, turning them
+ * on there and in the settings (pass-docs, Step 59, item 7); the cipher is the screen's to keep meanwhile.
+ * Launched by the screen when its processor asks with a side effect; the result goes back as an action.
  */
 @Composable
-internal fun rememberBiometricPrompt(onOutcome: (BiometricOutcome) -> Unit): (BiometricSession, BiometricPurpose) -> Unit {
+fun rememberBiometricPrompt(): (Cipher, BiometricPurpose, (BiometricPromptResult) -> Unit) -> Unit {
     val activity = LocalActivity.current as? FragmentActivity
-    val outcome by rememberUpdatedState(onOutcome)
     val texts = PromptTexts(
         unlockTitle = stringResource(R.string.biometric_prompt_unlock_title),
         enableTitle = stringResource(R.string.biometric_prompt_enable_title),
@@ -49,20 +47,22 @@ internal fun rememberBiometricPrompt(onOutcome: (BiometricOutcome) -> Unit): (Bi
     )
 
     return remember(activity, texts) {
-        { session, purpose ->
+        { cipher, purpose, onResult ->
             activity?.let { host ->
                 val callback = object : BiometricPrompt.AuthenticationCallback() {
                     override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                        outcome(BiometricOutcome.Succeeded(session))
+                        onResult(BiometricPromptResult.Succeeded)
                     }
 
                     override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                        outcome(if (errorCode in CANCELLED) BiometricOutcome.Cancelled else BiometricOutcome.Failed)
+                        onResult(
+                            if (errorCode in CANCELLED) BiometricPromptResult.Cancelled else BiometricPromptResult.Failed,
+                        )
                     }
                     // A finger that does not match is retried by the prompt itself
                 }
                 BiometricPrompt(host, ContextCompat.getMainExecutor(host), callback)
-                    .authenticate(texts.info(purpose), BiometricPrompt.CryptoObject(session.cipher))
+                    .authenticate(texts.info(purpose), BiometricPrompt.CryptoObject(cipher))
             }
         }
     }
