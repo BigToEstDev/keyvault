@@ -22,6 +22,12 @@ sealed interface AppearanceAction {
     /** "User name in the list" switched: kept at once. */
     data class SetUserNameInList(val on: Boolean) : AppearanceAction
 
+    /** "Number of entries in a group" switched: kept at once. */
+    data class SetEntryCount(val on: Boolean) : AppearanceAction
+
+    /** "Count nested groups" switched: kept at once. */
+    data class SetEntryCountNested(val on: Boolean) : AppearanceAction
+
     /** The snackbar took the message. */
     data object MessageShown : AppearanceAction
 }

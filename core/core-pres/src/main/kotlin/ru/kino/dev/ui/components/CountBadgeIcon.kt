@@ -1,5 +1,6 @@
 package ru.kino.dev.ui.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.Badge
@@ -13,18 +14,29 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
  * An icon with a number on a badge over its corner - a folder and the entries inside it, in the database
- * and in every group.
+ * and in every group. Null - the icon alone, no badge: the settings hide the number (pass-docs, Step 58).
  *
  * The badge is the accent of the theme (`tertiary`). Numbers above [MAX_SHOWN] are cut to "999+": the badge
  * is for a glance, not for counting.
  */
 @Composable
 fun CountBadgeIcon(
-    count: Int,
+    count: Int?,
     modifier: Modifier = Modifier,
     icon: ImageVector = Icons.Filled.Folder,
     contentDescription: String? = null,
 ) {
+    val folder = @Composable {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = MaterialTheme.colorScheme.primary,
+        )
+    }
+    if (count == null) {
+        Box(modifier = modifier) { folder() }
+        return
+    }
     BadgedBox(
         modifier = modifier,
         badge = {
@@ -36,11 +48,7 @@ fun CountBadgeIcon(
             }
         },
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = MaterialTheme.colorScheme.primary,
-        )
+        folder()
     }
 }
 

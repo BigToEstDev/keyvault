@@ -46,6 +46,14 @@ internal class DataStoreAppearanceRepository(
         .map { it[USER_NAME_IN_LIST_KEY] ?: false }
         .distinctUntilChanged()
 
+    override val entryCount: Flow<Boolean> = preferences
+        .map { it[ENTRY_COUNT_KEY] ?: true }
+        .distinctUntilChanged()
+
+    override val entryCountNested: Flow<Boolean> = preferences
+        .map { it[ENTRY_COUNT_NESTED_KEY] ?: true }
+        .distinctUntilChanged()
+
     override suspend fun save(mode: ThemeMode) {
         store.edit { it[THEME_MODE_KEY] = THEME_MODE.getValue(mode) }
     }
@@ -62,11 +70,21 @@ internal class DataStoreAppearanceRepository(
         store.edit { it[USER_NAME_IN_LIST_KEY] = on }
     }
 
+    override suspend fun saveEntryCount(on: Boolean) {
+        store.edit { it[ENTRY_COUNT_KEY] = on }
+    }
+
+    override suspend fun saveEntryCountNested(on: Boolean) {
+        store.edit { it[ENTRY_COUNT_NESTED_KEY] = on }
+    }
+
     internal companion object {
         val THEME_MODE_KEY: Preferences.Key<String> = stringPreferencesKey("theme_mode")
         val LANGUAGE_KEY: Preferences.Key<String> = stringPreferencesKey("language")
         val PASSWORD_COLORING_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("password_coloring")
         val USER_NAME_IN_LIST_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("user_name_in_list")
+        val ENTRY_COUNT_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("entry_count")
+        val ENTRY_COUNT_NESTED_KEY: Preferences.Key<Boolean> = booleanPreferencesKey("entry_count_nested")
 
         val THEME_MODE = mapOf(
             ThemeMode.System to "system",

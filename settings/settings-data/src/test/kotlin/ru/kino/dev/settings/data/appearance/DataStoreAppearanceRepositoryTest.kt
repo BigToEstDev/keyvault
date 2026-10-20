@@ -128,6 +128,32 @@ class DataStoreAppearanceRepositoryTest {
         assertEquals(true, repository.userNameInList.first())
     }
 
+    @Test
+    fun `groups show their number, counting the nested ones, until chosen`() = runTest {
+        val repository = DataStoreAppearanceRepository(store(newFile()))
+
+        assertEquals(true, repository.entryCount.first())
+        assertEquals(true, repository.entryCountNested.first())
+    }
+
+    @Test
+    fun `the number switched off is what is read next`() = runTest {
+        val repository = DataStoreAppearanceRepository(store(newFile()))
+
+        repository.saveEntryCount(false)
+
+        assertEquals(false, repository.entryCount.first())
+    }
+
+    @Test
+    fun `counting only its own entries is what is read next`() = runTest {
+        val repository = DataStoreAppearanceRepository(store(newFile()))
+
+        repository.saveEntryCountNested(false)
+
+        assertEquals(false, repository.entryCountNested.first())
+    }
+
     private fun newFile(): File = File(folder.newFolder(), "app_settings.preferences_pb")
 
     private fun TestScope.store(

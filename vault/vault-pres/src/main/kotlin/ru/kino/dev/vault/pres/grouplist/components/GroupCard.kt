@@ -23,7 +23,7 @@ internal fun GroupCard(
     modifier: Modifier = Modifier,
 ) {
     MenuCard(
-        icon = { CountBadgeIcon(count = group.entryCount) },
+        icon = { CountBadgeIcon(count = group.entryCount.shown()) },
         title = group.name,
         subtitle = location,
         items = listOf(editMenuItem(onEdit), deleteMenuItem(onDelete)),

@@ -2,6 +2,7 @@ package ru.kino.dev.vault.pres.grouplist
 
 import ru.kino.dev.vault.filter.CreationOrder
 import ru.kino.dev.vault.filter.Visibility
+import ru.kino.dev.vault.group.EntryCount
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 
@@ -81,7 +82,7 @@ data class GroupItem(
     val id: GroupId,
     val name: String,
     /** Entries in it and in every group below it */
-    val entryCount: Int,
+    val entryCount: EntryCount,
     /** Found by a search: the names from the group searched in down to the one it is in. Null otherwise */
     val location: List<String>? = null,
 )

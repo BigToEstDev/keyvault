@@ -38,7 +38,7 @@ class GroupRepositoryImplTest {
         assertNull(tree.recycleBinId)
         assertEquals(listOf(GroupId(WORK)), tree.subgroups(GroupId(ROOT)).map { it.id })
         assertEquals(listOf(EntryId("e2"), EntryId("e3")), tree.group(GroupId(WORK))?.entryIds)
-        assertEquals(3, tree.entryCount(GroupId(ROOT)))
+        assertEquals(3, tree.entryCount(GroupId(ROOT)).nested)
     }
 
     @Test
@@ -67,7 +67,7 @@ class GroupRepositoryImplTest {
         assertNull(tree.group(GroupId(WORK)))
         assertEquals(GroupId(FakeNativeCore.RECYCLE_BIN_ID), tree.recycleBinId)
         assertEquals(emptyList<GroupId>(), tree.subgroups(GroupId(ROOT)).map { it.id })
-        assertEquals(1, tree.entryCount(GroupId(ROOT)))
+        assertEquals(1, tree.entryCount(GroupId(ROOT)).nested)
     }
 
     @Test

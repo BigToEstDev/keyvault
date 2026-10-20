@@ -2,6 +2,7 @@ package ru.kino.dev.vault.search
 
 import ru.kino.dev.vault.entry.EntryRepository
 import ru.kino.dev.vault.entry.EntrySummary
+import ru.kino.dev.vault.group.EntryCount
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.group.VaultGroup
@@ -13,7 +14,7 @@ data class VaultSearchResult(
     val groups: List<VaultGroup>,
     val entries: List<EntrySummary>,
     /** For each group found: the entries in it and in every group below it - what its card shows */
-    val entryCounts: Map<GroupId, Int>,
+    val entryCounts: Map<GroupId, EntryCount>,
     /**
      * Where what is found lies: for each group holding an entry found - its [VaultSearchResult.entries] by
      * `groupId` - or a group found - by `parentId` - the names from the group searched in down to it, both

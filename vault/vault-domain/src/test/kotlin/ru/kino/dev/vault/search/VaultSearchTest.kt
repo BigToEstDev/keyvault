@@ -12,6 +12,7 @@ import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupFailure
+import ru.kino.dev.vault.group.EntryCount
 import ru.kino.dev.vault.group.GroupId
 
 class VaultSearchTest {
@@ -73,7 +74,7 @@ class VaultSearchTest {
 
         val result = search.search(DB, root, "cards")
 
-        assertEquals(mapOf(cards to 2), result.entryCounts)
+        assertEquals(mapOf(cards to EntryCount(direct = 2, nested = 2)), result.entryCounts)
     }
 
     @Test

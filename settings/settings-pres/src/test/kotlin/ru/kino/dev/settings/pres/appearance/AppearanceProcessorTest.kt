@@ -31,6 +31,8 @@ class AppearanceProcessorTest {
                     language = AppLanguage.Russian,
                     passwordColoring = true,
                     userNameInList = false,
+                    entryCount = true,
+                    entryCountNested = true,
                 )
             }
         }
@@ -190,6 +192,60 @@ class AppearanceProcessorTest {
             }
     }
 
+    @Test
+    fun `the number of entries switched is kept at once`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System)
+
+        AppearanceProcessor(repository, Navigator())
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCount = true)) {
+                containerHost.action(AppearanceAction.SetEntryCount(false)).join()
+
+                expectInternalState { copy(entryCount = false) }
+            }
+
+        assertEquals(listOf(false), repository.savedEntryCount)
+    }
+
+    @Test
+    fun `the number of entries not written shows what is kept, with a message`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
+
+        AppearanceProcessor(repository, Navigator())
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCount = true)) {
+                containerHost.action(AppearanceAction.SetEntryCount(false)).join()
+
+                expectInternalState { copy(entryCount = false) }
+                expectInternalState { copy(entryCount = true, message = AppearanceMessage.NotSaved) }
+            }
+    }
+
+    @Test
+    fun `counting the nested groups switched is kept at once`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System)
+
+        AppearanceProcessor(repository, Navigator())
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCountNested = true)) {
+                containerHost.action(AppearanceAction.SetEntryCountNested(false)).join()
+
+                expectInternalState { copy(entryCountNested = false) }
+            }
+
+        assertEquals(listOf(false), repository.savedEntryCountNested)
+    }
+
+    @Test
+    fun `counting the nested groups not written shows what is kept, with a message`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
+
+        AppearanceProcessor(repository, Navigator())
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCountNested = true)) {
+                containerHost.action(AppearanceAction.SetEntryCountNested(false)).join()
+
+                expectInternalState { copy(entryCountNested = false) }
+                expectInternalState { copy(entryCountNested = true, message = AppearanceMessage.NotSaved) }
+            }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `back leaves the screen`() = runTest {
@@ -226,6 +282,14 @@ class AppearanceProcessorTest {
 
         private val userNames = MutableStateFlow(false)
 
+        val savedEntryCount = mutableListOf<Boolean>()
+
+        private val counts = MutableStateFlow(true)
+
+        val savedEntryCountNested = mutableListOf<Boolean>()
+
+        private val nested = MutableStateFlow(true)
+
         override val themeMode: Flow<ThemeMode> = mode
 
         override val language: Flow<AppLanguage> = chosenLanguage
@@ -233,6 +297,10 @@ class AppearanceProcessorTest {
         override val passwordColoring: Flow<Boolean> = coloring
 
         override val userNameInList: Flow<Boolean> = userNames
+
+        override val entryCount: Flow<Boolean> = counts
+
+        override val entryCountNested: Flow<Boolean> = nested
 
         override suspend fun save(mode: ThemeMode) {
             if (failSave) throw IOException("disk full")
@@ -256,6 +324,18 @@ class AppearanceProcessorTest {
             if (failSave) throw IOException("disk full")
             savedUserNameInList += on
             userNames.value = on
+        }
+
+        override suspend fun saveEntryCount(on: Boolean) {
+            if (failSave) throw IOException("disk full")
+            savedEntryCount += on
+            counts.value = on
+        }
+
+        override suspend fun saveEntryCountNested(on: Boolean) {
+            if (failSave) throw IOException("disk full")
+            savedEntryCountNested += on
+            nested.value = on
         }
     }
 }

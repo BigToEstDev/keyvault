@@ -141,6 +141,29 @@ internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) 
                         )
                     }
                 }
+                item(key = "entry-count") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        SwitchRow(
+                            title = stringResource(R.string.settings_entry_count),
+                            text = stringResource(R.string.settings_entry_count_hint),
+                            checked = state.entryCount ?: true,
+                            onCheckedChange = { processor.action(AppearanceAction.SetEntryCount(it)) },
+                            enabled = state.entryCount != null,
+                        )
+                    }
+                }
+                item(key = "entry-count-nested") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        SwitchRow(
+                            title = stringResource(R.string.settings_entry_count_nested),
+                            text = stringResource(R.string.settings_entry_count_nested_hint),
+                            checked = state.entryCountNested ?: true,
+                            onCheckedChange = { processor.action(AppearanceAction.SetEntryCountNested(it)) },
+                            // Nothing to count without the number
+                            enabled = state.entryCountNested != null && state.entryCount == true,
+                        )
+                    }
+                }
             }
         }
     }
