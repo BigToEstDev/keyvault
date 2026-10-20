@@ -39,6 +39,8 @@ internal fun OwnFieldRow(
             error = error,
             enabled = enabled,
             hidden = field.protected && !shown,
+            // Shown in clear, colored as a password is (pass-docs, Step 58)
+            secret = field.protected,
             actions = if (field.protected) {
                 { VisibilityToggle(visible = shown, onToggle = onToggleShown, enabled = enabled) }
             } else {

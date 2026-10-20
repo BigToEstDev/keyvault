@@ -25,7 +25,9 @@ class AppearanceProcessorTest {
         AppearanceProcessor(repository, Navigator()).testWithInternalState(this) {
             containerHost.action(AppearanceAction.Load).join()
 
-            expectInternalState { copy(themeMode = ThemeMode.Dark, language = AppLanguage.Russian) }
+            expectInternalState {
+                copy(themeMode = ThemeMode.Dark, language = AppLanguage.Russian, passwordColoring = true)
+            }
         }
     }
 
@@ -119,6 +121,34 @@ class AppearanceProcessorTest {
         assertEquals(emptyList<AppLanguage>(), repository.savedLanguages)
     }
 
+    @Test
+    fun `password coloring switched is kept at once`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System)
+
+        AppearanceProcessor(repository, Navigator())
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordColoring = true)) {
+                containerHost.action(AppearanceAction.SetPasswordColoring(false)).join()
+
+                expectInternalState { copy(passwordColoring = false, saving = true) }
+                expectInternalState { copy(saving = false) }
+            }
+
+        assertEquals(listOf(false), repository.savedColoring)
+    }
+
+    @Test
+    fun `password coloring not written goes back, with a message`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
+
+        AppearanceProcessor(repository, Navigator())
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordColoring = true)) {
+                containerHost.action(AppearanceAction.SetPasswordColoring(false)).join()
+
+                expectInternalState { copy(passwordColoring = false, saving = true) }
+                expectInternalState { copy(passwordColoring = true, saving = false, message = AppearanceMessage.NotSaved) }
+            }
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `back leaves the screen`() = runTest {
@@ -147,9 +177,15 @@ class AppearanceProcessorTest {
 
         val savedLanguages = mutableListOf<AppLanguage>()
 
+        val savedColoring = mutableListOf<Boolean>()
+
+        private val coloring = MutableStateFlow(true)
+
         override val themeMode: Flow<ThemeMode> = mode
 
         override val language: Flow<AppLanguage> = chosenLanguage
+
+        override val passwordColoring: Flow<Boolean> = coloring
 
         override suspend fun save(mode: ThemeMode) {
             if (failSave) throw IOException("disk full")
@@ -161,6 +197,12 @@ class AppearanceProcessorTest {
             if (failSave) throw IOException("disk full")
             savedLanguages += language
             chosenLanguage.value = language
+        }
+
+        override suspend fun savePasswordColoring(on: Boolean) {
+            if (failSave) throw IOException("disk full")
+            savedColoring += on
+            coloring.value = on
         }
     }
 }

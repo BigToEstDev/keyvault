@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -19,8 +20,10 @@ import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
+import ru.kino.dev.ui.theme.AppDisplay
 import ru.kino.dev.ui.theme.AppLocale
 import ru.kino.dev.ui.theme.KeyVaultTheme
+import ru.kino.dev.ui.theme.LocalAppDisplay
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.welcome.pres.start.WelcomeStartResolver
 import java.util.Locale
@@ -46,9 +49,10 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super: the splash replaces the launch theme. It stays up until the start route is known -
         // reading the remembered database takes a moment, and there is nothing to show before it - and the
-        // mode of the theme and the language, so the app does not flash in the other ones (pass-docs, Step 55, 57)
+        // appearance, so the app does not flash in the other theme or language first (pass-docs, Step 55, 57, 58)
         installSplashScreen().setKeepOnScreenCondition {
-            startResolver.start.value == null || theme.themeMode.value == null || theme.language.value == null
+            startResolver.start.value == null || theme.themeMode.value == null || theme.language.value == null ||
+                theme.passwordColoring.value == null
         }
         super.onCreate(savedInstanceState)
 
@@ -71,10 +75,15 @@ class MainActivity : FragmentActivity() {
             LaunchedEffect(darkTheme) { systemBars(darkTheme) }
 
             val language by theme.language.collectAsStateWithLifecycle()
+            val passwordColoring by theme.passwordColoring.collectAsStateWithLifecycle()
+            val display = AppDisplay(passwordColoring = passwordColoring ?: return@setContent)
             AppLocale(locale = (language ?: return@setContent).locale) {
-                KeyVaultTheme(darkTheme = darkTheme) {
-                    val start by startResolver.start.collectAsStateWithLifecycle()
-                    start?.let { AppNavHost(navigator = navigator, autoLock = autoLock, start = it) }
+                // What the screens show, as chosen in the settings: the features read it, not `settings`
+                CompositionLocalProvider(LocalAppDisplay provides display) {
+                    KeyVaultTheme(darkTheme = darkTheme) {
+                        val start by startResolver.start.collectAsStateWithLifecycle()
+                        start?.let { AppNavHost(navigator = navigator, autoLock = autoLock, start = it) }
+                    }
                 }
             }
         }

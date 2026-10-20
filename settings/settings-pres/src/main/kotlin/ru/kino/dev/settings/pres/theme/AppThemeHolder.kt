@@ -12,10 +12,10 @@ import ru.kino.dev.settings.appearance.ThemeMode
 import javax.inject.Inject
 
 /**
- * The mode of the theme and the language for the whole app - the activity paints every screen with them,
- * `welcome` too (pass-docs, Step 55, Step 57).
+ * The mode of the theme, the language and what the screens show for the whole app - the activity paints every
+ * screen with them, `welcome` too (pass-docs, Step 55, Step 57, Step 58).
  *
- * Not a screen: the activity keeps the system splash on until both have a value, so the app does not
+ * Not a screen: the activity keeps the system splash on until all have a value, so the app does not
  * flash in the other theme or language first.
  */
 @HiltViewModel
@@ -29,5 +29,9 @@ class AppThemeHolder @Inject constructor(
 
     /** Null while the setting is being read; a new value as soon as it is changed in the settings. */
     val language: StateFlow<AppLanguage?> = repository.language
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** Null while the setting is being read; a new value as soon as it is changed in the settings. */
+    val passwordColoring: StateFlow<Boolean?> = repository.passwordColoring
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }

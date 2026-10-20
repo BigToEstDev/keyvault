@@ -96,6 +96,22 @@ class DataStoreAppearanceRepositoryTest {
         assertEquals(AppLanguage.System, DataStoreAppearanceRepository(store).language.first())
     }
 
+    @Test
+    fun `passwords are colored until chosen otherwise`() = runTest {
+        val repository = DataStoreAppearanceRepository(store(newFile()))
+
+        assertEquals(true, repository.passwordColoring.first())
+    }
+
+    @Test
+    fun `coloring switched off is what is read next`() = runTest {
+        val repository = DataStoreAppearanceRepository(store(newFile()))
+
+        repository.savePasswordColoring(false)
+
+        assertEquals(false, repository.passwordColoring.first())
+    }
+
     private fun newFile(): File = File(folder.newFolder(), "app_settings.preferences_pb")
 
     private fun TestScope.store(
