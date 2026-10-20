@@ -43,8 +43,7 @@ class AppearanceProcessorTest {
         AppearanceProcessor(repository, Navigator()).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
             containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Light)).join()
 
-            expectInternalState { copy(themeMode = ThemeMode.Light, saving = true) }
-            expectInternalState { copy(saving = false) }
+            expectInternalState { copy(themeMode = ThemeMode.Light) }
         }
 
         assertEquals(listOf(ThemeMode.Light), repository.saved)
@@ -57,8 +56,20 @@ class AppearanceProcessorTest {
         AppearanceProcessor(repository, Navigator()).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
             containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Dark)).join()
 
-            expectInternalState { copy(themeMode = ThemeMode.Dark, saving = true) }
-            expectInternalState { copy(themeMode = ThemeMode.System, saving = false, message = AppearanceMessage.NotSaved) }
+            expectInternalState { copy(themeMode = ThemeMode.Dark) }
+            expectInternalState { copy(themeMode = ThemeMode.System, message = AppearanceMessage.NotSaved) }
+        }
+    }
+
+    @Test
+    fun `a mode not written shows the one the repository holds, not the one shown before`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.Dark, failSave = true)
+
+        AppearanceProcessor(repository, Navigator()).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
+            containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Light)).join()
+
+            expectInternalState { copy(themeMode = ThemeMode.Light) }
+            expectInternalState { copy(themeMode = ThemeMode.Dark, message = AppearanceMessage.NotSaved) }
         }
     }
 
@@ -92,8 +103,7 @@ class AppearanceProcessorTest {
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System)) {
                 containerHost.action(AppearanceAction.SelectLanguage(AppLanguage.English)).join()
 
-                expectInternalState { copy(language = AppLanguage.English, saving = true) }
-                expectInternalState { copy(saving = false) }
+                expectInternalState { copy(language = AppLanguage.English) }
             }
 
         assertEquals(listOf(AppLanguage.English), repository.savedLanguages)
@@ -107,9 +117,9 @@ class AppearanceProcessorTest {
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System)) {
                 containerHost.action(AppearanceAction.SelectLanguage(AppLanguage.Russian)).join()
 
-                expectInternalState { copy(language = AppLanguage.Russian, saving = true) }
+                expectInternalState { copy(language = AppLanguage.Russian) }
                 expectInternalState {
-                    copy(language = AppLanguage.System, saving = false, message = AppearanceMessage.NotSaved)
+                    copy(language = AppLanguage.System, message = AppearanceMessage.NotSaved)
                 }
             }
     }
@@ -134,8 +144,7 @@ class AppearanceProcessorTest {
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordColoring = true)) {
                 containerHost.action(AppearanceAction.SetPasswordColoring(false)).join()
 
-                expectInternalState { copy(passwordColoring = false, saving = true) }
-                expectInternalState { copy(saving = false) }
+                expectInternalState { copy(passwordColoring = false) }
             }
 
         assertEquals(listOf(false), repository.savedColoring)
@@ -149,8 +158,8 @@ class AppearanceProcessorTest {
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordColoring = true)) {
                 containerHost.action(AppearanceAction.SetPasswordColoring(false)).join()
 
-                expectInternalState { copy(passwordColoring = false, saving = true) }
-                expectInternalState { copy(passwordColoring = true, saving = false, message = AppearanceMessage.NotSaved) }
+                expectInternalState { copy(passwordColoring = false) }
+                expectInternalState { copy(passwordColoring = true, message = AppearanceMessage.NotSaved) }
             }
     }
 
@@ -162,8 +171,7 @@ class AppearanceProcessorTest {
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, userNameInList = false)) {
                 containerHost.action(AppearanceAction.SetUserNameInList(true)).join()
 
-                expectInternalState { copy(userNameInList = true, saving = true) }
-                expectInternalState { copy(saving = false) }
+                expectInternalState { copy(userNameInList = true) }
             }
 
         assertEquals(listOf(true), repository.savedUserNameInList)
@@ -177,8 +185,8 @@ class AppearanceProcessorTest {
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, userNameInList = false)) {
                 containerHost.action(AppearanceAction.SetUserNameInList(true)).join()
 
-                expectInternalState { copy(userNameInList = true, saving = true) }
-                expectInternalState { copy(userNameInList = false, saving = false, message = AppearanceMessage.NotSaved) }
+                expectInternalState { copy(userNameInList = true) }
+                expectInternalState { copy(userNameInList = false, message = AppearanceMessage.NotSaved) }
             }
     }
 

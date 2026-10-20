@@ -3,6 +3,7 @@ package ru.kino.dev.settings.pres.appearance
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -16,11 +17,10 @@ import java.io.IOException
 import javax.inject.Inject
 
 /**
- * @param themeMode the chosen mode; null until read - the choices are disabled
- * @param language the chosen language; null until read - the choices are disabled
- * @param passwordColoring whether passwords are colored; null until read - the choices are disabled
- * @param userNameInList whether the list shows user names; null until read - the choices are disabled
- * @param saving a choice is being written - the choices are disabled
+ * @param themeMode the chosen mode; null until read - its choice is disabled
+ * @param language the chosen language; null until read - its choice is disabled
+ * @param passwordColoring whether passwords are colored; null until read - its choice is disabled
+ * @param userNameInList whether the list shows user names; null until read - its choice is disabled
  * @param message for the snackbar, until it takes it
  */
 data class AppearanceState(
@@ -28,15 +28,15 @@ data class AppearanceState(
     val language: AppLanguage? = null,
     val passwordColoring: Boolean? = null,
     val userNameInList: Boolean? = null,
-    val saving: Boolean = false,
     val message: AppearanceMessage? = null,
 )
 
 /**
  * How the app looks (pass-docs, Step 55, Step 57, Step 58): the mode of the theme, the language, the coloring
- * of passwords, the user names in the list. A choice is kept
- * at once - the whole app takes it from the repository; one not written goes back to what it was, with a
- * snackbar.
+ * of passwords, the user names in the list. A choice is shown at once and written in the background - only
+ * the store of the app settings, not the database: the screen does not wait for it, nothing is disabled
+ * meanwhile (pass-docs, Step 56, item 4). The whole app takes it from the repository; one not written shows
+ * what the repository holds, with a snackbar.
  */
 @HiltViewModel
 class AppearanceProcessor @Inject constructor(
@@ -66,41 +66,49 @@ class AppearanceProcessor @Inject constructor(
             AppearanceAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
 
             is AppearanceAction.SelectTheme ->
-                keep(action.mode, state.themeMode, { copy(themeMode = it) }) { repository.save(it) }
+                keep(action.mode, state.themeMode, repository.themeMode, { copy(themeMode = it) }) {
+                    repository.save(it)
+                }
 
             is AppearanceAction.SelectLanguage ->
-                keep(action.language, state.language, { copy(language = it) }) { repository.save(it) }
+                keep(action.language, state.language, repository.language, { copy(language = it) }) {
+                    repository.save(it)
+                }
 
             is AppearanceAction.SetPasswordColoring ->
-                keep(action.on, state.passwordColoring, { copy(passwordColoring = it) }) {
+                keep(action.on, state.passwordColoring, repository.passwordColoring, { copy(passwordColoring = it) }) {
                     repository.savePasswordColoring(it)
                 }
 
             is AppearanceAction.SetUserNameInList ->
-                keep(action.on, state.userNameInList, { copy(userNameInList = it) }) { repository.saveUserNameInList(it) }
+                keep(action.on, state.userNameInList, repository.userNameInList, { copy(userNameInList = it) }) {
+                    repository.saveUserNameInList(it)
+                }
 
             AppearanceAction.MessageShown -> reduce { state.copy(message = null) }
         }
     }
 
     /**
-     * Shows [chosen] at once and writes it; back to [previous] when it could not be written. Nothing until
-     * the setting is read, while another choice is being written, or when it is the same.
+     * Shows [chosen] at once and writes it. Not written - shows what [kept] holds, the truth of the file rather
+     * than what was shown before: of a few quick taps one may fail while another went through. Nothing until
+     * the setting is read, or when it is the same.
      */
     private suspend fun <T : Any> Syntax<AppearanceState, Nothing>.keep(
         chosen: T,
-        previous: T?,
+        current: T?,
+        kept: Flow<T>,
         show: AppearanceState.(T) -> AppearanceState,
         save: suspend (T) -> Unit,
     ) {
-        if (previous == null || state.saving || chosen == previous) return
+        if (current == null || chosen == current) return
 
-        reduce { state.show(chosen).copy(saving = true) }
+        reduce { state.show(chosen) }
         try {
             save(chosen)
-            reduce { state.copy(saving = false) }
         } catch (_: IOException) {
-            reduce { state.show(previous).copy(saving = false, message = AppearanceMessage.NotSaved) }
+            val actual = kept.first()
+            reduce { state.show(actual).copy(message = AppearanceMessage.NotSaved) }
         }
     }
 }
