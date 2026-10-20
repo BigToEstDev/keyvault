@@ -29,7 +29,8 @@ data class VaultRootRoute(val dbKey: String)
 
 /**
  * The settings, from the main screen of `vault`. Inside the graph of `vault`: the database is open there, and
- * the lock pops them with it. No dbKey yet - nothing on the screen needs the database (pass-docs, Step 52).
+ * the lock pops them with it (pass-docs, Step 52). [dbKey] - the open database, for its own settings: biometrics
+ * first (Step 59).
  */
 @Serializable
-data object SettingsRoute
+data class SettingsRoute(val dbKey: String)

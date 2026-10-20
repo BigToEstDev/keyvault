@@ -11,6 +11,8 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.pres.navigation.AppearanceRoute
 
+private const val DB = "content://docs/passwords.kdbx"
+
 class SettingsProcessorTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -20,7 +22,7 @@ class SettingsProcessorTest {
         val events = mutableListOf<MviNavEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
-        SettingsProcessor(navigator).testWithInternalState(this) {
+        SettingsProcessor(DB, navigator).testWithInternalState(this) {
             containerHost.action(SettingsAction.Back).join()
         }
 
@@ -34,7 +36,7 @@ class SettingsProcessorTest {
         val events = mutableListOf<MviNavEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
-        SettingsProcessor(navigator).testWithInternalState(this) {
+        SettingsProcessor(DB, navigator).testWithInternalState(this) {
             containerHost.action(SettingsAction.Open(SettingsItem.Appearance)).join()
         }
 
@@ -48,7 +50,7 @@ class SettingsProcessorTest {
         val events = mutableListOf<MviNavEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
-        SettingsProcessor(navigator).testWithInternalState(this) {
+        SettingsProcessor(DB, navigator).testWithInternalState(this) {
             containerHost.action(SettingsAction.Open(SettingsItem.Security)).join()
         }
 

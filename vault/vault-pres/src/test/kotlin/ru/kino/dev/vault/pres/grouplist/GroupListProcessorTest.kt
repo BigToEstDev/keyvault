@@ -646,7 +646,7 @@ class GroupListProcessorTest {
     fun `the gear opens the settings`() = runTest {
         val (_, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenSettings)
 
-        assertEquals(listOf(MviNavEvent.NavigateTo(SettingsRoute)), events)
+        assertEquals(listOf(MviNavEvent.NavigateTo(SettingsRoute(DB))), events)
     }
 
     @Test

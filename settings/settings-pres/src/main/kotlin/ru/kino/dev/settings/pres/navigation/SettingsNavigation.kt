@@ -2,6 +2,7 @@ package ru.kino.dev.settings.pres.navigation
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.settings.pres.appearance.AppearanceScreen
 import ru.kino.dev.settings.pres.lock.LockScreen
@@ -12,7 +13,7 @@ import ru.kino.dev.settings.pres.settings.SettingsScreen
  * pops them with it (pass-docs, Step 52).
  */
 fun NavGraphBuilder.settingsGraph() {
-    composable<SettingsRoute> { SettingsScreen() }
+    composable<SettingsRoute> { entry -> SettingsScreen(dbKey = entry.toRoute<SettingsRoute>().dbKey) }
     composable<AppearanceRoute> { AppearanceScreen() }
     composable<LockRoute> { LockScreen() }
 }

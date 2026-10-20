@@ -28,7 +28,12 @@ import ru.kino.dev.ui.components.GradientBackground
  * behind a divider. A card opens its screen when the screen is made (pass-docs, Step 55).
  */
 @Composable
-internal fun SettingsScreen(processor: SettingsProcessor = hiltViewModel()) {
+internal fun SettingsScreen(
+    dbKey: String,
+    processor: SettingsProcessor = hiltViewModel<SettingsProcessor, SettingsProcessor.Factory>(
+        creationCallback = { factory -> factory.create(dbKey) },
+    ),
+) {
     GradientBackground {
         Scaffold(
             // The backdrop is the gradient behind
@@ -61,7 +66,7 @@ internal fun SettingsScreen(processor: SettingsProcessor = hiltViewModel()) {
                             icon = item.icon,
                             title = stringResource(item.title),
                             text = stringResource(item.text),
-                            onClick = item.route?.let { { processor.action(SettingsAction.Open(item)) } },
+                            onClick = item.route(dbKey)?.let { { processor.action(SettingsAction.Open(item)) } },
                         )
                     }
                 }
