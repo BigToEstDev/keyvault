@@ -15,6 +15,7 @@ import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.core.preset.PresetLink
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
@@ -29,7 +30,6 @@ import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
-import ru.kino.dev.vault.pres.navigation.PresetCreateRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
@@ -382,7 +382,7 @@ class EntryEditProcessorTest {
 
         assertNull(state.dialog)
         assertEquals(setOf(card.id), state.presetsBeforeCreate)
-        assertEquals(listOf(MviNavEvent.NavigateTo(PresetCreateRoute)), events)
+        assertEquals(listOf(MviNavEvent.NavigateTo(PresetEditRoute())), events)
     }
 
     @Test

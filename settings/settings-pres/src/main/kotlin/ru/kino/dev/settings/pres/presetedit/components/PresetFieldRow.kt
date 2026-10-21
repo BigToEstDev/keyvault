@@ -1,4 +1,4 @@
-package ru.kino.dev.vault.pres.presetcreate.components
+package ru.kino.dev.settings.pres.presetedit.components
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable

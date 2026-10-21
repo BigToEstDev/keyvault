@@ -34,3 +34,11 @@ data class VaultRootRoute(val dbKey: String)
  */
 @Serializable
 data class SettingsRoute(val dbKey: String)
+
+/**
+ * A preset of one's own: [presetId] - the one to edit, null - a new one. Its screen is in `settings` (pass-docs,
+ * Step 62); `vault` opens it from the choice of presets of an entry. No database in it: presets are one list for
+ * every database (Step 44).
+ */
+@Serializable
+data class PresetEditRoute(val presetId: String? = null)
