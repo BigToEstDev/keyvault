@@ -15,6 +15,10 @@ internal data class LockRoute(val dbKey: String)
 @Serializable
 internal data object PrivacyRoute
 
+/** The file of the database [dbKey]: its name, the file, the format, the compression (pass-docs, Step 63). */
+@Serializable
+internal data class FileRoute(val dbKey: String)
+
 /** The presets: whether they are used, the list of those of one's own (pass-docs, Step 62). */
 @Serializable
 internal data object PresetsRoute
@@ -25,5 +29,6 @@ internal fun SettingsItem.route(dbKey: String): Any? = when (this) {
     SettingsItem.Lock -> LockRoute(dbKey)
     SettingsItem.Privacy -> PrivacyRoute
     SettingsItem.Presets -> PresetsRoute
+    SettingsItem.File -> FileRoute(dbKey)
     else -> null
 }

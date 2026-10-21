@@ -78,7 +78,7 @@ internal fun EntryEditScreen(
         stringResource(
             when (it) {
                 EntryEditMessage.LoadFailed -> R.string.entry_message_load_failed
-                EntryEditMessage.NotSaved -> R.string.vault_message_not_saved
+                EntryEditMessage.NotSaved -> R.string.message_file_not_saved
                 EntryEditMessage.Unexpected -> R.string.error_unexpected
             },
         )

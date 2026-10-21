@@ -59,6 +59,9 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     /** What [credentialsUsed] answers, of every database here. */
     var credentials = CredentialsUsed(password = true, keyFile = false)
 
+    /** What [databaseFile] answers, of every database here; [changeDatabaseFile] changes it. */
+    var databaseFile = DatabaseFile(name = "Passwords", version = KdbxVersion.V41, compression = Compression.GZip)
+
     /**
      * Every key file handed in, as the same instances: a test checks after the call that the caller wiped
      * them.
@@ -108,6 +111,18 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         step("credentialsUsed", dbKey)
         if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
         return credentials
+    }
+
+    override suspend fun databaseFile(dbKey: String): DatabaseFile {
+        step("databaseFile", dbKey)
+        if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
+        return databaseFile
+    }
+
+    override suspend fun changeDatabaseFile(dbKey: String, name: String, compression: Compression) {
+        step("changeDatabaseFile", dbKey)
+        if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
+        databaseFile = databaseFile.copy(name = name, compression = compression)
     }
 
     override suspend fun lockDatabase(dbKey: String) {

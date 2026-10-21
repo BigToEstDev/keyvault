@@ -52,6 +52,7 @@
     <string name="error_key_file_unreachable">Нет доступа к key-файлу</string>
     <string name="error_key_file_too_large">Key-файл больше %1$d МиБ</string>
     <string name="error_unexpected">Что-то пошло не так</string>
+    <string name="error_name_empty">Введите название</string>
 
     <!-- Creating: master password -->
     <string name="create_password_title">Задайте мастер-пароль</string>
@@ -149,7 +150,6 @@
     <string name="group_dialog_create_title">Новая группа</string>
     <string name="group_dialog_rename_title">Переименовать группу</string>
     <string name="group_dialog_name">Название</string>
-    <string name="group_name_empty">Введите название</string>
     <plurals name="group_name_too_long">
         <item quantity="one">Не длиннее %1$d символа</item>
         <item quantity="few">Не длиннее %1$d символов</item>
@@ -159,7 +159,7 @@
     <string name="group_name_taken">Группа с таким названием уже есть</string>
     <string name="group_delete_title">Удалить группу?</string>
     <string name="group_delete_text">«%1$s» и всё, что в ней, попадёт в корзину.</string>
-    <string name="vault_message_not_saved">Изменение сделано, но файл не записан</string>
+    <string name="message_file_not_saved">Изменение сделано, но файл не записан</string>
     <string name="vault_message_load_failed">Не удалось прочитать группу</string>
     <string name="vault_message_search_failed">Не удалось выполнить поиск</string>
     <string name="vault_message_filter_not_saved">Фильтр применён, но не будет запомнен</string>
@@ -182,7 +182,6 @@
     <string name="preset_fields_dropped_text">Записи с этим пресетом покажут прежние поля как свои.</string>
     <string name="preset_gone">Пресет уже удалён</string>
     <string name="preset_name">Название пресета</string>
-    <string name="preset_name_empty">Введите название</string>
     <plurals name="preset_name_too_long">
         <item quantity="one">Не длиннее %1$d символа</item>
         <item quantity="few">Не длиннее %1$d символов</item>
@@ -216,7 +215,6 @@
     <string name="entry_field_group">Группа</string>
     <string name="entry_field_required">Заполните поле</string>
     <string name="entry_field_name">Название поля</string>
-    <string name="entry_field_name_empty">Введите название</string>
     <string name="entry_field_name_taken">В записи уже есть поле с таким названием</string>
     <string name="entry_field_menu">Действия с полем</string>
     <string name="entry_add_field">+ Добавить поле</string>
@@ -250,6 +248,15 @@
     <string name="settings_presets_text">Свои пресеты записей</string>
     <string name="settings_file">Файл базы</string>
     <string name="settings_file_text">Название, формат</string>
+    <string name="settings_file_name">Название базы</string>
+    <string name="settings_file_file">Файл</string>
+    <string name="settings_file_file_unknown">Провайдер не сообщает</string>
+    <string name="settings_file_format">Формат</string>
+    <string name="settings_file_format_upgrade">После сохранения станет KDBX 4.1</string>
+    <string name="settings_file_compression">Сжатие</string>
+    <string name="settings_file_compression_gzip">GZip — рекомендуется</string>
+    <string name="settings_file_compression_none">Без сжатия</string>
+    <string name="settings_file_compression_hint">GZip уменьшает файл в разы — быстрее синхронизация через облако</string>
     <string name="settings_entries">Записи</string>
     <string name="settings_entries_text">Скрытые поля, история</string>
     <string name="settings_recycle_bin">Корзина</string>

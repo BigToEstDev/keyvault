@@ -18,4 +18,5 @@ dependencies {
     testImplementation(libs.orbit.test)
     testImplementation(testFixtures(projects.settings.settingsDomain))
     testImplementation(testFixtures(projects.core.coreDomain))
+    testImplementation(testFixtures(projects.vault.vaultDomain))
 }

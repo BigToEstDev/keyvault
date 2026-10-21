@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
  * The colours are the theme's - the selected button in `primary`.
  *
  * @param label the text of an option, from the resources
+ * @param text a line under the title, before the options - what the choice does; none when not given
  */
 @Composable
 fun <T> RadioGroup(
@@ -32,6 +33,7 @@ fun <T> RadioGroup(
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    text: String? = null,
 ) {
     Column(modifier = modifier.selectableGroup()) {
         Text(
@@ -40,6 +42,14 @@ fun <T> RadioGroup(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 4.dp),
         )
+        text?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 4.dp),
+            )
+        }
         options.forEach { option ->
             Row(
                 modifier = Modifier

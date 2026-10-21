@@ -62,7 +62,7 @@ internal fun EntryReadScreen(
         stringResource(
             when (it) {
                 EntryReadMessage.LoadFailed -> R.string.entry_message_load_failed
-                EntryReadMessage.NotSaved -> R.string.vault_message_not_saved
+                EntryReadMessage.NotSaved -> R.string.message_file_not_saved
                 EntryReadMessage.Unexpected -> R.string.error_unexpected
             },
         )
