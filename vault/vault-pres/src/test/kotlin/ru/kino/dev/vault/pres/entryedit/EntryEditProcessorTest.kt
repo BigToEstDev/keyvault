@@ -9,6 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.preset.CustomPreset
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.PresetId
@@ -17,6 +18,8 @@ import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.entries.EntrySettingsFailure
+import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
@@ -59,6 +62,7 @@ class EntryEditProcessorTest {
     private val work = groups.add("work", groups.rootId, "Work")
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
+    private val settings = FakeEntrySettingsRepository()
 
     // Groups
 
@@ -313,6 +317,36 @@ class EntryEditProcessorTest {
 
         assertTrue(state.passwordVisible)
         assertEquals(setOf(0), state.shownOwn)
+    }
+
+    @Test
+    fun `the fields private by the database come with the entry, and the eye shows one`() = runTest {
+        settings.entries = settings.entries.copy(protection = FieldProtection.DEFAULT.copy(title = true, url = true))
+
+        val (state, _) = editing(EntryEditAction.ToggleKey(StandardPreset.URL))
+
+        assertEquals(FieldProtection.DEFAULT.copy(title = true, url = true), state.protection)
+        assertEquals(setOf(StandardPreset.URL), state.shownKeys)
+    }
+
+    @Test
+    fun `a new entry is hidden while typed as it will be in the file`() = runTest {
+        settings.entries = settings.entries.copy(protection = FieldProtection.DEFAULT.copy(title = true, url = true))
+
+        val (state, _) = creating()
+
+        assertEquals(FieldProtection.DEFAULT.copy(title = true, url = true), state.protection)
+    }
+
+    @Test
+    fun `the private fields not read - only the password is hidden, the entry opens`() = runTest {
+        settings.failure = EntrySettingsFailure.Unexpected()
+
+        val (state, _) = editing()
+
+        assertEquals(FieldProtection.DEFAULT, state.protection)
+        assertEquals("Mail", state.content?.value(StandardPreset.TITLE))
+        assertEquals(1, log.logged.size)
     }
 
     @Test
@@ -747,7 +781,7 @@ class EntryEditProcessorTest {
         initial: EntryEditState? = null,
     ): Pair<EntryEditState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryEditProcessor(DB, groupId, entryId, opener, groups, EntryEditor(entries, opener, database), presets, navigator, log)
+        val processor = EntryEditProcessor(DB, groupId, entryId, opener, settings, groups, EntryEditor(entries, opener, settings, database), presets, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             if (initial == null) runOnCreate().join()

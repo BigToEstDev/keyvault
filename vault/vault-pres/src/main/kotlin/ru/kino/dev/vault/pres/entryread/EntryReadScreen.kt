@@ -120,6 +120,9 @@ internal fun EntryReadScreen(
                             shownOwn = state.shownOwn,
                             onTogglePassword = { processor.action(EntryReadAction.TogglePassword) },
                             onToggleOwn = { processor.action(EntryReadAction.ToggleOwn(it)) },
+                            protection = state.protection,
+                            shownKeys = state.shownKeys,
+                            onToggleKey = { processor.action(EntryReadAction.ToggleKey(it)) },
                             group = state.group,
                         )
                         EntryTimesText(state.times)

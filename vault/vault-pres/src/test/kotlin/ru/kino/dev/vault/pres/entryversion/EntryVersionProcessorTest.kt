@@ -9,10 +9,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.entry.FakeEntryRepository
@@ -31,6 +33,7 @@ class EntryVersionProcessorTest {
     private val history = FakeEntryHistoryRepository(entries)
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
+    private val settings = FakeEntrySettingsRepository()
     private val mail = entries.add(
         "mail",
         GroupId("root"),
@@ -58,6 +61,16 @@ class EntryVersionProcessorTest {
         val (state, _) = perform(EntryVersionAction.Load, EntryVersionAction.ToggleOwn(0))
 
         assertEquals(setOf(0), state.shownOwn)
+    }
+
+    @Test
+    fun `the fields private by the database come with the version, and the eye shows one`() = runTest {
+        settings.entries = settings.entries.copy(protection = FieldProtection.DEFAULT.copy(title = true, url = true))
+
+        val (state, _) = perform(EntryVersionAction.Load, EntryVersionAction.ToggleKey(StandardPreset.URL))
+
+        assertEquals(FieldProtection.DEFAULT.copy(title = true, url = true), state.protection)
+        assertEquals(setOf(StandardPreset.URL), state.shownKeys)
     }
 
     @Test
@@ -131,6 +144,7 @@ class EntryVersionProcessorTest {
             mail.value,
             index = 0,
             EntryVersionOpener(history, EntryOpener(entries, FakePresetRepository())),
+            settings,
             EntryHistoryEditor(history, database),
             navigator,
             log,

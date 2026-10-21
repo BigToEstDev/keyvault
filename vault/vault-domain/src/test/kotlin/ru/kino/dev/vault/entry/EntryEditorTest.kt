@@ -6,6 +6,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Test
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.core.preset.CustomPreset
@@ -17,6 +18,8 @@ import ru.kino.dev.core.preset.StandardPreset.PASSWORD
 import ru.kino.dev.core.preset.StandardPreset.TITLE
 import ru.kino.dev.core.preset.StandardPreset.USER_NAME
 import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.entries.EntrySettingsFailure
+import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 
@@ -27,7 +30,8 @@ class EntryEditorTest {
     private val database = RecordingDatabase(journal)
     private val card = CustomPreset.of(PresetId("card"), "Card", listOf(listOf("PIN")))
     private val opener = EntryOpener(entries, FakePresetRepository(card))
-    private val editor = EntryEditor(entries, opener, database)
+    private val settings = FakeEntrySettingsRepository()
+    private val editor = EntryEditor(entries, opener, settings, database)
 
     private val filled = StandardPreset.preset.blank()
         .withValue(TITLE, "Mail")
@@ -44,6 +48,35 @@ class EntryEditorTest {
             entries.stored.getValue(id).fields.map { it.key },
         )
         assertEquals(GROUP, entries.stored.getValue(id).groupId)
+    }
+
+    @Test
+    fun `a new entry is private where the database says so, whatever the preset`() = runTest {
+        settings.entries = settings.entries.copy(protection = FieldProtection.DEFAULT.copy(title = true, url = true))
+
+        val id = editor.create(DB, GROUP, filled.withValue("URL", "mail.example"))
+
+        val protected = entries.stored.getValue(id).fields.filter { it.protected }.map { it.key }
+        assertEquals(listOf(TITLE, PASSWORD, "URL"), protected)
+    }
+
+    @Test
+    fun `a field the database leaves open stays as the preset says`() = runTest {
+        settings.entries = settings.entries.copy(protection = FieldProtection.DEFAULT.copy(password = false))
+
+        val id = editor.create(DB, GROUP, filled)
+
+        val protected = entries.stored.getValue(id).fields.filter { it.protected }.map { it.key }
+        assertEquals(listOf(PASSWORD), protected)
+    }
+
+    @Test
+    fun `the protection of the database not read - nothing is created`() = runTest {
+        settings.failure = EntrySettingsFailure.Unexpected()
+
+        expectFailure<EntryFailure.Unexpected> { editor.create(DB, GROUP, filled) }
+
+        assertEquals(emptyList<String>(), journal)
     }
 
     @Test

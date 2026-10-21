@@ -38,6 +38,7 @@ import ru.kino.dev.ui.components.SaveFab
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.TextField
+import ru.kino.dev.ui.components.VisibilityToggle
 import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.ui.preset.fieldLabel
@@ -48,6 +49,7 @@ import ru.kino.dev.vault.pres.common.EntryPresetSection
 import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
 import ru.kino.dev.vault.pres.common.EntryTopBar
+import ru.kino.dev.vault.pres.common.hides
 import ru.kino.dev.vault.pres.common.option
 import ru.kino.dev.vault.pres.entryedit.components.EntryEditDialogs
 import ru.kino.dev.vault.pres.entryedit.components.OwnFieldRow
@@ -146,6 +148,9 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
     fun PresetText(field: PresetField, modifier: Modifier = Modifier.fillMaxWidth()) {
         val key = field.key
         val notes = key == StandardPreset.NOTES
+        // Private by the database: behind dots with the eye, as the password (pass-docs, Step 65)
+        val private = state.protection.protects(key)
+        val shown = key in state.shownKeys
         TextField(
             value = content.value(key),
             onValueChange = { action(EntryEditAction.ValueChanged(key, it)) },
@@ -157,6 +162,13 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             singleLine = !notes,
             minLines = if (notes) NOTES_LINES else 1,
             keyboardOptions = keyboardFor(key),
+            hidden = private && !shown,
+            secret = private,
+            actions = if (private) {
+                { VisibilityToggle(visible = shown, onToggle = { action(EntryEditAction.ToggleKey(key)) }, enabled = enabled) }
+            } else {
+                null
+            },
         )
     }
 
@@ -217,6 +229,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         content.ownFields.forEachIndexed { index, field ->
             OwnFieldRow(
                 field = field,
+                private = state.protection.hides(field),
                 shown = index in state.shownOwn,
                 error = state.nameProblem(index)?.let { nameProblemText(it) },
                 enabled = enabled,

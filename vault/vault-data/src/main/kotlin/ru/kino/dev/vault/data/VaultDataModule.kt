@@ -115,9 +115,10 @@ internal interface VaultDataModule {
         fun provideEntryEditor(
             entries: EntryRepository,
             opener: EntryOpener,
+            settings: EntrySettingsRepository,
             database: VaultDatabaseRepository,
             guard: DatabaseGuard,
-        ): EntryEditor = EntryEditor(entries, opener, database, guard)
+        ): EntryEditor = EntryEditor(entries, opener, settings, database, guard)
 
         // One for the app: the editors and the lock wait for each other on it
         @Provides

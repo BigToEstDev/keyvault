@@ -15,6 +15,9 @@ sealed interface EntryReadAction {
     /** Shows or hides the value of the protected own field at [index]. */
     data class ToggleOwn(val index: Int) : EntryReadAction
 
+    /** Shows or hides the value of the field of the preset under [key], private by the database. */
+    data class ToggleKey(val key: String) : EntryReadAction
+
     /** "History" in the menu of the top bar: the old versions of this entry. */
     data object History : EntryReadAction
 
