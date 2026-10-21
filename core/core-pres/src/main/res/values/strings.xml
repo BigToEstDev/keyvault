@@ -251,6 +251,17 @@
     <string name="settings_file_compression_gzip">GZip — recommended</string>
     <string name="settings_file_compression_none">No compression</string>
     <string name="settings_file_compression_hint">GZip makes the file several times smaller — faster cloud sync</string>
+    <string name="settings_entries_hidden_group">Hidden fields</string>
+    <string name="settings_entries_hidden_hint">Hidden on every entry, the eye shows it</string>
+    <string name="settings_history_group">History</string>
+    <string name="settings_history_limit_items">Limit the number of versions</string>
+    <string name="settings_history_items">Number of versions</string>
+    <string name="settings_history_limit_size">Limit the history size</string>
+    <string name="settings_history_size">History size</string>
+    <string name="settings_megabytes_short">%1$s MB</string>
+    <string name="settings_history_trim_title">Trim the history?</string>
+    <string name="settings_history_trim_text">Older versions over the limit will be deleted from every entry. This cannot be undone.</string>
+    <string name="settings_history_trim_confirm">Trim</string>
     <string name="settings_entries">Entries</string>
     <string name="settings_entries_text">Hidden fields, history</string>
     <string name="settings_recycle_bin">Recycle bin</string>

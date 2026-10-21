@@ -1,6 +1,9 @@
 package ru.kino.dev.vault.entry
 
+import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.entries.EntrySettingsFailure
+import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.lock.DatabaseGuard
@@ -13,11 +16,15 @@ import ru.kino.dev.vault.lock.DatabaseGuard
  *
  * Each change runs inside [guard], so a lock waits for its write to end.
  *
+ * A new entry is private where the database says so - a field of [FieldProtection] is protected whatever the
+ * preset says (pass-docs, Step 65); an entry changed keeps the protection its fields have.
+ *
  * Throws [EntryFailure] and nothing else.
  */
 class EntryEditor(
     private val entries: EntryRepository,
     private val opener: EntryOpener,
+    private val settings: EntrySettingsRepository,
     private val database: VaultDatabaseRepository,
     private val guard: DatabaseGuard = DatabaseGuard(),
 ) {
@@ -27,7 +34,9 @@ class EntryEditor(
         val normalized = content.withNamesNormalized(keptNames = emptySet())
         refuseProblems(EntryValidator.problems(normalized, read = null))
 
-        val id = entries.create(dbKey, groupId, normalized.fields())
+        val protection = protection(dbKey)
+        val fields = normalized.fields().map { it.copy(protected = it.protected || protection.protects(it.key)) }
+        val id = entries.create(dbKey, groupId, fields)
         save(dbKey)
         id
     }
@@ -75,6 +84,12 @@ class EntryEditor(
 
     private fun refuseProblems(problems: List<FieldProblem>) {
         if (problems.isNotEmpty()) throw EntryFailure.InvalidFields(problems)
+    }
+
+    private suspend fun protection(dbKey: String): FieldProtection = try {
+        settings.read(dbKey).protection
+    } catch (e: EntrySettingsFailure) {
+        throw EntryFailure.Unexpected(e)
     }
 
     private suspend fun save(dbKey: String) = database.saveChange(dbKey)

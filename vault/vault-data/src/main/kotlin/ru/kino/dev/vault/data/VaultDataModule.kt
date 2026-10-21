@@ -17,12 +17,15 @@ import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.credentials.DatabaseCredentials
 import ru.kino.dev.vault.data.credentials.DatabaseCredentialsImpl
+import ru.kino.dev.vault.data.entries.EntrySettingsRepositoryImpl
 import ru.kino.dev.vault.data.entry.EntryRepositoryImpl
 import ru.kino.dev.vault.data.file.DatabaseFileRepositoryImpl
 import ru.kino.dev.vault.data.filter.DataStoreVaultFilterRepository
 import ru.kino.dev.vault.data.filter.vaultFilterStore
 import ru.kino.dev.vault.data.group.GroupRepositoryImpl
 import ru.kino.dev.vault.data.history.EntryHistoryRepositoryImpl
+import ru.kino.dev.vault.entries.EntrySettingsEditor
+import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.entry.EntryRepository
@@ -62,6 +65,9 @@ internal interface VaultDataModule {
     @Binds
     fun bindDatabaseFileRepository(impl: DatabaseFileRepositoryImpl): DatabaseFileRepository
 
+    @Binds
+    fun bindEntrySettingsRepository(impl: EntrySettingsRepositoryImpl): EntrySettingsRepository
+
     companion object {
 
         // vault-domain is plain Kotlin and carries no injection annotations, so its use cases are built here
@@ -99,12 +105,20 @@ internal interface VaultDataModule {
         ): DatabaseFileEditor = DatabaseFileEditor(files, database, guard)
 
         @Provides
+        fun provideEntrySettingsEditor(
+            settings: EntrySettingsRepository,
+            database: VaultDatabaseRepository,
+            guard: DatabaseGuard,
+        ): EntrySettingsEditor = EntrySettingsEditor(settings, database, guard)
+
+        @Provides
         fun provideEntryEditor(
             entries: EntryRepository,
             opener: EntryOpener,
+            settings: EntrySettingsRepository,
             database: VaultDatabaseRepository,
             guard: DatabaseGuard,
-        ): EntryEditor = EntryEditor(entries, opener, database, guard)
+        ): EntryEditor = EntryEditor(entries, opener, settings, database, guard)
 
         // One for the app: the editors and the lock wait for each other on it
         @Provides

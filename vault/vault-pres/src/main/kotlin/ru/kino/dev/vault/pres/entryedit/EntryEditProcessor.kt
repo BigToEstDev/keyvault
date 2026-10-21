@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.core.preset.PresetRepository
@@ -20,6 +21,7 @@ import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.PresetEditRoute
+import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryDraft
 import ru.kino.dev.vault.entry.EntryEditor
@@ -36,6 +38,8 @@ import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.common.groupChoices
+import ru.kino.dev.vault.pres.common.protectionOrDefault
+import ru.kino.dev.vault.pres.common.toggled
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 
 /**
@@ -52,6 +56,8 @@ import ru.kino.dev.vault.pres.navigation.EntryReadRoute
  * @param presetsBeforeCreate the presets of one's own when "+ create preset" was tapped: one not among them,
  * once the screen is back, is the one made there - it is picked (pass-docs, Step 49); null otherwise
  * @param shownOwn indexes of protected own fields shown in clear
+ * @param protection the fields private by the database (pass-docs, Step 65); only the password until read
+ * @param shownKeys keys of the fields of the preset private by the database shown in clear
  * @param problems what the last save was refused for, until the field is edited
  * @param saving the change is being made and written - the fab waits, the fields take nothing
  * @param message for the snackbar, until it takes it
@@ -68,6 +74,8 @@ data class EntryEditState(
     val presetsBeforeCreate: Set<PresetId>? = null,
     val passwordVisible: Boolean = false,
     val shownOwn: Set<Int> = emptySet(),
+    val protection: FieldProtection = FieldProtection.DEFAULT,
+    val shownKeys: Set<String> = emptySet(),
     val problems: List<FieldProblem> = emptyList(),
     val saving: Boolean = false,
     val dialog: EntryEditDialog? = null,
@@ -107,6 +115,7 @@ class EntryEditProcessor @AssistedInject constructor(
     @Assisted("groupId") private val groupId: String?,
     @Assisted("entryId") private val entryId: String?,
     private val opener: EntryOpener,
+    private val settings: EntrySettingsRepository,
     private val groupRepository: GroupRepository,
     private val editor: EntryEditor,
     private val presets: PresetRepository,
@@ -172,10 +181,9 @@ class EntryEditProcessor @AssistedInject constructor(
 
             EntryEditAction.TogglePassword -> reduce { state.copy(passwordVisible = !state.passwordVisible) }
 
-            is EntryEditAction.ToggleOwn -> reduce {
-                val shown = state.shownOwn
-                state.copy(shownOwn = if (action.index in shown) shown - action.index else shown + action.index)
-            }
+            is EntryEditAction.ToggleOwn -> reduce { state.copy(shownOwn = state.shownOwn.toggled(action.index)) }
+
+            is EntryEditAction.ToggleKey -> reduce { state.copy(shownKeys = state.shownKeys.toggled(action.key)) }
 
             is EntryEditAction.GroupChosen -> if (state.editable) {
                 reduce { state.copy(group = action.id) }
@@ -283,9 +291,11 @@ class EntryEditProcessor @AssistedInject constructor(
         try {
             val opened = opener.open(dbKey, id)
             val groups = groupRepository.tree(dbKey).groupChoices()
+            val protection = settings.protectionOrDefault(dbKey, log, TAG)
             reduce {
                 state.copy(
                     loading = false,
+                    protection = protection,
                     content = opened.content,
                     initial = opened.content,
                     groups = groups,
@@ -306,7 +316,9 @@ class EntryEditProcessor @AssistedInject constructor(
     private suspend fun Syntax<EntryEditState, Nothing>.loadGroups() {
         try {
             val groups = groupRepository.tree(dbKey).groupChoices()
-            reduce { state.copy(groups = groups) }
+            // Hidden while typed as it will be in the file (pass-docs, Step 65)
+            val protection = settings.protectionOrDefault(dbKey, log, TAG)
+            reduce { state.copy(groups = groups, protection = protection) }
         } catch (failure: GroupFailure) {
             loadFailed(failure)
         }

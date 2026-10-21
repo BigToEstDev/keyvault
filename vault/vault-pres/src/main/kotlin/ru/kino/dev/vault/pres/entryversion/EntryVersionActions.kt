@@ -12,6 +12,9 @@ sealed interface EntryVersionAction {
     /** Shows or hides the value of the protected own field at [index]. */
     data class ToggleOwn(val index: Int) : EntryVersionAction
 
+    /** Shows or hides the value of the field of the preset under [key], private by the database. */
+    data class ToggleKey(val key: String) : EntryVersionAction
+
     /** The fab with the clock: asks first. */
     data object Restore : EntryVersionAction
 

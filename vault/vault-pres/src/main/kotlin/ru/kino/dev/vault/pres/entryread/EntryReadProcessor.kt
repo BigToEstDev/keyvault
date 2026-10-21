@@ -9,10 +9,12 @@ import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ru.kino.dev.core.FieldProtection
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
-import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
@@ -24,6 +26,8 @@ import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.common.groupChoice
+import ru.kino.dev.vault.pres.common.protectionOrDefault
+import ru.kino.dev.vault.pres.common.toggled
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 
@@ -33,6 +37,8 @@ import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
  * @param group the group the entry is in, with the path down to it; null until it is read
  * @param times when the entry was made and last changed; empty until it is read
  * @param shownOwn indexes of protected own fields shown in clear
+ * @param protection the fields private by the database (pass-docs, Step 65); only the password until read
+ * @param shownKeys keys of the fields of the preset private by the database shown in clear
  * @param delete the dialog asking to delete the entry
  * @param locking the lock asked by the lock button is under way
  * @param message for the snackbar, until it takes it
@@ -44,6 +50,8 @@ data class EntryReadState(
     val times: EntryTimes = EntryTimes(),
     val passwordVisible: Boolean = false,
     val shownOwn: Set<Int> = emptySet(),
+    val protection: FieldProtection = FieldProtection.DEFAULT,
+    val shownKeys: Set<String> = emptySet(),
     val delete: DeleteDialog? = null,
     val locking: Boolean = false,
     val message: EntryReadMessage? = null,
@@ -66,6 +74,7 @@ class EntryReadProcessor @AssistedInject constructor(
     @Assisted("dbKey") private val dbKey: String,
     @Assisted("entryId") private val entryId: String,
     private val opener: EntryOpener,
+    private val settings: EntrySettingsRepository,
     private val groupRepository: GroupRepository,
     private val editor: EntryEditor,
     private val autoLock: AutoLock,
@@ -92,10 +101,9 @@ class EntryReadProcessor @AssistedInject constructor(
 
             EntryReadAction.TogglePassword -> reduce { state.copy(passwordVisible = !state.passwordVisible) }
 
-            is EntryReadAction.ToggleOwn -> reduce {
-                val shown = state.shownOwn
-                state.copy(shownOwn = if (action.index in shown) shown - action.index else shown + action.index)
-            }
+            is EntryReadAction.ToggleOwn -> reduce { state.copy(shownOwn = state.shownOwn.toggled(action.index)) }
+
+            is EntryReadAction.ToggleKey -> reduce { state.copy(shownKeys = state.shownKeys.toggled(action.key)) }
 
             EntryReadAction.History -> if (state.content != null) {
                 navigator.navigate(MviNavEvent.NavigateTo(EntryHistoryRoute(dbKey, entryId)))
@@ -176,9 +184,11 @@ class EntryReadProcessor @AssistedInject constructor(
             return
         }
         val content = opened.content
+        // Read anew too: it may come back from the settings changed
+        val protection = settings.protectionOrDefault(dbKey, log, TAG)
 
         reduce {
-            if (content == state.content) {
+            if (content == state.content && protection == state.protection) {
                 state.copy(loading = false, group = group, times = opened.times)
             } else {
                 state.copy(
@@ -186,8 +196,10 @@ class EntryReadProcessor @AssistedInject constructor(
                     content = content,
                     group = group,
                     times = opened.times,
+                    protection = protection,
                     passwordVisible = false,
                     shownOwn = emptySet(),
+                    shownKeys = emptySet(),
                 )
             }
         }

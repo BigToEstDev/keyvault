@@ -13,14 +13,16 @@ import ru.kino.dev.vault.entry.EntryField
  * An own field on the form: the field, and outside it the pen of [FieldMenuButton] - rename, delete
  * (pass-docs, vault-our.md "Свое поле").
  *
- * A protected one - from a database of another program - is hidden behind dots with an eye, as the password
- * is; one added here is plain text.
+ * A private one - protected in a database of another program, or by the settings of the database - is hidden
+ * behind dots with an eye, as the password is; one added here is plain text.
  *
+ * @param private hidden behind dots, with the eye
  * @param error why its name cannot be saved, if it cannot
  */
 @Composable
 internal fun OwnFieldRow(
     field: EntryField,
+    private: Boolean,
     shown: Boolean,
     error: String?,
     enabled: Boolean,
@@ -38,10 +40,10 @@ internal fun OwnFieldRow(
             modifier = Modifier.weight(1f),
             error = error,
             enabled = enabled,
-            hidden = field.protected && !shown,
+            hidden = private && !shown,
             // Shown in clear, colored as a password is (pass-docs, Step 58)
-            secret = field.protected,
-            actions = if (field.protected) {
+            secret = private,
+            actions = if (private) {
                 { VisibilityToggle(visible = shown, onToggle = onToggleShown, enabled = enabled) }
             } else {
                 null

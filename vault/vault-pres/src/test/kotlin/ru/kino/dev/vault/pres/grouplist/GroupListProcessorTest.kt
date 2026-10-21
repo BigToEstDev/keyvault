@@ -18,20 +18,21 @@ import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
-import ru.kino.dev.vault.entry.EntrySummary
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryOpener
+import ru.kino.dev.vault.entry.EntrySummary
 import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.filter.CreationOrder
 import ru.kino.dev.vault.filter.FakeVaultFilterRepository
 import ru.kino.dev.vault.filter.VaultFilter
 import ru.kino.dev.vault.filter.Visibility
-import ru.kino.dev.vault.group.FakeGroupRepository
-import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.EntryCount
 import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.FakeGroupRepository
+import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.lock.AutoLock
@@ -827,7 +828,7 @@ class GroupListProcessorTest {
         groups,
         GroupEditor(groups, database),
         entries,
-        EntryEditor(entries, EntryOpener(entries, FakePresetRepository()), database),
+        EntryEditor(entries, EntryOpener(entries, FakePresetRepository()), FakeEntrySettingsRepository(), database),
         lock(),
         VaultSearch(groups, entries),
         filters,

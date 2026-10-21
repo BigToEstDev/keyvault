@@ -18,6 +18,9 @@ sealed interface EntryEditAction {
     /** Shows or hides the value of the protected own field at [index]. */
     data class ToggleOwn(val index: Int) : EntryEditAction
 
+    /** Shows or hides the value of the field of the preset under [key], private by the database. */
+    data class ToggleKey(val key: String) : EntryEditAction
+
     /** Another group picked for the entry - it goes there on saving. */
     data class GroupChosen(val id: GroupId) : EntryEditAction
 

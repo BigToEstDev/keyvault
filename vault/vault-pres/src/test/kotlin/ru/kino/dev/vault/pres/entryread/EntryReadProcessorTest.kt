@@ -10,11 +10,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
@@ -48,6 +50,7 @@ class EntryReadProcessorTest {
     private val groups = FakeGroupRepository()
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
+    private val settings = FakeEntrySettingsRepository()
 
     @Test
     fun `the group of the entry is shown with the path down to it`() = runTest {
@@ -80,6 +83,31 @@ class EntryReadProcessorTest {
         assertEquals(listOf("PIN"), state.content?.ownFields?.map { it.key })
         assertFalse(state.passwordVisible)
         assertTrue(state.shownOwn.isEmpty())
+    }
+
+    @Test
+    fun `the fields private by the database come with the entry, and the eye shows one`() = runTest {
+        settings.entries = settings.entries.copy(protection = FieldProtection.DEFAULT.copy(title = true, url = true))
+
+        val (state, _) = perform(EntryReadAction.Load, EntryReadAction.ToggleKey(StandardPreset.TITLE))
+
+        assertEquals(FieldProtection.DEFAULT.copy(title = true, url = true), state.protection)
+        assertEquals(setOf(StandardPreset.TITLE), state.shownKeys)
+    }
+
+    @Test
+    fun `the private fields changed in the settings - the entry comes back hidden again`() = runTest {
+        val shown = EntryReadState(
+            loading = false,
+            protection = FieldProtection.DEFAULT,
+            shownKeys = setOf(StandardPreset.TITLE),
+        )
+        settings.entries = settings.entries.copy(protection = FieldProtection.DEFAULT.copy(title = true, url = true))
+
+        val (state, _) = perform(EntryReadAction.Load, initial = shown)
+
+        assertEquals(FieldProtection.DEFAULT.copy(title = true, url = true), state.protection)
+        assertTrue(state.shownKeys.isEmpty())
     }
 
     @Test
@@ -281,8 +309,8 @@ class EntryReadProcessorTest {
         autoLock: AutoLock = lock(),
     ): Pair<EntryReadState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val editor = EntryEditor(entries, opener, database)
-        val processor = EntryReadProcessor(DB, mail.value, opener, groups, editor, autoLock, navigator, log)
+        val editor = EntryEditor(entries, opener, settings, database)
+        val processor = EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, autoLock, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             actions.forEach { containerHost.action(it).join() }

@@ -11,12 +11,15 @@ import ru.kino.dev.core.Compression
 import ru.kino.dev.core.CreatedDatabase
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.CredentialsUsed
+import ru.kino.dev.core.DatabaseEntries
 import ru.kino.dev.core.DatabaseFile
 import ru.kino.dev.core.EntryData
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
 import ru.kino.dev.core.EntrySummaryData
+import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.GroupTree
+import ru.kino.dev.core.HistoryLimits
 import ru.kino.dev.core.HistoryVersionData
 import ru.kino.dev.core.KdbxVersion
 import ru.kino.dev.core.KeyFile
@@ -162,6 +165,47 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
             val changed = settings.copy(
                 meta = settings.meta.copy(databaseName = name),
                 compression = compression.name,
+            )
+            call(
+                FfiCommands.SET_DB_SETTINGS,
+                SetDbSettingsDto.serializer(),
+                SetDbSettingsDto(dbKey = dbKey, settings = changed),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun databaseEntries(dbKey: String): DatabaseEntries = withContext(dispatcher) {
+        val meta = dbSettings(dbKey).meta
+        DatabaseEntries(
+            protection = meta.memoryProtection.let {
+                FieldProtection(title = it.title, userName = it.userName, password = it.password, url = it.url, notes = it.notes)
+            },
+            // Any negative is no limit, as KeePass reads it; -1 is what it writes
+            history = HistoryLimits(
+                maxItems = meta.historyMaxItems.takeIf { it >= 0 },
+                maxSize = meta.historyMaxSize.takeIf { it >= 0 },
+            ),
+        )
+    }
+
+    override suspend fun changeDatabaseEntries(dbKey: String, entries: DatabaseEntries) {
+        withContext(dispatcher) {
+            // The whole settings go back, as the core gave them: only the protection and the limits are ours
+            val settings = dbSettings(dbKey)
+            val protection = entries.protection
+            val changed = settings.copy(
+                meta = settings.meta.copy(
+                    memoryProtection = MemoryProtectionDto(
+                        title = protection.title,
+                        userName = protection.userName,
+                        password = protection.password,
+                        url = protection.url,
+                        notes = protection.notes,
+                    ),
+                    historyMaxItems = entries.history.maxItems ?: NO_LIMIT.toInt(),
+                    historyMaxSize = entries.history.maxSize ?: NO_LIMIT,
+                ),
             )
             call(
                 FfiCommands.SET_DB_SETTINGS,
@@ -507,6 +551,9 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
         // Tags of the core's enums, as its json spells them
         const val ARGON2ID = "Argon2id"
         const val AES_256 = "Aes256"
+
+        // A history limit the core takes as none, both of the count and of the size
+        const val NO_LIMIT = -1L
 
         // Argon2id parameters of a new database. Measured on a device, not guessed: with the core's
         // defaults (64 MiB, 10 iterations) deriving the key took about 8 seconds - on opening and on

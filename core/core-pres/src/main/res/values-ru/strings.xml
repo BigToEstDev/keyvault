@@ -257,6 +257,17 @@
     <string name="settings_file_compression_gzip">GZip — рекомендуется</string>
     <string name="settings_file_compression_none">Без сжатия</string>
     <string name="settings_file_compression_hint">GZip уменьшает файл в разы — быстрее синхронизация через облако</string>
+    <string name="settings_entries_hidden_group">Скрытые поля</string>
+    <string name="settings_entries_hidden_hint">Поле скрыто у всех записей, глазик показывает</string>
+    <string name="settings_history_group">История</string>
+    <string name="settings_history_limit_items">Ограничить число версий</string>
+    <string name="settings_history_items">Число версий</string>
+    <string name="settings_history_limit_size">Ограничить размер истории</string>
+    <string name="settings_history_size">Размер истории</string>
+    <string name="settings_megabytes_short">%1$s МБ</string>
+    <string name="settings_history_trim_title">Сократить историю?</string>
+    <string name="settings_history_trim_text">Старые версии сверх лимита будут удалены у всех записей. Это нельзя отменить.</string>
+    <string name="settings_history_trim_confirm">Сократить</string>
     <string name="settings_entries">Записи</string>
     <string name="settings_entries_text">Скрытые поля, история</string>
     <string name="settings_recycle_bin">Корзина</string>

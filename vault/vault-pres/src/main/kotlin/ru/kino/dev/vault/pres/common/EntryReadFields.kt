@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.CopyButton
@@ -24,6 +25,8 @@ import ru.kino.dev.vault.entry.EntryField
  * @param group where the entry is - a card of its own; null - no card: a version does not keep its group
  * @param copyable "copy" by the values; an old version has none - restore it to copy (owner, 17.10.26)
  * @param shownOwn indexes of the protected own fields shown in clear
+ * @param protection the fields private by the database - hidden, with the eye, whatever the preset (Step 65)
+ * @param shownKeys keys of the fields of the preset private by the database shown in clear
  */
 @Composable
 internal fun EntryReadFields(
@@ -32,18 +35,32 @@ internal fun EntryReadFields(
     shownOwn: Set<Int>,
     onTogglePassword: () -> Unit,
     onToggleOwn: (Int) -> Unit,
+    protection: FieldProtection,
+    shownKeys: Set<String>,
+    onToggleKey: (String) -> Unit,
     group: GroupChoice? = null,
     copyable: Boolean = true,
 ) {
     val clipboard = rememberSensitiveClipboard().takeIf { copyable }
+    val privacy = Privacy(protection, shownKeys, onToggleKey)
 
     EntryTitleSection { modifier ->
         val title = content.value(StandardPreset.TITLE)
+        // "Untitled" is no value to hide
+        val private = title.isNotEmpty() && protection.protects(StandardPreset.TITLE)
         ReadField(
             label = fieldLabel(StandardPreset.TITLE),
             value = title.ifEmpty { stringResource(R.string.entry_untitled) },
             clipboard = clipboard.takeIf { title.isNotEmpty() },
             modifier = modifier,
+            hidden = private && StandardPreset.TITLE !in shownKeys,
+            secret = private,
+            shown = StandardPreset.TITLE in shownKeys,
+            onToggleShown = if (private) {
+                { onToggleKey(StandardPreset.TITLE) }
+            } else {
+                null
+            },
         )
     }
 
@@ -65,7 +82,7 @@ internal fun EntryReadFields(
     content.preset.cards.forEach { card ->
         val shown = card.fields.map { it.key }.filter { content.value(it).isNotEmpty() }
         if (shown.isNotEmpty()) {
-            FieldSection { PresetFields(content, shown, clipboard, passwordVisible, onTogglePassword) }
+            FieldSection { PresetFields(content, shown, clipboard, passwordVisible, onTogglePassword, privacy) }
         }
     }
 
@@ -73,7 +90,7 @@ internal fun EntryReadFields(
 
     // A card of its own, as on the form
     if (own.isNotEmpty()) {
-        FieldSection { OwnFields(own, clipboard, shownOwn, onToggleOwn) }
+        FieldSection { OwnFields(own, clipboard, shownOwn, onToggleOwn, protection) }
     }
 }
 
@@ -84,6 +101,7 @@ private fun PresetFields(
     clipboard: SensitiveClipboard?,
     passwordVisible: Boolean,
     onTogglePassword: () -> Unit,
+    privacy: Privacy,
 ) {
     keys.forEach { key ->
         if (key == StandardPreset.PASSWORD) {
@@ -100,11 +118,21 @@ private fun PresetFields(
                 actions = clipboard?.let { { CopyButton(onCopy = { it.copy(label, value) }) } },
             )
         } else {
+            val private = privacy.protection.protects(key)
+            val shown = key in privacy.shownKeys
             ReadField(
                 label = fieldLabel(key),
                 value = content.value(key),
                 clipboard = clipboard,
                 multiLine = key == StandardPreset.NOTES,
+                hidden = private && !shown,
+                secret = private,
+                shown = shown,
+                onToggleShown = if (private) {
+                    { privacy.onToggleKey(key) }
+                } else {
+                    null
+                },
             )
         }
     }
@@ -116,16 +144,18 @@ private fun OwnFields(
     clipboard: SensitiveClipboard?,
     shownOwn: Set<Int>,
     onToggleOwn: (Int) -> Unit,
+    protection: FieldProtection,
 ) {
     fields.forEach { (index, field) ->
         val shown = index in shownOwn
+        val private = protection.hides(field)
         ReadField(
             label = field.key,
             value = field.value,
             clipboard = clipboard,
-            hidden = field.protected && !shown,
-            secret = field.protected,
-            onToggleShown = if (field.protected) {
+            hidden = private && !shown,
+            secret = private,
+            onToggleShown = if (private) {
                 { onToggleOwn(index) }
             } else {
                 null
@@ -134,6 +164,13 @@ private fun OwnFields(
         )
     }
 }
+
+/** The fields of the preset private by the database, and those of them shown in clear. */
+private class Privacy(
+    val protection: FieldProtection,
+    val shownKeys: Set<String>,
+    val onToggleKey: (String) -> Unit,
+)
 
 /**
  * A field that only shows its value, with "copy" - when [clipboard] is given - and the eye of a protected one.

@@ -1,5 +1,7 @@
 package ru.kino.dev.core
 
+import ru.kino.dev.core.preset.StandardPreset
+
 /**
  * The kdbx core, as the rest of the app sees it.
  *
@@ -93,6 +95,16 @@ interface NativeCore {
      * stay as they are. In memory only: the file gets it on the next [saveDatabase].
      */
     suspend fun changeDatabaseFile(dbKey: String, name: String, compression: Compression)
+
+    /** Which standard fields of the open database are private and how long the history of its entries is kept. */
+    suspend fun databaseEntries(dbKey: String): DatabaseEntries
+
+    /**
+     * Sets the private fields and the history limits of the open database; the rest of its settings stay as they
+     * are. A lower limit trims the history of every entry at once - there is no undo. In memory only: the file gets
+     * it on the next [saveDatabase].
+     */
+    suspend fun changeDatabaseEntries(dbKey: String, entries: DatabaseEntries)
 
     /**
      * Compares [bytes] with the checksum taken when the file was last read or written.
@@ -263,6 +275,45 @@ data class CredentialsUsed(val password: Boolean, val keyFile: Boolean)
  * @param version the version of KDBX the file was read as; 4.1 once saved - the core writes no other
  */
 data class DatabaseFile(val name: String, val version: KdbxVersion, val compression: Compression)
+
+/** The entries of an open database as its settings show them (pass-docs, Step 65). */
+data class DatabaseEntries(val protection: FieldProtection, val history: HistoryLimits)
+
+/**
+ * Which standard fields of an entry are private - `Meta/MemoryProtection`, the same in KeePass and KeePassXC. The
+ * core keeps it, the app applies it: a field it names is hidden on every entry, whatever the preset says.
+ */
+data class FieldProtection(
+    val title: Boolean,
+    val userName: Boolean,
+    val password: Boolean,
+    val url: Boolean,
+    val notes: Boolean,
+) {
+
+    /** Whether the field of [key] is private by the database; a field of one's own never is. */
+    fun protects(key: String): Boolean = when (key) {
+        StandardPreset.TITLE -> title
+        StandardPreset.USER_NAME -> userName
+        StandardPreset.PASSWORD -> password
+        StandardPreset.URL -> url
+        StandardPreset.NOTES -> notes
+        else -> false
+    }
+
+    companion object {
+        /** What a new database has, as KeePass and KeePassXC: only the password. */
+        val DEFAULT = FieldProtection(title = false, userName = false, password = true, url = false, notes = false)
+    }
+}
+
+/**
+ * How much history every entry keeps; null - no limit.
+ *
+ * @param maxItems the versions kept
+ * @param maxSize the bytes the history of an entry takes at most
+ */
+data class HistoryLimits(val maxItems: Int?, val maxSize: Long?)
 
 /** A version of KDBX the core reads. */
 enum class KdbxVersion { V40, V41 }

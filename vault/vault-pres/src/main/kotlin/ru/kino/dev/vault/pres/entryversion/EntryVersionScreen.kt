@@ -102,6 +102,9 @@ internal fun EntryVersionScreen(
                         shownOwn = state.shownOwn,
                         onTogglePassword = { processor.action(EntryVersionAction.TogglePassword) },
                         onToggleOwn = { processor.action(EntryVersionAction.ToggleOwn(it)) },
+                        protection = state.protection,
+                        shownKeys = state.shownKeys,
+                        onToggleKey = { processor.action(EntryVersionAction.ToggleKey(it)) },
                         copyable = false,
                     )
                     skeleton != null -> EntrySkeleton(brush = skeleton)
