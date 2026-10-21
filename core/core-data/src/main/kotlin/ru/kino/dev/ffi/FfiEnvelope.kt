@@ -646,6 +646,17 @@ internal data class DbMetaDto(
     @SerialName("database_description") val databaseDescription: String,
     @SerialName("history_max_items") val historyMaxItems: Int,
     @SerialName("history_max_size") val historyMaxSize: Long,
+    @SerialName("memory_protection") val memoryProtection: MemoryProtectionDto,
+)
+
+/** Which standard fields of an entry are private - `Meta/MemoryProtection`. The core keeps it, the app applies it. */
+@Serializable
+internal data class MemoryProtectionDto(
+    @SerialName("protect_title") val title: Boolean,
+    @SerialName("protect_username") val userName: Boolean,
+    @SerialName("protect_password") val password: Boolean,
+    @SerialName("protect_url") val url: Boolean,
+    @SerialName("protect_notes") val notes: Boolean,
 )
 
 /**
