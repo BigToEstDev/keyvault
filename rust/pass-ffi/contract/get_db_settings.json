@@ -18,7 +18,14 @@
     "database_description": "string",
     "database_name": "string",
     "history_max_items": "number",
-    "history_max_size": "number"
+    "history_max_size": "number",
+    "memory_protection": {
+      "protect_notes": "bool",
+      "protect_password": "bool",
+      "protect_title": "bool",
+      "protect_url": "bool",
+      "protect_username": "bool"
+    }
   },
   "password": "null-in-this-sample",
   "password_changed": "bool",

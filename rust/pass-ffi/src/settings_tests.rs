@@ -88,6 +88,33 @@ fn the_compression_is_written_back_and_the_version_is_said() {
     close_database(&db_key);
 }
 
+// The private fields of the database go across both ways (Step 66): `meta.memory_protection`, only the password
+// in a new database
+#[test]
+fn the_memory_protection_is_written_back() {
+    let db_key = key_of("settings-memory-protection");
+    open_database(&db_key);
+
+    let mut settings = call_ok("get_db_settings", json!({ "db_key": db_key }));
+    let protection = &settings["meta"]["memory_protection"];
+    assert_eq!(protection["protect_password"], json!(true), "{}", settings);
+    assert_eq!(protection["protect_title"], json!(false), "{}", settings);
+
+    settings["meta"]["memory_protection"]["protect_title"] = json!(true);
+    call_ok(
+        "set_db_settings",
+        json!({"db_key": db_key, "settings": settings}),
+    );
+
+    let after = call_ok("get_db_settings", json!({ "db_key": db_key }));
+    assert_eq!(
+        after["meta"]["memory_protection"]["protect_title"],
+        json!(true)
+    );
+
+    close_database(&db_key);
+}
+
 #[test]
 fn a_new_key_file_comes_back_as_bytes() {
     let answer = run_with_bytes("generate_key_file", "", None);
