@@ -1,5 +1,6 @@
 package ru.kino.dev.settings.pres.entries
 
+import java.io.IOException
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -9,19 +10,20 @@ import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.HistoryLimits
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.settings.appearance.FakeAppearanceRepository
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entries.EntrySettingsEditor
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
-import java.io.IOException
 
 class EntriesProcessorTest {
 
     private val settings = FakeEntrySettingsRepository()
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
+    private var appearance = FakeAppearanceRepository(initialUserNameInList = true)
 
     @Test
     fun `the screen shown reads the settings`() = runTest {
@@ -53,6 +55,45 @@ class EntriesProcessorTest {
         assertEquals(protection, settings.entries.protection)
         assertNull(state.saving)
         assertEquals(listOf("save"), database.calls)
+    }
+
+    @Test
+    fun `the user name made private takes it out of the list`() = runTest {
+        perform(EntriesAction.Load, EntriesAction.SetProtection(FieldProtection.DEFAULT.copy(userName = true)))
+
+        assertEquals(listOf(false), appearance.savedUserNameInList)
+    }
+
+    @Test
+    fun `the user name made private but not written takes it out of the list too`() = runTest {
+        database.saveFailure = IOException("provider gone")
+
+        perform(EntriesAction.Load, EntriesAction.SetProtection(FieldProtection.DEFAULT.copy(userName = true)))
+
+        assertEquals(listOf(false), appearance.savedUserNameInList)
+    }
+
+    @Test
+    fun `the user name refused by the core leaves the list as it was`() = runTest {
+        perform(EntriesAction.Load, FailNext(settings), EntriesAction.SetProtection(FieldProtection.DEFAULT.copy(userName = true)))
+
+        assertEquals(emptyList<Boolean>(), appearance.savedUserNameInList)
+    }
+
+    @Test
+    fun `another field made private leaves the list as it was`() = runTest {
+        perform(EntriesAction.Load, EntriesAction.SetProtection(FieldProtection.DEFAULT.copy(url = true)))
+
+        assertEquals(emptyList<Boolean>(), appearance.savedUserNameInList)
+    }
+
+    @Test
+    fun `the list not showing user names is not written again`() = runTest {
+        appearance = FakeAppearanceRepository(initialUserNameInList = false)
+
+        perform(EntriesAction.Load, EntriesAction.SetProtection(FieldProtection.DEFAULT.copy(userName = true)))
+
+        assertEquals(emptyList<Boolean>(), appearance.savedUserNameInList)
     }
 
     @Test
@@ -153,7 +194,7 @@ class EntriesProcessorTest {
     /** Runs [steps] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(vararg steps: Any): Pair<EntriesState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntriesProcessor(DB, settings, EntrySettingsEditor(settings, database), navigator, log)
+        val processor = EntriesProcessor(DB, settings, EntrySettingsEditor(settings, database), appearance, navigator, log)
 
         processor.testWithInternalState(this) {
             steps.forEach { step ->

@@ -288,6 +288,7 @@
     <string name="settings_password_coloring_hint">Буквы, цифры и символы разным цветом</string>
     <string name="settings_user_name_in_list">Имя пользователя в списке</string>
     <string name="settings_user_name_in_list_hint">Под названием записи</string>
+    <string name="settings_user_name_hidden_hint">Имя пользователя скрыто в этой базе</string>
     <string name="settings_entry_count">Число записей в группе</string>
     <string name="settings_entry_count_hint">Число на значке группы</string>
     <string name="settings_entry_count_nested">Считать с вложенными</string>

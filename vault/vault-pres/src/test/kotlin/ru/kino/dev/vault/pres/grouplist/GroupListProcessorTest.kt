@@ -10,6 +10,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
@@ -62,6 +63,27 @@ class GroupListProcessorTest {
         assertEquals(mapOf("Mailbox" to "alice", "Bank" to ""), state.entries.associate { it.title to it.userName })
     }
 
+    @Test
+    fun `a database hiding user names gives the cards none`() {
+        val state = GroupListState(
+            listed = ListSource(
+                entries = listOf(EntrySummary(EntryId("mail"), GroupId("root"), "Mailbox", "alice", createdAt = 1)),
+            ),
+            userNameHidden = true,
+        )
+
+        assertEquals(listOf(""), state.entries.map { it.userName })
+    }
+
+    @Test
+    fun `the list reads whether the database hides user names`() = runTest {
+        entrySettings.entries = entrySettings.entries.copy(protection = FieldProtection.DEFAULT.copy(userName = true))
+
+        val (state, _) = perform(null, GroupListAction.Load)
+
+        assertTrue(state.userNameHidden)
+    }
+
     /*
      * Passwords (1 entry)
      * ├── Work (2)
@@ -80,6 +102,7 @@ class GroupListProcessorTest {
     private val database = FakeVaultDatabase()
     private val filters = FakeVaultFilterRepository()
     private val log = RecordingLog()
+    private val entrySettings = FakeEntrySettingsRepository()
     private lateinit var autoLock: AutoLock
 
     @Test
@@ -828,10 +851,11 @@ class GroupListProcessorTest {
         groups,
         GroupEditor(groups, database),
         entries,
-        EntryEditor(entries, EntryOpener(entries, FakePresetRepository()), FakeEntrySettingsRepository(), database),
+        EntryEditor(entries, EntryOpener(entries, FakePresetRepository()), entrySettings, database),
         lock(),
         VaultSearch(groups, entries),
         filters,
+        entrySettings,
         navigator,
         log,
     )

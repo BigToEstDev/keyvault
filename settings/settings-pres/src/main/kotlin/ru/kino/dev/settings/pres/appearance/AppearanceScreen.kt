@@ -40,7 +40,12 @@ import ru.kino.dev.ui.components.SwitchRow
  * the group "Language" (Step 57); the group "Entries" (Step 58).
  */
 @Composable
-internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) {
+internal fun AppearanceScreen(
+    dbKey: String,
+    processor: AppearanceProcessor = hiltViewModel<AppearanceProcessor, AppearanceProcessor.Factory>(
+        creationCallback = { factory -> factory.create(dbKey) },
+    ),
+) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 
@@ -134,10 +139,17 @@ internal fun AppearanceScreen(processor: AppearanceProcessor = hiltViewModel()) 
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
                             title = stringResource(R.string.settings_user_name_in_list),
-                            text = stringResource(R.string.settings_user_name_in_list_hint),
-                            checked = state.userNameInList ?: false,
+                            // The open database hides user names: off, whatever the app chose (pass-docs, Step 56, item 5)
+                            text = stringResource(
+                                if (state.userNameHidden) {
+                                    R.string.settings_user_name_hidden_hint
+                                } else {
+                                    R.string.settings_user_name_in_list_hint
+                                },
+                            ),
+                            checked = !state.userNameHidden && state.userNameInList == true,
                             onCheckedChange = { processor.action(AppearanceAction.SetUserNameInList(it)) },
-                            enabled = state.userNameInList != null,
+                            enabled = !state.userNameHidden && state.userNameInList != null,
                         )
                     }
                 }

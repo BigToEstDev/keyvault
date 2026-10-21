@@ -5,6 +5,8 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.IOException
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -17,6 +19,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.navigation.VaultRootRoute
+import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryRepository
@@ -32,13 +35,12 @@ import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.group.VaultTree
 import ru.kino.dev.vault.lock.AutoLock
+import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
 import ru.kino.dev.vault.search.VaultSearch
-import java.io.IOException
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * @param isRoot the screen is the root of the database - known from the route, before the tree is read, so
@@ -53,6 +55,8 @@ import kotlin.time.Duration.Companion.milliseconds
  * @param filter the filter in effect - as kept on the device
  * @param filterDraft the filter dialog is shown, with what is chosen in it so far
  * @param savingFilter the filter chosen is being kept - the dialog waits
+ * @param userNameHidden the database hides user names (pass-docs, Step 65): none in the list, whatever the
+ * appearance says (pass-docs, Step 56, item 5)
  * @param message for the snackbar, until it takes it
  */
 data class GroupListState(
@@ -70,6 +74,7 @@ data class GroupListState(
     val fabExpanded: Boolean = false,
     val dialog: GroupDialog? = null,
     val locking: Boolean = false,
+    val userNameHidden: Boolean = false,
     val message: GroupListMessage? = null,
 ) {
     // Worked out once for every state, not on every read
@@ -80,7 +85,7 @@ data class GroupListState(
 
     /** The entries the list shows, after the groups: by when they were created, as the filter says. */
     val entries: List<EntryItem> = shown.entries.map {
-        EntryItem(it.id, it.title, it.userName, found?.locations?.get(it.groupId))
+        EntryItem(it.id, it.title, if (userNameHidden) "" else it.userName, found?.locations?.get(it.groupId))
     }
 
     val isSearch: Boolean get() = query.isNotBlank()
@@ -159,6 +164,7 @@ class GroupListProcessor @AssistedInject constructor(
     private val autoLock: AutoLock,
     private val vaultSearch: VaultSearch,
     private val filters: VaultFilterRepository,
+    private val entrySettings: EntrySettingsRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<GroupListState, GroupListState, Nothing> {
@@ -300,7 +306,9 @@ class GroupListProcessor @AssistedInject constructor(
             reduce { state.copy(loading = false, filter = filter, message = GroupListMessage.LoadFailed) }
             return
         }
-        reduce { state.shown(tree, id, inside).copy(filter = filter) }
+        // Read anew too: it may come back from the settings changed
+        val userNameHidden = entrySettings.protectionOrDefault(dbKey, log, TAG).userName
+        reduce { state.shown(tree, id, inside).copy(filter = filter, userNameHidden = userNameHidden) }
 
         // What was found may have changed with what was just read - a group deleted, an entry renamed
         if (state.isSearch) search(state.query)
