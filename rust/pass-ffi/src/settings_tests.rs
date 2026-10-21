@@ -55,6 +55,39 @@ fn the_settings_of_a_database_are_read_and_written_back() {
     close_database(&db_key);
 }
 
+// The version and the compression of the file go across as the screen shows them (Step 64): the compression
+// both ways, the version out only
+#[test]
+fn the_compression_is_written_back_and_the_version_is_said() {
+    let db_key = key_of("settings-file-format");
+    open_database(&db_key);
+
+    let mut settings = call_ok("get_db_settings", json!({ "db_key": db_key }));
+    assert_eq!(
+        settings["kdbx_version"].as_str(),
+        Some("4.1"),
+        "{}",
+        settings
+    );
+    assert_eq!(
+        settings["compression"].as_str(),
+        Some("GZip"),
+        "{}",
+        settings
+    );
+
+    settings["compression"] = json!("None");
+    call_ok(
+        "set_db_settings",
+        json!({"db_key": db_key, "settings": settings}),
+    );
+
+    let after = call_ok("get_db_settings", json!({ "db_key": db_key }));
+    assert_eq!(after["compression"].as_str(), Some("None"));
+
+    close_database(&db_key);
+}
+
 #[test]
 fn a_new_key_file_comes_back_as_bytes() {
     let answer = run_with_bytes("generate_key_file", "", None);

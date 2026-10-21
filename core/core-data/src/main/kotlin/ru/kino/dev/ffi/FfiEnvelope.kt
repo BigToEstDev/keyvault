@@ -617,6 +617,10 @@ internal data class DbSettingsDto(
     @SerialName("key_file_changed") val keyFileChanged: Boolean,
     @SerialName("key_file_name_part") val keyFileNamePart: String? = null,
     @SerialName("database_file_name") val databaseFileName: String,
+    // "4.0" / "4.1" - what the file was read as; 4.1 once saved. Output only: the core never reads it back
+    @SerialName("kdbx_version") val kdbxVersion: String,
+    // "None" / "GZip" - how the content is packed from the next save on
+    val compression: String,
     val meta: DbMetaDto,
 )
 
