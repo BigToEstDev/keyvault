@@ -29,7 +29,7 @@ import ru.kino.dev.core.preset.PresetValidator
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.verticalFadingEdges
-import ru.kino.dev.vault.pres.common.presetName
+import ru.kino.dev.ui.preset.presetName
 
 /**
  * The choice of presets (pass-docs, vault-our.md "Фича создание кастомных пресетов"): the standard one, then

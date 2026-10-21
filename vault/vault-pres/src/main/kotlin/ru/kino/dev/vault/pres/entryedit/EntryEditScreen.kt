@@ -31,23 +31,23 @@ import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.PresetField
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.Dropdown
+import ru.kino.dev.ui.components.FieldSection
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PasswordField
+import ru.kino.dev.ui.components.SaveFab
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.TextField
+import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.preset.fieldLabel
+import ru.kino.dev.ui.preset.presetName
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.pres.common.EntryPresetSection
-import ru.kino.dev.vault.pres.common.EntrySection
 import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
 import ru.kino.dev.vault.pres.common.EntryTopBar
-import ru.kino.dev.vault.pres.common.SaveFab
-import ru.kino.dev.vault.pres.common.deleteMenuItem
-import ru.kino.dev.vault.pres.common.fieldLabel
 import ru.kino.dev.vault.pres.common.option
-import ru.kino.dev.vault.pres.common.presetName
 import ru.kino.dev.vault.pres.entryedit.components.EntryEditDialogs
 import ru.kino.dev.vault.pres.entryedit.components.OwnFieldRow
 import ru.kino.dev.vault.pres.entryedit.components.nameProblemText
@@ -183,7 +183,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         PresetText(field = content.preset.fields.first(), modifier = modifier)
     }
 
-    EntrySection {
+    FieldSection {
         Dropdown(
             selected = state.group,
             options = state.groups.map { it.option() },
@@ -202,13 +202,13 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
 
     // The cards of the preset, as the preset has them
     content.preset.cards.forEach { card ->
-        EntrySection {
+        FieldSection {
             card.fields.forEach { PresetInput(it) }
         }
     }
 
     // A card of its own: the own fields - read or added here - and the button that adds one
-    EntrySection {
+    FieldSection {
         content.ownFields.forEachIndexed { index, field ->
             OwnFieldRow(
                 field = field,

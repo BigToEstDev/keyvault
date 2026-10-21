@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import ru.kino.dev.ui.components.FieldMenuButton
 import ru.kino.dev.ui.components.TextField
-import ru.kino.dev.vault.pres.common.FieldMenuButton
 
 /**
  * A field of a preset on its form (pass-docs, Step 49, answer 10): it has a name and no value yet, so it is

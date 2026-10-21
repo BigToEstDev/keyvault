@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.pres.R
-import ru.kino.dev.vault.pres.common.fieldLabel
+import ru.kino.dev.ui.preset.fieldLabel
 
 /**
  * "Save" with fields the preset chosen lacks - filled ones of a preset chosen before (pass-docs, Step 49,

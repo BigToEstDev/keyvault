@@ -31,15 +31,15 @@ import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.FieldPosition
 import ru.kino.dev.core.preset.PresetLimits
 import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.ui.components.FieldSection
 import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.components.SECTION_PADDING
+import ru.kino.dev.ui.components.SaveFab
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.TextField
-import ru.kino.dev.vault.pres.common.EntrySection
+import ru.kino.dev.ui.preset.fieldLabel
 import ru.kino.dev.vault.pres.common.EntryTopBar
-import ru.kino.dev.vault.pres.common.SECTION_PADDING
-import ru.kino.dev.vault.pres.common.SaveFab
-import ru.kino.dev.vault.pres.common.fieldLabel
 import ru.kino.dev.vault.pres.presetcreate.components.CardDeleteBadge
 import ru.kino.dev.vault.pres.presetcreate.components.PresetCreateDialogs
 import ru.kino.dev.vault.pres.presetcreate.components.PresetFieldRow
@@ -109,7 +109,7 @@ private fun PresetForm(state: PresetCreateState, action: (PresetCreateAction) ->
     val enabled = !state.saving
 
     // The name of the preset - the first card, required
-    EntrySection {
+    FieldSection {
         TextField(
             value = state.name,
             onValueChange = { action(PresetCreateAction.NameChanged(it)) },
@@ -151,7 +151,7 @@ private fun PresetForm(state: PresetCreateState, action: (PresetCreateAction) ->
     }
 
     // The notes close every preset: a card of their own, fixed
-    EntrySection {
+    FieldSection {
         PresetFieldRow(name = fieldLabel(StandardPreset.NOTES), enabled = enabled)
     }
 }
@@ -165,7 +165,7 @@ private fun PresetCard(
     enabled: Boolean,
     action: (PresetCreateAction) -> Unit,
 ) {
-    EntrySection {
+    FieldSection {
         if (card == 0) {
             // The first card holds the user name and the password - in every preset, not to be removed
             PresetFieldRow(name = fieldLabel(StandardPreset.USER_NAME), enabled = enabled, required = true)

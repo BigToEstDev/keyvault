@@ -7,11 +7,13 @@ import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.CopyButton
+import ru.kino.dev.ui.components.FieldSection
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.SensitiveClipboard
 import ru.kino.dev.ui.components.TextField
 import ru.kino.dev.ui.components.VisibilityToggle
 import ru.kino.dev.ui.components.rememberSensitiveClipboard
+import ru.kino.dev.ui.preset.fieldLabel
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryField
 
@@ -47,7 +49,7 @@ internal fun EntryReadFields(
 
     // Where the entry is: the name, the path down to it under it (pass-docs, Step 48)
     group?.let {
-        EntrySection {
+        FieldSection {
             TextField(
                 value = it.title(),
                 onValueChange = {},
@@ -63,7 +65,7 @@ internal fun EntryReadFields(
     content.preset.cards.forEach { card ->
         val shown = card.fields.map { it.key }.filter { content.value(it).isNotEmpty() }
         if (shown.isNotEmpty()) {
-            EntrySection { PresetFields(content, shown, clipboard, passwordVisible, onTogglePassword) }
+            FieldSection { PresetFields(content, shown, clipboard, passwordVisible, onTogglePassword) }
         }
     }
 
@@ -71,7 +73,7 @@ internal fun EntryReadFields(
 
     // A card of its own, as on the form
     if (own.isNotEmpty()) {
-        EntrySection { OwnFields(own, clipboard, shownOwn, onToggleOwn) }
+        FieldSection { OwnFields(own, clipboard, shownOwn, onToggleOwn) }
     }
 }
 

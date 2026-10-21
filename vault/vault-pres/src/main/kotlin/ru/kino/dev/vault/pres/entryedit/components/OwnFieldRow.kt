@@ -4,10 +4,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import ru.kino.dev.ui.components.FieldMenuButton
 import ru.kino.dev.ui.components.TextField
 import ru.kino.dev.ui.components.VisibilityToggle
 import ru.kino.dev.vault.entry.EntryField
-import ru.kino.dev.vault.pres.common.FieldMenuButton
 
 /**
  * An own field on the form: the field, and outside it the pen of [FieldMenuButton] - rename, delete
