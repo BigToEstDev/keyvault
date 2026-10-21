@@ -3,9 +3,12 @@ package ru.kino.dev.settings.pres.navigation
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.settings.pres.appearance.AppearanceScreen
 import ru.kino.dev.settings.pres.lock.LockScreen
+import ru.kino.dev.settings.pres.presetedit.PresetEditScreen
+import ru.kino.dev.settings.pres.presets.PresetsScreen
 import ru.kino.dev.settings.pres.privacy.PrivacyScreen
 import ru.kino.dev.settings.pres.settings.SettingsScreen
 
@@ -18,4 +21,6 @@ fun NavGraphBuilder.settingsGraph() {
     composable<AppearanceRoute> { AppearanceScreen() }
     composable<LockRoute> { entry -> LockScreen(dbKey = entry.toRoute<LockRoute>().dbKey) }
     composable<PrivacyRoute> { PrivacyScreen() }
+    composable<PresetsRoute> { PresetsScreen() }
+    composable<PresetEditRoute> { entry -> PresetEditScreen(presetId = entry.toRoute<PresetEditRoute>().presetId) }
 }

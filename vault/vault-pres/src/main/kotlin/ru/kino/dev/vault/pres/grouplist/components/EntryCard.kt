@@ -8,10 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.pres.R
+import ru.kino.dev.ui.components.deleteMenuItem
+import ru.kino.dev.ui.components.editMenuItem
 import ru.kino.dev.ui.theme.LocalAppDisplay
 import ru.kino.dev.vault.pres.common.MenuCard
-import ru.kino.dev.vault.pres.common.deleteMenuItem
-import ru.kino.dev.vault.pres.common.editMenuItem
 import ru.kino.dev.vault.pres.grouplist.EntryItem
 
 /**

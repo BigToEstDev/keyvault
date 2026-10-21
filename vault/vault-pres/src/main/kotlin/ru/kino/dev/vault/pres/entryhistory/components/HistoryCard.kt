@@ -6,8 +6,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import ru.kino.dev.ui.components.MenuItem
 import ru.kino.dev.vault.pres.common.MenuCard
-import ru.kino.dev.vault.pres.common.MenuItem
 
 /**
  * A card of the history - "Modified: …" for an old version, "Created: …" last: the clock and the [text], the

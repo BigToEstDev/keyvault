@@ -18,6 +18,7 @@
     <string name="action_edit">Редактировать</string>
     <string name="action_rename">Переименовать</string>
     <string name="action_add">Добавить</string>
+    <string name="action_create">Создать</string>
     <string name="action_apply">Применить</string>
     <string name="action_reset">Сбросить</string>
     <string name="action_copy">Копировать</string>
@@ -176,6 +177,10 @@
     <string name="entry_hidden_keep">Добавить вне пресета</string>
     <string name="preset_create">+ Создать пресет</string>
     <string name="preset_create_title">Создать пресет</string>
+    <string name="preset_edit_title">Изменить пресет</string>
+    <string name="preset_fields_dropped_title">Сохранить пресет?</string>
+    <string name="preset_fields_dropped_text">Записи с этим пресетом покажут прежние поля как свои.</string>
+    <string name="preset_gone">Пресет уже удалён</string>
     <string name="preset_name">Название пресета</string>
     <string name="preset_name_empty">Введите название</string>
     <plurals name="preset_name_too_long">
@@ -196,6 +201,10 @@
         <item quantity="other">Уже %1$d пресета — больше не создать</item>
     </plurals>
     <string name="preset_not_saved">Пресет не сохранён. Попробуйте ещё раз</string>
+    <string name="preset_menu">Меню пресета</string>
+    <string name="preset_delete_title">Удалить пресет «%1$s»?</string>
+    <string name="preset_delete_text">Записи с ним откроются со стандартным пресетом, их поля станут своими.</string>
+    <string name="preset_not_deleted">Пресет не удалён. Попробуйте ещё раз</string>
     <string name="entry_title_new">Новая запись</string>
     <string name="entry_title_edit">Редактирование</string>
     <string name="entry_field_title">Название</string>
@@ -292,4 +301,6 @@
     <string name="settings_message_not_saved">Настройка не сохранилась</string>
     <string name="settings_allow_screenshots">Разрешить скриншоты</string>
     <string name="settings_allow_screenshots_hint">Разрешить снимки и запись экрана приложения</string>
+    <string name="settings_use_presets">Использовать пресеты</string>
+    <string name="settings_use_presets_hint">Выбор пресета на экранах записи</string>
 </resources>

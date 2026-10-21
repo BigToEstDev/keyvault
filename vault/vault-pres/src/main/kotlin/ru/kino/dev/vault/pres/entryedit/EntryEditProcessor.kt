@@ -19,6 +19,7 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryDraft
 import ru.kino.dev.vault.entry.EntryEditor
@@ -36,7 +37,6 @@ import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.common.groupChoices
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
-import ru.kino.dev.vault.pres.navigation.PresetCreateRoute
 
 /**
  * @param creating a new entry, not one of the database
@@ -195,7 +195,7 @@ class EntryEditProcessor @AssistedInject constructor(
             EntryEditAction.CreatePreset -> (state.dialog as? EntryEditDialog.Preset)?.let { dialog ->
                 if (PresetValidator.canAdd(dialog.presets)) {
                     reduce { state.copy(dialog = null, presetsBeforeCreate = dialog.presets.mapNotNull { it.id }.toSet()) }
-                    navigator.navigate(MviNavEvent.NavigateTo(PresetCreateRoute))
+                    navigator.navigate(MviNavEvent.NavigateTo(PresetEditRoute()))
                 }
             }
 

@@ -15,10 +15,15 @@ internal data class LockRoute(val dbKey: String)
 @Serializable
 internal data object PrivacyRoute
 
+/** The presets: whether they are used, the list of those of one's own (pass-docs, Step 62). */
+@Serializable
+internal data object PresetsRoute
+
 /** Where a card of the settings of [dbKey] leads; null while the screen behind it is not made yet. */
 internal fun SettingsItem.route(dbKey: String): Any? = when (this) {
     SettingsItem.Appearance -> AppearanceRoute
     SettingsItem.Lock -> LockRoute(dbKey)
     SettingsItem.Privacy -> PrivacyRoute
+    SettingsItem.Presets -> PresetsRoute
     else -> null
 }

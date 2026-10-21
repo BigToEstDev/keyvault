@@ -26,6 +26,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import ru.kino.dev.ui.components.ItemMenu
+import ru.kino.dev.ui.components.MenuItem
 
 /**
  * A card with an icon and a title - a group or an entry of a list, a version of a history. A tap opens it,

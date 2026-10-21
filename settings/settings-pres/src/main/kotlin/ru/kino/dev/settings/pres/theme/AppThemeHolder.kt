@@ -3,6 +3,7 @@ package ru.kino.dev.settings.pres.theme
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -11,8 +12,8 @@ import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.AppearanceRepository
 import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.lock.LockSettingsRepository
+import ru.kino.dev.settings.presets.PresetSettingsRepository
 import ru.kino.dev.ui.theme.AppDisplay
-import javax.inject.Inject
 
 /**
  * The mode of the theme, the language and what the screens show for the whole app - the activity paints every
@@ -25,6 +26,7 @@ import javax.inject.Inject
 class AppThemeHolder @Inject constructor(
     repository: AppearanceRepository,
     lock: LockSettingsRepository,
+    presets: PresetSettingsRepository,
 ) : ViewModel() {
 
     /** Null while the setting is being read; a new value as soon as it is changed in the settings. */
@@ -40,18 +42,18 @@ class AppThemeHolder @Inject constructor(
      * while they are being read; a new value as soon as one is changed in the settings.
      */
     val display: StateFlow<AppDisplay?> = combine(
+        // A typed combine takes five at most: what the list of entries shows goes as one
+        combine(
+            repository.userNameInList,
+            repository.entryCount,
+            repository.entryCountNested,
+        ) { userNameInList, entryCount, entryCountNested ->
+            AppDisplay(userNameInList = userNameInList, entryCount = entryCount, entryCountNested = entryCountNested)
+        },
         repository.passwordColoring,
-        repository.userNameInList,
-        repository.entryCount,
-        repository.entryCountNested,
         lock.lockButton,
-    ) { passwordColoring, userNameInList, entryCount, entryCountNested, lockButton ->
-        AppDisplay(
-            passwordColoring = passwordColoring,
-            userNameInList = userNameInList,
-            entryCount = entryCount,
-            entryCountNested = entryCountNested,
-            lockButton = lockButton,
-        )
+        presets.usePresets,
+    ) { list, passwordColoring, lockButton, usePresets ->
+        list.copy(passwordColoring = passwordColoring, lockButton = lockButton, presets = usePresets)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }

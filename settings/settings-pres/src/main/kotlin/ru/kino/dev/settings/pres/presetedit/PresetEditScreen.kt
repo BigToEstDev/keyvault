@@ -1,4 +1,4 @@
-package ru.kino.dev.vault.pres.presetcreate
+package ru.kino.dev.settings.pres.presetedit
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -31,55 +32,68 @@ import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.FieldPosition
 import ru.kino.dev.core.preset.PresetLimits
 import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.settings.pres.presetedit.components.CardDeleteBadge
+import ru.kino.dev.settings.pres.presetedit.components.PresetEditDialogs
+import ru.kino.dev.settings.pres.presetedit.components.PresetFieldRow
+import ru.kino.dev.settings.pres.presetedit.components.fieldNameProblemText
+import ru.kino.dev.settings.pres.presetedit.components.presetNameProblemText
+import ru.kino.dev.ui.components.BackTopBar
+import ru.kino.dev.ui.components.FieldSection
 import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.components.SECTION_PADDING
+import ru.kino.dev.ui.components.SaveFab
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.TextField
-import ru.kino.dev.vault.pres.common.EntrySection
-import ru.kino.dev.vault.pres.common.EntryTopBar
-import ru.kino.dev.vault.pres.common.SECTION_PADDING
-import ru.kino.dev.vault.pres.common.SaveFab
-import ru.kino.dev.vault.pres.common.fieldLabel
-import ru.kino.dev.vault.pres.presetcreate.components.CardDeleteBadge
-import ru.kino.dev.vault.pres.presetcreate.components.PresetCreateDialogs
-import ru.kino.dev.vault.pres.presetcreate.components.PresetFieldRow
-import ru.kino.dev.vault.pres.presetcreate.components.fieldNameProblemText
-import ru.kino.dev.vault.pres.presetcreate.components.presetNameProblemText
+import ru.kino.dev.ui.preset.fieldLabel
 
-/** Creating a preset of one's own (pass-docs, vault-our.md "Экран создания пресетов"). */
+/**
+ * Creating a preset of one's own, or editing the one of [presetId] (pass-docs, vault-our.md "Экран создания
+ * пресетов", Step 62).
+ */
 @Composable
-internal fun PresetCreateScreen(processor: PresetCreateProcessor = hiltViewModel()) {
+internal fun PresetEditScreen(
+    presetId: String?,
+    processor: PresetEditProcessor = hiltViewModel<PresetEditProcessor, PresetEditProcessor.Factory>(
+        key = presetId,
+        creationCallback = { factory -> factory.create(presetId) },
+    ),
+) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     val standardName = stringResource(R.string.entry_preset_standard)
 
+    LaunchedEffect(Unit) { processor.action(PresetEditAction.Load) }
+
     // The system "back" asks as the one in the top bar does
-    BackHandler { processor.action(PresetCreateAction.Back) }
+    BackHandler { processor.action(PresetEditAction.Back) }
 
     val message = state.message?.let {
         when (it) {
-            PresetCreateMessage.TooMany -> pluralStringResource(
+            PresetEditMessage.TooMany -> pluralStringResource(
                 R.plurals.preset_too_many,
                 PresetLimits.MAX_PRESETS,
                 PresetLimits.MAX_PRESETS,
             )
-            PresetCreateMessage.NotSaved -> stringResource(R.string.preset_not_saved)
+            PresetEditMessage.NotSaved -> stringResource(R.string.preset_not_saved)
+            PresetEditMessage.Gone -> stringResource(R.string.preset_gone)
         }
     }
-    SnackbarMessage(message, snackbar) { processor.action(PresetCreateAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.action(PresetEditAction.MessageShown) }
 
     GradientBackground {
         Scaffold(
             // The backdrop is the gradient behind
             containerColor = Color.Transparent,
             topBar = {
-                EntryTopBar(
-                    title = stringResource(R.string.preset_create_title),
-                    onBack = { processor.action(PresetCreateAction.Back) },
+                BackTopBar(
+                    title = stringResource(if (state.editing) R.string.preset_edit_title else R.string.preset_create_title),
+                    onBack = { processor.action(PresetEditAction.Back) },
                 )
             },
             floatingActionButton = {
-                SaveFab(saving = state.saving, onSave = { processor.action(PresetCreateAction.Save(standardName)) })
+                // While the preset to edit is read the fab waits as while it is saved
+                SaveFab(saving = state.saving || state.loading, onSave = { processor.action(PresetEditAction.Save(standardName)) })
             },
             snackbarHost = { SnackbarHost(snackbar) },
         ) { padding ->
@@ -95,24 +109,24 @@ internal fun PresetCreateScreen(processor: PresetCreateProcessor = hiltViewModel
             }
         }
 
-        PresetCreateDialogs(
+        PresetEditDialogs(
             dialog = state.dialog,
-            onNameChange = { processor.action(PresetCreateAction.DialogNameChanged(it)) },
-            onConfirm = { processor.action(PresetCreateAction.DialogConfirm) },
-            onDismiss = { processor.action(PresetCreateAction.DialogDismiss) },
+            onNameChange = { processor.action(PresetEditAction.DialogNameChanged(it)) },
+            onConfirm = { processor.action(PresetEditAction.DialogConfirm) },
+            onDismiss = { processor.action(PresetEditAction.DialogDismiss) },
         )
     }
 }
 
 @Composable
-private fun PresetForm(state: PresetCreateState, action: (PresetCreateAction) -> Unit) {
-    val enabled = !state.saving
+private fun PresetForm(state: PresetEditState, action: (PresetEditAction) -> Unit) {
+    val enabled = !state.saving && !state.loading
 
     // The name of the preset - the first card, required
-    EntrySection {
+    FieldSection {
         TextField(
             value = state.name,
-            onValueChange = { action(PresetCreateAction.NameChanged(it)) },
+            onValueChange = { action(PresetEditAction.NameChanged(it)) },
             label = stringResource(R.string.preset_name),
             modifier = Modifier.fillMaxWidth(),
             required = true,
@@ -130,7 +144,7 @@ private fun PresetForm(state: PresetCreateState, action: (PresetCreateAction) ->
                 CardDeleteBadge(
                     contentDescription = stringResource(R.string.preset_delete_card),
                     enabled = enabled,
-                    onClick = { action(PresetCreateAction.DeleteCard(card)) },
+                    onClick = { action(PresetEditAction.DeleteCard(card)) },
                     modifier = Modifier.align(Alignment.TopEnd),
                 )
             }
@@ -141,7 +155,7 @@ private fun PresetForm(state: PresetCreateState, action: (PresetCreateAction) ->
     if (state.canAddCard) {
         SecondaryButton(
             text = stringResource(R.string.preset_add_card),
-            onClick = { action(PresetCreateAction.AddCard) },
+            onClick = { action(PresetEditAction.AddCard) },
             // As wide as "+ add field" in the cards above: inside the room of a card
             modifier = Modifier
                 .fillMaxWidth()
@@ -151,7 +165,7 @@ private fun PresetForm(state: PresetCreateState, action: (PresetCreateAction) ->
     }
 
     // The notes close every preset: a card of their own, fixed
-    EntrySection {
+    FieldSection {
         PresetFieldRow(name = fieldLabel(StandardPreset.NOTES), enabled = enabled)
     }
 }
@@ -161,11 +175,11 @@ private fun PresetForm(state: PresetCreateState, action: (PresetCreateAction) ->
 private fun PresetCard(
     card: Int,
     keys: List<String>,
-    state: PresetCreateState,
+    state: PresetEditState,
     enabled: Boolean,
-    action: (PresetCreateAction) -> Unit,
+    action: (PresetEditAction) -> Unit,
 ) {
-    EntrySection {
+    FieldSection {
         if (card == 0) {
             // The first card holds the user name and the password - in every preset, not to be removed
             PresetFieldRow(name = fieldLabel(StandardPreset.USER_NAME), enabled = enabled, required = true)
@@ -178,8 +192,8 @@ private fun PresetCard(
                 name = key,
                 enabled = enabled,
                 error = state.fieldProblem(at)?.let { fieldNameProblemText(it) },
-                onRename = { action(PresetCreateAction.RenameField(at)) },
-                onDelete = { action(PresetCreateAction.DeleteField(at)) },
+                onRename = { action(PresetEditAction.RenameField(at)) },
+                onDelete = { action(PresetEditAction.DeleteField(at)) },
             )
         }
 
@@ -187,7 +201,7 @@ private fun PresetCard(
         if (state.canAddField(card)) {
             SecondaryButton(
                 text = stringResource(R.string.entry_add_field),
-                onClick = { action(PresetCreateAction.AddField(card)) },
+                onClick = { action(PresetEditAction.AddField(card)) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = enabled,
             )

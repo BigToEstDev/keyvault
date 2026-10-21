@@ -11,7 +11,6 @@ import ru.kino.dev.vault.pres.entryhistory.EntryHistoryScreen
 import ru.kino.dev.vault.pres.entryread.EntryReadScreen
 import ru.kino.dev.vault.pres.entryversion.EntryVersionScreen
 import ru.kino.dev.vault.pres.grouplist.GroupListScreen
-import ru.kino.dev.vault.pres.presetcreate.PresetCreateScreen
 
 /**
  * The screens of `vault` - the database is open. Entered at its root, with its dbKey; every group below is
@@ -49,7 +48,6 @@ fun NavGraphBuilder.vaultGraph(nested: NavGraphBuilder.() -> Unit = {}) {
             val route = entry.toRoute<EntryEditRoute>()
             EntryEditScreen(dbKey = route.dbKey, groupId = null, entryId = route.entryId)
         }
-        composable<PresetCreateRoute> { PresetCreateScreen() }
         nested()
     }
 }

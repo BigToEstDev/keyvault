@@ -1,4 +1,4 @@
-package ru.kino.dev.vault.pres.presetcreate.components
+package ru.kino.dev.settings.pres.presetedit.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.pluralStringResource
@@ -7,14 +7,17 @@ import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.FieldNameProblem
 import ru.kino.dev.core.preset.PresetLimits
 import ru.kino.dev.core.preset.PresetNameProblem
+import ru.kino.dev.settings.pres.presetedit.PresetEditDialog
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.TextInputDialog
-import ru.kino.dev.vault.pres.presetcreate.PresetCreateDialog
 
-/** The dialog over the form of a preset: the name of a field, "delete the field?", "delete the card?", "leave?". */
+/**
+ * The dialog over the form of a preset: the name of a field, "delete the field?", "delete the card?", "leave?",
+ * "entries will show the old fields as their own".
+ */
 @Composable
-internal fun PresetCreateDialogs(
-    dialog: PresetCreateDialog?,
+internal fun PresetEditDialogs(
+    dialog: PresetEditDialog?,
     onNameChange: (String) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
@@ -22,7 +25,7 @@ internal fun PresetCreateDialogs(
     when (dialog) {
         null -> Unit
 
-        is PresetCreateDialog.AddField -> TextInputDialog(
+        is PresetEditDialog.AddField -> TextInputDialog(
             title = stringResource(R.string.entry_add_field_title),
             value = dialog.name,
             onValueChange = onNameChange,
@@ -34,7 +37,7 @@ internal fun PresetCreateDialogs(
             error = dialog.problem?.let { fieldNameProblemText(it) },
         )
 
-        is PresetCreateDialog.RenameField -> TextInputDialog(
+        is PresetEditDialog.RenameField -> TextInputDialog(
             title = stringResource(R.string.entry_rename_field_title),
             value = dialog.name,
             onValueChange = onNameChange,
@@ -46,7 +49,7 @@ internal fun PresetCreateDialogs(
             error = dialog.problem?.let { fieldNameProblemText(it) },
         )
 
-        is PresetCreateDialog.DeleteField -> ConfirmDialog(
+        is PresetEditDialog.DeleteField -> ConfirmDialog(
             title = stringResource(R.string.entry_delete_field_title),
             text = stringResource(R.string.entry_delete_field_text, dialog.name),
             confirmText = stringResource(R.string.action_delete),
@@ -56,7 +59,7 @@ internal fun PresetCreateDialogs(
             destructive = true,
         )
 
-        is PresetCreateDialog.DeleteCard -> ConfirmDialog(
+        is PresetEditDialog.DeleteCard -> ConfirmDialog(
             title = stringResource(R.string.preset_delete_card_title),
             text = stringResource(R.string.preset_delete_card_text),
             confirmText = stringResource(R.string.action_delete),
@@ -66,11 +69,20 @@ internal fun PresetCreateDialogs(
             destructive = true,
         )
 
-        PresetCreateDialog.Leave -> ConfirmDialog(
+        PresetEditDialog.Leave -> ConfirmDialog(
             title = stringResource(R.string.entry_leave_title),
             text = stringResource(R.string.entry_leave_text),
             confirmText = stringResource(R.string.entry_leave_confirm),
             dismissText = stringResource(R.string.entry_leave_stay),
+            onConfirm = onConfirm,
+            onDismiss = onDismiss,
+        )
+
+        is PresetEditDialog.FieldsDropped -> ConfirmDialog(
+            title = stringResource(R.string.preset_fields_dropped_title),
+            text = stringResource(R.string.preset_fields_dropped_text),
+            confirmText = stringResource(R.string.action_save),
+            dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
         )

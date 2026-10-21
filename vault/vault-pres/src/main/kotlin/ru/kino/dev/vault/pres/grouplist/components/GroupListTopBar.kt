@@ -26,12 +26,12 @@ import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.Breadcrumbs
 import ru.kino.dev.ui.components.CountBadgeIcon
+import ru.kino.dev.ui.components.MoreMenuButton
 import ru.kino.dev.ui.components.SearchBar
 import ru.kino.dev.ui.components.SkeletonText
+import ru.kino.dev.ui.components.deleteMenuItem
+import ru.kino.dev.ui.components.editMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
-import ru.kino.dev.vault.pres.common.MoreMenuButton
-import ru.kino.dev.vault.pres.common.deleteMenuItem
-import ru.kino.dev.vault.pres.common.editMenuItem
 import ru.kino.dev.vault.pres.grouplist.Crumb
 
 /**

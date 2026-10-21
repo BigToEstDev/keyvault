@@ -19,6 +19,7 @@
     <string name="action_edit">Edit</string>
     <string name="action_rename">Rename</string>
     <string name="action_add">Add</string>
+    <string name="action_create">Create</string>
     <string name="action_apply">Apply</string>
     <string name="action_reset">Reset</string>
     <string name="action_copy">Copy</string>
@@ -174,6 +175,10 @@
     <string name="entry_hidden_keep">Add outside the preset</string>
     <string name="preset_create">+ Create preset</string>
     <string name="preset_create_title">Create preset</string>
+    <string name="preset_edit_title">Edit preset</string>
+    <string name="preset_fields_dropped_title">Save the preset?</string>
+    <string name="preset_fields_dropped_text">Entries with this preset will show the old fields as their own.</string>
+    <string name="preset_gone">The preset is already deleted</string>
     <string name="preset_name">Preset name</string>
     <string name="preset_name_empty">Enter a name</string>
     <plurals name="preset_name_too_long">
@@ -190,6 +195,10 @@
         <item quantity="other">There are %1$d presets already - no more can be made</item>
     </plurals>
     <string name="preset_not_saved">The preset was not saved. Try again</string>
+    <string name="preset_menu">Preset menu</string>
+    <string name="preset_delete_title">Delete the preset «%1$s»?</string>
+    <string name="preset_delete_text">Entries with it will open with the standard preset, its fields will become their own.</string>
+    <string name="preset_not_deleted">The preset was not deleted. Try again</string>
     <string name="entry_title_new">New entry</string>
     <string name="entry_title_edit">Editing</string>
     <string name="entry_field_title">Title</string>
@@ -289,4 +298,6 @@
     <string name="settings_message_not_saved">The setting was not saved</string>
     <string name="settings_allow_screenshots">Allow screenshots</string>
     <string name="settings_allow_screenshots_hint">Allow screenshots and recording of the app screen</string>
+    <string name="settings_use_presets">Use presets</string>
+    <string name="settings_use_presets_hint">The choice of a preset on the screens of an entry</string>
 </resources>

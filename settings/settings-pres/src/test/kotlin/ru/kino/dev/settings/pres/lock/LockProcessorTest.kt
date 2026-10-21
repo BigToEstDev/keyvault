@@ -1,5 +1,6 @@
 package ru.kino.dev.settings.pres.lock
 
+import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,8 +16,8 @@ import ru.kino.dev.settings.biometric.FakeBiometrics
 import ru.kino.dev.settings.lock.AutoLockTimeout
 import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.settings.lock.LockSettingsRepository
+import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.signin.FakeSignInSettingsRepository
-import java.io.IOException
 
 class LockProcessorTest {
 

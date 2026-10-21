@@ -13,6 +13,7 @@ import ru.kino.dev.settings.biometric.FakeBiometrics
 import ru.kino.dev.settings.lock.AutoLockTimeout
 import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.settings.lock.LockSettingsRepository
+import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.signin.FakeSignInSettingsRepository
 import ru.kino.dev.ui.biometric.BiometricPromptResult
 
