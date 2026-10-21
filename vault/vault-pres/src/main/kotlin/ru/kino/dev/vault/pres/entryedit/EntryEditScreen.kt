@@ -42,6 +42,7 @@ import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.ui.preset.fieldLabel
 import ru.kino.dev.ui.preset.presetName
+import ru.kino.dev.ui.theme.LocalAppDisplay
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.pres.common.EntryPresetSection
 import ru.kino.dev.vault.pres.common.EntrySkeleton
@@ -194,11 +195,15 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         )
     }
 
-    EntryPresetSection(
-        name = presetName(content.preset),
-        onClick = { action(EntryEditAction.ChoosePreset) },
-        enabled = enabled,
-    )
+    // Presets switched off in the settings: no choice - a new entry stays with the standard preset, one saved with
+    // its own (pass-docs, Step 62)
+    if (LocalAppDisplay.current.presets) {
+        EntryPresetSection(
+            name = presetName(content.preset),
+            onClick = { action(EntryEditAction.ChoosePreset) },
+            enabled = enabled,
+        )
+    }
 
     // The cards of the preset, as the preset has them
     content.preset.cards.forEach { card ->

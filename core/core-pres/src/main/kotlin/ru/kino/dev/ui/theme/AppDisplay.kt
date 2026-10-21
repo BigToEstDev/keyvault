@@ -12,6 +12,8 @@ import androidx.compose.runtime.compositionLocalOf
  * @param entryCount the icon of a group has the number of its entries on a badge
  * @param entryCountNested that number counts the entries of the groups below too, not only its own
  * @param lockButton the screens of the open database have the button that locks it now (Step 59)
+ * @param presets the screens of an entry have the choice of presets; off - a new entry takes the standard one, one
+ *   saved keeps its own (Step 62)
  */
 @Immutable
 data class AppDisplay(
@@ -20,6 +22,7 @@ data class AppDisplay(
     val entryCount: Boolean = true,
     val entryCountNested: Boolean = true,
     val lockButton: Boolean = false,
+    val presets: Boolean = true,
 )
 
 /** The [AppDisplay] chosen; the defaults until `app` provides one. */
