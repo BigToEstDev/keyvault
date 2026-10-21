@@ -19,6 +19,10 @@ internal data object PrivacyRoute
 @Serializable
 internal data class FileRoute(val dbKey: String)
 
+/** The entries of the database [dbKey]: the hidden fields, the limits of the history (pass-docs, Step 65). */
+@Serializable
+internal data class EntriesRoute(val dbKey: String)
+
 /** The presets: whether they are used, the list of those of one's own (pass-docs, Step 62). */
 @Serializable
 internal data object PresetsRoute
@@ -30,5 +34,6 @@ internal fun SettingsItem.route(dbKey: String): Any? = when (this) {
     SettingsItem.Privacy -> PrivacyRoute
     SettingsItem.Presets -> PresetsRoute
     SettingsItem.File -> FileRoute(dbKey)
+    SettingsItem.Entries -> EntriesRoute(dbKey)
     else -> null
 }
