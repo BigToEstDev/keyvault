@@ -10,6 +10,8 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,14 +20,14 @@ import ru.kino.dev.settings.appearance.AppearanceRepository
 import ru.kino.dev.settings.data.appearance.DataStoreAppearanceRepository
 import ru.kino.dev.settings.data.lock.ClockInactivityTimer
 import ru.kino.dev.settings.data.lock.DataStoreLockSettingsRepository
+import ru.kino.dev.settings.data.presets.DataStorePresetSettingsRepository
 import ru.kino.dev.settings.data.privacy.DataStorePrivacySettingsRepository
 import ru.kino.dev.settings.data.signin.DataStoreSignInSettingsRepository
 import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.settings.lock.LockSettingsRepository
+import ru.kino.dev.settings.presets.PresetSettingsRepository
 import ru.kino.dev.settings.privacy.PrivacySettingsRepository
 import ru.kino.dev.settings.signin.SignInSettingsRepository
-import javax.inject.Singleton
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Builds the repositories of `settings`. The settings of the app share one file, each repository with keys
@@ -50,6 +52,10 @@ internal object SettingsDataModule {
     @Provides
     fun providePrivacySettingsRepository(@ApplicationContext context: Context): PrivacySettingsRepository =
         DataStorePrivacySettingsRepository(context.appSettingsStore)
+
+    @Provides
+    fun providePresetSettingsRepository(@ApplicationContext context: Context): PresetSettingsRepository =
+        DataStorePresetSettingsRepository(context.appSettingsStore)
 
     // One for the app: the app tells it what it sees, `vault` listens (pass-docs, Step 59)
     @Provides
