@@ -1,6 +1,8 @@
 {
   "cipher_id": "string",
+  "compression": "string",
   "database_file_name": "string",
+  "kdbx_version": "string",
   "kdf": {
     "algorithm": "string",
     "iterations": "number",
