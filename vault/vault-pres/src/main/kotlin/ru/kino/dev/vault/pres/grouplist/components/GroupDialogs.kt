@@ -88,7 +88,7 @@ private fun NameDialog(
 
 @Composable
 private fun text(problem: NameProblem): String = when (problem) {
-    NameProblem.Empty -> stringResource(R.string.group_name_empty)
+    NameProblem.Empty -> stringResource(R.string.error_name_empty)
     NameProblem.TooLong -> pluralStringResource(
         R.plurals.group_name_too_long,
         GroupNameValidator.MAX_LENGTH,

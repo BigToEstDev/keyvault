@@ -84,6 +84,16 @@ interface NativeCore {
     /** What the key of the open database is made of - a database without a password gets no biometrics. */
     suspend fun credentialsUsed(dbKey: String): CredentialsUsed
 
+    /** The name of the open database, the version of KDBX its file was read as and its compression. */
+    suspend fun databaseFile(dbKey: String): DatabaseFile
+
+    /**
+     * Gives the open database [name] - `Meta/DatabaseName`, what KeePass and KeePassXC show; not the root group,
+     * not the file - and packs its content with [compression] from the next save on. The rest of its settings
+     * stay as they are. In memory only: the file gets it on the next [saveDatabase].
+     */
+    suspend fun changeDatabaseFile(dbKey: String, name: String, compression: Compression)
+
     /**
      * Compares [bytes] with the checksum taken when the file was last read or written.
      *
@@ -245,6 +255,20 @@ data class CreatedDatabase(
 
 /** What the key of an open database is made of: a password, a key file or both (pass-docs, Step 60). */
 data class CredentialsUsed(val password: Boolean, val keyFile: Boolean)
+
+/**
+ * The file of an open database as its settings show it (pass-docs, Step 63).
+ *
+ * @param name the name of the database inside the file, `Meta/DatabaseName`
+ * @param version the version of KDBX the file was read as; 4.1 once saved - the core writes no other
+ */
+data class DatabaseFile(val name: String, val version: KdbxVersion, val compression: Compression)
+
+/** A version of KDBX the core reads. */
+enum class KdbxVersion { V40, V41 }
+
+/** How the content of a file is packed before it is encrypted. GZip is what a new database and KeePass write. */
+enum class Compression { None, GZip }
 
 /** An open database, as the core describes it. */
 data class OpenedDatabase(

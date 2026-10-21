@@ -53,7 +53,7 @@ internal fun EntryVersionScreen(
         stringResource(
             when (it) {
                 EntryVersionMessage.LoadFailed -> R.string.entry_message_load_failed
-                EntryVersionMessage.NotSaved -> R.string.vault_message_not_saved
+                EntryVersionMessage.NotSaved -> R.string.message_file_not_saved
                 EntryVersionMessage.Unexpected -> R.string.error_unexpected
             },
         )

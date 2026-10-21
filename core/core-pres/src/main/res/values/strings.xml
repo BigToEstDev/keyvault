@@ -53,6 +53,7 @@
     <string name="error_key_file_unreachable">Can\'t reach the key file</string>
     <string name="error_key_file_too_large">The key file is larger than %1$d MiB</string>
     <string name="error_unexpected">Something went wrong</string>
+    <string name="error_name_empty">Enter a name</string>
 
     <!-- Creating: master password -->
     <string name="create_password_title">Set a master password</string>
@@ -148,7 +149,6 @@
     <string name="group_dialog_create_title">New group</string>
     <string name="group_dialog_rename_title">Rename group</string>
     <string name="group_dialog_name">Name</string>
-    <string name="group_name_empty">Enter a name</string>
     <plurals name="group_name_too_long">
         <item quantity="one">No longer than %1$d character</item>
         <item quantity="other">No longer than %1$d characters</item>
@@ -156,7 +156,7 @@
     <string name="group_name_taken">A group with this name is already here</string>
     <string name="group_delete_title">Delete the group?</string>
     <string name="group_delete_text">«%1$s» and everything in it goes to the recycle bin.</string>
-    <string name="vault_message_not_saved">The change is made, but the file was not written</string>
+    <string name="message_file_not_saved">The change is made, but the file was not written</string>
     <string name="vault_message_load_failed">Could not read the group</string>
     <string name="vault_message_search_failed">Could not search</string>
     <string name="vault_message_filter_not_saved">The filter is applied, but will not be remembered</string>
@@ -180,7 +180,6 @@
     <string name="preset_fields_dropped_text">Entries with this preset will show the old fields as their own.</string>
     <string name="preset_gone">The preset is already deleted</string>
     <string name="preset_name">Preset name</string>
-    <string name="preset_name_empty">Enter a name</string>
     <plurals name="preset_name_too_long">
         <item quantity="one">No longer than %1$d character</item>
         <item quantity="other">No longer than %1$d characters</item>
@@ -210,7 +209,6 @@
     <string name="entry_field_group">Group</string>
     <string name="entry_field_required">Fill this in</string>
     <string name="entry_field_name">Field name</string>
-    <string name="entry_field_name_empty">Enter a name</string>
     <string name="entry_field_name_taken">The entry already has a field with this name</string>
     <string name="entry_field_menu">Field actions</string>
     <string name="entry_add_field">+ Add field</string>
@@ -244,6 +242,15 @@
     <string name="settings_presets_text">Your entry presets</string>
     <string name="settings_file">Database file</string>
     <string name="settings_file_text">Name, format</string>
+    <string name="settings_file_name">Database name</string>
+    <string name="settings_file_file">File</string>
+    <string name="settings_file_file_unknown">The provider does not say</string>
+    <string name="settings_file_format">Format</string>
+    <string name="settings_file_format_upgrade">Becomes KDBX 4.1 after saving</string>
+    <string name="settings_file_compression">Compression</string>
+    <string name="settings_file_compression_gzip">GZip — recommended</string>
+    <string name="settings_file_compression_none">No compression</string>
+    <string name="settings_file_compression_hint">GZip makes the file several times smaller — faster cloud sync</string>
     <string name="settings_entries">Entries</string>
     <string name="settings_entries_text">Hidden fields, history</string>
     <string name="settings_recycle_bin">Recycle bin</string>

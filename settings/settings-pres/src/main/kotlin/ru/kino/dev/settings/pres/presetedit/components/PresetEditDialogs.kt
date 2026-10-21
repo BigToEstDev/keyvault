@@ -92,14 +92,14 @@ internal fun PresetEditDialogs(
 /** Why the name of a field of a preset cannot be used - in the dialog and under the field. */
 @Composable
 internal fun fieldNameProblemText(problem: FieldNameProblem): String = when (problem) {
-    FieldNameProblem.EMPTY -> stringResource(R.string.entry_field_name_empty)
+    FieldNameProblem.EMPTY -> stringResource(R.string.error_name_empty)
     FieldNameProblem.TAKEN -> stringResource(R.string.entry_field_name_taken)
 }
 
 /** Why the name of a preset cannot be used - under the field. */
 @Composable
 internal fun presetNameProblemText(problem: PresetNameProblem): String = when (problem) {
-    PresetNameProblem.EMPTY -> stringResource(R.string.preset_name_empty)
+    PresetNameProblem.EMPTY -> stringResource(R.string.error_name_empty)
     PresetNameProblem.TOO_LONG -> pluralStringResource(
         R.plurals.preset_name_too_long,
         PresetLimits.MAX_NAME_LENGTH,

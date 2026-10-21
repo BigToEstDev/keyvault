@@ -52,7 +52,7 @@ internal fun EntryHistoryScreen(
         stringResource(
             when (it) {
                 EntryHistoryMessage.LoadFailed -> R.string.entry_message_load_failed
-                EntryHistoryMessage.NotSaved -> R.string.vault_message_not_saved
+                EntryHistoryMessage.NotSaved -> R.string.message_file_not_saved
                 EntryHistoryMessage.Unexpected -> R.string.error_unexpected
             },
         )

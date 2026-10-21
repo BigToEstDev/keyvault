@@ -109,6 +109,6 @@ internal fun EntryEditDialogs(
 /** Why the name of an own field cannot be used - under the field in a dialog and on the form. */
 @Composable
 internal fun nameProblemText(problem: NameProblem): String = when (problem) {
-    NameProblem.EMPTY -> stringResource(R.string.entry_field_name_empty)
+    NameProblem.EMPTY -> stringResource(R.string.error_name_empty)
     NameProblem.TAKEN -> stringResource(R.string.entry_field_name_taken)
 }

@@ -254,7 +254,7 @@ private fun GroupListEmpty(reason: EmptyReason, query: String, filterOn: Boolean
 
 private val GroupListMessage.text: Int
     get() = when (this) {
-        GroupListMessage.NotSaved -> R.string.vault_message_not_saved
+        GroupListMessage.NotSaved -> R.string.message_file_not_saved
         GroupListMessage.LoadFailed -> R.string.vault_message_load_failed
         GroupListMessage.SearchFailed -> R.string.vault_message_search_failed
         GroupListMessage.FilterNotSaved -> R.string.vault_message_filter_not_saved

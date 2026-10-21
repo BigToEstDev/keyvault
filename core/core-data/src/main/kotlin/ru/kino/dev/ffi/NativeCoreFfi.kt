@@ -1,27 +1,30 @@
 package ru.kino.dev.ffi
 
+import java.util.Base64
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
+import ru.kino.dev.core.Compression
 import ru.kino.dev.core.CreatedDatabase
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.CredentialsUsed
+import ru.kino.dev.core.DatabaseFile
 import ru.kino.dev.core.EntryData
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
 import ru.kino.dev.core.EntrySummaryData
 import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.HistoryVersionData
+import ru.kino.dev.core.KdbxVersion
 import ru.kino.dev.core.KeyFile
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.NativeCore
 import ru.kino.dev.core.NewDatabase
 import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.PasswordOptions
-import java.util.Base64
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * [NativeCore] on top of the jni bridge.
@@ -138,6 +141,39 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
             CredentialsUsed(password = it.password, keyFile = it.keyFile)
         }
     }
+
+    override suspend fun databaseFile(dbKey: String): DatabaseFile = withContext(dispatcher) {
+        val settings = dbSettings(dbKey)
+        DatabaseFile(
+            name = settings.meta.databaseName,
+            version = when (settings.kdbxVersion) {
+                "4.0" -> KdbxVersion.V40
+                "4.1" -> KdbxVersion.V41
+                else -> error("a version the core does not read: ${settings.kdbxVersion}")
+            },
+            compression = Compression.valueOf(settings.compression),
+        )
+    }
+
+    override suspend fun changeDatabaseFile(dbKey: String, name: String, compression: Compression) {
+        withContext(dispatcher) {
+            // The whole settings go back, as the core gave them: only the name and the compression are ours
+            val settings = dbSettings(dbKey)
+            val changed = settings.copy(
+                meta = settings.meta.copy(databaseName = name),
+                compression = compression.name,
+            )
+            call(
+                FfiCommands.SET_DB_SETTINGS,
+                SetDbSettingsDto.serializer(),
+                SetDbSettingsDto(dbKey = dbKey, settings = changed),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    private fun dbSettings(dbKey: String): DbSettingsDto =
+        call(FfiCommands.GET_DB_SETTINGS, DbKeyDto.serializer(), DbKeyDto(dbKey), DbSettingsDto.serializer())
 
     override suspend fun verifyFileChecksum(dbKey: String, bytes: ByteArray) {
         withContext(dispatcher) {

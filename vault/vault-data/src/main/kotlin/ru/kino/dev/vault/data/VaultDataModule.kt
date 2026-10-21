@@ -8,6 +8,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -17,6 +18,7 @@ import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.credentials.DatabaseCredentials
 import ru.kino.dev.vault.data.credentials.DatabaseCredentialsImpl
 import ru.kino.dev.vault.data.entry.EntryRepositoryImpl
+import ru.kino.dev.vault.data.file.DatabaseFileRepositoryImpl
 import ru.kino.dev.vault.data.filter.DataStoreVaultFilterRepository
 import ru.kino.dev.vault.data.filter.vaultFilterStore
 import ru.kino.dev.vault.data.group.GroupRepositoryImpl
@@ -24,6 +26,8 @@ import ru.kino.dev.vault.data.history.EntryHistoryRepositoryImpl
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.entry.EntryRepository
+import ru.kino.dev.vault.file.DatabaseFileEditor
+import ru.kino.dev.vault.file.DatabaseFileRepository
 import ru.kino.dev.vault.filter.VaultFilterRepository
 import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupRepository
@@ -34,7 +38,6 @@ import ru.kino.dev.vault.history.EntryVersionOpener
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.lock.DatabaseGuard
 import ru.kino.dev.vault.search.VaultSearch
-import javax.inject.Singleton
 
 /** Binds the repositories of `vault` to their implementations, and builds its use cases and its lock. */
 @Module
@@ -55,6 +58,9 @@ internal interface VaultDataModule {
 
     @Binds
     fun bindDatabaseCredentials(impl: DatabaseCredentialsImpl): DatabaseCredentials
+
+    @Binds
+    fun bindDatabaseFileRepository(impl: DatabaseFileRepositoryImpl): DatabaseFileRepository
 
     companion object {
 
@@ -84,6 +90,13 @@ internal interface VaultDataModule {
         @Provides
         fun provideEntryOpener(entries: EntryRepository, presets: PresetRepository): EntryOpener =
             EntryOpener(entries, presets)
+
+        @Provides
+        fun provideDatabaseFileEditor(
+            files: DatabaseFileRepository,
+            database: VaultDatabaseRepository,
+            guard: DatabaseGuard,
+        ): DatabaseFileEditor = DatabaseFileEditor(files, database, guard)
 
         @Provides
         fun provideEntryEditor(
