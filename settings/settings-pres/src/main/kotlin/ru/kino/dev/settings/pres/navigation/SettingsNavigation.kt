@@ -20,7 +20,7 @@ import ru.kino.dev.settings.pres.settings.SettingsScreen
  */
 fun NavGraphBuilder.settingsGraph() {
     composable<SettingsRoute> { entry -> SettingsScreen(dbKey = entry.toRoute<SettingsRoute>().dbKey) }
-    composable<AppearanceRoute> { AppearanceScreen() }
+    composable<AppearanceRoute> { entry -> AppearanceScreen(dbKey = entry.toRoute<AppearanceRoute>().dbKey) }
     composable<LockRoute> { entry -> LockScreen(dbKey = entry.toRoute<LockRoute>().dbKey) }
     composable<PrivacyRoute> { PrivacyScreen() }
     composable<PresetsRoute> { PresetsScreen() }

@@ -5,7 +5,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.IOException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -15,6 +17,7 @@ import ru.kino.dev.core.HistoryLimits
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.settings.appearance.AppearanceRepository
 import ru.kino.dev.vault.entries.EntrySettingsEditor
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 import ru.kino.dev.vault.entries.EntrySettingsRepository
@@ -45,12 +48,16 @@ data class EntriesState(
  * once, with progress; not written - the change is made all the same and waits for the next save.
  *
  * A limit lower than it was, or one where there was none, drops versions already kept - the screen asks first.
+ *
+ * The user name made private takes it out of the list: "user name in the list" of the appearance goes off, for
+ * every database - it is of the app (pass-docs, Step 56, item 5). Made open again, it stays off.
  */
 @HiltViewModel(assistedFactory = EntriesProcessor.Factory::class)
 class EntriesProcessor @AssistedInject constructor(
     @Assisted private val dbKey: String,
     private val settings: EntrySettingsRepository,
     private val editor: EntrySettingsEditor,
+    private val appearance: AppearanceRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntriesState, EntriesState, Nothing> {
@@ -128,6 +135,19 @@ class EntriesProcessor @AssistedInject constructor(
 
         write(entries, entries.copy(protection = protection), EntriesPart.Protection) {
             editor.setProtection(dbKey, protection)
+        }
+        // Made - written or waiting for the next save; refused, the screen shows the protection as it was
+        if (protection.userName && !entries.protection.userName && state.entries?.protection == protection) {
+            hideUserNamesInList()
+        }
+    }
+
+    private suspend fun Syntax<EntriesState, Nothing>.hideUserNamesInList() {
+        try {
+            if (appearance.userNameInList.first()) appearance.saveUserNameInList(false)
+        } catch (failure: IOException) {
+            // The list hides a private user name all the same: only the switch of the appearance stays on
+            log.unexpected(TAG, failure)
         }
     }
 

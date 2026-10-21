@@ -285,6 +285,7 @@
     <string name="settings_password_coloring_hint">Letters, digits and symbols in different colors</string>
     <string name="settings_user_name_in_list">User name in the list</string>
     <string name="settings_user_name_in_list_hint">Under the title of an entry</string>
+    <string name="settings_user_name_hidden_hint">Hidden in this database</string>
     <string name="settings_entry_count">Number of entries in a group</string>
     <string name="settings_entry_count_hint">The number on the icon of a group</string>
     <string name="settings_entry_count_nested">Count nested groups</string>

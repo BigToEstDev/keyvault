@@ -1,28 +1,32 @@
 package ru.kino.dev.settings.pres.appearance
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
+import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.appearance.AppLanguage
-import ru.kino.dev.settings.appearance.AppearanceRepository
+import ru.kino.dev.settings.appearance.FakeAppearanceRepository
 import ru.kino.dev.settings.appearance.ThemeMode
-import java.io.IOException
+import ru.kino.dev.settings.pres.testing.RecordingLog
+import ru.kino.dev.vault.entries.EntrySettingsFailure
+import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 
 class AppearanceProcessorTest {
+
+    private val entrySettings = FakeEntrySettingsRepository()
+    private val log = RecordingLog()
 
     @Test
     fun `the screen shown reads the chosen mode and language`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.Dark, AppLanguage.Russian)
 
-        AppearanceProcessor(repository, Navigator()).testWithInternalState(this) {
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this) {
             containerHost.action(AppearanceAction.Load).join()
 
             expectInternalState {
@@ -42,7 +46,7 @@ class AppearanceProcessorTest {
     fun `a mode chosen is kept at once`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System)
 
-        AppearanceProcessor(repository, Navigator()).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
             containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Light)).join()
 
             expectInternalState { copy(themeMode = ThemeMode.Light) }
@@ -55,7 +59,7 @@ class AppearanceProcessorTest {
     fun `a mode not written goes back to the one before, with a message`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
 
-        AppearanceProcessor(repository, Navigator()).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
             containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Dark)).join()
 
             expectInternalState { copy(themeMode = ThemeMode.Dark) }
@@ -67,7 +71,7 @@ class AppearanceProcessorTest {
     fun `a mode not written shows the one the repository holds, not the one shown before`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.Dark, failSave = true)
 
-        AppearanceProcessor(repository, Navigator()).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
             containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Light)).join()
 
             expectInternalState { copy(themeMode = ThemeMode.Light) }
@@ -79,7 +83,7 @@ class AppearanceProcessorTest {
     fun `the mode already chosen is not written again`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.Dark)
 
-        AppearanceProcessor(repository, Navigator()).testWithInternalState(this, AppearanceState(ThemeMode.Dark)) {
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this, AppearanceState(ThemeMode.Dark)) {
             containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Dark)).join()
         }
 
@@ -90,7 +94,7 @@ class AppearanceProcessorTest {
     fun `nothing is chosen before the mode is read`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System)
 
-        AppearanceProcessor(repository, Navigator()).testWithInternalState(this) {
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this) {
             containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Light)).join()
         }
 
@@ -101,7 +105,7 @@ class AppearanceProcessorTest {
     fun `a language chosen is kept at once`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System)
 
-        AppearanceProcessor(repository, Navigator())
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System)) {
                 containerHost.action(AppearanceAction.SelectLanguage(AppLanguage.English)).join()
 
@@ -115,7 +119,7 @@ class AppearanceProcessorTest {
     fun `a language not written goes back to the one before, with a message`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
 
-        AppearanceProcessor(repository, Navigator())
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System)) {
                 containerHost.action(AppearanceAction.SelectLanguage(AppLanguage.Russian)).join()
 
@@ -130,7 +134,7 @@ class AppearanceProcessorTest {
     fun `the language already chosen is not written again`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System, AppLanguage.Russian)
 
-        AppearanceProcessor(repository, Navigator())
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.Russian)) {
                 containerHost.action(AppearanceAction.SelectLanguage(AppLanguage.Russian)).join()
             }
@@ -142,7 +146,7 @@ class AppearanceProcessorTest {
     fun `password coloring switched is kept at once`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System)
 
-        AppearanceProcessor(repository, Navigator())
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordColoring = true)) {
                 containerHost.action(AppearanceAction.SetPasswordColoring(false)).join()
 
@@ -156,7 +160,7 @@ class AppearanceProcessorTest {
     fun `password coloring not written goes back, with a message`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
 
-        AppearanceProcessor(repository, Navigator())
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordColoring = true)) {
                 containerHost.action(AppearanceAction.SetPasswordColoring(false)).join()
 
@@ -169,7 +173,7 @@ class AppearanceProcessorTest {
     fun `user names in the list switched are kept at once`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System)
 
-        AppearanceProcessor(repository, Navigator())
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, userNameInList = false)) {
                 containerHost.action(AppearanceAction.SetUserNameInList(true)).join()
 
@@ -183,7 +187,7 @@ class AppearanceProcessorTest {
     fun `user names in the list not written go back, with a message`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
 
-        AppearanceProcessor(repository, Navigator())
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, userNameInList = false)) {
                 containerHost.action(AppearanceAction.SetUserNameInList(true)).join()
 
@@ -196,7 +200,7 @@ class AppearanceProcessorTest {
     fun `the number of entries switched is kept at once`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System)
 
-        AppearanceProcessor(repository, Navigator())
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCount = true)) {
                 containerHost.action(AppearanceAction.SetEntryCount(false)).join()
 
@@ -210,7 +214,7 @@ class AppearanceProcessorTest {
     fun `the number of entries not written shows what is kept, with a message`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
 
-        AppearanceProcessor(repository, Navigator())
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCount = true)) {
                 containerHost.action(AppearanceAction.SetEntryCount(false)).join()
 
@@ -223,7 +227,7 @@ class AppearanceProcessorTest {
     fun `counting the nested groups switched is kept at once`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System)
 
-        AppearanceProcessor(repository, Navigator())
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCountNested = true)) {
                 containerHost.action(AppearanceAction.SetEntryCountNested(false)).join()
 
@@ -237,7 +241,7 @@ class AppearanceProcessorTest {
     fun `counting the nested groups not written shows what is kept, with a message`() = runTest {
         val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
 
-        AppearanceProcessor(repository, Navigator())
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCountNested = true)) {
                 containerHost.action(AppearanceAction.SetEntryCountNested(false)).join()
 
@@ -253,89 +257,44 @@ class AppearanceProcessorTest {
         val events = mutableListOf<MviNavEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
-        AppearanceProcessor(FakeAppearanceRepository(ThemeMode.System), navigator).testWithInternalState(this) {
+        AppearanceProcessor(DB, FakeAppearanceRepository(ThemeMode.System), entrySettings, navigator, log).testWithInternalState(this) {
             containerHost.action(AppearanceAction.Back).join()
         }
 
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
     }
 
-    private class FakeAppearanceRepository(
-        initial: ThemeMode,
-        initialLanguage: AppLanguage = AppLanguage.System,
-        private val failSave: Boolean = false,
-    ) : AppearanceRepository {
+    @Test
+    fun `a database hiding user names shows them off, the choice of the app untouched`() = runTest {
+        entrySettings.entries = entrySettings.entries.copy(protection = FieldProtection.DEFAULT.copy(userName = true))
+        val repository = FakeAppearanceRepository(initialUserNameInList = true)
+        val processor = AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
 
-        private val mode = MutableStateFlow(initial)
-
-        private val chosenLanguage = MutableStateFlow(initialLanguage)
-
-        val saved = mutableListOf<ThemeMode>()
-
-        val savedLanguages = mutableListOf<AppLanguage>()
-
-        val savedColoring = mutableListOf<Boolean>()
-
-        private val coloring = MutableStateFlow(true)
-
-        val savedUserNameInList = mutableListOf<Boolean>()
-
-        private val userNames = MutableStateFlow(false)
-
-        val savedEntryCount = mutableListOf<Boolean>()
-
-        private val counts = MutableStateFlow(true)
-
-        val savedEntryCountNested = mutableListOf<Boolean>()
-
-        private val nested = MutableStateFlow(true)
-
-        override val themeMode: Flow<ThemeMode> = mode
-
-        override val language: Flow<AppLanguage> = chosenLanguage
-
-        override val passwordColoring: Flow<Boolean> = coloring
-
-        override val userNameInList: Flow<Boolean> = userNames
-
-        override val entryCount: Flow<Boolean> = counts
-
-        override val entryCountNested: Flow<Boolean> = nested
-
-        override suspend fun save(mode: ThemeMode) {
-            if (failSave) throw IOException("disk full")
-            saved += mode
-            this.mode.value = mode
+        processor.testWithInternalState(this) {
+            containerHost.action(AppearanceAction.Load).join()
+            containerHost.action(AppearanceAction.SetUserNameInList(false)).join()
+            cancelAndIgnoreRemainingItems()
         }
 
-        override suspend fun save(language: AppLanguage) {
-            if (failSave) throw IOException("disk full")
-            savedLanguages += language
-            chosenLanguage.value = language
+        assertEquals(true, processor.container.stateFlow.value.userNameHidden)
+        assertEquals(emptyList<Boolean>(), repository.savedUserNameInList)
+    }
+
+    @Test
+    fun `the protection not read - the user names are as the app chose, the cause to the log`() = runTest {
+        entrySettings.failure = EntrySettingsFailure.Unexpected()
+        val processor = AppearanceProcessor(DB, FakeAppearanceRepository(), entrySettings, Navigator(), log)
+
+        processor.testWithInternalState(this) {
+            containerHost.action(AppearanceAction.Load).join()
+            cancelAndIgnoreRemainingItems()
         }
 
-        override suspend fun savePasswordColoring(on: Boolean) {
-            if (failSave) throw IOException("disk full")
-            savedColoring += on
-            coloring.value = on
-        }
+        assertEquals(false, processor.container.stateFlow.value.userNameHidden)
+        assertEquals(1, log.logged.size)
+    }
 
-        override suspend fun saveUserNameInList(on: Boolean) {
-            if (failSave) throw IOException("disk full")
-            savedUserNameInList += on
-            userNames.value = on
-        }
-
-        override suspend fun saveEntryCount(on: Boolean) {
-            if (failSave) throw IOException("disk full")
-            savedEntryCount += on
-            counts.value = on
-        }
-
-        override suspend fun saveEntryCountNested(on: Boolean) {
-            if (failSave) throw IOException("disk full")
-            savedEntryCountNested += on
-            nested.value = on
-        }
+    private companion object {
+        const val DB = "content://docs/passwords.kdbx"
     }
 }

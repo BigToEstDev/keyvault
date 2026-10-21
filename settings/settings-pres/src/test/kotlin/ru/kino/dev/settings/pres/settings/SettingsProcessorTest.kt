@@ -40,7 +40,7 @@ class SettingsProcessorTest {
             containerHost.action(SettingsAction.Open(SettingsItem.Appearance)).join()
         }
 
-        assertEquals(listOf(MviNavEvent.NavigateTo(AppearanceRoute)), events)
+        assertEquals(listOf(MviNavEvent.NavigateTo(AppearanceRoute(DB))), events)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
