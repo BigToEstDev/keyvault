@@ -6,6 +6,7 @@ import androidx.navigation.toRoute
 import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.settings.pres.appearance.AppearanceScreen
 import ru.kino.dev.settings.pres.lock.LockScreen
+import ru.kino.dev.settings.pres.privacy.PrivacyScreen
 import ru.kino.dev.settings.pres.settings.SettingsScreen
 
 /**
@@ -16,4 +17,5 @@ fun NavGraphBuilder.settingsGraph() {
     composable<SettingsRoute> { entry -> SettingsScreen(dbKey = entry.toRoute<SettingsRoute>().dbKey) }
     composable<AppearanceRoute> { AppearanceScreen() }
     composable<LockRoute> { entry -> LockScreen(dbKey = entry.toRoute<LockRoute>().dbKey) }
+    composable<PrivacyRoute> { PrivacyScreen() }
 }

@@ -13,14 +13,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import ru.kino.dev.navigation.AppNavHost
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
+import ru.kino.dev.settings.privacy.PrivacySettingsRepository
 import ru.kino.dev.ui.theme.AppLocale
 import ru.kino.dev.ui.theme.KeyVaultTheme
 import ru.kino.dev.ui.theme.LocalAppDisplay
@@ -46,6 +49,9 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var timer: InactivityTimer
 
+    @Inject
+    lateinit var privacy: PrivacySettingsRepository
+
     private val startResolver: WelcomeStartResolver by viewModels()
 
     private val theme: AppThemeHolder by viewModels()
@@ -60,12 +66,11 @@ class MainActivity : FragmentActivity() {
         }
         super.onCreate(savedInstanceState)
 
-        // The whole app, not a screen: there are more screens with secrets than without, and a switch in
-        // settings would be an offer to make oneself less safe (pass-docs, welcome decisions.md).
-        // Not in debug: screenshots are needed to review the UI
-        if (!BuildConfig.DEBUG) {
-            window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
-        }
+        // The whole app, not a screen: there are more screens with secrets than without. Closed before the
+        // setting is read, then as chosen in the settings - lifted and put back without a restart; debug as
+        // release (pass-docs, Step 61)
+        secureWindow(true)
+        lifecycleScope.launch { privacy.allowScreenshots.collect { secureWindow(!it) } }
 
         enableEdgeToEdge()
         setContent {
@@ -100,6 +105,16 @@ class MainActivity : FragmentActivity() {
             AppLanguage.English -> Locale.ENGLISH
             AppLanguage.Russian -> Locale.forLanguageTag("ru")
         }
+
+    // Screenshots, recording, casting and the preview in the recent apps - all at once, Android does not tell
+    // them apart
+    private fun secureWindow(secure: Boolean) {
+        if (secure) {
+            window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
 
     // The scrims are the defaults of `enableEdgeToEdge`: only how dark the theme is decided here
     private fun systemBars(darkTheme: Boolean) {
