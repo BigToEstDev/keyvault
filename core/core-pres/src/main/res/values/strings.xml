@@ -287,4 +287,6 @@
     <string name="settings_clear_password">Clear the password after an error</string>
     <string name="settings_clear_password_hint">Wipes a wrong password - type it again</string>
     <string name="settings_message_not_saved">The setting was not saved</string>
+    <string name="settings_allow_screenshots">Allow screenshots</string>
+    <string name="settings_allow_screenshots_hint">Allow screenshots and recording of the app screen</string>
 </resources>

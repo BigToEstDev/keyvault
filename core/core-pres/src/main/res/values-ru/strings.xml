@@ -290,4 +290,6 @@
     <string name="settings_clear_password">Очищать пароль после ошибки</string>
     <string name="settings_clear_password_hint">Стирает неверно введённый пароль — вводить заново</string>
     <string name="settings_message_not_saved">Настройка не сохранилась</string>
+    <string name="settings_allow_screenshots">Разрешить скриншоты</string>
+    <string name="settings_allow_screenshots_hint">Разрешить снимки и запись экрана приложения</string>
 </resources>
