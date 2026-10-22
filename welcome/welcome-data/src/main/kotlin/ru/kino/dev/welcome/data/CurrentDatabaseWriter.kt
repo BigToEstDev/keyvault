@@ -6,7 +6,8 @@ import ru.kino.dev.welcome.CurrentDatabase
  * Writing the remembered database - kept inside the data layer on purpose.
  *
  * Only [WelcomeDatabaseRepositoryImpl] writes it, as the last step of a database that opened, so the domain
- * interface offers reading alone and no screen can remember a database that did not open.
+ * interface offers reading alone and no screen can remember a database that did not open. The one other writer,
+ * [RememberedKeyFileImpl], changes the key file of the database already remembered - nothing else of it.
  */
 internal interface CurrentDatabaseWriter {
 
