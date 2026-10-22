@@ -13,6 +13,7 @@ import ru.kino.dev.vault.pres.entryread.EntryReadScreen
 import ru.kino.dev.vault.pres.entryversion.EntryVersionScreen
 import ru.kino.dev.vault.pres.grouplist.GroupListScreen
 import ru.kino.dev.vault.pres.trash.TrashScreen
+import ru.kino.dev.vault.pres.trashentry.TrashEntryScreen
 
 /**
  * The screens of `vault` - the database is open. Entered at its root, with its dbKey; every group below is
@@ -51,6 +52,10 @@ fun NavGraphBuilder.vaultGraph(nested: NavGraphBuilder.() -> Unit = {}) {
             EntryEditScreen(dbKey = route.dbKey, groupId = null, entryId = route.entryId)
         }
         composable<TrashRoute> { entry -> TrashScreen(dbKey = entry.toRoute<TrashRoute>().dbKey) }
+        composable<TrashEntryRoute> { entry ->
+            val route = entry.toRoute<TrashEntryRoute>()
+            TrashEntryScreen(dbKey = route.dbKey, entryId = route.entryId)
+        }
         nested()
     }
 }

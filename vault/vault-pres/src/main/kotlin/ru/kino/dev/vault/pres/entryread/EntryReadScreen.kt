@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -12,11 +11,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -35,13 +32,12 @@ import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
-import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.pres.common.EntryReadFields
 import ru.kino.dev.vault.pres.common.EntrySkeleton
+import ru.kino.dev.vault.pres.common.EntryTimesText
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.LockFab
-import ru.kino.dev.vault.pres.common.entryTimeText
 import ru.kino.dev.vault.pres.common.historyMenuItem
 
 @Composable
@@ -149,27 +145,6 @@ internal fun EntryReadScreen(
             )
         }
     }
-}
-
-/**
- * Under the cards, in the middle: when the entry was last changed, and under it when it was made (pass-docs,
- * Step 51, item 2). A time that could not be read has no line.
- */
-@Composable
-private fun EntryTimesText(times: EntryTimes) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        times.modified?.let { TimeLine(stringResource(R.string.entry_modified_at, entryTimeText(it))) }
-        times.created?.let { TimeLine(stringResource(R.string.entry_created_at, entryTimeText(it))) }
-    }
-}
-
-@Composable
-private fun TimeLine(text: String) {
-    Text(text = text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 /** Room around the cards; at the bottom - for the fab, so it never covers the last field. */
