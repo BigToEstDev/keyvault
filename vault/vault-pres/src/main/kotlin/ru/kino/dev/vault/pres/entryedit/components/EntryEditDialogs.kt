@@ -82,6 +82,7 @@ internal fun EntryEditDialogs(
 
         is EntryEditDialog.Delete -> EntryDeleteDialog(
             title = dialog.title,
+            toBin = dialog.toBin,
             deleting = dialog.deleting,
             onConfirm = onConfirm,
             onDismiss = onDismiss,

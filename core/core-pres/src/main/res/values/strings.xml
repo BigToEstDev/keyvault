@@ -157,7 +157,8 @@
     </plurals>
     <string name="group_name_taken">A group with this name is already here</string>
     <string name="group_delete_title">Delete the group?</string>
-    <string name="group_delete_text">«%1$s» and everything in it goes to the recycle bin.</string>
+    <string name="group_delete_text">«%1$s» and the groups inside it are deleted, its entries go to the recycle bin.</string>
+    <string name="group_delete_forever_text">«%1$s» is deleted for good with everything in it. This cannot be undone.</string>
     <string name="message_file_not_saved">The change is made, but the file was not written</string>
     <string name="vault_message_load_failed">Could not read the group</string>
     <string name="vault_message_search_failed">Could not search</string>
@@ -169,6 +170,7 @@
     <string name="entry_created_at">Created: %1$s</string>
     <string name="entry_delete_title">Delete the entry?</string>
     <string name="entry_delete_text">«%1$s» goes to the recycle bin.</string>
+    <string name="entry_delete_forever_text">«%1$s» is deleted for good. This cannot be undone.</string>
     <string name="entry_preset_standard">Standard</string>
     <string name="entry_preset">Preset</string>
     <string name="entry_hidden_title">Fields outside the preset</string>

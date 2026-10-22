@@ -160,7 +160,8 @@
     </plurals>
     <string name="group_name_taken">Группа с таким названием уже есть</string>
     <string name="group_delete_title">Удалить группу?</string>
-    <string name="group_delete_text">«%1$s» и всё, что в ней, попадёт в корзину.</string>
+    <string name="group_delete_text">«%1$s» и вложенные группы удалятся, записи попадут в корзину.</string>
+    <string name="group_delete_forever_text">«%1$s» удалится со всем содержимым насовсем. Это нельзя отменить.</string>
     <string name="message_file_not_saved">Изменение сделано, но файл не записан</string>
     <string name="vault_message_load_failed">Не удалось прочитать группу</string>
     <string name="vault_message_search_failed">Не удалось выполнить поиск</string>
@@ -171,6 +172,7 @@
     <string name="entry_created_at">Создано: %1$s</string>
     <string name="entry_delete_title">Удалить запись?</string>
     <string name="entry_delete_text">«%1$s» попадёт в корзину.</string>
+    <string name="entry_delete_forever_text">«%1$s» удалится насовсем. Это нельзя отменить.</string>
     <string name="entry_preset_standard">Стандарт</string>
     <string name="entry_preset">Пресет</string>
     <string name="entry_hidden_title">Поля вне пресета</string>

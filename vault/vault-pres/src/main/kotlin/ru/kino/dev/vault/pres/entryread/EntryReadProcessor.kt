@@ -30,6 +30,8 @@ import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.common.toggled
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
+import ru.kino.dev.vault.trash.TrashRepository
+import ru.kino.dev.vault.trash.deletesToBin
 
 /**
  * @param loading the entry is not read yet - the skeleton is shown
@@ -77,6 +79,7 @@ class EntryReadProcessor @AssistedInject constructor(
     private val settings: EntrySettingsRepository,
     private val groupRepository: GroupRepository,
     private val editor: EntryEditor,
+    private val trash: TrashRepository,
     private val autoLock: AutoLock,
     private val navigator: Navigator,
     private val log: ErrorLog,
@@ -111,7 +114,8 @@ class EntryReadProcessor @AssistedInject constructor(
 
             EntryReadAction.Delete -> state.content?.let { content ->
                 if (state.delete == null) {
-                    reduce { state.copy(delete = DeleteDialog(content.value(StandardPreset.TITLE))) }
+                    val toBin = trash.deletesToBin(dbKey)
+                    reduce { state.copy(delete = DeleteDialog(content.value(StandardPreset.TITLE), toBin)) }
                 }
             }
 

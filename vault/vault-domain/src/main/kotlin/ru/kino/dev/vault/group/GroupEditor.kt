@@ -45,11 +45,14 @@ class GroupEditor(
         save(dbKey)
     }
 
-    /** Moves the group, with everything inside it, into the recycle bin and saves. */
+    /**
+     * Deletes the group with its subtree and saves: the entries go to the recycle bin - or for good when the database
+     * does not use one - and the groups go for good.
+     */
     suspend fun delete(dbKey: String, groupId: GroupId): Unit = guard.exclusive {
         editable(groups.tree(dbKey), groupId)
 
-        groups.moveToRecycleBin(dbKey, groupId)
+        groups.delete(dbKey, groupId)
         save(dbKey)
     }
 

@@ -142,6 +142,7 @@ internal fun EntryReadScreen(
         state.delete?.let { dialog ->
             EntryDeleteDialog(
                 title = dialog.title,
+                toBin = dialog.toBin,
                 deleting = dialog.deleting,
                 onConfirm = { processor.action(EntryReadAction.DeleteConfirm) },
                 onDismiss = { processor.action(EntryReadAction.DeleteDismiss) },

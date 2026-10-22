@@ -96,9 +96,10 @@ sealed interface EntryEditDialog {
      * "Delete the entry?" - called [title] as the file holds it; what is typed goes with it, unasked
      * (pass-docs, Step 50, item 2).
      *
+     * @param toBin the delete goes to the recycle bin; false - for good (pass-docs, Step 70)
      * @param deleting the delete is under way: the dialog shows progress and takes nothing
      */
-    data class Delete(val title: String, val deleting: Boolean = false) : EntryEditDialog
+    data class Delete(val title: String, val toBin: Boolean, val deleting: Boolean = false) : EntryEditDialog
 
     /** The change is made but the file is not written; the screen closes after it. */
     data object NotSaved : EntryEditDialog

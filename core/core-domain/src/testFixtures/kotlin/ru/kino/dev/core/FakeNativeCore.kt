@@ -77,6 +77,9 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     /** What [measureKdfPass] answers - about a pass on the phone of pass-docs `kdf-time.md`. */
     var kdfPass: Duration = 850.milliseconds
 
+    /** `Meta/RecycleBinEnabled` of the open database; off - a delete is for good. */
+    var recycleBinEnabled = true
+
     /**
      * Every key file handed in, as the same instances: a test checks after the call that the caller wiped
      * them.
@@ -200,6 +203,65 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         return kdfPass
     }
 
+    override suspend fun recycleBinEnabled(dbKey: String): Boolean {
+        step("recycleBinEnabled", dbKey)
+        tree(dbKey)
+        return recycleBinEnabled
+    }
+
+    // Like the core: switched off, the bin goes with all it holds
+    override suspend fun changeRecycleBinEnabled(dbKey: String, enabled: Boolean) {
+        step("changeRecycleBinEnabled", dbKey)
+        val tree = tree(dbKey)
+        if (enabled == recycleBinEnabled) return
+        recycleBinEnabled = enabled
+        val binId = tree.recycleBinId ?: return
+        if (enabled) return
+        removeGroups(dbKey, subtree(tree, binId))
+        groupTrees[dbKey] = groupTrees.getValue(dbKey).copy(recycleBinId = null)
+    }
+
+    override suspend fun trashEntries(dbKey: String): List<TrashEntryData> {
+        step("trashEntries", dbKey)
+        return trashed(dbKey).map { (id, entry) -> trashEntry(dbKey, id, entry) }
+    }
+
+    override suspend fun searchTrash(dbKey: String, term: String): TrashSearchData {
+        step("searchTrash", dbKey)
+        val found = trashed(dbKey)
+            .filter { (_, entry) -> entry.matches(term) }
+            .map { (id, entry) -> trashEntry(dbKey, id, entry) }
+        return TrashSearchData(term, found)
+    }
+
+    override suspend fun restoreEntries(dbKey: String, entryIds: List<String>, groupId: String) {
+        step("restoreEntries", dbKey)
+        val tree = tree(dbKey)
+        if (groupId !in tree.groups) throw notFound(groupId)
+        if (inRecycleBin(dbKey, groupId)) throw CoreException("DataError", "no restoring into the bin")
+        refuseOutsideBin(dbKey, entryIds)
+        entryIds.distinct().forEach { relocate(dbKey, it, groupId) }
+    }
+
+    override suspend fun removeEntries(dbKey: String, entryIds: List<String>) {
+        step("removeEntries", dbKey)
+        refuseOutsideBin(dbKey, entryIds)
+        entryIds.distinct().forEach { removeEntry(dbKey, it) }
+    }
+
+    override suspend fun emptyTrash(dbKey: String) {
+        step("emptyTrash", dbKey)
+        val tree = tree(dbKey)
+        val binId = tree.recycleBinId ?: return
+        val bin = tree.groups.getValue(binId)
+        bin.groupIds.forEach { removeGroups(dbKey, subtree(groupTrees.getValue(dbKey), it)) }
+        bin.entryIds.forEach { removeEntry(dbKey, it) }
+        val emptied = groupTrees.getValue(dbKey)
+        groupTrees[dbKey] = emptied.copy(
+            groups = emptied.groups + (binId to emptied.groups.getValue(binId).copy(groupIds = emptyList(), entryIds = emptyList())),
+        )
+    }
+
     override suspend fun lockDatabase(dbKey: String) {
         step("lockDatabase", dbKey)
         if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
@@ -285,28 +347,43 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         groupTrees[dbKey] = tree.copy(groups = tree.groups + (groupId to group.copy(name = name)))
     }
 
-    // As the core with the bin on: the entries of the subtree go to the bin flat, the groups go for good
+    // As the core: the entries of the subtree go to the bin flat - or for good with the bin off - the groups go for good
     override suspend fun deleteGroup(dbKey: String, groupId: String) {
         step("deleteGroup", dbKey)
         val group = tree(dbKey).groups[groupId] ?: throw notFound(groupId)
-        val binId = recycleBin(dbKey)
-        val tree = tree(dbKey)
-        val oldParent = tree.groups.getValue(checkNotNull(group.parentId) { "the root cannot be deleted" })
-        val bin = tree.groups.getValue(binId)
-        val subtree = subtree(tree, groupId)
-        val entryIds = subtree.flatMap { tree.groups.getValue(it).entryIds }
-
-        groupTrees[dbKey] = tree.copy(
-            groups = tree.groups - subtree.toSet() +
-                (oldParent.id to oldParent.copy(groupIds = oldParent.groupIds - groupId)) +
-                (binId to bin.copy(entryIds = bin.entryIds + entryIds)),
-        )
-        val entries = stored(dbKey)
-        entryIds.forEach { id -> entries[id]?.let { entries[id] = it.copy(groupId = binId) } }
+        checkNotNull(group.parentId) { "the root cannot be deleted" }
+        val subtree = subtree(tree(dbKey), groupId)
+        val entryIds = subtree.flatMap { tree(dbKey).groups.getValue(it).entryIds }
+        if (recycleBinEnabled) {
+            // By the tree: a test may name entries in it that it never stored
+            val binId = recycleBin(dbKey)
+            val tree = tree(dbKey)
+            val bin = tree.groups.getValue(binId)
+            groupTrees[dbKey] = tree.copy(
+                groups = tree.groups + subtree.associateWith { tree.groups.getValue(it).copy(entryIds = emptyList()) } +
+                    (binId to bin.copy(entryIds = bin.entryIds + entryIds)),
+            )
+            val entries = stored(dbKey)
+            entryIds.forEach { id ->
+                entries[id]?.let { entries[id] = it.copy(groupId = binId, previousGroupId = it.groupId, deletedAt = ++clock) }
+            }
+        }
+        removeGroups(dbKey, subtree)
     }
 
     private fun subtree(tree: GroupTree, groupId: String): List<String> =
         listOf(groupId) + tree.groups.getValue(groupId).groupIds.flatMap { subtree(tree, it) }
+
+    // The groups and the entries left in them go for good; the parent of the first one forgets it
+    private fun removeGroups(dbKey: String, subtree: List<String>) {
+        val tree = tree(dbKey)
+        subtree.flatMap { tree.groups.getValue(it).entryIds }.forEach { stored(dbKey).remove(it) }
+        val parent = tree.groups.getValue(subtree.first()).parentId?.let { tree.groups.getValue(it) }
+        groupTrees[dbKey] = tree.copy(
+            groups = tree.groups - subtree.toSet() +
+                listOfNotNull(parent?.let { it.id to it.copy(groupIds = it.groupIds - subtree.first()) }),
+        )
+    }
 
     /**
      * An entry the fake holds: the group it is in, its strings in order, when it was made and changed, and
@@ -318,6 +395,10 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         val createdAt: Long,
         val modifiedAt: Long = createdAt,
         val history: List<FakeVersion> = emptyList(),
+        /** `PreviousParentGroup`: the group before the last move, as the core sets it on every move */
+        val previousGroupId: String? = null,
+        /** When the entry went to the bin */
+        val deletedAt: Long? = null,
     )
 
     /** One old version of an entry: its strings, and when it was saved. */
@@ -366,17 +447,32 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     // recycle bin and the groups inside it left out; in no particular order - here, the order they were put
     override suspend fun searchEntries(dbKey: String, term: String): EntrySearchData {
         step("searchEntries", dbKey)
-        val needle = term.trim().lowercase()
-        if (needle.isEmpty()) return EntrySearchData(term, emptyList())
-
-        fun open(entry: FakeEntry, key: String) =
-            entry.fields.firstOrNull { it.key == key }?.takeUnless { it.protected }?.value.orEmpty()
-
         val found = stored(dbKey)
             .filter { (_, entry) -> !inRecycleBin(dbKey, entry.groupId) }
-            .filter { (_, entry) -> listOf("Title", "UserName").any { open(entry, it).lowercase().contains(needle) } }
+            .filter { (_, entry) -> entry.matches(term) }
             .map { (id, entry) -> summary(id, entry) }
         return EntrySearchData(term, found)
+    }
+
+    private fun FakeEntry.matches(term: String): Boolean {
+        val needle = term.trim().lowercase()
+        if (needle.isEmpty()) return false
+        fun open(key: String) = fields.firstOrNull { it.key == key }?.takeUnless { it.protected }?.value.orEmpty()
+        return listOf("Title", "UserName").any { open(it).lowercase().contains(needle) }
+    }
+
+    private fun trashed(dbKey: String): List<Pair<String, FakeEntry>> =
+        stored(dbKey).filter { (_, entry) -> inRecycleBin(dbKey, entry.groupId) }.toList()
+
+    private fun trashEntry(dbKey: String, id: String, entry: FakeEntry): TrashEntryData {
+        val previous = entry.previousGroupId?.takeIf { it in tree(dbKey).groups && !inRecycleBin(dbKey, it) }
+        return TrashEntryData(summary(id, entry), previous, entry.deletedAt ?: 0)
+    }
+
+    private fun refuseOutsideBin(dbKey: String, entryIds: List<String>) {
+        entryIds.forEach { id ->
+            if (!inRecycleBin(dbKey, found(dbKey, id).groupId)) throw CoreException("DataError", "$id is not in the bin")
+        }
     }
 
     private fun inRecycleBin(dbKey: String, groupId: String): Boolean {
@@ -405,24 +501,36 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         stored(dbKey)[entryId] = entry.updatedTo(fields)
     }
 
+    // As the core: into the bin, or for good with the bin off
     override suspend fun deleteEntry(dbKey: String, entryId: String) {
         step("deleteEntry", dbKey)
-        val entry = found(dbKey, entryId)
-        val binId = recycleBin(dbKey)
-        val tree = tree(dbKey)
-        val oldParent = tree.groups.getValue(entry.groupId)
-        val bin = tree.groups.getValue(binId)
+        delete(dbKey, entryId)
+    }
 
-        groupTrees[dbKey] = tree.copy(
-            groups = tree.groups +
-                (oldParent.id to oldParent.copy(entryIds = oldParent.entryIds - entryId)) +
-                (binId to bin.copy(entryIds = bin.entryIds + entryId)),
-        )
-        stored(dbKey)[entryId] = entry.copy(groupId = binId)
+    private fun delete(dbKey: String, entryId: String) {
+        found(dbKey, entryId)
+        if (!recycleBinEnabled) {
+            removeEntry(dbKey, entryId)
+            return
+        }
+        relocate(dbKey, entryId, recycleBin(dbKey))
+        stored(dbKey)[entryId] = found(dbKey, entryId).copy(deletedAt = ++clock)
+    }
+
+    private fun removeEntry(dbKey: String, entryId: String) {
+        val entry = found(dbKey, entryId)
+        val tree = tree(dbKey)
+        val parent = tree.groups.getValue(entry.groupId)
+        groupTrees[dbKey] = tree.copy(groups = tree.groups + (parent.id to parent.copy(entryIds = parent.entryIds - entryId)))
+        stored(dbKey).remove(entryId)
     }
 
     override suspend fun moveEntry(dbKey: String, entryId: String, groupId: String) {
         step("moveEntry", dbKey)
+        relocate(dbKey, entryId, groupId)
+    }
+
+    private fun relocate(dbKey: String, entryId: String, groupId: String) {
         val entry = found(dbKey, entryId)
         val tree = tree(dbKey)
         val target = tree.groups[groupId] ?: throw notFound(groupId)
@@ -433,7 +541,7 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
                 (oldParent.id to oldParent.copy(entryIds = oldParent.entryIds - entryId)) +
                 (groupId to target.copy(entryIds = target.entryIds + entryId)),
         )
-        stored(dbKey)[entryId] = entry.copy(groupId = groupId)
+        stored(dbKey)[entryId] = entry.copy(groupId = groupId, previousGroupId = entry.groupId)
     }
 
     override suspend fun entryHistory(dbKey: String, entryId: String): List<HistoryVersionData> {

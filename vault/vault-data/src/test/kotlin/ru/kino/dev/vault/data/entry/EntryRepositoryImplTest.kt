@@ -143,12 +143,12 @@ class EntryRepositoryImplTest {
     fun `an entry that is gone is not found`() = runTest {
         expectFailure<EntryFailure.EntryNotFound> { repository.read(DB, EntryId("missing")) }
         expectFailure<EntryFailure.EntryNotFound> { repository.update(DB, EntryId("missing"), emptyList()) }
-        expectFailure<EntryFailure.EntryNotFound> { repository.moveToRecycleBin(DB, EntryId("missing")) }
+        expectFailure<EntryFailure.EntryNotFound> { repository.delete(DB, EntryId("missing")) }
     }
 
     @Test
     fun `a deleted entry leaves its group for the recycle bin`() = runTest {
-        repository.moveToRecycleBin(DB, EntryId("mail"))
+        repository.delete(DB, EntryId("mail"))
 
         assertEquals(listOf("Bank"), repository.entries(DB, GroupId(WORK)).map { it.title })
         val bin = core.groupTrees.getValue(DB).groups.getValue(FakeNativeCore.RECYCLE_BIN_ID)

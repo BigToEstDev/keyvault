@@ -123,6 +123,8 @@ sealed interface GroupDialog {
     data class Delete(
         val groupId: GroupId,
         val name: String,
+        /** Its entries go to the recycle bin; false - everything goes for good (pass-docs, Step 70) */
+        val toBin: Boolean,
         override val saving: Boolean = false,
     ) : GroupDialog
 
@@ -130,6 +132,8 @@ sealed interface GroupDialog {
         val entryId: EntryId,
         /** As the card shows it; empty when the entry has none */
         val title: String,
+        /** Into the recycle bin; false - for good (pass-docs, Step 70) */
+        val toBin: Boolean,
         override val saving: Boolean = false,
     ) : GroupDialog
 }

@@ -129,6 +129,34 @@ interface NativeCore {
      */
     suspend fun measureKdfPass(dbKey: String): Duration
 
+    /** Whether the open database uses the recycle bin - `Meta/RecycleBinEnabled`; a new database does. */
+    suspend fun recycleBinEnabled(dbKey: String): Boolean
+
+    /**
+     * Switches the recycle bin of the open database on or off; the rest of its settings stay as they are. Off, a
+     * delete is for good, and the bin goes at once with all it holds - there is no undo. On again, the first delete
+     * makes a new bin. In memory only: the file gets it on the next [saveDatabase].
+     */
+    suspend fun changeRecycleBinEnabled(dbKey: String, enabled: Boolean)
+
+    /** The entries of the recycle bin, from any depth of it, in no particular order (pass-docs, Step 69). */
+    suspend fun trashEntries(dbKey: String): List<TrashEntryData>
+
+    /** The entries of the recycle bin found by [term] - the same match as [searchEntries]. */
+    suspend fun searchTrash(dbKey: String, term: String): TrashSearchData
+
+    /**
+     * Moves [entryIds] out of the recycle bin into [groupId] - a living group, not the bin or in it. All or nothing:
+     * one entry outside the bin, or such a group, and nothing moves. In memory only.
+     */
+    suspend fun restoreEntries(dbKey: String, entryIds: List<String>, groupId: String)
+
+    /** Removes [entryIds] of the recycle bin for good, all or nothing. In memory only. */
+    suspend fun removeEntries(dbKey: String, entryIds: List<String>)
+
+    /** Removes everything in the recycle bin for good; the bin stays. In memory only. */
+    suspend fun emptyTrash(dbKey: String)
+
     /**
      * Compares [bytes] with the checksum taken when the file was last read or written.
      *

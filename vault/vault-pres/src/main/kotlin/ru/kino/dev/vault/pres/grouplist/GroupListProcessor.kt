@@ -41,6 +41,8 @@ import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
 import ru.kino.dev.vault.search.VaultSearch
+import ru.kino.dev.vault.trash.TrashRepository
+import ru.kino.dev.vault.trash.deletesToBin
 
 /**
  * @param isRoot the screen is the root of the database - known from the route, before the tree is read, so
@@ -165,6 +167,7 @@ class GroupListProcessor @AssistedInject constructor(
     private val vaultSearch: VaultSearch,
     private val filters: VaultFilterRepository,
     private val entrySettings: EntrySettingsRepository,
+    private val trash: TrashRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<GroupListState, GroupListState, Nothing> {
@@ -251,7 +254,8 @@ class GroupListProcessor @AssistedInject constructor(
             }
 
             is GroupListAction.DeleteEntry -> state.entries.find { it.id == action.id }?.let { entry ->
-                reduce { state.copy(dialog = GroupDialog.DeleteEntry(entry.id, entry.title)) }
+                val toBin = trash.deletesToBin(dbKey)
+                reduce { state.copy(dialog = GroupDialog.DeleteEntry(entry.id, entry.title, toBin)) }
             }
 
             is GroupListAction.RenameGroup -> state.groups.find { it.id == action.id }?.let { group ->
@@ -259,7 +263,8 @@ class GroupListProcessor @AssistedInject constructor(
             }
 
             is GroupListAction.DeleteGroup -> state.groups.find { it.id == action.id }?.let { group ->
-                reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name)) }
+                val toBin = trash.deletesToBin(dbKey)
+                reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name, toBin)) }
             }
 
             GroupListAction.RenameCurrent -> state.current?.let { group ->
@@ -267,7 +272,8 @@ class GroupListProcessor @AssistedInject constructor(
             }
 
             GroupListAction.DeleteCurrent -> state.current?.let { group ->
-                reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name)) }
+                val toBin = trash.deletesToBin(dbKey)
+                reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name, toBin)) }
             }
 
             GroupListAction.DialogConfirm -> confirm()

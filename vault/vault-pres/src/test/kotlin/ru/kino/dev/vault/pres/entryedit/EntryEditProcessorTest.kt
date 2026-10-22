@@ -36,6 +36,7 @@ import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
+import ru.kino.dev.vault.trash.FakeTrashRepository
 
 class EntryEditProcessorTest {
 
@@ -63,13 +64,14 @@ class EntryEditProcessorTest {
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
     private val settings = FakeEntrySettingsRepository()
+    private val trash = FakeTrashRepository()
 
     // Groups
 
     @Test
     fun `an entry opens in its group, every group to choose from with its path, the bin left out`() = runTest {
         // The bin, with a group in it: neither is a place for an entry
-        groups.moveToRecycleBin(DB, groups.add("old", groups.rootId, "Old"))
+        groups.delete(DB, groups.add("old", groups.rootId, "Old"))
 
         val (state, _) = editing()
 
@@ -676,7 +678,16 @@ class EntryEditProcessorTest {
     fun `delete asks first, naming the entry as the file holds it`() = runTest {
         val (state, _) = editing(EntryEditAction.ValueChanged(StandardPreset.TITLE, "Typed"), EntryEditAction.Delete)
 
-        assertEquals(EntryEditDialog.Delete("Mail"), state.dialog)
+        assertEquals(EntryEditDialog.Delete("Mail", toBin = true), state.dialog)
+    }
+
+    @Test
+    fun `without a recycle bin the dialog says the delete is for good`() = runTest {
+        trash.enabled = false
+
+        val (state, _) = editing(EntryEditAction.Delete)
+
+        assertEquals(EntryEditDialog.Delete("Mail", toBin = false), state.dialog)
     }
 
     @Test
@@ -723,11 +734,11 @@ class EntryEditProcessorTest {
                 creating = false,
                 content = read,
                 initial = read,
-                dialog = EntryEditDialog.Delete("Mail", deleting = true),
+                dialog = EntryEditDialog.Delete("Mail", toBin = true, deleting = true),
             ),
         )
 
-        assertEquals(EntryEditDialog.Delete("Mail", deleting = true), state.dialog)
+        assertEquals(EntryEditDialog.Delete("Mail", toBin = true, deleting = true), state.dialog)
     }
 
     // Helpers
@@ -781,7 +792,7 @@ class EntryEditProcessorTest {
         initial: EntryEditState? = null,
     ): Pair<EntryEditState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryEditProcessor(DB, groupId, entryId, opener, settings, groups, EntryEditor(entries, opener, settings, database), presets, navigator, log)
+        val processor = EntryEditProcessor(DB, groupId, entryId, opener, settings, groups, EntryEditor(entries, opener, settings, database), trash, presets, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             if (initial == null) runOnCreate().join()

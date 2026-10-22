@@ -31,8 +31,8 @@ interface EntryRepository {
     /** Replaces the fields of the entry with [fields]; nothing else of it changes. */
     suspend fun update(dbKey: String, entryId: EntryId, fields: List<EntryField>)
 
-    /** Moves the entry into the recycle bin. */
-    suspend fun moveToRecycleBin(dbKey: String, entryId: EntryId)
+    /** Deletes the entry: into the recycle bin, or for good when the database does not use one (pass-docs, Step 69). */
+    suspend fun delete(dbKey: String, entryId: EntryId)
 
     /** Moves the entry into the group [groupId]; nothing else of it changes. */
     suspend fun move(dbKey: String, entryId: EntryId, groupId: GroupId)

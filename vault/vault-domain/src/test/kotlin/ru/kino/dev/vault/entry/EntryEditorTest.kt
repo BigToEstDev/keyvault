@@ -199,7 +199,7 @@ class EntryEditorTest {
 
         editor.delete(DB, id)
 
-        assertEquals(listOf("moveToRecycleBin", "save"), journal)
+        assertEquals(listOf("delete", "save"), journal)
         assertEquals(listOf(id), entries.recycled)
     }
 
