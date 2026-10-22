@@ -17,8 +17,11 @@ internal class GroupRepositoryImpl @Inject constructor(
     private val core: NativeCore,
 ) : GroupRepository {
 
+    // The root stands for the database wherever it is shown, so it is named as the database: `Meta/DatabaseName`, what
+    // `Файл базы` renames - not the root group, which KeePass keeps apart (pass-docs, Step 56, item 6)
     override suspend fun tree(dbKey: String): VaultTree = groupCall {
-        core.groupTree(dbKey).toVaultTree()
+        val databaseName = core.databaseFile(dbKey).name
+        core.groupTree(dbKey).toVaultTree(databaseName)
     }
 
     override suspend fun create(dbKey: String, parentId: GroupId, name: String): GroupId = groupCall {
@@ -33,13 +36,16 @@ internal class GroupRepositoryImpl @Inject constructor(
         core.moveGroupToRecycleBin(dbKey, groupId.value)
     }
 
-    private fun GroupTree.toVaultTree() = VaultTree(
+    /** The root named [databaseName]; a blank one - the root group's own, as before. */
+    private fun GroupTree.toVaultTree(databaseName: String) = VaultTree(
         rootId = GroupId(rootId),
         recycleBinId = recycleBinId?.let(::GroupId),
-        groups = groups.values.associate { GroupId(it.id) to it.toVaultGroup() },
+        groups = groups.values.associate {
+            GroupId(it.id) to it.toVaultGroup(if (it.id == rootId) databaseName.ifBlank { it.name } else it.name)
+        },
     )
 
-    private fun GroupNode.toVaultGroup() = VaultGroup(
+    private fun GroupNode.toVaultGroup(name: String) = VaultGroup(
         id = GroupId(id),
         parentId = parentId?.let(::GroupId),
         name = name,
