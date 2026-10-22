@@ -1,5 +1,8 @@
 package ru.kino.dev.core
 
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+
 /**
  * [NativeCore] in memory, for tests of the repositories built on it.
  *
@@ -64,6 +67,15 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
 
     /** What [databaseEntries] answers, of every database here; [changeDatabaseEntries] replaces it. */
     var databaseEntries = DatabaseEntries(FieldProtection.DEFAULT, HistoryLimits(maxItems = 10, maxSize = 6L * 1024 * 1024))
+
+    /** The encryption [databaseSecurity] answers, of every database here; [changeDatabaseEncryption] replaces it. */
+    var encryption = Encryption(Cipher.Aes256, KdfVariant.Argon2id, iterations = 3)
+
+    /** The key file name [databaseSecurity] answers; [changeDatabaseCredentials] changes it with [credentials]. */
+    var keyFileName: String? = null
+
+    /** What [measureKdfPass] answers - about a pass on the phone of pass-docs `kdf-time.md`. */
+    var kdfPass: Duration = 850.milliseconds
 
     /**
      * Every key file handed in, as the same instances: a test checks after the call that the caller wiped
@@ -138,6 +150,54 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         step("changeDatabaseEntries", dbKey)
         if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
         databaseEntries = entries
+    }
+
+    override suspend fun databaseSecurity(dbKey: String): DatabaseSecurity {
+        step("databaseSecurity", dbKey)
+        if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
+        return DatabaseSecurity(
+            encryption = encryption,
+            memoryBytes = 64L * 1024 * 1024,
+            parallelism = 2,
+            credentials = credentials,
+            keyFileName = keyFileName,
+        )
+    }
+
+    override suspend fun changeDatabaseEncryption(dbKey: String, encryption: Encryption) {
+        step("changeDatabaseEncryption", dbKey)
+        if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
+        this.encryption = encryption
+    }
+
+    /** As the core: both factors gone is refused before anything changes. */
+    override suspend fun changeDatabaseCredentials(dbKey: String, change: CredentialsChange) {
+        if (change is CredentialsChange.SetPassword) passwordReceived = change.password
+        if (change is CredentialsChange.SetKeyFile) keyFilesReceived += change.keyFile
+        step("changeDatabaseCredentials", dbKey)
+        if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
+
+        when (change) {
+            is CredentialsChange.SetPassword -> {
+                password = change.password
+                credentials = credentials.copy(password = true)
+            }
+            is CredentialsChange.SetKeyFile -> {
+                keyFileName = change.keyFile.name
+                credentials = credentials.copy(keyFile = true)
+            }
+            CredentialsChange.RemoveKeyFile -> {
+                if (!credentials.password) throw CoreException("InSufficientCredentials", "no password left")
+                keyFileName = null
+                credentials = credentials.copy(keyFile = false)
+            }
+        }
+    }
+
+    override suspend fun measureKdfPass(dbKey: String): Duration {
+        step("measureKdfPass", dbKey)
+        if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
+        return kdfPass
     }
 
     override suspend fun lockDatabase(dbKey: String) {
