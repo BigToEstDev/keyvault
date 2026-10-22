@@ -41,3 +41,7 @@ internal data class EntryCreateRoute(val dbKey: String, val groupId: String)
 /** Editing the entry [entryId]. */
 @Serializable
 internal data class EntryEditRoute(val dbKey: String, val entryId: String)
+
+/** An entry of the recycle bin, read - to copy from, restore or delete for good (pass-docs, Step 71). */
+@Serializable
+internal data class TrashEntryRoute(val dbKey: String, val entryId: String)

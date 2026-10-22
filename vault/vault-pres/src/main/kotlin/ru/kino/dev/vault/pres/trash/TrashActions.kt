@@ -18,7 +18,7 @@ sealed interface TrashAction {
     /** A long press: the choice begins with this card, or it is added to it - as a tap while choosing. */
     data class LongPress(val id: EntryId) : TrashAction
 
-    /** A tap: while choosing, the card is picked or let go; otherwise nothing - an entry in the bin is not read. */
+    /** A tap: while choosing, the card is picked or let go; otherwise the entry is read (pass-docs, Step 71). */
     data class Tap(val id: EntryId) : TrashAction
 
     /** The cross of the choice: nothing picked any more. */
@@ -71,6 +71,13 @@ sealed interface TrashDialog {
 
     /** "Empty the recycle bin?" - all it holds. */
     data class Empty(override val saving: Boolean = false) : TrashDialog
+}
+
+/** The same dialog, its change under way. */
+internal fun TrashDialog.saving(): TrashDialog = when (this) {
+    is TrashDialog.Restore -> copy(saving = true)
+    is TrashDialog.Remove -> copy(saving = true)
+    is TrashDialog.Empty -> copy(saving = true)
 }
 
 /** Why the list is empty - what the empty screen says. */

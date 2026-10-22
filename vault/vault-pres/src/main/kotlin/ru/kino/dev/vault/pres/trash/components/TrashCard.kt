@@ -31,8 +31,8 @@ import ru.kino.dev.vault.trash.TrashEntry
 
 /**
  * An entry of the recycle bin: the icon of an entry, the title - "untitled" when it has none - and under it the day
- * it was deleted (pass-docs, Step 70). While choosing, a check box exactly in place of the icon - the card keeps its
- * height (Step 56, item 7) - and a picked card is tinted.
+ * it was deleted (pass-docs, Step 70); a tap reads it (Step 71). While choosing, a check box exactly in place of the
+ * icon - the card keeps its height (Step 56, item 7) - and a picked card is tinted.
  *
  * @param choosing a choice goes on: a tap picks or lets go
  */

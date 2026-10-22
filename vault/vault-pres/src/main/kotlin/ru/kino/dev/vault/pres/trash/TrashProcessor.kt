@@ -18,7 +18,7 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.pres.common.SEARCH_DELAY
-import ru.kino.dev.vault.pres.common.groupChoices
+import ru.kino.dev.vault.pres.navigation.TrashEntryRoute
 import ru.kino.dev.vault.trash.TrashEditor
 import ru.kino.dev.vault.trash.TrashEntry
 import ru.kino.dev.vault.trash.TrashFailure
@@ -68,7 +68,7 @@ data class TrashState(
  * never there; the last deleted first. The search is the one of `vault` - the title and the user name, after
  * [SEARCH_DELAY] - over the bin only; the core does it ([TrashRepository.search]).
  *
- * A tap does nothing; a long press starts a choice, and while choosing a tap picks or lets go. The picked entries are
+ * A tap reads the entry (pass-docs, Step 71); a long press starts a choice, and while choosing a tap picks or lets go. The picked entries are
  * restored - all to one group, the one they came from offered when they share it - or removed for good. The whole bin
  * is emptied from the menu of the top bar. Each is one write of the file; after it the bin is read again.
  */
@@ -111,7 +111,11 @@ class TrashProcessor @AssistedInject constructor(
 
             is TrashAction.LongPress -> pick(action.id)
 
-            is TrashAction.Tap -> if (state.choosing) pick(action.id)
+            is TrashAction.Tap -> if (state.choosing) {
+                pick(action.id)
+            } else {
+                navigator.navigate(MviNavEvent.NavigateTo(TrashEntryRoute(dbKey, action.id.value)))
+            }
 
             TrashAction.ClearChoice -> reduce { state.copy(picked = emptySet()) }
 
@@ -169,10 +173,8 @@ class TrashProcessor @AssistedInject constructor(
             reduce { state.copy(message = TrashMessage.Unexpected) }
             return
         }
-        val choices = tree.groupChoices()
-        val previous = state.shown.filter { it.entry.id in state.picked }.map { it.previousGroupId }.distinct()
-        val offered = previous.singleOrNull()?.takeIf { id -> choices.any { it.id == id } }
-        reduce { state.copy(dialog = TrashDialog.Restore(choices, offered)) }
+        val previous = state.shown.filter { it.entry.id in state.picked }.map { it.previousGroupId }
+        reduce { state.copy(dialog = tree.restoreDialog(previous)) }
     }
 
     private suspend fun Syntax<TrashState, Nothing>.confirm() {
@@ -242,10 +244,4 @@ class TrashProcessor @AssistedInject constructor(
     private companion object {
         const val TAG = "TrashProcessor"
     }
-}
-
-private fun TrashDialog.saving(): TrashDialog = when (this) {
-    is TrashDialog.Restore -> copy(saving = true)
-    is TrashDialog.Remove -> copy(saving = true)
-    is TrashDialog.Empty -> copy(saving = true)
 }
