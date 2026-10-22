@@ -269,7 +269,15 @@
     <string name="settings_entries">Entries</string>
     <string name="settings_entries_text">Hidden fields, history</string>
     <string name="settings_recycle_bin">Recycle bin</string>
-    <string name="settings_recycle_bin_text">Deleted groups and entries</string>
+    <string name="settings_recycle_bin_text">Deleted entries</string>
+    <string name="settings_recycle_bin_use">Use the recycle bin</string>
+    <string name="settings_recycle_bin_use_on">Deleted entries can be restored</string>
+    <string name="settings_recycle_bin_use_off">Off — a delete is for good at once</string>
+    <string name="settings_recycle_bin_deleted">Deleted</string>
+    <string name="settings_recycle_bin_empty">Empty</string>
+    <string name="settings_recycle_bin_off_title">Switch the recycle bin off?</string>
+    <string name="settings_recycle_bin_off_text">The recycle bin will be emptied: what was deleted cannot be brought back.</string>
+    <string name="settings_recycle_bin_off_confirm">Switch off</string>
     <string name="settings_security">Security</string>
     <string name="settings_security_text">Password, key file, encryption</string>
     <string name="settings_security_credentials_group">Credentials</string>

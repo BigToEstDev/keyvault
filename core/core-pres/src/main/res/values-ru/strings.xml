@@ -275,7 +275,15 @@
     <string name="settings_entries">Записи</string>
     <string name="settings_entries_text">Скрытые поля, история</string>
     <string name="settings_recycle_bin">Корзина</string>
-    <string name="settings_recycle_bin_text">Удалённые группы и записи</string>
+    <string name="settings_recycle_bin_text">Удалённые записи</string>
+    <string name="settings_recycle_bin_use">Использовать корзину</string>
+    <string name="settings_recycle_bin_use_on">Удалённые записи можно восстановить</string>
+    <string name="settings_recycle_bin_use_off">Выключено — удаление сразу насовсем</string>
+    <string name="settings_recycle_bin_deleted">Удалённое</string>
+    <string name="settings_recycle_bin_empty">Пусто</string>
+    <string name="settings_recycle_bin_off_title">Выключить корзину?</string>
+    <string name="settings_recycle_bin_off_text">Корзина будет очищена: удалённое не вернуть.</string>
+    <string name="settings_recycle_bin_off_confirm">Выключить</string>
     <string name="settings_security">Безопасность</string>
     <string name="settings_security_text">Пароль, key-файл, шифрование</string>
     <string name="settings_security_credentials_group">Учётные данные</string>

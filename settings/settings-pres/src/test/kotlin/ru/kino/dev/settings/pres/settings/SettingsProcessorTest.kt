@@ -10,6 +10,7 @@ import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.pres.navigation.AppearanceRoute
+import ru.kino.dev.settings.pres.navigation.RecycleBinRoute
 
 private const val DB = "content://docs/passwords.kdbx"
 
@@ -45,7 +46,7 @@ class SettingsProcessorTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `a card with no screen made yet opens nothing`() = runTest {
+    fun `the card of the recycle bin opens its screen`() = runTest {
         val navigator = Navigator()
         val events = mutableListOf<MviNavEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
@@ -54,6 +55,6 @@ class SettingsProcessorTest {
             containerHost.action(SettingsAction.Open(SettingsItem.RecycleBin)).join()
         }
 
-        assertEquals(emptyList<MviNavEvent>(), events)
+        assertEquals(listOf(MviNavEvent.NavigateTo(RecycleBinRoute(DB))), events)
     }
 }
