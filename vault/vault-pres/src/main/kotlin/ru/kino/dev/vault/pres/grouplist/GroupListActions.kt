@@ -48,6 +48,9 @@ sealed interface GroupListAction {
     /** The gear of the root: the settings (pass-docs, Step 52). */
     data object OpenSettings : GroupListAction
 
+    /** The bin of the root, beside the gear: the recycle bin (pass-docs, Step 70). */
+    data object OpenTrash : GroupListAction
+
     data class OpenEntry(val id: EntryId) : GroupListAction
 
     data class EditEntry(val id: EntryId) : GroupListAction

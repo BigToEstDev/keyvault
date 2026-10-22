@@ -15,6 +15,9 @@ sealed interface RecycleBinAction {
 
     data object OffDismiss : RecycleBinAction
 
+    /** "Deleted" tapped: the screen of the bin, in `vault`. */
+    data object OpenTrash : RecycleBinAction
+
     /** The snackbar took the message. */
     data object MessageShown : RecycleBinAction
 }

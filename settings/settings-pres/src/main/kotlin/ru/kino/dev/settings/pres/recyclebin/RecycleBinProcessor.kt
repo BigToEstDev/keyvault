@@ -12,6 +12,7 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.vault.trash.TrashEditor
 import ru.kino.dev.vault.trash.TrashFailure
 import ru.kino.dev.vault.trash.TrashRepository
@@ -68,6 +69,10 @@ class RecycleBinProcessor @AssistedInject constructor(
             }
 
             RecycleBinAction.OffDismiss -> reduce { state.copy(confirmingOff = false) }
+
+            RecycleBinAction.OpenTrash -> if (state.count > 0) {
+                navigator.navigate(MviNavEvent.NavigateTo(TrashRoute(dbKey)))
+            }
 
             RecycleBinAction.MessageShown -> reduce { state.copy(message = null) }
         }

@@ -16,6 +16,7 @@ import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.SettingsRoute
+import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.vault.FakeVaultDatabase
@@ -683,6 +684,13 @@ class GroupListProcessorTest {
         val (_, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenSettings)
 
         assertEquals(listOf(MviNavEvent.NavigateTo(SettingsRoute(DB))), events)
+    }
+
+    @Test
+    fun `the bin beside the gear opens the recycle bin`() = runTest {
+        val (_, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenTrash)
+
+        assertEquals(listOf(MviNavEvent.NavigateTo(TrashRoute(DB))), events)
     }
 
     @Test

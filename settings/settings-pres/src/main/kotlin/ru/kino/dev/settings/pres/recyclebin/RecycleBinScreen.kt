@@ -13,7 +13,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -21,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.settings.pres.recyclebin.components.RecycleBinSkeleton
@@ -43,7 +44,8 @@ internal fun RecycleBinScreen(
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) { processor.action(RecycleBinAction.Load) }
+    // Every time the screen is shown: back from the bin, it may hold less
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.action(RecycleBinAction.Load) }
 
     val message = state.message?.let {
         stringResource(
@@ -80,7 +82,9 @@ internal fun RecycleBinScreen(
                     item(key = "skeleton") { RecycleBinSkeleton(skeletonBrush()) }
                 } else {
                     item(key = "use") { UseCard(enabled, state.saving, processor::action) }
-                    item(key = "deleted") { DeletedCard(state.count, state.saving) }
+                    item(key = "deleted") {
+                        DeletedCard(state.count, state.saving) { processor.action(RecycleBinAction.OpenTrash) }
+                    }
                 }
             }
         }
@@ -120,14 +124,14 @@ private fun UseCard(enabled: Boolean, saving: Boolean, action: (RecycleBinAction
     }
 }
 
-/** How many entries the bin holds; empty - "Empty". The screen of the bin opens from here (pass-docs, Step 70, item 3). */
+/** How many entries the bin holds; empty - "Empty". The screen of the bin opens from here. */
 @Composable
-private fun DeletedCard(count: Int, saving: Boolean) {
+private fun DeletedCard(count: Int, saving: Boolean, onOpen: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         ValueRow(
             title = stringResource(R.string.settings_recycle_bin_deleted),
             value = if (count == 0) stringResource(R.string.settings_recycle_bin_empty) else count.toString(),
-            onClick = null,
+            onClick = onOpen,
             enabled = count > 0 && !saving,
         )
     }

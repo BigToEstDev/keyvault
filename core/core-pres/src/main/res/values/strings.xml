@@ -278,6 +278,9 @@
     <string name="settings_recycle_bin_off_title">Switch the recycle bin off?</string>
     <string name="settings_recycle_bin_off_text">The recycle bin will be emptied: what was deleted cannot be brought back.</string>
     <string name="settings_recycle_bin_off_confirm">Switch off</string>
+    <string name="trash_deleted_at">Deleted: %1$s</string>
+    <string name="trash_empty">The recycle bin is empty</string>
+    <string name="trash_empty_hint">Deleted entries show up here</string>
     <string name="settings_security">Security</string>
     <string name="settings_security_text">Password, key file, encryption</string>
     <string name="settings_security_credentials_group">Credentials</string>

@@ -81,6 +81,7 @@ internal fun GroupListScreen(
                     onQueryChange = { processor.action(GroupListAction.QueryChanged(it)) },
                     onFilters = { processor.action(GroupListAction.OpenFilters) },
                     onSettings = { processor.action(GroupListAction.OpenSettings) },
+                    onTrash = { processor.action(GroupListAction.OpenTrash) },
                     onBack = { processor.action(GroupListAction.Back) },
                     onCrumb = { processor.action(GroupListAction.OpenCrumb(it)) },
                     onEditGroup = { processor.action(GroupListAction.RenameCurrent) },

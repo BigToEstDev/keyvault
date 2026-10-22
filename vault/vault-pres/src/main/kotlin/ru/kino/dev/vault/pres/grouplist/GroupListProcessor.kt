@@ -6,7 +6,6 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -18,6 +17,7 @@ import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.SettingsRoute
+import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
@@ -35,6 +35,7 @@ import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.group.VaultTree
 import ru.kino.dev.vault.lock.AutoLock
+import ru.kino.dev.vault.pres.common.SEARCH_DELAY
 import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
@@ -242,6 +243,11 @@ class GroupListProcessor @AssistedInject constructor(
             GroupListAction.CreateEntry -> createEntry()
 
             GroupListAction.OpenSettings -> navigator.navigate(MviNavEvent.NavigateTo(SettingsRoute(dbKey)))
+
+            GroupListAction.OpenTrash -> {
+                clearSearch()
+                navigator.navigate(MviNavEvent.NavigateTo(TrashRoute(dbKey)))
+            }
 
             is GroupListAction.OpenEntry -> {
                 clearSearch()
@@ -525,9 +531,6 @@ class GroupListProcessor @AssistedInject constructor(
 
     private companion object {
         const val TAG = "GroupListProcessor"
-
-        /** A pause in typing this long, and the search runs - not on every letter (owner, Step 41). */
-        val SEARCH_DELAY = 300.milliseconds
     }
 }
 

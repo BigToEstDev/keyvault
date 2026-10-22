@@ -36,6 +36,13 @@ data class VaultRootRoute(val dbKey: String)
 data class SettingsRoute(val dbKey: String)
 
 /**
+ * The recycle bin of the open database [dbKey]: its entries, to restore or remove for good (pass-docs, Step 70). Its
+ * screen is in `vault`; the way in is the main screen of `vault` and the recycle bin of `settings`.
+ */
+@Serializable
+data class TrashRoute(val dbKey: String)
+
+/**
  * A preset of one's own: [presetId] - the one to edit, null - a new one. Its screen is in `settings` (pass-docs,
  * Step 62); `vault` opens it from the choice of presets of an entry. No database in it: presets are one list for
  * every database (Step 44).

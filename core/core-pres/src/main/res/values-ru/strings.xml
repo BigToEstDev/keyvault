@@ -284,6 +284,9 @@
     <string name="settings_recycle_bin_off_title">Выключить корзину?</string>
     <string name="settings_recycle_bin_off_text">Корзина будет очищена: удалённое не вернуть.</string>
     <string name="settings_recycle_bin_off_confirm">Выключить</string>
+    <string name="trash_deleted_at">Удалено: %1$s</string>
+    <string name="trash_empty">Корзина пуста</string>
+    <string name="trash_empty_hint">Здесь появятся удалённые записи</string>
     <string name="settings_security">Безопасность</string>
     <string name="settings_security_text">Пароль, key-файл, шифрование</string>
     <string name="settings_security_credentials_group">Учётные данные</string>

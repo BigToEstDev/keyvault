@@ -10,6 +10,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
 import ru.kino.dev.vault.FakeVaultDatabase
@@ -123,6 +124,22 @@ class RecycleBinProcessorTest {
         assertEquals(true, state.enabled)
         assertFalse(state.saving)
         assertEquals(RecycleBinMessage.Failed, state.message)
+    }
+
+    @Test
+    fun `deleted opens the bin`() = runTest {
+        val (_, events) = perform(RecycleBinAction.Load, RecycleBinAction.OpenTrash)
+
+        assertEquals(listOf(MviNavEvent.NavigateTo(TrashRoute(DB))), events)
+    }
+
+    @Test
+    fun `an empty bin opens nothing`() = runTest {
+        trash.entries.clear()
+
+        val (_, events) = perform(RecycleBinAction.Load, RecycleBinAction.OpenTrash)
+
+        assertEquals(emptyList<MviNavEvent>(), events)
     }
 
     @Test
