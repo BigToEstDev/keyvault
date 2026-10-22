@@ -41,8 +41,8 @@ internal object FfiCommands {
     const val MOVE_GROUP = "move_group"
     const val SORT_SUB_GROUPS = "sort_sub_groups"
     const val CLONE_GROUP = "clone_group"
-    const val MOVE_GROUP_TO_RECYCLE_BIN = "move_group_to_recycle_bin"
-    const val REMOVE_GROUP_PERMANENTLY = "remove_group_permanently"
+    // Into the recycle bin go the entries of its subtree, the groups go for good; all for good without a bin
+    const val DELETE_GROUP = "delete_group"
 
     // Entries: the list of a category, the form behind one entry, and what changes it
     const val ENTRY_SUMMARY_DATA = "entry_summary_data"
@@ -53,8 +53,8 @@ internal object FfiCommands {
     const val UPDATE_ENTRY_FROM_FORM_DATA = "update_entry_from_form_data"
     const val MOVE_ENTRY = "move_entry"
     const val CLONE_ENTRY = "clone_entry"
-    const val MOVE_ENTRY_TO_RECYCLE_BIN = "move_entry_to_recycle_bin"
-    const val REMOVE_ENTRY_PERMANENTLY = "remove_entry_permanently"
+    // Into the recycle bin, or for good when the database does not use one
+    const val DELETE_ENTRY = "delete_entry"
 
     // The history of an entry: kdbx keeps old versions inside the entry, addressed by index
     const val HISTORY_ENTRIES_SUMMARY = "history_entries_summary"
@@ -87,7 +87,12 @@ internal object FfiCommands {
     const val DB_CHECKSUM_HASH = "db_checksum_hash"
     const val MERGE_DATABASE = "merge_kdbx_with_reader"
 
-    // The one irreversible step of the recycle bin
+    // The recycle bin holds entries only (pass-docs, Step 69): its list and search, restoring to a group, and
+    // the irreversible steps - removing picked entries and emptying it
+    const val TRASH_ENTRIES = "trash_entries"
+    const val SEARCH_TRASH = "search_trash"
+    const val RESTORE_ENTRIES = "restore_entries"
+    const val REMOVE_ENTRIES_PERMANENTLY = "remove_entries_permanently"
     const val EMPTY_TRASH = "empty_trash"
 
     const val GENERATE_PASSWORD = "generate_password"
@@ -117,8 +122,7 @@ internal object FfiCommands {
         MOVE_GROUP,
         SORT_SUB_GROUPS,
         CLONE_GROUP,
-        MOVE_GROUP_TO_RECYCLE_BIN,
-        REMOVE_GROUP_PERMANENTLY,
+        DELETE_GROUP,
         ENTRY_SUMMARY_DATA,
         GET_ENTRY_FORM_DATA_BY_ID,
         ENTRY_KEY_VALUE_FIELDS,
@@ -127,8 +131,7 @@ internal object FfiCommands {
         UPDATE_ENTRY_FROM_FORM_DATA,
         MOVE_ENTRY,
         CLONE_ENTRY,
-        MOVE_ENTRY_TO_RECYCLE_BIN,
-        REMOVE_ENTRY_PERMANENTLY,
+        DELETE_ENTRY,
         HISTORY_ENTRIES_SUMMARY,
         HISTORY_ENTRY_BY_INDEX,
         DELETE_HISTORY_ENTRY_BY_INDEX,
@@ -148,6 +151,10 @@ internal object FfiCommands {
         SET_DB_FILE_CHECKSUM,
         DB_CHECKSUM_HASH,
         MERGE_DATABASE,
+        TRASH_ENTRIES,
+        SEARCH_TRASH,
+        RESTORE_ENTRIES,
+        REMOVE_ENTRIES_PERMANENTLY,
         EMPTY_TRASH,
         GENERATE_PASSWORD,
         ANALYZED_PASSWORD,

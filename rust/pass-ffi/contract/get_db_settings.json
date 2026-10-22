@@ -25,7 +25,8 @@
       "protect_title": "bool",
       "protect_url": "bool",
       "protect_username": "bool"
-    }
+    },
+    "recycle_bin_enabled": "bool"
   },
   "password": "null-in-this-sample",
   "password_changed": "bool",

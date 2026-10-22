@@ -285,21 +285,28 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         groupTrees[dbKey] = tree.copy(groups = tree.groups + (groupId to group.copy(name = name)))
     }
 
-    override suspend fun moveGroupToRecycleBin(dbKey: String, groupId: String) {
-        step("moveGroupToRecycleBin", dbKey)
+    // As the core with the bin on: the entries of the subtree go to the bin flat, the groups go for good
+    override suspend fun deleteGroup(dbKey: String, groupId: String) {
+        step("deleteGroup", dbKey)
         val group = tree(dbKey).groups[groupId] ?: throw notFound(groupId)
         val binId = recycleBin(dbKey)
         val tree = tree(dbKey)
         val oldParent = tree.groups.getValue(checkNotNull(group.parentId) { "the root cannot be deleted" })
         val bin = tree.groups.getValue(binId)
+        val subtree = subtree(tree, groupId)
+        val entryIds = subtree.flatMap { tree.groups.getValue(it).entryIds }
 
         groupTrees[dbKey] = tree.copy(
-            groups = tree.groups +
+            groups = tree.groups - subtree.toSet() +
                 (oldParent.id to oldParent.copy(groupIds = oldParent.groupIds - groupId)) +
-                (binId to bin.copy(groupIds = bin.groupIds + groupId)) +
-                (groupId to group.copy(parentId = binId)),
+                (binId to bin.copy(entryIds = bin.entryIds + entryIds)),
         )
+        val entries = stored(dbKey)
+        entryIds.forEach { id -> entries[id]?.let { entries[id] = it.copy(groupId = binId) } }
     }
+
+    private fun subtree(tree: GroupTree, groupId: String): List<String> =
+        listOf(groupId) + tree.groups.getValue(groupId).groupIds.flatMap { subtree(tree, it) }
 
     /**
      * An entry the fake holds: the group it is in, its strings in order, when it was made and changed, and
@@ -398,8 +405,8 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         stored(dbKey)[entryId] = entry.updatedTo(fields)
     }
 
-    override suspend fun moveEntryToRecycleBin(dbKey: String, entryId: String) {
-        step("moveEntryToRecycleBin", dbKey)
+    override suspend fun deleteEntry(dbKey: String, entryId: String) {
+        step("deleteEntry", dbKey)
         val entry = found(dbKey, entryId)
         val binId = recycleBin(dbKey)
         val tree = tree(dbKey)

@@ -49,7 +49,7 @@ internal class EntryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun moveToRecycleBin(dbKey: String, entryId: EntryId) = entryCall {
-        core.moveEntryToRecycleBin(dbKey, entryId.value)
+        core.deleteEntry(dbKey, entryId.value)
     }
 
     // The core names neither which is missing - the entry, or the group it goes to; the group is the one

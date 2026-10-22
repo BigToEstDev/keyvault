@@ -277,8 +277,10 @@ fn an_entry_is_cloned_with_a_new_title() {
     close_database(&db_key);
 }
 
+// A new database uses the recycle bin: a deleted entry is still there, in the bin. The rest of the bin is
+// trash_tests
 #[test]
-fn an_entry_goes_to_the_recycle_bin_and_can_be_removed_for_good() {
+fn a_deleted_entry_goes_to_the_recycle_bin() {
     let db_key = key_of("entry-delete");
     open_database(&db_key);
     let root = root_uuid(&db_key);
@@ -286,32 +288,16 @@ fn an_entry_goes_to_the_recycle_bin_and_can_be_removed_for_good() {
     let form = new_entry(&db_key, "Doomed", &root);
     let uuid = uuid_of(&form).to_string();
 
-    let binned = call(
-        "move_entry_to_recycle_bin",
+    let deleted = call(
+        "delete_entry",
         json!({"db_key": db_key, "entry_uuid": uuid}),
     );
-    assert_shape("move_entry_to_recycle_bin", &binned);
+    assert_shape("delete_entry", &deleted);
 
     // Deleted is a category of its own, which is how the ui shows the recycle bin
     assert_eq!(
         titles(&db_key, json!({"kind": "deleted"})),
         vec!["Doomed".to_string()]
-    );
-
-    let removed = call(
-        "remove_entry_permanently",
-        json!({"db_key": db_key, "entry_uuid": uuid}),
-    );
-    assert_shape("remove_entry_permanently", &removed);
-
-    let gone = call(
-        "get_entry_form_data_by_id",
-        json!({"db_key": db_key, "entry_uuid": uuid}),
-    );
-    assert!(
-        gone.starts_with(r#"{"err":"#),
-        "a removed entry is not found any more: {}",
-        gone
     );
 
     close_database(&db_key);

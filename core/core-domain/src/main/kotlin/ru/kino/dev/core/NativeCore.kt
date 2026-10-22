@@ -176,10 +176,11 @@ interface NativeCore {
     suspend fun renameGroup(dbKey: String, groupId: String, name: String)
 
     /**
-     * Moves the group, with everything inside it, into the recycle bin; the core creates the bin when the
-     * database has none. In memory only.
+     * Deletes the group with its subtree: the entries go to the recycle bin, flat - the core creates the bin
+     * when the database has none - and the groups go for good; only entries are kept in the bin. Without a
+     * bin (`RecycleBinEnabled` off) everything goes for good. In memory only.
      */
-    suspend fun moveGroupToRecycleBin(dbKey: String, groupId: String)
+    suspend fun deleteGroup(dbKey: String, groupId: String)
 
     /**
      * The entries directly inside [groupId], not those of the groups below, in the order the core gives
@@ -214,10 +215,10 @@ interface NativeCore {
     suspend fun updateEntry(dbKey: String, entryId: String, fields: List<EntryFieldData>)
 
     /**
-     * Moves the entry into the recycle bin; the core creates the bin when the database has none. In memory
-     * only.
+     * Deletes the entry: into the recycle bin - the core creates the bin when the database has none - or for
+     * good without a bin (`RecycleBinEnabled` off). In memory only.
      */
-    suspend fun moveEntryToRecycleBin(dbKey: String, entryId: String)
+    suspend fun deleteEntry(dbKey: String, entryId: String)
 
     /** Moves the entry into the group [groupId], with nothing else of it changed. In memory only. */
     suspend fun moveEntry(dbKey: String, entryId: String, groupId: String)

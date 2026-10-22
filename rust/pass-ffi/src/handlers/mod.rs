@@ -10,7 +10,6 @@
 //! carries a database) and returning an `Answer`. Nothing else - no locking, no state of its own. The
 //! core owns the open databases.
 
-pub(crate) mod catalog;
 pub(crate) mod entries;
 pub(crate) mod generator;
 pub(crate) mod groups;
@@ -20,6 +19,7 @@ pub(crate) mod lifecycle;
 pub(crate) mod otp;
 pub(crate) mod search;
 pub(crate) mod settings;
+pub(crate) mod trash;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
