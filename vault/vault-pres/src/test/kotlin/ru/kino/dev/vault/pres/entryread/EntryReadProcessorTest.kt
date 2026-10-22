@@ -33,6 +33,7 @@ import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
+import ru.kino.dev.vault.trash.FakeTrashRepository
 
 class EntryReadProcessorTest {
 
@@ -51,6 +52,7 @@ class EntryReadProcessorTest {
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
     private val settings = FakeEntrySettingsRepository()
+    private val trash = FakeTrashRepository()
 
     @Test
     fun `the group of the entry is shown with the path down to it`() = runTest {
@@ -218,7 +220,16 @@ class EntryReadProcessorTest {
     fun `delete asks first, naming the entry`() = runTest {
         val (state, _) = perform(EntryReadAction.Load, EntryReadAction.Delete)
 
-        assertEquals(DeleteDialog("Mail"), state.delete)
+        assertEquals(DeleteDialog("Mail", toBin = true), state.delete)
+    }
+
+    @Test
+    fun `without a recycle bin the dialog says the delete is for good`() = runTest {
+        trash.enabled = false
+
+        val (state, _) = perform(EntryReadAction.Load, EntryReadAction.Delete)
+
+        assertEquals(DeleteDialog("Mail", toBin = false), state.delete)
     }
 
     @Test
@@ -260,7 +271,7 @@ class EntryReadProcessorTest {
     fun `an entry in the recycle bin is not shown - the screen goes back`() = runTest {
         // Deleted from its form over this screen: back here, it is in the bin - in a group put there
         val old = groups.add("old", groups.rootId, "Old")
-        groups.moveToRecycleBin(DB, old)
+        groups.delete(DB, old)
         entries.stored[mail] = entries.stored.getValue(mail).copy(groupId = old)
 
         val (_, events) = perform(EntryReadAction.Load)
@@ -310,7 +321,7 @@ class EntryReadProcessorTest {
     ): Pair<EntryReadState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val editor = EntryEditor(entries, opener, settings, database)
-        val processor = EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, autoLock, navigator, log)
+        val processor = EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, trash, autoLock, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             actions.forEach { containerHost.action(it).join() }

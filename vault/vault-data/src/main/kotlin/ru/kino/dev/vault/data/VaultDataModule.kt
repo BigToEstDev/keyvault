@@ -27,6 +27,7 @@ import ru.kino.dev.vault.data.filter.vaultFilterStore
 import ru.kino.dev.vault.data.group.GroupRepositoryImpl
 import ru.kino.dev.vault.data.history.EntryHistoryRepositoryImpl
 import ru.kino.dev.vault.data.security.SecurityRepositoryImpl
+import ru.kino.dev.vault.data.trash.TrashRepositoryImpl
 import ru.kino.dev.vault.entries.EntrySettingsEditor
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
@@ -46,6 +47,8 @@ import ru.kino.dev.vault.lock.DatabaseGuard
 import ru.kino.dev.vault.search.VaultSearch
 import ru.kino.dev.vault.security.SecurityEditor
 import ru.kino.dev.vault.security.SecurityRepository
+import ru.kino.dev.vault.trash.TrashEditor
+import ru.kino.dev.vault.trash.TrashRepository
 
 /** Binds the repositories of `vault` to their implementations, and builds its use cases and its lock. */
 @Module
@@ -75,6 +78,9 @@ internal interface VaultDataModule {
 
     @Binds
     fun bindSecurityRepository(impl: SecurityRepositoryImpl): SecurityRepository
+
+    @Binds
+    fun bindTrashRepository(impl: TrashRepositoryImpl): TrashRepository
 
     companion object {
 
@@ -118,6 +124,13 @@ internal interface VaultDataModule {
             database: VaultDatabaseRepository,
             guard: DatabaseGuard,
         ): EntrySettingsEditor = EntrySettingsEditor(settings, database, guard)
+
+        @Provides
+        fun provideTrashEditor(
+            trash: TrashRepository,
+            database: VaultDatabaseRepository,
+            guard: DatabaseGuard,
+        ): TrashEditor = TrashEditor(trash, database, guard)
 
         @Provides
         fun provideSecurityEditor(

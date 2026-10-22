@@ -4,6 +4,8 @@ import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
 import ru.kino.dev.core.EntrySummaryData
 import ru.kino.dev.core.HistoryVersionData
+import ru.kino.dev.core.TrashEntryData
+import ru.kino.dev.core.TrashSearchData
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
@@ -55,6 +57,11 @@ internal fun EntrySummaryDto.toDomain() = EntrySummaryData(
 )
 
 internal fun EntrySearchResultDto.toDomain() = EntrySearchData(term = term, entries = entryItems.map { it.toDomain() })
+
+internal fun TrashEntryDto.toDomain() =
+    TrashEntryData(entry = entry.toDomain(), previousGroupId = previousGroupUuid, deletedAt = deletedTime)
+
+internal fun TrashSearchResultDto.toDomain() = TrashSearchData(term = term, entries = entryItems.map { it.toDomain() })
 
 /** `entry_summary_data` for the entries directly inside one group. */
 internal fun entriesOfGroup(dbKey: String, groupId: String) =

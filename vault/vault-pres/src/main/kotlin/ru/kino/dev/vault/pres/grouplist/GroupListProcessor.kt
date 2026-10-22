@@ -6,7 +6,6 @@ import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -18,6 +17,7 @@ import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.SettingsRoute
+import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
@@ -35,12 +35,15 @@ import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.group.VaultTree
 import ru.kino.dev.vault.lock.AutoLock
+import ru.kino.dev.vault.pres.common.SEARCH_DELAY
 import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
 import ru.kino.dev.vault.search.VaultSearch
+import ru.kino.dev.vault.trash.TrashRepository
+import ru.kino.dev.vault.trash.deletesToBin
 
 /**
  * @param isRoot the screen is the root of the database - known from the route, before the tree is read, so
@@ -165,6 +168,7 @@ class GroupListProcessor @AssistedInject constructor(
     private val vaultSearch: VaultSearch,
     private val filters: VaultFilterRepository,
     private val entrySettings: EntrySettingsRepository,
+    private val trash: TrashRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<GroupListState, GroupListState, Nothing> {
@@ -240,6 +244,11 @@ class GroupListProcessor @AssistedInject constructor(
 
             GroupListAction.OpenSettings -> navigator.navigate(MviNavEvent.NavigateTo(SettingsRoute(dbKey)))
 
+            GroupListAction.OpenTrash -> {
+                clearSearch()
+                navigator.navigate(MviNavEvent.NavigateTo(TrashRoute(dbKey)))
+            }
+
             is GroupListAction.OpenEntry -> {
                 clearSearch()
                 navigator.navigate(MviNavEvent.NavigateTo(EntryReadRoute(dbKey, action.id.value)))
@@ -251,7 +260,8 @@ class GroupListProcessor @AssistedInject constructor(
             }
 
             is GroupListAction.DeleteEntry -> state.entries.find { it.id == action.id }?.let { entry ->
-                reduce { state.copy(dialog = GroupDialog.DeleteEntry(entry.id, entry.title)) }
+                val toBin = trash.deletesToBin(dbKey)
+                reduce { state.copy(dialog = GroupDialog.DeleteEntry(entry.id, entry.title, toBin)) }
             }
 
             is GroupListAction.RenameGroup -> state.groups.find { it.id == action.id }?.let { group ->
@@ -259,7 +269,8 @@ class GroupListProcessor @AssistedInject constructor(
             }
 
             is GroupListAction.DeleteGroup -> state.groups.find { it.id == action.id }?.let { group ->
-                reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name)) }
+                val toBin = trash.deletesToBin(dbKey)
+                reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name, toBin)) }
             }
 
             GroupListAction.RenameCurrent -> state.current?.let { group ->
@@ -267,7 +278,8 @@ class GroupListProcessor @AssistedInject constructor(
             }
 
             GroupListAction.DeleteCurrent -> state.current?.let { group ->
-                reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name)) }
+                val toBin = trash.deletesToBin(dbKey)
+                reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name, toBin)) }
             }
 
             GroupListAction.DialogConfirm -> confirm()
@@ -519,9 +531,6 @@ class GroupListProcessor @AssistedInject constructor(
 
     private companion object {
         const val TAG = "GroupListProcessor"
-
-        /** A pause in typing this long, and the search runs - not on every letter (owner, Step 41). */
-        val SEARCH_DELAY = 300.milliseconds
     }
 }
 

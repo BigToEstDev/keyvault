@@ -40,7 +40,7 @@ class VaultSearchTest {
         entries.add("visa", cards, fields("Visa", user = "bank-user"))
         entries.add("home-bank", home, fields("Bank of home"))
         entries.add("old-bank", old, fields("Bank of old"))
-        runBlocking { groups.moveToRecycleBin(DB, old) }
+        runBlocking { groups.delete(DB, old) }
         groups.calls.clear()
     }
 

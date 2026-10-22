@@ -33,6 +33,8 @@ import ru.kino.dev.core.NativeCore
 import ru.kino.dev.core.NewDatabase
 import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.PasswordOptions
+import ru.kino.dev.core.TrashEntryData
+import ru.kino.dev.core.TrashSearchData
 
 /**
  * [NativeCore] on top of the jni bridge.
@@ -252,6 +254,69 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
     override suspend fun measureKdfPass(dbKey: String): Duration = withContext(dispatcher) {
         call(FfiCommands.MEASURE_KDF_PASS, DbKeyDto.serializer(), DbKeyDto(dbKey), KdfPassDto.serializer())
             .millis.milliseconds
+    }
+
+    override suspend fun recycleBinEnabled(dbKey: String): Boolean = withContext(dispatcher) {
+        dbSettings(dbKey).meta.recycleBinEnabled
+    }
+
+    override suspend fun changeRecycleBinEnabled(dbKey: String, enabled: Boolean) {
+        withContext(dispatcher) {
+            // The whole settings go back, as the core gave them: only the flag is ours
+            val settings = dbSettings(dbKey)
+            call(
+                FfiCommands.SET_DB_SETTINGS,
+                SetDbSettingsDto.serializer(),
+                SetDbSettingsDto(dbKey = dbKey, settings = settings.copy(meta = settings.meta.copy(recycleBinEnabled = enabled))),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun trashEntries(dbKey: String): List<TrashEntryData> = withContext(dispatcher) {
+        call(
+            FfiCommands.TRASH_ENTRIES,
+            DbKeyDto.serializer(),
+            DbKeyDto(dbKey),
+            ListSerializer(TrashEntryDto.serializer()),
+        ).map { it.toDomain() }
+    }
+
+    override suspend fun searchTrash(dbKey: String, term: String): TrashSearchData = withContext(dispatcher) {
+        call(
+            FfiCommands.SEARCH_TRASH,
+            SearchTermDto.serializer(),
+            SearchTermDto(dbKey = dbKey, term = term),
+            TrashSearchResultDto.serializer(),
+        ).toDomain()
+    }
+
+    override suspend fun restoreEntries(dbKey: String, entryIds: List<String>, groupId: String) {
+        withContext(dispatcher) {
+            call(
+                FfiCommands.RESTORE_ENTRIES,
+                RestoreEntriesDto.serializer(),
+                RestoreEntriesDto(dbKey = dbKey, entryUuids = entryIds, groupUuid = groupId),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun removeEntries(dbKey: String, entryIds: List<String>) {
+        withContext(dispatcher) {
+            call(
+                FfiCommands.REMOVE_ENTRIES_PERMANENTLY,
+                EntryUuidsDto.serializer(),
+                EntryUuidsDto(dbKey = dbKey, entryUuids = entryIds),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun emptyTrash(dbKey: String) {
+        withContext(dispatcher) {
+            call(FfiCommands.EMPTY_TRASH, DbKeyDto.serializer(), DbKeyDto(dbKey), DoneDto.serializer())
+        }
     }
 
     private fun dbSettings(dbKey: String): DbSettingsDto =

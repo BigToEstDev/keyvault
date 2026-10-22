@@ -130,7 +130,7 @@ class GroupEditorTest {
             change("rename ${groupId.value} $name")
         }
 
-        override suspend fun moveToRecycleBin(dbKey: String, groupId: GroupId) {
+        override suspend fun delete(dbKey: String, groupId: GroupId) {
             change("recycle ${groupId.value}")
         }
 

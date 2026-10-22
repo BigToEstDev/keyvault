@@ -16,6 +16,7 @@ import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.SettingsRoute
+import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.vault.FakeVaultDatabase
@@ -46,6 +47,8 @@ import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
 import ru.kino.dev.vault.search.VaultSearch
+import ru.kino.dev.vault.trash.FakeTrashRepository
+import ru.kino.dev.vault.trash.TrashFailure
 
 class GroupListProcessorTest {
 
@@ -103,6 +106,7 @@ class GroupListProcessorTest {
     private val filters = FakeVaultFilterRepository()
     private val log = RecordingLog()
     private val entrySettings = FakeEntrySettingsRepository()
+    private val trash = FakeTrashRepository()
     private lateinit var autoLock: AutoLock
 
     @Test
@@ -299,7 +303,16 @@ class GroupListProcessorTest {
     fun `delete in the menu of the top bar asks first, naming the group shown`() = runTest {
         val (state, _) = perform(groupId = mail.value, GroupListAction.Load, GroupListAction.DeleteCurrent)
 
-        assertEquals(GroupDialog.Delete(mail, "Mail"), state.dialog)
+        assertEquals(GroupDialog.Delete(mail, "Mail", toBin = true), state.dialog)
+    }
+
+    @Test
+    fun `without a recycle bin deleting a group says everything goes for good`() = runTest {
+        trash.enabled = false
+
+        val (state, _) = perform(groupId = mail.value, GroupListAction.Load, GroupListAction.DeleteCurrent)
+
+        assertEquals(GroupDialog.Delete(mail, "Mail", toBin = false), state.dialog)
     }
 
     @Test
@@ -386,10 +399,10 @@ class GroupListProcessorTest {
         val (state, _) = perform(
             groupId = null,
             GroupListAction.DialogDismiss,
-            initial = GroupListState(dialog = GroupDialog.Delete(home, "Home", saving = true)),
+            initial = GroupListState(dialog = GroupDialog.Delete(home, "Home", toBin = true, saving = true)),
         )
 
-        assertEquals(GroupDialog.Delete(home, "Home", saving = true), state.dialog)
+        assertEquals(GroupDialog.Delete(home, "Home", toBin = true, saving = true), state.dialog)
     }
 
     @Test
@@ -674,6 +687,13 @@ class GroupListProcessorTest {
     }
 
     @Test
+    fun `the bin beside the gear opens the recycle bin`() = runTest {
+        val (_, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenTrash)
+
+        assertEquals(listOf(MviNavEvent.NavigateTo(TrashRoute(DB))), events)
+    }
+
+    @Test
     fun `create entry opens the form inside this group and closes the menu`() = runTest {
         val (state, events) = perform(
             groupId = work.value,
@@ -774,7 +794,25 @@ class GroupListProcessorTest {
     fun `delete asks first, naming the entry`() = runTest {
         val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.DeleteEntry(bank))
 
-        assertEquals(GroupDialog.DeleteEntry(bank, "Bank"), state.dialog)
+        assertEquals(GroupDialog.DeleteEntry(bank, "Bank", toBin = true), state.dialog)
+    }
+
+    @Test
+    fun `without a recycle bin deleting an entry says it goes for good`() = runTest {
+        trash.enabled = false
+
+        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.DeleteEntry(bank))
+
+        assertEquals(GroupDialog.DeleteEntry(bank, "Bank", toBin = false), state.dialog)
+    }
+
+    @Test
+    fun `an unread recycle bin warns of a delete for good - the safe side`() = runTest {
+        trash.failures["enabled"] = TrashFailure.Unexpected()
+
+        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.DeleteEntry(bank))
+
+        assertEquals(GroupDialog.DeleteEntry(bank, "Bank", toBin = false), state.dialog)
     }
 
     @Test
@@ -810,7 +848,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `an entry gone before its delete closes the dialog and the list is read again`() = runTest {
-        entries.failures["moveToRecycleBin"] = EntryFailure.EntryNotFound()
+        entries.failures["delete"] = EntryFailure.EntryNotFound()
 
         val (state, _) = perform(
             groupId = null,
@@ -856,6 +894,7 @@ class GroupListProcessorTest {
         VaultSearch(groups, entries),
         filters,
         entrySettings,
+        trash,
         navigator,
         log,
     )

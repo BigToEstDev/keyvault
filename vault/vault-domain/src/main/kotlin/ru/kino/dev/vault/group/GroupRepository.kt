@@ -19,6 +19,9 @@ interface GroupRepository {
     /** Renames the group; nothing else of it changes. */
     suspend fun rename(dbKey: String, groupId: GroupId, name: String)
 
-    /** Moves the group, with everything inside it, into the recycle bin. */
-    suspend fun moveToRecycleBin(dbKey: String, groupId: GroupId)
+    /**
+     * Deletes the group with its subtree: the entries go to the recycle bin flat - or for good when the database does
+     * not use one - and the groups go for good (pass-docs, Step 69).
+     */
+    suspend fun delete(dbKey: String, groupId: GroupId)
 }

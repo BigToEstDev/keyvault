@@ -36,7 +36,7 @@ class SettingsProcessor @AssistedInject constructor(
         when (action) {
             SettingsAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
 
-            is SettingsAction.Open -> action.item.route(dbKey)?.let { navigator.navigate(MviNavEvent.NavigateTo(it)) }
+            is SettingsAction.Open -> navigator.navigate(MviNavEvent.NavigateTo(action.item.route(dbKey)))
         }
     }
 }

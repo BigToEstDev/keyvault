@@ -101,8 +101,8 @@ class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : En
         stored[entryId] = entry.updatedTo(fields, tick())
     }
 
-    override suspend fun moveToRecycleBin(dbKey: String, entryId: EntryId) {
-        call("moveToRecycleBin")
+    override suspend fun delete(dbKey: String, entryId: EntryId) {
+        call("delete")
         entry(entryId)
         stored.remove(entryId)
         recycled += entryId

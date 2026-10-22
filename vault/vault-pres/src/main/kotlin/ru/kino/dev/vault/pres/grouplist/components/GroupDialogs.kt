@@ -44,6 +44,7 @@ internal fun GroupDialogs(
 
         is GroupDialog.DeleteEntry -> EntryDeleteDialog(
             title = dialog.title,
+            toBin = dialog.toBin,
             deleting = dialog.saving,
             onConfirm = onConfirm,
             onDismiss = onDismiss,
@@ -51,7 +52,10 @@ internal fun GroupDialogs(
 
         is GroupDialog.Delete -> ConfirmDialog(
             title = stringResource(R.string.group_delete_title),
-            text = stringResource(R.string.group_delete_text, dialog.name),
+            text = stringResource(
+                if (dialog.toBin) R.string.group_delete_text else R.string.group_delete_forever_text,
+                dialog.name,
+            ),
             confirmText = stringResource(R.string.action_delete),
             dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,

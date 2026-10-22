@@ -41,6 +41,8 @@ import ru.kino.dev.vault.pres.common.groupChoices
 import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.common.toggled
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
+import ru.kino.dev.vault.trash.TrashRepository
+import ru.kino.dev.vault.trash.deletesToBin
 
 /**
  * @param creating a new entry, not one of the database
@@ -118,6 +120,7 @@ class EntryEditProcessor @AssistedInject constructor(
     private val settings: EntrySettingsRepository,
     private val groupRepository: GroupRepository,
     private val editor: EntryEditor,
+    private val trash: TrashRepository,
     private val presets: PresetRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
@@ -253,7 +256,8 @@ class EntryEditProcessor @AssistedInject constructor(
             EntryEditAction.Delete -> state.initial?.let { read ->
                 // A new entry has nothing to delete; nor is a dialog put over another one
                 if (entryId != null && state.editable && state.dialog == null) {
-                    reduce { state.copy(dialog = EntryEditDialog.Delete(read.value(StandardPreset.TITLE))) }
+                    val toBin = trash.deletesToBin(dbKey)
+                    reduce { state.copy(dialog = EntryEditDialog.Delete(read.value(StandardPreset.TITLE), toBin)) }
                 }
             }
 

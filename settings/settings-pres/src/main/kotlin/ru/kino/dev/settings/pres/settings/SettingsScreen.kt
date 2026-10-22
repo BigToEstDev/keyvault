@@ -66,7 +66,7 @@ internal fun SettingsScreen(
                             icon = item.icon,
                             title = stringResource(item.title),
                             text = stringResource(item.text),
-                            onClick = item.route(dbKey)?.let { { processor.action(SettingsAction.Open(item)) } },
+                            onClick = { processor.action(SettingsAction.Open(item)) },
                         )
                     }
                 }

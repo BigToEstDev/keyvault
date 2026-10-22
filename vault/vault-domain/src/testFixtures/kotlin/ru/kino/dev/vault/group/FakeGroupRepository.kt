@@ -66,17 +66,22 @@ class FakeGroupRepository(rootName: String = "Passwords") : GroupRepository {
         groups[groupId] = group.copy(name = name)
     }
 
-    override suspend fun moveToRecycleBin(dbKey: String, groupId: GroupId) {
-        call("moveToRecycleBin")
+    // As the core: the entries of the subtree go to the bin flat, the groups go for good
+    override suspend fun delete(dbKey: String, groupId: GroupId) {
+        call("delete")
         val group = groups[groupId] ?: throw GroupFailure.GroupNotFound()
         val bin = recycleBinId ?: add("recycle-bin", rootId, "Recycle Bin").also { recycleBinId = it }
 
+        val subtree = subtree(groupId)
         val oldParent = groups.getValue(checkNotNull(group.parentId))
         groups[oldParent.id] = oldParent.copy(childGroupIds = oldParent.childGroupIds - groupId)
-        val newParent = groups.getValue(bin)
-        groups[bin] = newParent.copy(childGroupIds = newParent.childGroupIds + groupId)
-        groups[groupId] = group.copy(parentId = bin)
+        val binGroup = groups.getValue(bin)
+        groups[bin] = binGroup.copy(entryIds = binGroup.entryIds + subtree.flatMap { groups.getValue(it).entryIds })
+        subtree.forEach { groups.remove(it) }
     }
+
+    private fun subtree(groupId: GroupId): List<GroupId> =
+        listOf(groupId) + groups.getValue(groupId).childGroupIds.flatMap { subtree(it) }
 
     private fun call(method: String) {
         calls += method

@@ -24,7 +24,7 @@ sealed interface EntryReadAction {
     /** "Delete" in the menu of the top bar: asks first. */
     data object Delete : EntryReadAction
 
-    /** "Delete" in the dialog: the entry goes into the recycle bin, the screen goes back. */
+    /** "Delete" in the dialog: the entry goes into the recycle bin, or for good; the screen goes back. */
     data object DeleteConfirm : EntryReadAction
 
     data object DeleteDismiss : EntryReadAction
@@ -39,9 +39,10 @@ sealed interface EntryReadAction {
 /**
  * "Delete the entry?" - the entry called [title] as the file holds it.
  *
+ * @param toBin the delete goes to the recycle bin; false - for good (pass-docs, Step 70)
  * @param deleting the delete is under way: the dialog shows progress and takes nothing
  */
-data class DeleteDialog(val title: String, val deleting: Boolean = false)
+data class DeleteDialog(val title: String, val toBin: Boolean, val deleting: Boolean = false)
 
 /** What the snackbar says. */
 enum class EntryReadMessage { LoadFailed, NotSaved, Unexpected }

@@ -24,6 +24,8 @@
     <string name="action_apply">Применить</string>
     <string name="action_reset">Сбросить</string>
     <string name="action_copy">Копировать</string>
+    <string name="action_restore">Восстановить</string>
+    <string name="action_select_all">Выбрать все</string>
     <string name="action_pick_another_file">Выбрать другой файл</string>
     <string name="action_pick_another_key_file">Выбрать другой key-файл</string>
 
@@ -160,7 +162,8 @@
     </plurals>
     <string name="group_name_taken">Группа с таким названием уже есть</string>
     <string name="group_delete_title">Удалить группу?</string>
-    <string name="group_delete_text">«%1$s» и всё, что в ней, попадёт в корзину.</string>
+    <string name="group_delete_text">«%1$s» и вложенные группы удалятся, записи попадут в корзину.</string>
+    <string name="group_delete_forever_text">«%1$s» удалится со всем содержимым насовсем. Это нельзя отменить.</string>
     <string name="message_file_not_saved">Изменение сделано, но файл не записан</string>
     <string name="vault_message_load_failed">Не удалось прочитать группу</string>
     <string name="vault_message_search_failed">Не удалось выполнить поиск</string>
@@ -171,6 +174,7 @@
     <string name="entry_created_at">Создано: %1$s</string>
     <string name="entry_delete_title">Удалить запись?</string>
     <string name="entry_delete_text">«%1$s» попадёт в корзину.</string>
+    <string name="entry_delete_forever_text">«%1$s» удалится насовсем. Это нельзя отменить.</string>
     <string name="entry_preset_standard">Стандарт</string>
     <string name="entry_preset">Пресет</string>
     <string name="entry_hidden_title">Поля вне пресета</string>
@@ -273,7 +277,34 @@
     <string name="settings_entries">Записи</string>
     <string name="settings_entries_text">Скрытые поля, история</string>
     <string name="settings_recycle_bin">Корзина</string>
-    <string name="settings_recycle_bin_text">Удалённые группы и записи</string>
+    <string name="settings_recycle_bin_text">Удалённые записи</string>
+    <string name="settings_recycle_bin_use">Использовать корзину</string>
+    <string name="settings_recycle_bin_use_on">Удалённые записи можно восстановить</string>
+    <string name="settings_recycle_bin_use_off">Выключено — удаление сразу насовсем</string>
+    <string name="settings_recycle_bin_deleted">Удалённое</string>
+    <string name="settings_recycle_bin_empty">Пусто</string>
+    <string name="settings_recycle_bin_off_title">Выключить корзину?</string>
+    <string name="settings_recycle_bin_off_text">Корзина будет очищена: удалённое не вернуть.</string>
+    <string name="settings_recycle_bin_off_confirm">Выключить</string>
+    <string name="trash_deleted_at">Удалено: %1$s</string>
+    <string name="trash_empty">Корзина пуста</string>
+    <string name="trash_empty_hint">Здесь появятся удалённые записи</string>
+    <string name="trash_picked">Выбрано: %1$d</string>
+    <string name="trash_menu">Меню корзины</string>
+    <string name="trash_empty_action">Очистить корзину</string>
+    <string name="trash_empty_title">Очистить корзину?</string>
+    <string name="trash_empty_text">Все записи в корзине удалятся насовсем. Это нельзя отменить.</string>
+    <string name="trash_empty_confirm">Очистить</string>
+    <string name="trash_restore_title">Восстановить</string>
+    <string name="trash_restore_text">Выберите группу, куда вернуть записи.</string>
+    <string name="trash_remove_title">Удалить насовсем?</string>
+    <plurals name="trash_remove_text">
+        <item quantity="one">%1$d запись удалится насовсем. Это нельзя отменить.</item>
+        <item quantity="few">%1$d записи удалятся насовсем. Это нельзя отменить.</item>
+        <item quantity="many">%1$d записей удалятся насовсем. Это нельзя отменить.</item>
+        <item quantity="other">%1$d записи удалятся насовсем. Это нельзя отменить.</item>
+    </plurals>
+    <string name="trash_message_changed">Корзина изменилась, список обновлён</string>
     <string name="settings_security">Безопасность</string>
     <string name="settings_security_text">Пароль, key-файл, шифрование</string>
     <string name="settings_security_credentials_group">Учётные данные</string>

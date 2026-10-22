@@ -66,9 +66,9 @@ class EntryEditor(
         save(dbKey)
     }
 
-    /** Moves the entry into the recycle bin and saves. */
+    /** Deletes the entry - into the recycle bin, or for good when the database does not use one - and saves. */
     suspend fun delete(dbKey: String, entryId: EntryId): Unit = guard.exclusive {
-        entries.moveToRecycleBin(dbKey, entryId)
+        entries.delete(dbKey, entryId)
         save(dbKey)
     }
 

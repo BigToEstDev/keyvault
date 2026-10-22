@@ -11,4 +11,10 @@ import java.time.format.DateTimeFormatter
 internal fun entryTimeText(epochSeconds: Long, zone: ZoneId = ZoneId.systemDefault()): String =
     ENTRY_TIME.withZone(zone).format(Instant.ofEpochSecond(epochSeconds))
 
+/** The day alone, `17.10.2026` - when an entry went to the recycle bin (pass-docs, Step 70). */
+internal fun entryDateText(epochSeconds: Long, zone: ZoneId = ZoneId.systemDefault()): String =
+    ENTRY_DATE.withZone(zone).format(Instant.ofEpochSecond(epochSeconds))
+
 private val ENTRY_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+
+private val ENTRY_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")

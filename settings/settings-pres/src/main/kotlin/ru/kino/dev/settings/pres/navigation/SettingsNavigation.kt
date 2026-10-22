@@ -12,6 +12,7 @@ import ru.kino.dev.settings.pres.lock.LockScreen
 import ru.kino.dev.settings.pres.presetedit.PresetEditScreen
 import ru.kino.dev.settings.pres.presets.PresetsScreen
 import ru.kino.dev.settings.pres.privacy.PrivacyScreen
+import ru.kino.dev.settings.pres.recyclebin.RecycleBinScreen
 import ru.kino.dev.settings.pres.security.SecurityScreen
 import ru.kino.dev.settings.pres.settings.SettingsScreen
 
@@ -27,6 +28,7 @@ fun NavGraphBuilder.settingsGraph() {
     composable<PresetsRoute> { PresetsScreen() }
     composable<FileRoute> { entry -> FileScreen(dbKey = entry.toRoute<FileRoute>().dbKey) }
     composable<EntriesRoute> { entry -> EntriesScreen(dbKey = entry.toRoute<EntriesRoute>().dbKey) }
+    composable<RecycleBinRoute> { entry -> RecycleBinScreen(dbKey = entry.toRoute<RecycleBinRoute>().dbKey) }
     composable<SecurityRoute> { entry -> SecurityScreen(dbKey = entry.toRoute<SecurityRoute>().dbKey) }
     composable<PresetEditRoute> { entry -> PresetEditScreen(presetId = entry.toRoute<PresetEditRoute>().presetId) }
 }

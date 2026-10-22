@@ -25,6 +25,8 @@
     <string name="action_apply">Apply</string>
     <string name="action_reset">Reset</string>
     <string name="action_copy">Copy</string>
+    <string name="action_restore">Restore</string>
+    <string name="action_select_all">Select all</string>
     <string name="action_pick_another_file">Choose another file</string>
     <string name="action_pick_another_key_file">Choose another key file</string>
 
@@ -157,7 +159,8 @@
     </plurals>
     <string name="group_name_taken">A group with this name is already here</string>
     <string name="group_delete_title">Delete the group?</string>
-    <string name="group_delete_text">«%1$s» and everything in it goes to the recycle bin.</string>
+    <string name="group_delete_text">«%1$s» and the groups inside it are deleted, its entries go to the recycle bin.</string>
+    <string name="group_delete_forever_text">«%1$s» is deleted for good with everything in it. This cannot be undone.</string>
     <string name="message_file_not_saved">The change is made, but the file was not written</string>
     <string name="vault_message_load_failed">Could not read the group</string>
     <string name="vault_message_search_failed">Could not search</string>
@@ -169,6 +172,7 @@
     <string name="entry_created_at">Created: %1$s</string>
     <string name="entry_delete_title">Delete the entry?</string>
     <string name="entry_delete_text">«%1$s» goes to the recycle bin.</string>
+    <string name="entry_delete_forever_text">«%1$s» is deleted for good. This cannot be undone.</string>
     <string name="entry_preset_standard">Standard</string>
     <string name="entry_preset">Preset</string>
     <string name="entry_hidden_title">Fields outside the preset</string>
@@ -267,7 +271,32 @@
     <string name="settings_entries">Entries</string>
     <string name="settings_entries_text">Hidden fields, history</string>
     <string name="settings_recycle_bin">Recycle bin</string>
-    <string name="settings_recycle_bin_text">Deleted groups and entries</string>
+    <string name="settings_recycle_bin_text">Deleted entries</string>
+    <string name="settings_recycle_bin_use">Use the recycle bin</string>
+    <string name="settings_recycle_bin_use_on">Deleted entries can be restored</string>
+    <string name="settings_recycle_bin_use_off">Off — a delete is for good at once</string>
+    <string name="settings_recycle_bin_deleted">Deleted</string>
+    <string name="settings_recycle_bin_empty">Empty</string>
+    <string name="settings_recycle_bin_off_title">Switch the recycle bin off?</string>
+    <string name="settings_recycle_bin_off_text">The recycle bin will be emptied: what was deleted cannot be brought back.</string>
+    <string name="settings_recycle_bin_off_confirm">Switch off</string>
+    <string name="trash_deleted_at">Deleted: %1$s</string>
+    <string name="trash_empty">The recycle bin is empty</string>
+    <string name="trash_empty_hint">Deleted entries show up here</string>
+    <string name="trash_picked">Selected: %1$d</string>
+    <string name="trash_menu">Recycle bin menu</string>
+    <string name="trash_empty_action">Empty the recycle bin</string>
+    <string name="trash_empty_title">Empty the recycle bin?</string>
+    <string name="trash_empty_text">Every entry in the recycle bin is deleted for good. This cannot be undone.</string>
+    <string name="trash_empty_confirm">Empty</string>
+    <string name="trash_restore_title">Restore</string>
+    <string name="trash_restore_text">Choose the group the entries go back to.</string>
+    <string name="trash_remove_title">Delete for good?</string>
+    <plurals name="trash_remove_text">
+        <item quantity="one">%1$d entry is deleted for good. This cannot be undone.</item>
+        <item quantity="other">%1$d entries are deleted for good. This cannot be undone.</item>
+    </plurals>
+    <string name="trash_message_changed">The recycle bin has changed, the list is read again</string>
     <string name="settings_security">Security</string>
     <string name="settings_security_text">Password, key file, encryption</string>
     <string name="settings_security_credentials_group">Credentials</string>

@@ -85,7 +85,7 @@ class GroupRepositoryImplTest {
 
     @Test
     fun `a deleted group leaves the tree, and its entries leave the count`() = runTest {
-        repository.moveToRecycleBin(DB, GroupId(WORK))
+        repository.delete(DB, GroupId(WORK))
 
         val tree = repository.tree(DB)
         assertNull(tree.group(GroupId(WORK)))

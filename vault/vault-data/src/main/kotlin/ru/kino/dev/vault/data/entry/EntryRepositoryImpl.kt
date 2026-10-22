@@ -48,7 +48,7 @@ internal class EntryRepositoryImpl @Inject constructor(
         core.updateEntry(dbKey, entryId.value, fields.map { it.toData() })
     }
 
-    override suspend fun moveToRecycleBin(dbKey: String, entryId: EntryId) = entryCall {
+    override suspend fun delete(dbKey: String, entryId: EntryId) = entryCall {
         core.deleteEntry(dbKey, entryId.value)
     }
 
@@ -59,15 +59,16 @@ internal class EntryRepositoryImpl @Inject constructor(
             core.moveEntry(dbKey, entryId.value, groupId.value)
         }
 
-    private fun EntrySummaryData.toSummary() = EntrySummary(
-        id = EntryId(id),
-        groupId = GroupId(groupId),
-        title = title,
-        userName = userName,
-        createdAt = createdAt,
-    )
-
     private fun EntryFieldData.toField() = EntryField(key = key, value = value, protected = protected)
 
     private fun EntryField.toData() = EntryFieldData(key = key, value = value, protected = protected)
 }
+
+/** An entry as a list shows it - also in the recycle bin. */
+internal fun EntrySummaryData.toSummary() = EntrySummary(
+    id = EntryId(id),
+    groupId = GroupId(groupId),
+    title = title,
+    userName = userName,
+    createdAt = createdAt,
+)

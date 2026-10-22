@@ -48,6 +48,9 @@ sealed interface GroupListAction {
     /** The gear of the root: the settings (pass-docs, Step 52). */
     data object OpenSettings : GroupListAction
 
+    /** The bin of the root, beside the gear: the recycle bin (pass-docs, Step 70). */
+    data object OpenTrash : GroupListAction
+
     data class OpenEntry(val id: EntryId) : GroupListAction
 
     data class EditEntry(val id: EntryId) : GroupListAction
@@ -123,6 +126,8 @@ sealed interface GroupDialog {
     data class Delete(
         val groupId: GroupId,
         val name: String,
+        /** Its entries go to the recycle bin; false - everything goes for good (pass-docs, Step 70) */
+        val toBin: Boolean,
         override val saving: Boolean = false,
     ) : GroupDialog
 
@@ -130,6 +135,8 @@ sealed interface GroupDialog {
         val entryId: EntryId,
         /** As the card shows it; empty when the entry has none */
         val title: String,
+        /** Into the recycle bin; false - for good (pass-docs, Step 70) */
+        val toBin: Boolean,
         override val saving: Boolean = false,
     ) : GroupDialog
 }
