@@ -13,7 +13,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import ru.kino.dev.core.preset.PresetRepository
+import ru.kino.dev.settings.biometric.BiometricRepository
 import ru.kino.dev.settings.lock.InactivityTimer
+import ru.kino.dev.settings.signin.RememberedKeyFile
 import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.credentials.DatabaseCredentials
 import ru.kino.dev.vault.data.credentials.DatabaseCredentialsImpl
@@ -24,6 +26,7 @@ import ru.kino.dev.vault.data.filter.DataStoreVaultFilterRepository
 import ru.kino.dev.vault.data.filter.vaultFilterStore
 import ru.kino.dev.vault.data.group.GroupRepositoryImpl
 import ru.kino.dev.vault.data.history.EntryHistoryRepositoryImpl
+import ru.kino.dev.vault.data.security.SecurityRepositoryImpl
 import ru.kino.dev.vault.entries.EntrySettingsEditor
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
@@ -41,6 +44,8 @@ import ru.kino.dev.vault.history.EntryVersionOpener
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.lock.DatabaseGuard
 import ru.kino.dev.vault.search.VaultSearch
+import ru.kino.dev.vault.security.SecurityEditor
+import ru.kino.dev.vault.security.SecurityRepository
 
 /** Binds the repositories of `vault` to their implementations, and builds its use cases and its lock. */
 @Module
@@ -67,6 +72,9 @@ internal interface VaultDataModule {
 
     @Binds
     fun bindEntrySettingsRepository(impl: EntrySettingsRepositoryImpl): EntrySettingsRepository
+
+    @Binds
+    fun bindSecurityRepository(impl: SecurityRepositoryImpl): SecurityRepository
 
     companion object {
 
@@ -110,6 +118,15 @@ internal interface VaultDataModule {
             database: VaultDatabaseRepository,
             guard: DatabaseGuard,
         ): EntrySettingsEditor = EntrySettingsEditor(settings, database, guard)
+
+        @Provides
+        fun provideSecurityEditor(
+            security: SecurityRepository,
+            database: VaultDatabaseRepository,
+            biometrics: BiometricRepository,
+            rememberedKeyFile: RememberedKeyFile,
+            guard: DatabaseGuard,
+        ): SecurityEditor = SecurityEditor(security, database, biometrics, rememberedKeyFile, guard)
 
         @Provides
         fun provideEntryEditor(

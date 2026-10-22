@@ -1,5 +1,6 @@
 package ru.kino.dev.core
 
+import kotlin.time.Duration
 import ru.kino.dev.core.preset.StandardPreset
 
 /**
@@ -105,6 +106,28 @@ interface NativeCore {
      * it on the next [saveDatabase].
      */
     suspend fun changeDatabaseEntries(dbKey: String, entries: DatabaseEntries)
+
+    /** The cipher, the key derivation and the credentials of the open database. */
+    suspend fun databaseSecurity(dbKey: String): DatabaseSecurity
+
+    /**
+     * Encrypts the open database with [encryption] from the next save on; memory, lanes and the rest of its settings
+     * stay as they are. In memory only: the file gets it on the next [saveDatabase].
+     */
+    suspend fun changeDatabaseEncryption(dbKey: String, encryption: Encryption)
+
+    /**
+     * Applies [change] to the credentials of the open database. Both password and key file gone is refused by the
+     * core (`InSufficientCredentials`), a password over [CredentialLimits.PASSWORD_MAX_CHARS] too - before anything
+     * changes. In memory only: the old file opens with the old credentials until the next [saveDatabase].
+     */
+    suspend fun changeDatabaseCredentials(dbKey: String, change: CredentialsChange)
+
+    /**
+     * How long one KDF pass of the open database takes on this device - the open time is one pass times the
+     * iterations. Takes about as long as a pass; the database is not changed, locked or not (pass-docs, Step 68).
+     */
+    suspend fun measureKdfPass(dbKey: String): Duration
 
     /**
      * Compares [bytes] with the checksum taken when the file was last read or written.

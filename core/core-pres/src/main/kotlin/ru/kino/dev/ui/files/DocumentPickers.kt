@@ -1,12 +1,12 @@
-package ru.kino.dev.welcome.pres.common
+package ru.kino.dev.ui.files
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 
 /*
- * The system pickers of `welcome`. Launched by the screen when its processor asks with a side effect, and
- * what they hand back goes to the processor as an action - the processor never sees Android.
+ * The system pickers, shared by `welcome` and `settings` (pass-docs, Step 67). Launched by the screen when its
+ * processor asks, and what they hand back goes to the processor as an action - the processor never sees Android.
  *
  * Only single documents: access to a folder is never asked for (pass-docs, `decisions.md`, "Одна текущая
  * база"). A cancelled picker hands back nothing and nothing happens.
@@ -20,7 +20,7 @@ private const val BINARY_FILE = "application/octet-stream"
 
 /** Picks an existing file - `ACTION_OPEN_DOCUMENT`. The returned function launches the picker. */
 @Composable
-internal fun rememberOpenDocument(onPicked: (uri: String) -> Unit): () -> Unit {
+fun rememberOpenDocument(onPicked: (uri: String) -> Unit): () -> Unit {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { onPicked(it.toString()) }
     }
@@ -32,7 +32,7 @@ internal fun rememberOpenDocument(onPicked: (uri: String) -> Unit): () -> Unit {
  * the name to suggest.
  */
 @Composable
-internal fun rememberCreateDocument(onPicked: (uri: String) -> Unit): (suggestedName: String) -> Unit {
+fun rememberCreateDocument(onPicked: (uri: String) -> Unit): (suggestedName: String) -> Unit {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BINARY_FILE)) { uri ->
         uri?.let { onPicked(it.toString()) }
     }

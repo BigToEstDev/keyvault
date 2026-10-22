@@ -36,7 +36,7 @@ import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.PrimaryButton
-import ru.kino.dev.welcome.pres.common.rememberCreateDocument
+import ru.kino.dev.ui.files.rememberCreateDocument
 import ru.kino.dev.welcome.pres.create.CreateDraft
 import ru.kino.dev.welcome.pres.create.CreateProblemText
 import ru.kino.dev.welcome.pres.create.OverwriteDialog

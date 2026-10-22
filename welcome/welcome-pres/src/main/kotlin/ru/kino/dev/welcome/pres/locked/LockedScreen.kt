@@ -12,7 +12,7 @@ import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.biometric.BiometricPurpose
 import ru.kino.dev.welcome.pres.common.PasswordEntryContent
 import ru.kino.dev.welcome.pres.common.rememberBiometricPrompt
-import ru.kino.dev.welcome.pres.common.rememberOpenDocument
+import ru.kino.dev.ui.files.rememberOpenDocument
 
 @Composable
 internal fun LockedScreen(

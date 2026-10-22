@@ -29,7 +29,7 @@ import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.welcome.pres.common.ShieldImage
-import ru.kino.dev.welcome.pres.common.rememberOpenDocument
+import ru.kino.dev.ui.files.rememberOpenDocument
 
 @Composable
 internal fun WelcomeScreen(processor: WelcomeProcessor = hiltViewModel()) {

@@ -1,0 +1,368 @@
+package ru.kino.dev.settings.pres.security
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material3.Card
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import java.text.NumberFormat
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.Cipher
+import ru.kino.dev.core.CredentialLimits
+import ru.kino.dev.core.DatabaseSecurity
+import ru.kino.dev.core.KdfVariant
+import ru.kino.dev.core.pres.R
+import ru.kino.dev.settings.pres.entries.MEGABYTE
+import ru.kino.dev.settings.pres.security.components.CredentialCard
+import ru.kino.dev.settings.pres.security.components.PasswordDialog
+import ru.kino.dev.settings.pres.security.components.SecuritySkeleton
+import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
+import ru.kino.dev.ui.components.BackTopBar
+import ru.kino.dev.ui.components.ConfirmDialog
+import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.components.ItemMenu
+import ru.kino.dev.ui.components.MenuItem
+import ru.kino.dev.ui.components.RadioGroup
+import ru.kino.dev.ui.components.SkeletonText
+import ru.kino.dev.ui.components.SnackbarMessage
+import ru.kino.dev.ui.components.ValueRow
+import ru.kino.dev.ui.components.WheelPickerDialog
+import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.files.rememberOpenDocument
+
+/**
+ * The security of the database: the credentials, the cipher, the key derivation and its rounds with the open time
+ * on this phone (pass-docs, Step 67).
+ */
+@Composable
+internal fun SecurityScreen(
+    dbKey: String,
+    processor: SecurityProcessor = hiltViewModel<SecurityProcessor, SecurityProcessor.Factory>(
+        creationCallback = { factory -> factory.create(dbKey) },
+    ),
+) {
+    val state by processor.collectAsState()
+    val snackbar = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) { processor.action(SecurityAction.Load) }
+
+    val message = state.message?.let { messageText(it) }
+    SnackbarMessage(message, snackbar) { processor.action(SecurityAction.MessageShown) }
+    val pickKeyFile = rememberOpenDocument { processor.action(SecurityAction.KeyFilePicked(it)) }
+
+    GradientBackground {
+        Scaffold(
+            // The backdrop is the gradient behind
+            containerColor = Color.Transparent,
+            topBar = {
+                BackTopBar(
+                    title = stringResource(R.string.settings_security),
+                    onBack = { processor.action(SecurityAction.Back) },
+                )
+            },
+            snackbarHost = { SnackbarHost(snackbar) },
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val security = state.security
+                if (security == null) {
+                    // Until read there is nothing to show for real: the shapes of the screen
+                    item(key = "skeleton") { SecuritySkeleton(skeletonBrush()) }
+                } else {
+                    credentialRows(security, state.saving, pickKeyFile, processor::action)
+                    encryptionRows(security, state.kdfPass, state.saving, processor::action)
+                }
+            }
+        }
+    }
+
+    if (state.choosingRounds) {
+        state.security?.let { RoundsDialog(it, state.kdfPass, processor::action) }
+    }
+    state.passwordDialog?.let { PasswordDialog(it, processor::action) }
+    if (state.removingKeyFile) {
+        ConfirmDialog(
+            title = stringResource(R.string.settings_security_key_file_remove_title),
+            text = stringResource(R.string.settings_security_key_file_remove_text),
+            confirmText = stringResource(R.string.action_remove),
+            dismissText = stringResource(R.string.action_cancel),
+            onConfirm = { processor.action(SecurityAction.RemoveKeyFileConfirm) },
+            onDismiss = { processor.action(SecurityAction.RemoveKeyFileDismiss) },
+            destructive = true,
+        )
+    }
+}
+
+private fun LazyListScope.credentialRows(
+    security: DatabaseSecurity,
+    saving: SecurityPart?,
+    pickKeyFile: () -> Unit,
+    action: (SecurityAction) -> Unit,
+) {
+    item(key = "credentials") {
+        SettingsSectionHeader(title = stringResource(R.string.settings_security_credentials_group))
+    }
+    item(key = "password") {
+        CredentialCard(
+            title = stringResource(R.string.settings_security_password),
+            value = stringResource(
+                if (security.credentials.password) {
+                    R.string.settings_security_password_set
+                } else {
+                    R.string.settings_security_password_none
+                },
+            ),
+            hint = stringResource(R.string.settings_security_password_hint),
+            onClick = { action(SecurityAction.EditPassword) },
+            enabled = saving == null,
+        )
+    }
+    item(key = "key_file") { KeyFileCard(security, saving, pickKeyFile, action) }
+}
+
+private fun LazyListScope.encryptionRows(
+    security: DatabaseSecurity,
+    kdfPass: KdfPass,
+    saving: SecurityPart?,
+    action: (SecurityAction) -> Unit,
+) {
+    val encryption = security.encryption
+    item(key = "encryption") {
+        // Set apart from the group above, as the sections of the main screen
+        SettingsSectionHeader(
+            title = stringResource(R.string.settings_security_encryption_group),
+            hint = stringResource(R.string.settings_security_encryption_hint),
+            top = 8.dp,
+        )
+    }
+    item(key = "cipher") {
+        ChoiceCard(saving == SecurityPart.Cipher) {
+            RadioGroup(
+                title = stringResource(R.string.settings_security_cipher),
+                options = listOf(Cipher.Aes256, Cipher.ChaCha20),
+                selected = encryption.cipher,
+                label = { cipherLabel(it) },
+                onSelect = { action(SecurityAction.SelectCipher(it)) },
+                enabled = saving == null,
+            )
+        }
+    }
+    item(key = "kdf") {
+        ChoiceCard(saving == SecurityPart.Kdf) {
+            RadioGroup(
+                title = stringResource(R.string.settings_security_kdf),
+                options = listOf(KdfVariant.Argon2id, KdfVariant.Argon2d),
+                selected = encryption.kdf,
+                label = { kdfLabel(it) },
+                onSelect = { action(SecurityAction.SelectKdf(it)) },
+                enabled = saving == null,
+            )
+        }
+    }
+    item(key = "kdf_parameters") {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column {
+                // As the file has them, 20 of a database from elsewhere too: the wheel offers ours
+                val rounds = encryption.iterations
+                ValueRow(
+                    title = stringResource(R.string.settings_security_rounds),
+                    value = rounds.toString(),
+                    onClick = { action(SecurityAction.ChooseRounds) },
+                    text = (kdfPass as? KdfPass.Measured)?.let { openTime(it, rounds) },
+                    enabled = saving == null,
+                )
+                if (kdfPass == KdfPass.Measuring) OpenTimeSkeleton(Modifier.padding(start = 16.dp, bottom = 12.dp))
+                if (saving == SecurityPart.Rounds) SavingProgress(Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+                // What makes guessing expensive stays as the file has it: to read only
+                ValueRow(
+                    title = stringResource(R.string.settings_security_memory),
+                    value = stringResource(R.string.settings_megabytes_short, megabytes(security.memoryBytes)),
+                    onClick = null,
+                )
+                ValueRow(
+                    title = stringResource(R.string.settings_security_parallelism),
+                    value = security.parallelism.toString(),
+                    onClick = null,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The key file: none - a tap picks the first one; one - a tap opens "Change" and, with a password, "Remove". Without
+ * a password the key file is all that opens the database, and it cannot go.
+ */
+@Composable
+private fun KeyFileCard(
+    security: DatabaseSecurity,
+    saving: SecurityPart?,
+    pickKeyFile: () -> Unit,
+    action: (SecurityAction) -> Unit,
+) {
+    var menu by remember { mutableStateOf(false) }
+    val hasKeyFile = security.credentials.keyFile
+    CredentialCard(
+        title = stringResource(R.string.key_file_title),
+        value = security.keyFileName ?: stringResource(R.string.settings_security_key_file_none),
+        hint = stringResource(R.string.settings_security_key_file_hint),
+        onClick = { if (hasKeyFile) menu = true else pickKeyFile() },
+        enabled = saving == null,
+        footer = {
+            if (saving == SecurityPart.KeyFile) SavingProgress(Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+        },
+    ) {
+        ItemMenu(
+            expanded = menu,
+            onDismiss = { menu = false },
+            items = buildList {
+                add(MenuItem(stringResource(R.string.action_change), Icons.Filled.SwapHoriz, pickKeyFile))
+                if (security.credentials.password) {
+                    add(MenuItem(stringResource(R.string.action_remove), Icons.Filled.LinkOff) {
+                        action(SecurityAction.RemoveKeyFile)
+                    })
+                }
+            },
+            offset = DpOffset(x = 16.dp, y = 0.dp),
+        )
+    }
+}
+
+@Composable
+private fun messageText(message: SecurityMessage): String = when (message) {
+    SecurityMessage.NotSaved -> stringResource(R.string.message_file_not_saved)
+    SecurityMessage.Failed -> stringResource(R.string.error_unexpected)
+    SecurityMessage.PasswordSaved -> stringResource(R.string.settings_security_password_saved)
+    SecurityMessage.PasswordSavedBiometricsOff -> stringResource(R.string.settings_security_password_saved_biometrics_off)
+    SecurityMessage.KeyFileSaved -> stringResource(R.string.settings_security_key_file_saved)
+    SecurityMessage.KeyFileRemoved -> stringResource(R.string.settings_security_key_file_removed)
+    SecurityMessage.KeyFileTooLarge ->
+        stringResource(R.string.error_key_file_too_large, (CredentialLimits.KEY_FILE_MAX_SIZE / MEGABYTE).toInt())
+    SecurityMessage.KeyFileUnreadable -> stringResource(R.string.error_key_file_unreachable)
+    SecurityMessage.KeyFileNotRemembered -> stringResource(R.string.settings_security_key_file_not_remembered)
+}
+
+/** A choice of the encryption in a card, with progress under it while the file is written with it. */
+@Composable
+private fun ChoiceCard(saving: Boolean, content: @Composable () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            content()
+            if (saving) SavingProgress(Modifier.padding(top = 12.dp))
+        }
+    }
+}
+
+/** While the file is written - the key derivation takes seconds. */
+@Composable
+private fun SavingProgress(modifier: Modifier) {
+    LinearProgressIndicator(modifier = modifier.fillMaxWidth())
+}
+
+@Composable
+private fun RoundsDialog(security: DatabaseSecurity, kdfPass: KdfPass, action: (SecurityAction) -> Unit) {
+    WheelPickerDialog(
+        title = stringResource(R.string.settings_security_rounds),
+        options = RoundsChoices.OPTIONS,
+        selected = RoundsChoices.onWheel(security.encryption.iterations),
+        label = { it.toString() },
+        onConfirm = { action(SecurityAction.SelectRounds(it)) },
+        onDismiss = { action(SecurityAction.DismissRounds) },
+        confirmText = stringResource(R.string.action_save),
+    ) { rounds ->
+        Column(modifier = Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            when (kdfPass) {
+                is KdfPass.Measured -> Text(
+                    text = openTime(kdfPass, rounds),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                KdfPass.Measuring -> OpenTimeSkeleton(Modifier)
+                KdfPass.Unknown -> Unit
+            }
+            Text(
+                text = stringResource(R.string.settings_security_rounds_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** The open time is measured in the background - its line meanwhile. */
+@Composable
+private fun OpenTimeSkeleton(modifier: Modifier) {
+    SkeletonText(
+        brush = skeletonBrush(),
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = modifier,
+        widthFraction = OPEN_TIME_WIDTH,
+    )
+}
+
+/** "Opening on this phone: about 2.6 s" - one pass times [rounds], in the way of the language. */
+@Composable
+private fun openTime(kdfPass: KdfPass.Measured, rounds: Long): String {
+    val seconds = kdfPass.pass.inWholeMilliseconds * rounds / MILLIS_IN_SECOND
+    val number = NumberFormat.getNumberInstance().apply {
+        minimumFractionDigits = 1
+        maximumFractionDigits = 1
+    }
+    return stringResource(R.string.settings_security_open_time, number.format(seconds))
+}
+
+/** The memory of Argon2 as KeePass shows it, in MiB - "64"; a size that is no whole one - "3.5". */
+private fun megabytes(bytes: Long): String {
+    val number = NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }
+    return number.format(bytes.toDouble() / MEGABYTE)
+}
+
+@Composable
+private fun cipherLabel(cipher: Cipher): String = stringResource(
+    when (cipher) {
+        Cipher.Aes256 -> R.string.settings_security_cipher_aes
+        Cipher.ChaCha20 -> R.string.settings_security_cipher_chacha
+    },
+)
+
+@Composable
+private fun kdfLabel(kdf: KdfVariant): String = stringResource(
+    when (kdf) {
+        KdfVariant.Argon2id -> R.string.settings_security_kdf_argon2id
+        KdfVariant.Argon2d -> R.string.settings_security_kdf_argon2d
+    },
+)
+
+private const val MILLIS_IN_SECOND = 1000.0
+
+private const val OPEN_TIME_WIDTH = 0.6f

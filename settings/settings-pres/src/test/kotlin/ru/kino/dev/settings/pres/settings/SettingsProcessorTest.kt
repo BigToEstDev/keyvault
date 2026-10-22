@@ -51,7 +51,7 @@ class SettingsProcessorTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
         SettingsProcessor(DB, navigator).testWithInternalState(this) {
-            containerHost.action(SettingsAction.Open(SettingsItem.Security)).join()
+            containerHost.action(SettingsAction.Open(SettingsItem.RecycleBin)).join()
         }
 
         assertEquals(emptyList<MviNavEvent>(), events)

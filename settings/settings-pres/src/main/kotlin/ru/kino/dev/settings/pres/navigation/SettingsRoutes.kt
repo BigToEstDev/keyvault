@@ -26,6 +26,10 @@ internal data class FileRoute(val dbKey: String)
 @Serializable
 internal data class EntriesRoute(val dbKey: String)
 
+/** The security of the database [dbKey]: the credentials, the cipher, the key derivation (pass-docs, Step 67). */
+@Serializable
+internal data class SecurityRoute(val dbKey: String)
+
 /** The presets: whether they are used, the list of those of one's own (pass-docs, Step 62). */
 @Serializable
 internal data object PresetsRoute
@@ -38,5 +42,6 @@ internal fun SettingsItem.route(dbKey: String): Any? = when (this) {
     SettingsItem.Presets -> PresetsRoute
     SettingsItem.File -> FileRoute(dbKey)
     SettingsItem.Entries -> EntriesRoute(dbKey)
+    SettingsItem.Security -> SecurityRoute(dbKey)
     else -> null
 }

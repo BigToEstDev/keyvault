@@ -3,6 +3,8 @@ package ru.kino.dev.ffi
 import java.util.Base64
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -10,9 +12,12 @@ import kotlinx.serialization.builtins.ListSerializer
 import ru.kino.dev.core.Compression
 import ru.kino.dev.core.CreatedDatabase
 import ru.kino.dev.core.CredentialLimits
+import ru.kino.dev.core.CredentialsChange
 import ru.kino.dev.core.CredentialsUsed
 import ru.kino.dev.core.DatabaseEntries
 import ru.kino.dev.core.DatabaseFile
+import ru.kino.dev.core.DatabaseSecurity
+import ru.kino.dev.core.Encryption
 import ru.kino.dev.core.EntryData
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
@@ -214,6 +219,39 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
                 DoneDto.serializer(),
             )
         }
+    }
+
+    override suspend fun databaseSecurity(dbKey: String): DatabaseSecurity = withContext(dispatcher) {
+        dbSettings(dbKey).securityToDomain()
+    }
+
+    override suspend fun changeDatabaseEncryption(dbKey: String, encryption: Encryption) {
+        withContext(dispatcher) {
+            call(
+                FfiCommands.SET_DB_SETTINGS,
+                SetDbSettingsDto.serializer(),
+                SetDbSettingsDto(dbKey = dbKey, settings = dbSettings(dbKey).withEncryption(encryption)),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun changeDatabaseCredentials(dbKey: String, change: CredentialsChange) {
+        withContext(dispatcher) {
+            // Only a new key file travels, as content, beside the settings - the core refuses it anywhere else
+            val keyFile = (change as? CredentialsChange.SetKeyFile)?.keyFile?.toDto()
+            call(
+                FfiCommands.SET_DB_SETTINGS,
+                SetDbSettingsDto.serializer(),
+                SetDbSettingsDto(dbKey = dbKey, settings = dbSettings(dbKey).withCredentials(change), keyFile = keyFile),
+                DoneDto.serializer(),
+            )
+        }
+    }
+
+    override suspend fun measureKdfPass(dbKey: String): Duration = withContext(dispatcher) {
+        call(FfiCommands.MEASURE_KDF_PASS, DbKeyDto.serializer(), DbKeyDto(dbKey), KdfPassDto.serializer())
+            .millis.milliseconds
     }
 
     private fun dbSettings(dbKey: String): DbSettingsDto =
