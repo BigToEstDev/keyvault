@@ -73,6 +73,13 @@ sealed interface TrashDialog {
     data class Empty(override val saving: Boolean = false) : TrashDialog
 }
 
+/** The same dialog, its change under way. */
+internal fun TrashDialog.saving(): TrashDialog = when (this) {
+    is TrashDialog.Restore -> copy(saving = true)
+    is TrashDialog.Remove -> copy(saving = true)
+    is TrashDialog.Empty -> copy(saving = true)
+}
+
 /** Why the list is empty - what the empty screen says. */
 enum class TrashEmpty {
     /** Nothing in the bin. */

@@ -18,7 +18,6 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.pres.common.SEARCH_DELAY
-import ru.kino.dev.vault.pres.common.groupChoices
 import ru.kino.dev.vault.trash.TrashEditor
 import ru.kino.dev.vault.trash.TrashEntry
 import ru.kino.dev.vault.trash.TrashFailure
@@ -169,10 +168,8 @@ class TrashProcessor @AssistedInject constructor(
             reduce { state.copy(message = TrashMessage.Unexpected) }
             return
         }
-        val choices = tree.groupChoices()
-        val previous = state.shown.filter { it.entry.id in state.picked }.map { it.previousGroupId }.distinct()
-        val offered = previous.singleOrNull()?.takeIf { id -> choices.any { it.id == id } }
-        reduce { state.copy(dialog = TrashDialog.Restore(choices, offered)) }
+        val previous = state.shown.filter { it.entry.id in state.picked }.map { it.previousGroupId }
+        reduce { state.copy(dialog = tree.restoreDialog(previous)) }
     }
 
     private suspend fun Syntax<TrashState, Nothing>.confirm() {
@@ -242,10 +239,4 @@ class TrashProcessor @AssistedInject constructor(
     private companion object {
         const val TAG = "TrashProcessor"
     }
-}
-
-private fun TrashDialog.saving(): TrashDialog = when (this) {
-    is TrashDialog.Restore -> copy(saving = true)
-    is TrashDialog.Remove -> copy(saving = true)
-    is TrashDialog.Empty -> copy(saving = true)
 }
