@@ -19,6 +19,9 @@ data class VaultGroup(
  * shown in v1, its groups cannot be opened, and its entries are not counted (pass-docs, Step 36, decision
  * 2). Every question about a group that is not visible answers as if there were no such group.
  *
+ * The root is named as the database - `Meta/DatabaseName`, what the settings rename; a blank one - the root
+ * group's own (pass-docs, Step 56, item 6). Wherever the root is shown it stands for the database.
+ *
  * A snapshot: a change made through the repository is seen in the next tree, not in this one.
  */
 class VaultTree(

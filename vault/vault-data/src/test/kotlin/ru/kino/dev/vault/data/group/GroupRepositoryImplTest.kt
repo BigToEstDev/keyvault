@@ -5,10 +5,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Test
+import ru.kino.dev.core.Compression
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.DatabaseFile
 import ru.kino.dev.core.FakeNativeCore
 import ru.kino.dev.core.GroupNode
 import ru.kino.dev.core.GroupTree
+import ru.kino.dev.core.KdbxVersion
+import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
@@ -20,6 +24,8 @@ class GroupRepositoryImplTest {
     private val repository = GroupRepositoryImpl(core)
 
     init {
+        core.opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null)
+        core.databaseFile = DatabaseFile(name = "Passwords", version = KdbxVersion.V41, compression = Compression.GZip)
         core.groupTrees[DB] = GroupTree(
             rootId = ROOT,
             recycleBinId = null,
@@ -39,6 +45,24 @@ class GroupRepositoryImplTest {
         assertEquals(listOf(GroupId(WORK)), tree.subgroups(GroupId(ROOT)).map { it.id })
         assertEquals(listOf(EntryId("e2"), EntryId("e3")), tree.group(GroupId(WORK))?.entryIds)
         assertEquals(3, tree.entryCount(GroupId(ROOT)).nested)
+    }
+
+    // Renamed in the settings: the root group keeps its own name in the file, the screens show the database's
+    @Test
+    fun `the root is named as the database`() = runTest {
+        core.databaseFile = core.databaseFile.copy(name = "Home")
+
+        val tree = repository.tree(DB)
+
+        assertEquals("Home", tree.root.name)
+        assertEquals("Work", tree.group(GroupId(WORK))?.name)
+    }
+
+    @Test
+    fun `a database without a name keeps the name of its root group`() = runTest {
+        core.databaseFile = core.databaseFile.copy(name = "")
+
+        assertEquals("Passwords", repository.tree(DB).root.name)
     }
 
     @Test

@@ -10,7 +10,7 @@ package ru.kino.dev.vault.group
  */
 interface GroupRepository {
 
-    /** The whole tree, in one call to the core. */
+    /** The whole tree, its root named as the database ([VaultTree]). */
     suspend fun tree(dbKey: String): VaultTree
 
     /** Creates a group called [name] inside [parentId] and returns its id. */
