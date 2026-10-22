@@ -24,12 +24,13 @@ import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.settings.pres.security.PasswordDialog
+import ru.kino.dev.settings.pres.security.PasswordInput
 import ru.kino.dev.settings.pres.security.SecurityAction
 import ru.kino.dev.ui.components.PasswordField
 
 /**
  * The master password of the database: the current one first when there is one, then the new one twice - with the
- * limits and the mismatch of `masterpassword` (pass-docs, Step 67). One eye shows or hides all of them.
+ * limits and the mismatch of `masterpassword` (pass-docs, Step 67). Each field has its eye.
  *
  * While [PasswordDialog.saving] - the password checked, the key derived, the file written - the button shows
  * progress and nothing takes input; the dialog does not close.
@@ -61,8 +62,8 @@ internal fun PasswordDialog(dialog: PasswordDialog, action: (SecurityAction) -> 
                         value = dialog.current,
                         onValueChange = { action(SecurityAction.CurrentPasswordChanged(it)) },
                         label = stringResource(R.string.settings_security_password_current),
-                        visible = dialog.visible,
-                        onToggleVisible = { action(SecurityAction.TogglePasswordVisible) },
+                        visible = PasswordInput.Current in dialog.visible,
+                        onToggleVisible = { action(SecurityAction.TogglePasswordVisible(PasswordInput.Current)) },
                         error = if (dialog.wrongCurrent) stringResource(R.string.settings_biometric_wrong_password) else null,
                         enabled = enabled,
                         imeAction = ImeAction.Next,
@@ -73,9 +74,8 @@ internal fun PasswordDialog(dialog: PasswordDialog, action: (SecurityAction) -> 
                     value = dialog.password,
                     onValueChange = { action(SecurityAction.NewPasswordChanged(it)) },
                     label = stringResource(R.string.settings_security_password_new),
-                    visible = dialog.visible,
-                    // The eye on the first field only: one for all of them
-                    onToggleVisible = if (dialog.needsCurrent) null else ({ action(SecurityAction.TogglePasswordVisible) }),
+                    visible = PasswordInput.New in dialog.visible,
+                    onToggleVisible = { action(SecurityAction.TogglePasswordVisible(PasswordInput.New)) },
                     error = if (dialog.tooLong) {
                         val max = CredentialLimits.PASSWORD_MAX_CHARS
                         pluralStringResource(R.plurals.create_password_too_long, max, max)
@@ -98,8 +98,8 @@ internal fun PasswordDialog(dialog: PasswordDialog, action: (SecurityAction) -> 
                     value = dialog.confirm,
                     onValueChange = { action(SecurityAction.ConfirmPasswordChanged(it)) },
                     label = stringResource(R.string.create_password_confirm),
-                    visible = dialog.visible,
-                    onToggleVisible = null,
+                    visible = PasswordInput.Confirm in dialog.visible,
+                    onToggleVisible = { action(SecurityAction.TogglePasswordVisible(PasswordInput.Confirm)) },
                     error = if (dialog.mismatch) stringResource(R.string.create_password_mismatch) else null,
                     enabled = enabled,
                     onImeAction = { if (dialog.canSave) action(SecurityAction.SavePassword) },

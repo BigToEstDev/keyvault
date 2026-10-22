@@ -19,6 +19,8 @@
     <string name="action_edit">Edit</string>
     <string name="action_rename">Rename</string>
     <string name="action_add">Add</string>
+    <string name="action_change">Change</string>
+    <string name="action_remove">Remove</string>
     <string name="action_create">Create</string>
     <string name="action_apply">Apply</string>
     <string name="action_reset">Reset</string>
@@ -272,6 +274,8 @@
     <string name="settings_security_password">Master password</string>
     <string name="settings_security_password_set">Set</string>
     <string name="settings_security_password_none">Not set</string>
+    <string name="settings_security_password_hint">Changing it turns biometric unlock off - turn it on again after</string>
+    <string name="settings_security_key_file_hint">The file must never change, not by a single byte - otherwise the database will not open</string>
     <string name="settings_security_password_change">Change the master password</string>
     <string name="settings_security_password_add">Set a master password</string>
     <string name="settings_security_password_current">Current password</string>
@@ -279,8 +283,13 @@
     <string name="settings_security_password_saved">The master password is saved</string>
     <string name="settings_security_password_saved_biometrics_off">The master password is saved. Biometric unlock is off - turn it on again in Lock and unlock</string>
     <string name="settings_security_key_file_none">None</string>
+    <string name="settings_security_key_file_saved">The key file is saved. Keep it apart from the database - without it the database will not open</string>
+    <string name="settings_security_key_file_removed">The key file is removed - the database opens with the password alone</string>
+    <string name="settings_security_key_file_not_remembered">The key file is saved, but sign-in still remembers the old one - choose the new one when you sign in</string>
+    <string name="settings_security_key_file_remove_title">Remove the key file?</string>
+    <string name="settings_security_key_file_remove_text">The database will open with the password alone. The file itself is not deleted.</string>
     <string name="settings_security_encryption_group">Encryption</string>
-    <string name="settings_security_encryption_hint">Applied with the next save. A database from another app gets heavier to open there too</string>
+    <string name="settings_security_encryption_hint">Applied with the next save</string>
     <string name="settings_security_cipher">Encryption algorithm</string>
     <string name="settings_security_cipher_aes" translatable="false">AES-256</string>
     <string name="settings_security_cipher_chacha" translatable="false">ChaCha20</string>

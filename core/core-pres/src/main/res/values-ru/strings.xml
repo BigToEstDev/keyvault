@@ -18,6 +18,8 @@
     <string name="action_edit">Редактировать</string>
     <string name="action_rename">Переименовать</string>
     <string name="action_add">Добавить</string>
+    <string name="action_change">Сменить</string>
+    <string name="action_remove">Убрать</string>
     <string name="action_create">Создать</string>
     <string name="action_apply">Применить</string>
     <string name="action_reset">Сбросить</string>
@@ -278,6 +280,8 @@
     <string name="settings_security_password">Главный пароль</string>
     <string name="settings_security_password_set">Задан</string>
     <string name="settings_security_password_none">Не задан</string>
+    <string name="settings_security_password_hint">При смене вход по биометрии выключится - включите его снова</string>
+    <string name="settings_security_key_file_hint">Файл не должен меняться ни на байт - иначе база не откроется</string>
     <string name="settings_security_password_change">Изменить главный пароль</string>
     <string name="settings_security_password_add">Задать главный пароль</string>
     <string name="settings_security_password_current">Текущий пароль</string>
@@ -285,8 +289,13 @@
     <string name="settings_security_password_saved">Главный пароль сохранён</string>
     <string name="settings_security_password_saved_biometrics_off">Главный пароль сохранён. Вход по биометрии выключен - включите его снова в «Блокировка и вход»</string>
     <string name="settings_security_key_file_none">Нет</string>
+    <string name="settings_security_key_file_saved">Key-файл сохранён. Храните его отдельно от базы - без него база не откроется</string>
+    <string name="settings_security_key_file_removed">Key-файл убран - база открывается одним паролем</string>
+    <string name="settings_security_key_file_not_remembered">Key-файл сохранён, но вход помнит прежний - выберите новый при входе</string>
+    <string name="settings_security_key_file_remove_title">Убрать key-файл?</string>
+    <string name="settings_security_key_file_remove_text">База будет открываться одним паролем. Сам файл не удаляется.</string>
     <string name="settings_security_encryption_group">Шифрование</string>
-    <string name="settings_security_encryption_hint">Применится при следующем сохранении. База из другого приложения станет тяжелее открываться и там</string>
+    <string name="settings_security_encryption_hint">Применится при следующем сохранении</string>
     <string name="settings_security_cipher">Алгоритм шифрования</string>
     <string name="settings_security_kdf">Функция формирования ключа</string>
     <string name="settings_security_kdf_argon2id">Argon2id — рекомендуется</string>

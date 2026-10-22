@@ -31,6 +31,7 @@ class SecurityProcessorTest {
     private val log = RecordingLog()
     private val journal = mutableListOf<String>()
     private val biometrics = FakeBiometrics(journal)
+    private val remembered = FakeRememberedKeyFile(journal)
 
     @Test
     fun `the screen shown reads the security and measures a pass`() = runTest {
@@ -123,7 +124,7 @@ class SecurityProcessorTest {
         assertEquals(listOf("save"), database.calls)
     }
 
-    // A database from elsewhere with more rounds than the wheel offers: shown as 10, its own 20 stay in the file
+    // A database from elsewhere with more rounds than the wheel offers: shown as its own 20, the wheel opens on 10
     @Test
     fun `rounds outside the wheel stay in the file until a choice is saved`() = runTest {
         security.security = security.security.copy(encryption = security.security.encryption.copy(iterations = 20))
@@ -131,7 +132,8 @@ class SecurityProcessorTest {
         val (state, _) = perform(SecurityAction.Load, SecurityAction.SelectCipher(Cipher.ChaCha20))
 
         assertEquals(20L, security.security.encryption.iterations)
-        assertEquals(RoundsChoices.MAX, RoundsChoices.shown(state.security!!.encryption.iterations))
+        assertEquals(20L, state.security?.encryption?.iterations)
+        assertEquals(RoundsChoices.MAX, RoundsChoices.onWheel(20))
     }
 
     @Test
@@ -234,10 +236,111 @@ class SecurityProcessorTest {
     }
 
     @Test
+    fun `the eye of a field shows that one alone`() = runTest {
+        val (state, _) = perform(
+            SecurityAction.Load,
+            SecurityAction.EditPassword,
+            SecurityAction.TogglePasswordVisible(PasswordInput.New),
+            SecurityAction.TogglePasswordVisible(PasswordInput.Confirm),
+            SecurityAction.TogglePasswordVisible(PasswordInput.Confirm),
+        )
+
+        assertEquals(setOf(PasswordInput.New), state.passwordDialog?.visible)
+    }
+
+    @Test
     fun `the dialog dismissed changes nothing`() = runTest {
         val (state, _) = perform(*typed(CURRENT), SecurityAction.DismissPassword)
 
         assertNull(state.passwordDialog)
+        assertEquals(emptyList<String>(), database.calls)
+    }
+
+    // --- Key file ---
+
+    @Test
+    fun `a key file picked is set, written and its name shown`() = runTest {
+        val (state, _) = perform(SecurityAction.Load, SecurityAction.KeyFilePicked(KEY))
+
+        assertEquals("home.keyx", state.security?.keyFileName)
+        assertEquals(true, state.security?.credentials?.keyFile)
+        assertNull(state.saving)
+        assertEquals(SecurityMessage.KeyFileSaved, state.message)
+        assertEquals(listOf("remember $DB $KEY"), journal)
+    }
+
+    @Test
+    fun `a key file over the limit says so and changes nothing`() = runTest {
+        security.keyFileFailure = SecurityFailure.KeyFileTooLarge()
+
+        val (state, _) = perform(SecurityAction.Load, SecurityAction.KeyFilePicked(KEY))
+
+        assertNull(state.security?.keyFileName)
+        assertEquals(SecurityMessage.KeyFileTooLarge, state.message)
+        assertEquals(emptyList<String>(), database.calls)
+    }
+
+    @Test
+    fun `a key file that cannot be read says so`() = runTest {
+        security.keyFileFailure = SecurityFailure.KeyFileUnreadable()
+
+        val (state, _) = perform(SecurityAction.Load, SecurityAction.KeyFilePicked(KEY))
+
+        assertEquals(SecurityMessage.KeyFileUnreadable, state.message)
+    }
+
+    @Test
+    fun `a key file saved but not remembered says to pick it at sign-in`() = runTest {
+        remembered.failure = IOException("store gone")
+
+        val (state, _) = perform(SecurityAction.Load, SecurityAction.KeyFilePicked(KEY))
+
+        assertEquals("home.keyx", state.security?.keyFileName)
+        assertEquals(SecurityMessage.KeyFileNotRemembered, state.message)
+    }
+
+    @Test
+    fun `remove asks first`() = runTest {
+        security.security = security.security.copy(credentials = CredentialsUsed(password = true, keyFile = true))
+
+        val (state, _) = perform(SecurityAction.Load, SecurityAction.RemoveKeyFile)
+
+        assertTrue(state.removingKeyFile)
+        assertEquals(emptyList<String>(), database.calls)
+    }
+
+    @Test
+    fun `remove confirmed takes the key file away`() = runTest {
+        security.security = security.security.copy(
+            credentials = CredentialsUsed(password = true, keyFile = true),
+            keyFileName = "home.keyx",
+        )
+
+        val (state, _) = perform(SecurityAction.Load, SecurityAction.RemoveKeyFile, SecurityAction.RemoveKeyFileConfirm)
+
+        assertFalse(state.removingKeyFile)
+        assertNull(state.security?.keyFileName)
+        assertEquals(false, state.security?.credentials?.keyFile)
+        assertEquals(SecurityMessage.KeyFileRemoved, state.message)
+        assertEquals(listOf("remember $DB null"), journal)
+    }
+
+    @Test
+    fun `the only key file is not offered to remove`() = runTest {
+        security.security = security.security.copy(credentials = CredentialsUsed(password = false, keyFile = true))
+
+        val (state, _) = perform(SecurityAction.Load, SecurityAction.RemoveKeyFile)
+
+        assertFalse(state.removingKeyFile)
+    }
+
+    @Test
+    fun `remove dismissed changes nothing`() = runTest {
+        security.security = security.security.copy(credentials = CredentialsUsed(password = true, keyFile = true))
+
+        val (state, _) = perform(SecurityAction.Load, SecurityAction.RemoveKeyFile, SecurityAction.RemoveKeyFileDismiss)
+
+        assertFalse(state.removingKeyFile)
         assertEquals(emptyList<String>(), database.calls)
     }
 
@@ -259,7 +362,7 @@ class SecurityProcessorTest {
 
     private suspend fun TestScope.perform(vararg steps: Any): Pair<SecurityState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val editor = SecurityEditor(security, database, biometrics, FakeRememberedKeyFile())
+        val editor = SecurityEditor(security, database, biometrics, remembered)
         val processor = SecurityProcessor(DB, security, editor, biometrics, navigator, log)
 
         processor.testWithInternalState(this) {
@@ -281,5 +384,6 @@ class SecurityProcessorTest {
         const val DB = "content://docs/passwords.kdbx"
         const val CURRENT = "current password"
         const val NEW = "new password 12"
+        const val KEY = "content://keys/home.keyx"
     }
 }

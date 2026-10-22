@@ -27,6 +27,7 @@ import ru.kino.dev.vault.security.SecurityRepository
  * @param kdfPass one KDF pass on this phone, for the open time
  * @param choosingRounds the wheel of the rounds, while open
  * @param passwordDialog the dialog of the master password, while open
+ * @param removingKeyFile "remove the key file?", while asked
  * @param saving the part written into the file - every row waits, that one shows progress
  * @param message for the snackbar, until it takes it
  */
@@ -35,6 +36,7 @@ data class SecurityState(
     val kdfPass: KdfPass = KdfPass.Measuring,
     val choosingRounds: Boolean = false,
     val passwordDialog: PasswordDialog? = null,
+    val removingKeyFile: Boolean = false,
     val saving: SecurityPart? = null,
     val message: SecurityMessage? = null,
 )
@@ -116,7 +118,7 @@ class SecurityProcessor @AssistedInject constructor(
 
             is SecurityAction.SelectRounds -> {
                 reduce { state.copy(choosingRounds = false) }
-                // The rounds shown of a database from elsewhere are not its own: saving them as shown is a change
+                // The wheel opens on ours for rounds of a database from elsewhere: saving where it opened is a change
                 changeEncryption(SecurityPart.Rounds) { it.copy(iterations = action.rounds) }
             }
 
@@ -130,7 +132,11 @@ class SecurityProcessor @AssistedInject constructor(
 
             SecurityAction.ConfirmPasswordLeft -> reduce { state.editPassword { it.copy(confirmLeft = true) } }
 
-            SecurityAction.TogglePasswordVisible -> reduce { state.editPassword { it.copy(visible = !it.visible) } }
+            is SecurityAction.TogglePasswordVisible -> reduce {
+                state.editPassword {
+                    it.copy(visible = if (action.field in it.visible) it.visible - action.field else it.visible + action.field)
+                }
+            }
 
             SecurityAction.SavePassword -> savePassword()
 
@@ -138,8 +144,59 @@ class SecurityProcessor @AssistedInject constructor(
                 reduce { state.copy(passwordDialog = null) }
             }
 
+            is SecurityAction.KeyFilePicked -> changeKeyFile(SecurityMessage.KeyFileSaved) {
+                editor.setKeyFile(dbKey, action.uri)
+            }
+
+            // Only from a database with a password: the screen offers it no other
+            SecurityAction.RemoveKeyFile -> if (state.security?.credentials?.password == true && state.saving == null) {
+                reduce { state.copy(removingKeyFile = true) }
+            }
+
+            SecurityAction.RemoveKeyFileConfirm -> if (state.removingKeyFile) {
+                reduce { state.copy(removingKeyFile = false) }
+                changeKeyFile(SecurityMessage.KeyFileRemoved) { editor.removeKeyFile(dbKey) }
+            }
+
+            SecurityAction.RemoveKeyFileDismiss -> reduce { state.copy(removingKeyFile = false) }
+
             SecurityAction.MessageShown -> reduce { state.copy(message = null) }
         }
+    }
+
+    /**
+     * The key file [change]d, with progress on its row; made - the security read again for its name, since the
+     * core keeps the name of a file as the provider gives it.
+     */
+    private suspend fun Syntax<SecurityState, Nothing>.changeKeyFile(done: SecurityMessage, change: suspend () -> Unit) {
+        if (state.security == null || state.saving != null) return
+
+        reduce { state.copy(saving = SecurityPart.KeyFile) }
+        val message = try {
+            change()
+            done
+        } catch (_: SecurityFailure.KeyFileTooLarge) {
+            SecurityMessage.KeyFileTooLarge
+        } catch (failure: SecurityFailure.KeyFileUnreadable) {
+            log.unexpected(TAG, failure)
+            SecurityMessage.KeyFileUnreadable
+        } catch (_: SecurityFailure.NotSaved) {
+            // The database has it: it is written with the next save
+            SecurityMessage.NotSaved
+        } catch (failure: SecurityFailure.KeyFileNotRemembered) {
+            log.unexpected(TAG, failure)
+            SecurityMessage.KeyFileNotRemembered
+        } catch (failure: SecurityFailure) {
+            log.unexpected(TAG, failure)
+            SecurityMessage.Failed
+        }
+        val security = try {
+            repository.read(dbKey)
+        } catch (failure: SecurityFailure) {
+            log.unexpected(TAG, failure)
+            state.security
+        }
+        reduce { state.copy(security = security, saving = null, message = message) }
     }
 
     private suspend fun Syntax<SecurityState, Nothing>.savePassword() {
