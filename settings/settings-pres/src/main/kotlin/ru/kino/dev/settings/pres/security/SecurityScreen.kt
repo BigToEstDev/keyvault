@@ -31,6 +31,7 @@ import ru.kino.dev.core.DatabaseSecurity
 import ru.kino.dev.core.KdfVariant
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.settings.pres.entries.MEGABYTE
+import ru.kino.dev.settings.pres.security.components.PasswordDialog
 import ru.kino.dev.settings.pres.security.components.SecuritySkeleton
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
 import ru.kino.dev.ui.components.BackTopBar
@@ -63,6 +64,8 @@ internal fun SecurityScreen(
             when (it) {
                 SecurityMessage.NotSaved -> R.string.message_file_not_saved
                 SecurityMessage.Failed -> R.string.error_unexpected
+                SecurityMessage.PasswordSaved -> R.string.settings_security_password_saved
+                SecurityMessage.PasswordSavedBiometricsOff -> R.string.settings_security_password_saved_biometrics_off
             },
         )
     }
@@ -92,7 +95,7 @@ internal fun SecurityScreen(
                     // Until read there is nothing to show for real: the shapes of the screen
                     item(key = "skeleton") { SecuritySkeleton(skeletonBrush()) }
                 } else {
-                    credentialRows(security)
+                    credentialRows(security, state.saving, processor::action)
                     encryptionRows(security, state.kdfPass, state.saving, processor::action)
                 }
             }
@@ -102,9 +105,14 @@ internal fun SecurityScreen(
     if (state.choosingRounds) {
         state.security?.let { RoundsDialog(it, state.kdfPass, processor::action) }
     }
+    state.passwordDialog?.let { PasswordDialog(it, processor::action) }
 }
 
-private fun LazyListScope.credentialRows(security: DatabaseSecurity) {
+private fun LazyListScope.credentialRows(
+    security: DatabaseSecurity,
+    saving: SecurityPart?,
+    action: (SecurityAction) -> Unit,
+) {
     item(key = "credentials") {
         SettingsSectionHeader(title = stringResource(R.string.settings_security_credentials_group))
     }
@@ -120,7 +128,8 @@ private fun LazyListScope.credentialRows(security: DatabaseSecurity) {
                             R.string.settings_security_password_none
                         },
                     ),
-                    onClick = null,
+                    onClick = { action(SecurityAction.EditPassword) },
+                    enabled = saving == null,
                 )
                 ValueRow(
                     title = stringResource(R.string.key_file_title),

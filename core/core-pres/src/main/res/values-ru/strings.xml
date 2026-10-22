@@ -278,6 +278,12 @@
     <string name="settings_security_password">Главный пароль</string>
     <string name="settings_security_password_set">Задан</string>
     <string name="settings_security_password_none">Не задан</string>
+    <string name="settings_security_password_change">Изменить главный пароль</string>
+    <string name="settings_security_password_add">Задать главный пароль</string>
+    <string name="settings_security_password_current">Текущий пароль</string>
+    <string name="settings_security_password_new">Новый пароль</string>
+    <string name="settings_security_password_saved">Главный пароль сохранён</string>
+    <string name="settings_security_password_saved_biometrics_off">Главный пароль сохранён. Вход по биометрии выключен - включите его снова в «Блокировка и вход»</string>
     <string name="settings_security_key_file_none">Нет</string>
     <string name="settings_security_encryption_group">Шифрование</string>
     <string name="settings_security_encryption_hint">Применится при следующем сохранении. База из другого приложения станет тяжелее открываться и там</string>
