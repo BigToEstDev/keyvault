@@ -111,6 +111,7 @@ fn dispatch(
 
         Command::GetDbSettings => settings::get_db_settings(args_json, input),
         Command::SetDbSettings => settings::set_db_settings(args_json, input),
+        Command::MeasureKdfPass => settings::measure_kdf_pass(args_json, input),
         Command::GenerateKeyFile => settings::generate_key_file(args_json, input),
 
         Command::VerifyDbFileChecksum => integrity::verify_db_file_checksum(args_json, input),

@@ -179,6 +179,32 @@ fn the_settings_of_a_database_that_is_not_open_say_so() {
     assert!(envelope.contains("DbKeyNotFound"), "{}", envelope);
 }
 
+// --- One KDF pass timed for the open time on the screen (Step 68) ---
+
+#[test]
+fn a_kdf_pass_is_measured_and_the_kdf_stays_as_is() {
+    let db_key = key_of("settings-kdf-pass");
+    open_database(&db_key);
+    let before = call_ok("get_db_settings", json!({ "db_key": db_key }))["kdf"].clone();
+
+    let envelope = call("measure_kdf_pass", json!({ "db_key": db_key }));
+    assert_shape("measure_kdf_pass", &envelope);
+
+    let after = call_ok("get_db_settings", json!({ "db_key": db_key }))["kdf"].clone();
+    assert_eq!(after, before);
+    close_database(&db_key);
+}
+
+#[test]
+fn a_kdf_pass_of_a_database_that_is_not_open_says_so() {
+    let envelope = call(
+        "measure_kdf_pass",
+        json!({"db_key": "content://test/never-opened-kdf-pass.kdbx"}),
+    );
+
+    assert!(envelope.contains("DbKeyNotFound"), "{}", envelope);
+}
+
 // --- A changed key file goes in as content (Step 31) ---
 
 fn key_file_json(name: &str, content: &[u8]) -> Value {

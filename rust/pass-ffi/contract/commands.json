@@ -31,6 +31,7 @@
   "is_valid_otp_url",
   "kdbx_context_statuses",
   "lock_kdbx",
+  "measure_kdf_pass",
   "merge_kdbx_with_reader",
   "move_entry",
   "move_entry_to_recycle_bin",

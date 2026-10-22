@@ -76,6 +76,8 @@ internal object FfiCommands {
     // The settings of a database, and the key file the core writes by path
     const val GET_DB_SETTINGS = "get_db_settings"
     const val SET_DB_SETTINGS = "set_db_settings"
+    // One KDF pass of an open database timed on this device - the open time a settings screen shows (pass-docs, Step 68)
+    const val MEASURE_KDF_PASS = "measure_kdf_pass"
     const val GENERATE_KEY_FILE = "generate_key_file"
 
     // Has the file changed under us, and merging it back in when it has. All but one carry the bytes
@@ -140,6 +142,7 @@ internal object FfiCommands {
         COLLECT_ENTRY_GROUP_TAGS,
         GET_DB_SETTINGS,
         SET_DB_SETTINGS,
+        MEASURE_KDF_PASS,
         GENERATE_KEY_FILE,
         VERIFY_DB_FILE_CHECKSUM,
         SET_DB_FILE_CHECKSUM,

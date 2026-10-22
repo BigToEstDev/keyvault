@@ -139,6 +139,11 @@ class FfiContractTest {
     }
 
     @Test
+    fun `a measured kdf pass is read exactly as the bridge describes it`() {
+        assertKeysMatch(FfiCommands.MEASURE_KDF_PASS, KdfPassDto.serializer())
+    }
+
+    @Test
     fun `the checksum and the result of a merge are read exactly as the bridge describes them`() {
         assertKeysMatch(FfiCommands.DB_CHECKSUM_HASH, ChecksumDto.serializer())
         assertKeysMatch(FfiCommands.MERGE_DATABASE, MergeResultDto.serializer())

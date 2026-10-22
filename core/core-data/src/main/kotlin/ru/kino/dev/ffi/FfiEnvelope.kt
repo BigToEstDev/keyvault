@@ -566,6 +566,10 @@ internal data class VerifyPasswordDto(
 @Serializable
 internal data class MatchesDto(val matches: Boolean)
 
+/** Result of `measure_kdf_pass`: one KDF pass of the open database on this device, in milliseconds. */
+@Serializable
+internal data class KdfPassDto(val millis: Long)
+
 /** Result of `credentials_used`. */
 @Serializable
 internal data class CredentialsUsedDto(
