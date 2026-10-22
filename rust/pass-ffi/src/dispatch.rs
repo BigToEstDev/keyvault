@@ -12,7 +12,7 @@
 use crate::commands::Command;
 use crate::errors::{err_envelope, ErrorPayload};
 use crate::handlers::{
-    catalog, entries, generator, groups, history, integrity, lifecycle, otp, search, settings,
+    entries, generator, groups, history, integrity, lifecycle, otp, search, settings, trash,
 };
 
 /// What a command answers: the envelope always, and raw bytes when the command produces a file - the
@@ -79,8 +79,7 @@ fn dispatch(
         Command::MoveGroup => groups::move_group(args_json, input),
         Command::SortSubGroups => groups::sort_sub_groups(args_json, input),
         Command::CloneGroup => groups::clone_group(args_json, input),
-        Command::MoveGroupToRecycleBin => groups::move_group_to_recycle_bin(args_json, input),
-        Command::RemoveGroupPermanently => groups::remove_group_permanently(args_json, input),
+        Command::DeleteGroup => groups::delete_group(args_json, input),
 
         Command::EntrySummaryData => entries::entry_summary_data(args_json, input),
         Command::GetEntryFormDataById => entries::get_entry_form_data_by_id(args_json, input),
@@ -90,8 +89,7 @@ fn dispatch(
         Command::UpdateEntryFromFormData => entries::update_entry_from_form_data(args_json, input),
         Command::MoveEntry => entries::move_entry(args_json, input),
         Command::CloneEntry => entries::clone_entry(args_json, input),
-        Command::MoveEntryToRecycleBin => entries::move_entry_to_recycle_bin(args_json, input),
-        Command::RemoveEntryPermanently => entries::remove_entry_permanently(args_json, input),
+        Command::DeleteEntry => entries::delete_entry(args_json, input),
 
         Command::HistoryEntriesSummary => history::history_entries_summary(args_json, input),
         Command::HistoryEntryByIndex => history::history_entry_by_index(args_json, input),
@@ -121,7 +119,11 @@ fn dispatch(
         Command::DbChecksumHash => integrity::db_checksum_hash(args_json, input),
         Command::MergeKdbxWithReader => integrity::merge_kdbx_with_reader(args_json, input),
 
-        Command::EmptyTrash => catalog::empty_trash(args_json, input),
+        Command::TrashEntries => trash::trash_entries(args_json, input),
+        Command::SearchTrash => trash::search_trash(args_json, input),
+        Command::RestoreEntries => trash::restore_entries(args_json, input),
+        Command::RemoveEntriesPermanently => trash::remove_entries_permanently(args_json, input),
+        Command::EmptyTrash => trash::empty_trash(args_json, input),
 
         Command::GeneratePassword => generator::generate_password(args_json, input),
         Command::AnalyzedPassword => generator::analyzed_password(args_json, input),

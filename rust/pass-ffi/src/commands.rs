@@ -73,8 +73,8 @@ commands! {
     MoveGroup => "move_group",
     SortSubGroups => "sort_sub_groups",
     CloneGroup => "clone_group",
-    MoveGroupToRecycleBin => "move_group_to_recycle_bin",
-    RemoveGroupPermanently => "remove_group_permanently",
+    // Into the recycle bin go the entries of its subtree, the groups go for good; all for good without a bin
+    DeleteGroup => "delete_group",
 
     // Entries: the list of a category, the form behind one entry, and what changes it
     EntrySummaryData => "entry_summary_data",
@@ -85,8 +85,8 @@ commands! {
     UpdateEntryFromFormData => "update_entry_from_form_data",
     MoveEntry => "move_entry",
     CloneEntry => "clone_entry",
-    MoveEntryToRecycleBin => "move_entry_to_recycle_bin",
-    RemoveEntryPermanently => "remove_entry_permanently",
+    // Into the recycle bin, or for good when the database does not use one
+    DeleteEntry => "delete_entry",
 
     // The history of an entry: kdbx keeps old versions inside the entry, addressed by index
     HistoryEntriesSummary => "history_entries_summary",
@@ -119,7 +119,12 @@ commands! {
     DbChecksumHash => "db_checksum_hash",
     MergeKdbxWithReader => "merge_kdbx_with_reader",
 
-    // The one irreversible step of the recycle bin
+    // The recycle bin holds entries only (Step 69): its list and search, restoring to a group, and the
+    // irreversible steps - removing picked entries and emptying it
+    TrashEntries => "trash_entries",
+    SearchTrash => "search_trash",
+    RestoreEntries => "restore_entries",
+    RemoveEntriesPermanently => "remove_entries_permanently",
     EmptyTrash => "empty_trash",
 
     GeneratePassword => "generate_password",

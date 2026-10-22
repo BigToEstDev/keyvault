@@ -33,7 +33,7 @@ internal class GroupRepositoryImpl @Inject constructor(
     }
 
     override suspend fun moveToRecycleBin(dbKey: String, groupId: GroupId) = groupCall {
-        core.moveGroupToRecycleBin(dbKey, groupId.value)
+        core.deleteGroup(dbKey, groupId.value)
     }
 
     /** The root named [databaseName]; a blank one - the root group's own, as before. */

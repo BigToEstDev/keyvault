@@ -129,6 +129,7 @@ class SecurityMappingTest {
             historyMaxItems = 10,
             historyMaxSize = 6L * 1024 * 1024,
             memoryProtection = MemoryProtectionDto(title = false, userName = false, password = true, url = false, notes = false),
+            recycleBinEnabled = true,
         ),
     )
 

@@ -529,6 +529,39 @@ internal data class EntrySearchResultDto(
     @SerialName("entry_items") val entryItems: List<EntrySummaryDto> = emptyList(),
 )
 
+/**
+ * An entry of the recycle bin (pass-docs, Step 69): the entry as a list shows it, the group it was deleted
+ * from while that group lives - null when it is gone or in the bin - and when it was deleted, in seconds.
+ */
+@Serializable
+internal data class TrashEntryDto(
+    val entry: EntrySummaryDto,
+    @SerialName("previous_group_uuid") val previousGroupUuid: String? = null,
+    @SerialName("deleted_time") val deletedTime: Long,
+)
+
+/** The entries of the recycle bin matching a term, with the term beside them - as [EntrySearchResultDto]. */
+@Serializable
+internal data class TrashSearchResultDto(
+    val term: String,
+    @SerialName("entry_items") val entryItems: List<TrashEntryDto> = emptyList(),
+)
+
+/** Arguments of `restore_entries`: the entries picked in the recycle bin and the one group they all go to. */
+@Serializable
+internal data class RestoreEntriesDto(
+    @SerialName("db_key") val dbKey: String,
+    @SerialName("entry_uuids") val entryUuids: List<String>,
+    @SerialName("group_uuid") val groupUuid: String,
+)
+
+/** Arguments of `remove_entries_permanently`: the entries picked in the recycle bin. */
+@Serializable
+internal data class EntryUuidsDto(
+    @SerialName("db_key") val dbKey: String,
+    @SerialName("entry_uuids") val entryUuids: List<String>,
+)
+
 /** Every tag in the database - of entries and of groups, kept apart. */
 @Serializable
 internal data class AllTagsDto(
@@ -651,6 +684,8 @@ internal data class DbMetaDto(
     @SerialName("history_max_items") val historyMaxItems: Int,
     @SerialName("history_max_size") val historyMaxSize: Long,
     @SerialName("memory_protection") val memoryProtection: MemoryProtectionDto,
+    // `Meta/RecycleBinEnabled`: off - a delete is for good; switching it off removes the bin with all it holds
+    @SerialName("recycle_bin_enabled") val recycleBinEnabled: Boolean,
 )
 
 /** Which standard fields of an entry are private - `Meta/MemoryProtection`. The core keeps it, the app applies it. */

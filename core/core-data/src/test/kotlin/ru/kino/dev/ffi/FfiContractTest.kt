@@ -134,6 +134,12 @@ class FfiContractTest {
     }
 
     @Test
+    fun `the recycle bin and its search are read exactly as the bridge describes them`() {
+        assertKeysMatchList(FfiCommands.TRASH_ENTRIES, TrashEntryDto.serializer())
+        assertKeysMatch(FfiCommands.SEARCH_TRASH, TrashSearchResultDto.serializer())
+    }
+
+    @Test
     fun `the settings of a database are read exactly as the bridge describes them`() {
         assertKeysMatch(FfiCommands.GET_DB_SETTINGS, DbSettingsDto.serializer())
     }
@@ -168,19 +174,19 @@ class FfiContractTest {
             FfiCommands.UPDATE_GROUP,
             FfiCommands.MOVE_GROUP,
             FfiCommands.SORT_SUB_GROUPS,
-            FfiCommands.MOVE_GROUP_TO_RECYCLE_BIN,
-            FfiCommands.REMOVE_GROUP_PERMANENTLY,
+            FfiCommands.DELETE_GROUP,
             FfiCommands.INSERT_ENTRY_FROM_FORM_DATA,
             FfiCommands.UPDATE_ENTRY_FROM_FORM_DATA,
             FfiCommands.MOVE_ENTRY,
-            FfiCommands.MOVE_ENTRY_TO_RECYCLE_BIN,
-            FfiCommands.REMOVE_ENTRY_PERMANENTLY,
+            FfiCommands.DELETE_ENTRY,
             FfiCommands.DELETE_HISTORY_ENTRY_BY_INDEX,
             FfiCommands.DELETE_HISTORY_ENTRIES,
             FfiCommands.SET_DB_SETTINGS,
             FfiCommands.VERIFY_DB_FILE_CHECKSUM,
             FfiCommands.SET_DB_FILE_CHECKSUM,
             FfiCommands.GENERATE_KEY_FILE,
+            FfiCommands.RESTORE_ENTRIES,
+            FfiCommands.REMOVE_ENTRIES_PERMANENTLY,
             FfiCommands.EMPTY_TRASH,
             FfiCommands.SET_ENTRY_OTP,
             FfiCommands.DELETE_ENTRY_OTP,

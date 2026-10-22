@@ -24,8 +24,6 @@ use jni::sys::{jbyteArray, jstring};
 use jni::JNIEnv;
 use zeroize::Zeroize;
 
-#[cfg(test)]
-mod catalog_tests;
 mod commands;
 #[cfg(test)]
 mod contract;
@@ -34,6 +32,8 @@ mod dispatch;
 mod entry_tests;
 mod errors;
 mod frame;
+#[cfg(test)]
+mod generator_tests;
 #[cfg(test)]
 mod group_tests;
 mod handlers;
@@ -54,6 +54,8 @@ mod search_tests;
 mod settings_tests;
 #[cfg(test)]
 mod test_support;
+#[cfg(test)]
+mod trash_tests;
 
 /// Version of this crate plus the time it was built, so a stale `.so` is visible in the log instead of
 /// being debugged for an hour. Logged by the app on start.

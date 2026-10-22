@@ -342,10 +342,10 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
         }
     }
 
-    override suspend fun moveGroupToRecycleBin(dbKey: String, groupId: String) {
+    override suspend fun deleteGroup(dbKey: String, groupId: String) {
         withContext(dispatcher) {
             call(
-                FfiCommands.MOVE_GROUP_TO_RECYCLE_BIN,
+                FfiCommands.DELETE_GROUP,
                 GroupIdDto.serializer(),
                 GroupIdDto(dbKey = dbKey, groupUuid = groupId),
                 DoneDto.serializer(),
@@ -417,10 +417,10 @@ internal class NativeCoreFfi @Inject constructor() : NativeCore {
         }
     }
 
-    override suspend fun moveEntryToRecycleBin(dbKey: String, entryId: String) {
+    override suspend fun deleteEntry(dbKey: String, entryId: String) {
         withContext(dispatcher) {
             call(
-                FfiCommands.MOVE_ENTRY_TO_RECYCLE_BIN,
+                FfiCommands.DELETE_ENTRY,
                 EntryIdDto.serializer(),
                 EntryIdDto(dbKey = dbKey, entryUuid = entryId),
                 DoneDto.serializer(),

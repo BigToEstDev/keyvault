@@ -219,30 +219,16 @@ pub(crate) fn clone_group(args_json: &str, input: Option<Vec<u8>>) -> Result<Ans
     json_answer(&ClonedGroup { group_uuid })
 }
 
-/// Moves a group to the recycle bin - reversible, and the usual "delete" of the ui.
-pub(crate) fn move_group_to_recycle_bin(
+/// The "delete" of the ui for a group with its subtree: its entries go to the recycle bin, flat, and the
+/// groups go for good - only entries are kept in the bin. Without a bin everything goes for good.
+pub(crate) fn delete_group(
     args_json: &str,
     input: Option<Vec<u8>>,
 ) -> Result<Answer, ErrorPayload> {
-    reject_bytes(Command::MoveGroupToRecycleBin, input)?;
+    reject_bytes(Command::DeleteGroup, input)?;
     let args: GroupIdArgs = args(args_json)?;
 
-    db_service::move_group_to_recycle_bin(&args.db_key, args.group_uuid)
-        .map_err(|e| ErrorPayload::of(&e))?;
-
-    Done::answer()
-}
-
-/// Removes a group for good, with everything inside it. There is no undo, so the ui asks first.
-pub(crate) fn remove_group_permanently(
-    args_json: &str,
-    input: Option<Vec<u8>>,
-) -> Result<Answer, ErrorPayload> {
-    reject_bytes(Command::RemoveGroupPermanently, input)?;
-    let args: GroupIdArgs = args(args_json)?;
-
-    db_service::remove_group_permanently(&args.db_key, args.group_uuid)
-        .map_err(|e| ErrorPayload::of(&e))?;
+    db_service::delete_group(&args.db_key, args.group_uuid).map_err(|e| ErrorPayload::of(&e))?;
 
     Done::answer()
 }

@@ -266,8 +266,9 @@ fn an_unknown_sort_criteria_is_refused_before_the_database_is_touched() {
     close_database(&db_key);
 }
 
+// Only entries go to the recycle bin (pass-docs, Step 69): a deleted group is gone for good
 #[test]
-fn a_group_goes_to_the_recycle_bin_and_can_be_removed_for_good() {
+fn a_deleted_group_is_gone_for_good() {
     let db_key = key_of("group-delete");
     open_database(&db_key);
     let root = root_uuid(&db_key);
@@ -275,22 +276,8 @@ fn a_group_goes_to_the_recycle_bin_and_can_be_removed_for_good() {
     let group = new_group(&db_key, "Doomed", &root);
     let uuid = uuid_of(&group).to_string();
 
-    let binned = call("move_group_to_recycle_bin", group_id_args(&db_key, &uuid));
-    assert_shape("move_group_to_recycle_bin", &binned);
-
-    // Still there, just somewhere else: the recycle bin is a group like any other
-    let after_binning = call_ok("groups_summary_data", json!({ "db_key": db_key }));
-    let recycle_bin = after_binning["recycle_bin_uuid"]
-        .as_str()
-        .expect("binning creates the recycle bin");
-    let in_bin = call_ok(
-        "get_group_by_id",
-        json!({"db_key": db_key, "group_uuid": uuid}),
-    );
-    assert_eq!(in_bin["parent_group_uuid"].as_str(), Some(recycle_bin));
-
-    let removed = call("remove_group_permanently", group_id_args(&db_key, &uuid));
-    assert_shape("remove_group_permanently", &removed);
+    let deleted = call("delete_group", group_id_args(&db_key, &uuid));
+    assert_shape("delete_group", &deleted);
 
     let gone = call(
         "get_group_by_id",
@@ -298,7 +285,7 @@ fn a_group_goes_to_the_recycle_bin_and_can_be_removed_for_good() {
     );
     assert!(
         gone.starts_with(r#"{"err":"#),
-        "a removed group is not found any more: {}",
+        "a deleted group is not found any more: {}",
         gone
     );
 

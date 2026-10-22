@@ -219,30 +219,16 @@ pub(crate) fn clone_entry(args_json: &str, input: Option<Vec<u8>>) -> Result<Ans
     json_answer(&ClonedEntry { entry_uuid })
 }
 
-/// Moves an entry to the recycle bin - reversible, and the usual "delete" of the ui.
-pub(crate) fn move_entry_to_recycle_bin(
+/// The "delete" of the ui: into the recycle bin - reversible - or for good when the database does not
+/// use a bin (`RecycleBinEnabled`); the core decides by the flag, the ui only words its warning by it.
+pub(crate) fn delete_entry(
     args_json: &str,
     input: Option<Vec<u8>>,
 ) -> Result<Answer, ErrorPayload> {
-    reject_bytes(Command::MoveEntryToRecycleBin, input)?;
+    reject_bytes(Command::DeleteEntry, input)?;
     let args: EntryIdArgs = args(args_json)?;
 
-    db_service::move_entry_to_recycle_bin(&args.db_key, args.entry_uuid)
-        .map_err(|e| ErrorPayload::of(&e))?;
-
-    Done::answer()
-}
-
-/// Removes an entry for good, history and all. There is no undo, so the ui asks first.
-pub(crate) fn remove_entry_permanently(
-    args_json: &str,
-    input: Option<Vec<u8>>,
-) -> Result<Answer, ErrorPayload> {
-    reject_bytes(Command::RemoveEntryPermanently, input)?;
-    let args: EntryIdArgs = args(args_json)?;
-
-    db_service::remove_entry_permanently(&args.db_key, args.entry_uuid)
-        .map_err(|e| ErrorPayload::of(&e))?;
+    db_service::delete_entry(&args.db_key, args.entry_uuid).map_err(|e| ErrorPayload::of(&e))?;
 
     Done::answer()
 }
