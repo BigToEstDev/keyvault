@@ -15,6 +15,7 @@ import ru.kino.dev.vault.entry.EntrySummary
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
+import ru.kino.dev.vault.pres.navigation.TrashEntryRoute
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
 import ru.kino.dev.vault.trash.FakeTrashRepository
@@ -100,10 +101,11 @@ class TrashProcessorTest {
     // Choosing
 
     @Test
-    fun `a tap with nothing picked does nothing`() = runTest {
-        val (state, _) = perform(TrashAction.Load, TrashAction.Tap(OLD))
+    fun `a tap with nothing picked reads the entry`() = runTest {
+        val (state, events) = perform(TrashAction.Load, TrashAction.Tap(OLD))
 
         assertFalse(state.choosing)
+        assertEquals(listOf(MviNavEvent.NavigateTo(TrashEntryRoute(DB, OLD.value))), events)
     }
 
     @Test

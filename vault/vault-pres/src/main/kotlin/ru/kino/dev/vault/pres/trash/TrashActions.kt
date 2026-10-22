@@ -18,7 +18,7 @@ sealed interface TrashAction {
     /** A long press: the choice begins with this card, or it is added to it - as a tap while choosing. */
     data class LongPress(val id: EntryId) : TrashAction
 
-    /** A tap: while choosing, the card is picked or let go; otherwise nothing - an entry in the bin is not read. */
+    /** A tap: while choosing, the card is picked or let go; otherwise the entry is read (pass-docs, Step 71). */
     data class Tap(val id: EntryId) : TrashAction
 
     /** The cross of the choice: nothing picked any more. */
