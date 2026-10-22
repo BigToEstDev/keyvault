@@ -1,5 +1,7 @@
 package ru.kino.dev.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -18,6 +20,9 @@ import androidx.compose.ui.unit.dp
  *
  * While [loading] the confirming button shows progress, nothing takes clicks and the dialog does not close:
  * the answer is being carried out.
+ *
+ * @param confirmEnabled false - the answer waits for something chosen in [body]
+ * @param body what is chosen before answering - a group to restore to, say - under the text
  */
 @Composable
 fun ConfirmDialog(
@@ -29,15 +34,26 @@ fun ConfirmDialog(
     onDismiss: () -> Unit,
     destructive: Boolean = false,
     loading: Boolean = false,
+    confirmEnabled: Boolean = true,
+    body: (@Composable () -> Unit)? = null,
 ) {
     AlertDialog(
         onDismissRequest = { if (!loading) onDismiss() },
         title = { Text(title) },
-        text = { Text(text) },
+        text = {
+            if (body == null) {
+                Text(text)
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text(text)
+                    body()
+                }
+            }
+        },
         confirmButton = {
             TextButton(
                 onClick = onConfirm,
-                enabled = !loading,
+                enabled = !loading && confirmEnabled,
                 colors = if (destructive) {
                     ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 } else {

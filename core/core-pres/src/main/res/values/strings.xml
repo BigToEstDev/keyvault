@@ -25,6 +25,8 @@
     <string name="action_apply">Apply</string>
     <string name="action_reset">Reset</string>
     <string name="action_copy">Copy</string>
+    <string name="action_restore">Restore</string>
+    <string name="action_select_all">Select all</string>
     <string name="action_pick_another_file">Choose another file</string>
     <string name="action_pick_another_key_file">Choose another key file</string>
 
@@ -281,6 +283,20 @@
     <string name="trash_deleted_at">Deleted: %1$s</string>
     <string name="trash_empty">The recycle bin is empty</string>
     <string name="trash_empty_hint">Deleted entries show up here</string>
+    <string name="trash_picked">Selected: %1$d</string>
+    <string name="trash_menu">Recycle bin menu</string>
+    <string name="trash_empty_action">Empty the recycle bin</string>
+    <string name="trash_empty_title">Empty the recycle bin?</string>
+    <string name="trash_empty_text">Every entry in the recycle bin is deleted for good. This cannot be undone.</string>
+    <string name="trash_empty_confirm">Empty</string>
+    <string name="trash_restore_title">Restore</string>
+    <string name="trash_restore_text">Choose the group the entries go back to.</string>
+    <string name="trash_remove_title">Delete for good?</string>
+    <plurals name="trash_remove_text">
+        <item quantity="one">%1$d entry is deleted for good. This cannot be undone.</item>
+        <item quantity="other">%1$d entries are deleted for good. This cannot be undone.</item>
+    </plurals>
+    <string name="trash_message_changed">The recycle bin has changed, the list is read again</string>
     <string name="settings_security">Security</string>
     <string name="settings_security_text">Password, key file, encryption</string>
     <string name="settings_security_credentials_group">Credentials</string>

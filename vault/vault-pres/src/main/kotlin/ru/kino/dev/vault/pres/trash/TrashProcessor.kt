@@ -14,7 +14,12 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.GroupFailure
+import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.pres.common.SEARCH_DELAY
+import ru.kino.dev.vault.pres.common.groupChoices
+import ru.kino.dev.vault.trash.TrashEditor
 import ru.kino.dev.vault.trash.TrashEntry
 import ru.kino.dev.vault.trash.TrashFailure
 import ru.kino.dev.vault.trash.TrashRepository
@@ -24,6 +29,8 @@ import ru.kino.dev.vault.trash.TrashRepository
  * @param query the search field
  * @param searching the typing goes on, or the core looks - a skeleton meanwhile
  * @param found what the search found; null - no search, the whole bin
+ * @param picked the cards chosen; empty - no choice going on
+ * @param dialog the dialog shown, if any
  * @param message for the snackbar, until it takes it
  */
 data class TrashState(
@@ -31,12 +38,16 @@ data class TrashState(
     val query: String = "",
     val searching: Boolean = false,
     val found: List<TrashEntry>? = null,
+    val picked: Set<EntryId> = emptySet(),
+    val dialog: TrashDialog? = null,
     val message: TrashMessage? = null,
 ) {
     /** The cards: the last deleted first; deleted in the same second - by title, case aside. */
     val shown: List<TrashEntry> = (found ?: entries.orEmpty()).sortedWith(NEWEST_FIRST)
 
     val loading: Boolean get() = entries == null
+
+    val choosing: Boolean get() = picked.isNotEmpty()
 
     /** Why there is no card; null while there are cards, or while something is read. */
     val empty: TrashEmpty?
@@ -54,13 +65,19 @@ data class TrashState(
 
 /**
  * The recycle bin of the database [dbKey] (pass-docs, Step 70): its entries flat, from any depth of it - groups are
- * never there; the last deleted first. A tap does nothing. The search is the one of `vault` - the title and the user
- * name, after [SEARCH_DELAY] - over the bin only; the core does it ([TrashRepository.search]).
+ * never there; the last deleted first. The search is the one of `vault` - the title and the user name, after
+ * [SEARCH_DELAY] - over the bin only; the core does it ([TrashRepository.search]).
+ *
+ * A tap does nothing; a long press starts a choice, and while choosing a tap picks or lets go. The picked entries are
+ * restored - all to one group, the one they came from offered when they share it - or removed for good. The whole bin
+ * is emptied from the menu of the top bar. Each is one write of the file; after it the bin is read again.
  */
 @HiltViewModel(assistedFactory = TrashProcessor.Factory::class)
 class TrashProcessor @AssistedInject constructor(
     @Assisted private val dbKey: String,
     private val trash: TrashRepository,
+    private val editor: TrashEditor,
+    private val groups: GroupRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<TrashState, TrashState, Nothing> {
@@ -86,7 +103,39 @@ class TrashProcessor @AssistedInject constructor(
 
             TrashAction.Load -> load()
 
-            TrashAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
+            TrashAction.Back -> if (state.choosing) {
+                reduce { state.copy(picked = emptySet()) }
+            } else {
+                navigator.navigate(MviNavEvent.NavigateBack)
+            }
+
+            is TrashAction.LongPress -> pick(action.id)
+
+            is TrashAction.Tap -> if (state.choosing) pick(action.id)
+
+            TrashAction.ClearChoice -> reduce { state.copy(picked = emptySet()) }
+
+            TrashAction.PickAll -> if (state.choosing) {
+                reduce { state.copy(picked = state.shown.map { it.entry.id }.toSet()) }
+            }
+
+            TrashAction.Restore -> if (state.choosing && state.dialog == null) askRestore()
+
+            is TrashAction.GroupChosen -> (state.dialog as? TrashDialog.Restore)?.let { dialog ->
+                if (!dialog.saving) reduce { state.copy(dialog = dialog.copy(group = action.id)) }
+            }
+
+            TrashAction.Remove -> if (state.choosing && state.dialog == null) {
+                reduce { state.copy(dialog = TrashDialog.Remove(state.picked.size)) }
+            }
+
+            TrashAction.Empty -> if (!state.choosing && state.dialog == null && state.entries.orEmpty().isNotEmpty()) {
+                reduce { state.copy(dialog = TrashDialog.Empty()) }
+            }
+
+            TrashAction.DialogConfirm -> confirm()
+
+            TrashAction.DialogDismiss -> if (state.dialog?.saving == false) reduce { state.copy(dialog = null) }
 
             TrashAction.MessageShown -> reduce { state.copy(message = null) }
         }
@@ -100,9 +149,61 @@ class TrashProcessor @AssistedInject constructor(
             reduce { state.copy(entries = state.entries ?: emptyList(), message = TrashMessage.LoadFailed) }
             return
         }
-        reduce { state.copy(entries = entries) }
+        // What is gone from the bin cannot stay picked
+        val ids = entries.map { it.entry.id }.toSet()
+        reduce { state.copy(entries = entries, picked = state.picked.intersect(ids)) }
         // Back from elsewhere with a term in the field: what it finds may have changed too
         if (state.query.isNotBlank()) search(state.query)
+    }
+
+    private suspend fun Syntax<TrashState, Nothing>.pick(id: EntryId) {
+        reduce { state.copy(picked = if (id in state.picked) state.picked - id else state.picked + id) }
+    }
+
+    /** The groups to choose from, read now; the one the picked entries came from offered, when they share it. */
+    private suspend fun Syntax<TrashState, Nothing>.askRestore() {
+        val tree = try {
+            groups.tree(dbKey)
+        } catch (failure: GroupFailure) {
+            log.unexpected(TAG, failure)
+            reduce { state.copy(message = TrashMessage.Unexpected) }
+            return
+        }
+        val choices = tree.groupChoices()
+        val previous = state.shown.filter { it.entry.id in state.picked }.map { it.previousGroupId }.distinct()
+        val offered = previous.singleOrNull()?.takeIf { id -> choices.any { it.id == id } }
+        reduce { state.copy(dialog = TrashDialog.Restore(choices, offered)) }
+    }
+
+    private suspend fun Syntax<TrashState, Nothing>.confirm() {
+        val dialog = state.dialog ?: return
+        if (dialog.saving) return
+        val picked = state.picked.toList()
+        val change: suspend () -> Unit = when (dialog) {
+            is TrashDialog.Restore -> {
+                val group = dialog.group ?: return
+                ({ editor.restore(dbKey, picked, group) })
+            }
+            is TrashDialog.Remove -> ({ editor.remove(dbKey, picked) })
+            is TrashDialog.Empty -> ({ editor.empty(dbKey) })
+        }
+
+        reduce { state.copy(dialog = dialog.saving()) }
+        val message = try {
+            change()
+            null
+        } catch (_: TrashFailure.NotSaved) {
+            // The database has it: it is written with the next save
+            TrashMessage.NotSaved
+        } catch (_: TrashFailure.Stale) {
+            // Not a bug: the list was older than the bin
+            TrashMessage.Changed
+        } catch (failure: TrashFailure) {
+            log.unexpected(TAG, failure)
+            TrashMessage.Unexpected
+        }
+        reduce { state.copy(dialog = null, picked = emptySet(), message = message) }
+        load()
     }
 
     private fun queryChanged(query: String): Job {
@@ -141,4 +242,10 @@ class TrashProcessor @AssistedInject constructor(
     private companion object {
         const val TAG = "TrashProcessor"
     }
+}
+
+private fun TrashDialog.saving(): TrashDialog = when (this) {
+    is TrashDialog.Restore -> copy(saving = true)
+    is TrashDialog.Remove -> copy(saving = true)
+    is TrashDialog.Empty -> copy(saving = true)
 }
