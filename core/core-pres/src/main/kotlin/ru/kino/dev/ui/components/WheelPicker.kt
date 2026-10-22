@@ -113,6 +113,9 @@ fun <T> WheelPicker(
 /**
  * A choice made on a [WheelPicker] in a dialog: [onConfirm] takes the one the wheel stopped on, "Cancel"
  * leaves it as it was.
+ *
+ * @param confirmText the confirming button; "OK" when not given
+ * @param content under the wheel, of the option it stopped on - what that choice costs (pass-docs, Step 67)
  */
 @Composable
 fun <T> WheelPickerDialog(
@@ -122,21 +125,28 @@ fun <T> WheelPickerDialog(
     label: @Composable (T) -> String,
     onConfirm: (T) -> Unit,
     onDismiss: () -> Unit,
+    confirmText: String? = null,
+    content: (@Composable (T) -> Unit)? = null,
 ) {
     var choice by remember { mutableStateOf(selected) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            WheelPicker(
-                options = options,
-                selected = selected,
-                label = label,
-                onSelect = { choice = it },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Column(modifier = Modifier.fillMaxWidth()) {
+                WheelPicker(
+                    options = options,
+                    selected = selected,
+                    label = label,
+                    onSelect = { choice = it },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                content?.invoke(choice)
+            }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(choice) }) { Text(stringResource(R.string.action_ok)) } },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(choice) }) { Text(confirmText ?: stringResource(R.string.action_ok)) }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }

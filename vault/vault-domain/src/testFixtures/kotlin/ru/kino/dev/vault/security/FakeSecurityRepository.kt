@@ -12,7 +12,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * The security in memory: what [read] answers, changed the way the core would. [failure], when set, is thrown by
- * every call instead; [keyFileFailure] - by [readKeyFile] alone.
+ * every call instead; [keyFileFailure] - by [readKeyFile] alone, [measureFailure] - by [measureKdfPass] alone.
  */
 class FakeSecurityRepository(
     var security: DatabaseSecurity = DatabaseSecurity(
@@ -26,6 +26,7 @@ class FakeSecurityRepository(
 
     var failure: SecurityFailure? = null
     var keyFileFailure: SecurityFailure? = null
+    var measureFailure: SecurityFailure? = null
 
     /** The password [verifyPassword] takes. */
     var password = "current password"
@@ -74,6 +75,7 @@ class FakeSecurityRepository(
 
     override suspend fun measureKdfPass(dbKey: String): Duration {
         failure?.let { throw it }
+        measureFailure?.let { throw it }
         return kdfPass
     }
 

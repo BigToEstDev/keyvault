@@ -268,6 +268,24 @@
     <string name="settings_recycle_bin_text">Deleted groups and entries</string>
     <string name="settings_security">Security</string>
     <string name="settings_security_text">Password, key file, encryption</string>
+    <string name="settings_security_credentials_group">Credentials</string>
+    <string name="settings_security_password">Master password</string>
+    <string name="settings_security_password_set">Set</string>
+    <string name="settings_security_password_none">Not set</string>
+    <string name="settings_security_key_file_none">None</string>
+    <string name="settings_security_encryption_group">Encryption</string>
+    <string name="settings_security_encryption_hint">Applied with the next save. A database from another app gets heavier to open there too</string>
+    <string name="settings_security_cipher">Encryption algorithm</string>
+    <string name="settings_security_cipher_aes" translatable="false">AES-256</string>
+    <string name="settings_security_cipher_chacha" translatable="false">ChaCha20</string>
+    <string name="settings_security_kdf">Key derivation function</string>
+    <string name="settings_security_kdf_argon2id">Argon2id — recommended</string>
+    <string name="settings_security_kdf_argon2d" translatable="false">Argon2d</string>
+    <string name="settings_security_rounds">Rounds</string>
+    <string name="settings_security_rounds_hint">Higher — opening and every save take longer. Lower — weaker protection</string>
+    <string name="settings_security_open_time">Opening on this phone: about %1$s s</string>
+    <string name="settings_security_memory">Memory</string>
+    <string name="settings_security_parallelism">Parallelism</string>
     <string name="settings_about">About</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_mode">App theme</string>
