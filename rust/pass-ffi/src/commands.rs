@@ -108,6 +108,8 @@ commands! {
     // The settings of a database, and the key file the core writes by path
     GetDbSettings => "get_db_settings",
     SetDbSettings => "set_db_settings",
+    // One KDF pass of an open database timed on this device - the open time a settings screen shows (Step 68)
+    MeasureKdfPass => "measure_kdf_pass",
     GenerateKeyFile => "generate_key_file",
 
     // Has the file changed under us, and merging it back in when it has. All but one carry the bytes

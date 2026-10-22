@@ -9,7 +9,7 @@
 //! itself. A changed key file goes in as content too, `key_file` beside the settings (Step 31):
 //! `key_file_name` inside `DbSettings` is the name to show and is never read on the way in.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use kdbx_rust_core::db_service::{self, DbSettings};
 
@@ -60,6 +60,28 @@ pub(crate) fn set_db_settings(
         .map_err(|e| ErrorPayload::of(&e))?;
 
     Done::answer()
+}
+
+#[derive(Serialize)]
+struct KdfPass {
+    millis: u64,
+}
+
+/// How long one KDF pass of the open database takes on this device, in milliseconds (Step 68): the
+/// settings screen shows the open time as one pass times the iterations. Takes about as long as one
+/// pass - the caller runs it off the main thread. The database is not changed, locked or not.
+pub(crate) fn measure_kdf_pass(
+    args_json: &str,
+    input: Option<Vec<u8>>,
+) -> Result<Answer, ErrorPayload> {
+    reject_bytes(Command::MeasureKdfPass, input)?;
+    let args: DbKeyArgs = args(args_json)?;
+
+    let pass = db_service::measure_kdf_pass(&args.db_key).map_err(|e| ErrorPayload::of(&e))?;
+
+    // Milliseconds fit u64 for any pass that ever ends; saturate rather than wrap
+    let millis = u64::try_from(pass.as_millis()).unwrap_or(u64::MAX);
+    json_answer(&KdfPass { millis })
 }
 
 /// A new key file - 32 random bytes as xml KeyFile 2.0 - handed back as bytes beside the answer.
