@@ -37,6 +37,18 @@ val SurfaceVariantDark2C2F52 = Color(0xFF2C2F52)
 val OnSurfaceVariantDarkC3C6D6 = Color(0xFFC3C6D6)
 val OutlineDark8B909C = Color(0xFF8B909C)
 
+// Containers - steps off the background toward the outline, not the grey-violet defaults of M3 (pass-docs, Step 73)
+val SurfaceContainerLowLightF3F5F9 = Color(0xFFF3F5F9)
+val SurfaceContainerLightEDF0F5 = Color(0xFFEDF0F5)
+val SurfaceContainerHighLightE6EAF0 = Color(0xFFE6EAF0)
+
+// The dark ones - halfway between the defaults of M3 and the hue of the background: of it, not bright
+val SurfaceContainerLowestDark141426 = Color(0xFF141426)
+val SurfaceContainerLowDark202034 = Color(0xFF202034)
+val SurfaceContainerDark24243A = Color(0xFF24243A)
+val SurfaceContainerHighDark2B2C42 = Color(0xFF2B2C42)
+val SurfaceContainerHighestDark35354C = Color(0xFF35354C)
+
 // Service colors - not of the brand: marks of meaning shared by the themes (the classes of a password)
 val PasswordDigitLight1565C0 = Color(0xFF1565C0)
 val PasswordDigitDark82B1FF = Color(0xFF82B1FF)
