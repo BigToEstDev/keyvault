@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import ru.kino.dev.ui.theme.DISABLED_ALPHA
+import ru.kino.dev.ui.theme.DISABLED_CONTAINER_ALPHA
 
 /**
  * The red cross that deletes a card the person added - a round badge over the card's top end corner, on its
@@ -58,7 +60,7 @@ internal fun CardDeleteBadge(
             Icon(
                 Icons.Filled.Close,
                 contentDescription = contentDescription,
-                tint = if (enabled) colors.onError else colors.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA),
+                tint = if (enabled) colors.onError else colors.onSurface.copy(alpha = DISABLED_ALPHA),
                 modifier = Modifier.size(ICON_SIZE),
             )
         }
@@ -71,6 +73,3 @@ private val TOUCH_SIZE = 48.dp
 
 /** Half the touch less a few - the badge's center sits on the rounded corner, a little in from its point. */
 private val CORNER_OFFSET = 20.dp
-
-private const val DISABLED_CONTAINER_ALPHA = 0.12f
-private const val DISABLED_CONTENT_ALPHA = 0.38f

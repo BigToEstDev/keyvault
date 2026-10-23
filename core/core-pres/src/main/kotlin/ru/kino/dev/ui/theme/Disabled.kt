@@ -6,3 +6,6 @@ package ru.kino.dev.ui.theme
  * (pass-docs, Step 72, fix 3).
  */
 const val DISABLED_ALPHA = 0.38f
+
+/** The fill or the outline of a disabled element of Material 3: `onSurface` at 12% (pass-docs, Step 73, item 2). */
+const val DISABLED_CONTAINER_ALPHA = 0.12f

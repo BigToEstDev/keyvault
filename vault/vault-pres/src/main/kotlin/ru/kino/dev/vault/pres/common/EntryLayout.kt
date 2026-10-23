@@ -2,12 +2,12 @@ package ru.kino.dev.vault.pres.common
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.Icon
@@ -28,6 +28,8 @@ import ru.kino.dev.ui.components.FieldSection
 import ru.kino.dev.ui.components.MenuItem
 import ru.kino.dev.ui.components.MoreMenuButton
 import ru.kino.dev.ui.components.SkeletonField
+import ru.kino.dev.ui.theme.DISABLED_ALPHA
+import ru.kino.dev.ui.theme.DISABLED_CONTAINER_ALPHA
 
 /*
  * What reading and editing an entry share: the screens are one layout - the same top bar, the same cards,
@@ -59,23 +61,29 @@ internal fun EntryTopBar(
 }
 
 /**
- * The icon of the entry in a frame - one icon for every entry until choosing an icon comes, a step of its
- * own (vault-our.md, "Фича выбор иконки").
+ * The icon of the entry on a tonal tile - the primary container, no outline (pass-docs, Step 73, item 2); one icon
+ * for every entry until choosing an icon comes, a step of its own (vault-our.md, "Фича выбор иконки").
  *
- * Not [enabled] - while the entry is saved - it fades as a disabled field of Material 3 does: the text color
- * of the theme at 38%.
+ * Not [enabled] - while the entry is saved - it fades as a disabled element of Material 3 does: the fill and the
+ * icon in the text color of the theme at 12% and 38%.
  */
 @Composable
 internal fun EntryIconFrame(modifier: Modifier = Modifier, enabled: Boolean = true) {
     val colors = MaterialTheme.colorScheme
-    val disabled = colors.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
     Box(
         modifier = modifier
-            .size(56.dp)
-            .border(1.dp, if (enabled) colors.outline else disabled, MaterialTheme.shapes.medium),
+            .size(ICON_SIZE)
+            .background(
+                if (enabled) colors.primaryContainer else colors.onSurface.copy(alpha = DISABLED_CONTAINER_ALPHA),
+                ICON_SHAPE,
+            ),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Filled.Key, contentDescription = null, tint = if (enabled) colors.primary else disabled)
+        Icon(
+            Icons.Filled.Key,
+            contentDescription = null,
+            tint = if (enabled) colors.onPrimaryContainer else colors.onSurface.copy(alpha = DISABLED_ALPHA),
+        )
     }
 }
 
@@ -84,7 +92,7 @@ internal fun EntryIconFrame(modifier: Modifier = Modifier, enabled: Boolean = tr
 internal fun EntryTitleSection(enabled: Boolean = true, title: @Composable (Modifier) -> Unit) {
     FieldSection {
         // By the bottom, not the center: an outlined field keeps room above its box for the label, so its box
-        // sits lower than its middle. The frame is as tall as the box, and their bottoms meet
+        // sits lower than its middle. The tile is as tall as the box, and their bottoms meet
         Row(verticalAlignment = Alignment.Bottom) {
             EntryIconFrame(enabled = enabled)
             title(
@@ -111,7 +119,7 @@ internal fun EntryPresetSection(name: String, onClick: () -> Unit, enabled: Bool
             enabled = enabled,
             border = BorderStroke(
                 1.dp,
-                if (enabled) colors.primary else colors.onSurface.copy(alpha = DISABLED_OUTLINE_ALPHA),
+                if (enabled) colors.primary else colors.onSurface.copy(alpha = DISABLED_CONTAINER_ALPHA),
             ),
         ) {
             Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -126,8 +134,8 @@ internal fun EntrySkeleton(brush: Brush) {
         Row(verticalAlignment = Alignment.Bottom) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
-                    .clip(MaterialTheme.shapes.medium)
+                    .size(ICON_SIZE)
+                    .clip(ICON_SHAPE)
                     .background(brush),
             )
             SkeletonField(
@@ -143,9 +151,9 @@ internal fun EntrySkeleton(brush: Brush) {
     }
 }
 
-/** What Material 3 gives disabled content and a disabled outline: the text color at these. */
-private const val DISABLED_CONTENT_ALPHA = 0.38f
-private const val DISABLED_OUTLINE_ALPHA = 0.12f
+/** The tile of the icon: as tall as the box of an outlined field, rounded as the section it stands in. */
+private val ICON_SIZE = 56.dp
+private val ICON_SHAPE = RoundedCornerShape(16.dp)
 
 /** The fields of the standard preset after the title. */
 private const val SKELETON_FIELDS = 5
