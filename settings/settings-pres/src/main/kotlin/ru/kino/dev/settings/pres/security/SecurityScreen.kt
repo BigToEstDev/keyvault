@@ -48,7 +48,7 @@ import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.ItemMenu
 import ru.kino.dev.ui.components.MenuItem
 import ru.kino.dev.ui.components.RadioGroup
-import ru.kino.dev.ui.components.SkeletonText
+import ru.kino.dev.ui.components.Reveal
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.ValueRow
 import ru.kino.dev.ui.components.WheelPickerDialog
@@ -192,7 +192,8 @@ private fun LazyListScope.encryptionRows(
     item(key = "kdf_parameters") {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column {
-                // As the file has them, 20 of a database from elsewhere too: the wheel offers ours
+                // As the file has them, 20 of a database from elsewhere too: the wheel offers ours. The open time
+                // opens out under the title once measured - no skeleton, the card does not jump (pass-docs, Step 72)
                 val rounds = encryption.iterations
                 ValueRow(
                     title = stringResource(R.string.settings_security_rounds),
@@ -201,7 +202,6 @@ private fun LazyListScope.encryptionRows(
                     text = (kdfPass as? KdfPass.Measured)?.let { openTime(it, rounds) },
                     enabled = saving == null,
                 )
-                if (kdfPass == KdfPass.Measuring) OpenTimeSkeleton(Modifier.padding(start = 16.dp, bottom = 12.dp))
                 if (saving == SecurityPart.Rounds) SavingProgress(Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
                 // What makes guessing expensive stays as the file has it: to read only
                 ValueRow(
@@ -300,15 +300,15 @@ private fun RoundsDialog(security: DatabaseSecurity, kdfPass: KdfPass, action: (
         onDismiss = { action(SecurityAction.DismissRounds) },
         confirmText = stringResource(R.string.action_save),
     ) { rounds ->
-        Column(modifier = Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            when (kdfPass) {
-                is KdfPass.Measured -> Text(
-                    text = openTime(kdfPass, rounds),
+        Column(modifier = Modifier.padding(top = 16.dp)) {
+            // Opens out once measured, as on the card, the gap with it (pass-docs, Step 72)
+            Reveal(kdfPass as? KdfPass.Measured) {
+                Text(
+                    text = openTime(it, rounds),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
-                KdfPass.Measuring -> OpenTimeSkeleton(Modifier)
-                KdfPass.Unknown -> Unit
             }
             Text(
                 text = stringResource(R.string.settings_security_rounds_hint),
@@ -317,17 +317,6 @@ private fun RoundsDialog(security: DatabaseSecurity, kdfPass: KdfPass, action: (
             )
         }
     }
-}
-
-/** The open time is measured in the background - its line meanwhile. */
-@Composable
-private fun OpenTimeSkeleton(modifier: Modifier) {
-    SkeletonText(
-        brush = skeletonBrush(),
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = modifier,
-        widthFraction = OPEN_TIME_WIDTH,
-    )
 }
 
 /** "Opening on this phone: about 2.6 s" - one pass times [rounds], in the way of the language. */
@@ -364,5 +353,3 @@ private fun kdfLabel(kdf: KdfVariant): String = stringResource(
 )
 
 private const val MILLIS_IN_SECOND = 1000.0
-
-private const val OPEN_TIME_WIDTH = 0.6f
