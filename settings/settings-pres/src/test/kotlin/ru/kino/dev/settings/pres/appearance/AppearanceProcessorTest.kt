@@ -34,6 +34,7 @@ class AppearanceProcessorTest {
                     themeMode = ThemeMode.Dark,
                     language = AppLanguage.Russian,
                     passwordColoring = true,
+                    passwordStrength = false,
                     userNameInList = false,
                     entryCount = true,
                     entryCountNested = true,
@@ -166,6 +167,33 @@ class AppearanceProcessorTest {
 
                 expectInternalState { copy(passwordColoring = false) }
                 expectInternalState { copy(passwordColoring = true, message = AppearanceMessage.NotSaved) }
+            }
+    }
+
+    @Test
+    fun `password strength switched is kept at once`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System)
+
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordStrength = false)) {
+                containerHost.action(AppearanceAction.SetPasswordStrength(true)).join()
+
+                expectInternalState { copy(passwordStrength = true) }
+            }
+
+        assertEquals(listOf(true), repository.savedStrength)
+    }
+
+    @Test
+    fun `password strength not written goes back, with a message`() = runTest {
+        val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
+
+        AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
+            .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordStrength = false)) {
+                containerHost.action(AppearanceAction.SetPasswordStrength(true)).join()
+
+                expectInternalState { copy(passwordStrength = true) }
+                expectInternalState { copy(passwordStrength = false, message = AppearanceMessage.NotSaved) }
             }
     }
 

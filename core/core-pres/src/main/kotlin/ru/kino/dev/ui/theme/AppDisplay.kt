@@ -14,6 +14,7 @@ import androidx.compose.runtime.compositionLocalOf
  * @param lockButton the screens of the open database have the button that locks it now (Step 59)
  * @param presets the screens of an entry have the choice of presets; off - a new entry takes the standard one, one
  *   saved keeps its own (Step 62)
+ * @param passwordStrength a password being made has its strength on the border of its field (Step 74)
  */
 @Immutable
 data class AppDisplay(
@@ -23,6 +24,7 @@ data class AppDisplay(
     val entryCountNested: Boolean = true,
     val lockButton: Boolean = false,
     val presets: Boolean = true,
+    val passwordStrength: Boolean = false,
 )
 
 /** The [AppDisplay] chosen; the defaults until `app` provides one. */

@@ -113,6 +113,22 @@ class DataStoreAppearanceRepositoryTest {
     }
 
     @Test
+    fun `the strength of a password is not shown until chosen`() = runTest {
+        val repository = DataStoreAppearanceRepository(store(newFile()))
+
+        assertEquals(false, repository.passwordStrength.first())
+    }
+
+    @Test
+    fun `the strength switched on is what is read next`() = runTest {
+        val repository = DataStoreAppearanceRepository(store(newFile()))
+
+        repository.savePasswordStrength(true)
+
+        assertEquals(true, repository.passwordStrength.first())
+    }
+
+    @Test
     fun `user names are not in the list until chosen`() = runTest {
         val repository = DataStoreAppearanceRepository(store(newFile()))
 

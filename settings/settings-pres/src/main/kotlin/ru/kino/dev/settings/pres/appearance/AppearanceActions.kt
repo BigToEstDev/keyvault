@@ -19,6 +19,9 @@ sealed interface AppearanceAction {
     /** "Password coloring" switched: kept at once. */
     data class SetPasswordColoring(val on: Boolean) : AppearanceAction
 
+    /** "Password strength" switched: kept at once. */
+    data class SetPasswordStrength(val on: Boolean) : AppearanceAction
+
     /** "User name in the list" switched: kept at once. */
     data class SetUserNameInList(val on: Boolean) : AppearanceAction
 

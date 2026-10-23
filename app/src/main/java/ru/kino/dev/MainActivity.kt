@@ -3,6 +3,7 @@ package ru.kino.dev
 import android.content.res.Resources
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
 import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -75,6 +76,9 @@ class MainActivity : FragmentActivity() {
         // release (pass-docs, Step 61)
         secureWindow(true)
         lifecycleScope.launch { privacy.allowScreenshots.collect { secureWindow(!it) } }
+        // Out of autofill, the whole window: no other manager reads or offers to keep our passwords. The fields
+        // take the windows of dialogs out themselves (pass-docs, Step 74, item 5)
+        window.decorView.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
         // The windows of dialogs and menus take the language from the activity, not from `AppLocale`
         // (pass-docs, Step 72, fix 1)
         lifecycleScope.launch { theme.language.collect { localeResources.locale = it?.locale } }

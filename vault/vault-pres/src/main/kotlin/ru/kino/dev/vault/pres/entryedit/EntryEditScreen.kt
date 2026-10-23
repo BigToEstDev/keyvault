@@ -186,6 +186,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
                 error = if (state.isMissing(field.key)) missing else null,
                 enabled = enabled,
                 imeAction = ImeAction.Next,
+                newPassword = true,
             )
         } else {
             PresetText(field)

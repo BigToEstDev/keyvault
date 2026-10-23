@@ -135,6 +135,18 @@ internal fun AppearanceScreen(
                         )
                     }
                 }
+                item(key = "password-strength") {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        SwitchRow(
+                            title = stringResource(R.string.settings_password_strength),
+                            text = stringResource(R.string.settings_password_strength_hint),
+                            // Until read nothing is chosen for real: the switch is disabled meanwhile, shown off
+                            checked = state.passwordStrength ?: false,
+                            onCheckedChange = { processor.action(AppearanceAction.SetPasswordStrength(it)) },
+                            enabled = state.passwordStrength != null,
+                        )
+                    }
+                }
                 item(key = "user-name-in-list") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(

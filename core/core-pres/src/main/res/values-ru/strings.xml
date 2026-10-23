@@ -348,6 +348,8 @@
     <string name="settings_language_system">Системный</string>
     <string name="settings_password_coloring">Раскраска пароля</string>
     <string name="settings_password_coloring_hint">Буквы, цифры и символы разным цветом</string>
+    <string name="settings_password_strength">Надёжность пароля</string>
+    <string name="settings_password_strength_hint">Показывает сложность пароля</string>
     <string name="settings_user_name_in_list">Имя пользователя в списке</string>
     <string name="settings_user_name_in_list_hint">Под названием записи</string>
     <string name="settings_user_name_hidden_hint">Имя пользователя скрыто в этой базе</string>
