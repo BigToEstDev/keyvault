@@ -1,10 +1,9 @@
 package ru.kino.dev.vault.pres.common
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,15 +11,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.BackTopBar
@@ -87,9 +83,16 @@ internal fun EntryIconFrame(modifier: Modifier = Modifier, enabled: Boolean = tr
     }
 }
 
-/** The first card of every preset: the icon and the title, side by side. */
+/**
+ * The first card of the form: the icon and the title, side by side, and [below] them - the group and the preset
+ * (pass-docs, Step 73, item 4).
+ */
 @Composable
-internal fun EntryTitleSection(enabled: Boolean = true, title: @Composable (Modifier) -> Unit) {
+internal fun EntryTitleSection(
+    enabled: Boolean = true,
+    title: @Composable (Modifier) -> Unit,
+    below: @Composable ColumnScope.() -> Unit = {},
+) {
     FieldSection {
         // By the bottom, not the center: an outlined field keeps room above its box for the label, so its box
         // sits lower than its middle. The tile is as tall as the box, and their bottoms meet
@@ -101,29 +104,7 @@ internal fun EntryTitleSection(enabled: Boolean = true, title: @Composable (Modi
                     .padding(start = 16.dp),
             )
         }
-    }
-}
-
-/**
- * The card of the preset, between the group and the fields: a button outlined in the primary color with the
- * [name] of the preset. It opens the choice of presets. Not [enabled], its outline fades as that of a disabled
- * outlined button of Material 3: the text color of the theme at 12%; the text fades by itself.
- */
-@Composable
-internal fun EntryPresetSection(name: String, onClick: () -> Unit, enabled: Boolean) {
-    val colors = MaterialTheme.colorScheme
-    FieldSection {
-        OutlinedButton(
-            onClick = onClick,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = enabled,
-            border = BorderStroke(
-                1.dp,
-                if (enabled) colors.primary else colors.onSurface.copy(alpha = DISABLED_CONTAINER_ALPHA),
-            ),
-        ) {
-            Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
+        below()
     }
 }
 
