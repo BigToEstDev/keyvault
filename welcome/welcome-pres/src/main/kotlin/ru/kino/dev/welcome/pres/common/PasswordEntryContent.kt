@@ -35,6 +35,7 @@ import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.SecondaryButton
+import ru.kino.dev.ui.theme.DISABLED_ALPHA
 
 /**
  * The layout of entering a password, shared by the unlock and the locked screens - one layout, two
@@ -236,11 +237,17 @@ private fun KeyFileRow(entry: PasswordEntry, onAttach: () -> Unit, onRemove: (()
         return
     }
 
+    // Greys out with the buttons under it while the database opens (pass-docs, Step 72, fix 3)
+    val color = if (entry.busy) {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA)
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(
             imageVector = Icons.Outlined.Key,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = color,
         )
         Spacer(Modifier.size(8.dp))
         Text(
@@ -249,7 +256,7 @@ private fun KeyFileRow(entry: PasswordEntry, onAttach: () -> Unit, onRemove: (()
                 entry.keyFileName ?: stringResource(R.string.entry_key_file_unnamed),
             ),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = color,
         )
     }
     if (problem.isAboutKeyFile) {

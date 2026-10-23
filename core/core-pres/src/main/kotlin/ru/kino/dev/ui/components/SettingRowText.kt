@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ru.kino.dev.ui.theme.DISABLED_ALPHA
 
 /**
  * The title of a row of settings and the line under it, when there is one - [SwitchRow], [ValueRow].
@@ -38,9 +39,6 @@ internal fun SettingRowText(title: String, text: String?, enabled: Boolean, modi
         }
     }
 }
-
-/** A disabled element of Material 3: its content in `onSurface` at 38%. Shared by the rows of settings. */
-internal const val DISABLED_ALPHA = 0.38f
 
 private val TITLE_LINE_HEIGHT = 18.sp
 private val TEXT_LINE_HEIGHT = 16.sp

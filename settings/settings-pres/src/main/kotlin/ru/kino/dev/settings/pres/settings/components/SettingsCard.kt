@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ru.kino.dev.ui.theme.DISABLED_ALPHA
 
 /**
  * A card of the settings screen: an icon, the [title], what is inside in [text] - when there is one - and an
@@ -82,6 +83,3 @@ private fun CardContent(icon: ImageVector, title: String, text: String?, enabled
         )
     }
 }
-
-// A disabled element of Material 3: the text color at 38%
-private const val DISABLED_ALPHA = 0.38f
