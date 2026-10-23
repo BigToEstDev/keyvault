@@ -226,6 +226,7 @@ class LockedProcessorTest {
     private fun lockedState() = LockedState(
         databaseName = "Passwords",
         entry = PasswordEntry(keyFileUri = KEY, keyFileName = "my.keyx"),
+        read = true,
     )
 
     private companion object {

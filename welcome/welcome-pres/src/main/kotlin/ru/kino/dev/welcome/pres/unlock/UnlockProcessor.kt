@@ -35,12 +35,15 @@ import ru.kino.dev.welcome.pres.navigation.WelcomeRoute
  * @param databaseUri the database to open; null until it is known, and when nothing is remembered
  * @param databaseName the name from inside the database, known once it was opened before
  * @param fileName the name of the file, shown when the database has not been opened yet
+ * @param read the database to show is read - until then the screen is the shield alone, not these defaults
+ * (pass-docs, Step 72, fix 4)
  */
 data class UnlockState(
     val databaseUri: String? = null,
     val databaseName: String? = null,
     val fileName: String? = null,
     val entry: PasswordEntry = PasswordEntry(),
+    val read: Boolean = false,
 )
 
 /**
@@ -185,9 +188,10 @@ class UnlockProcessor @AssistedInject constructor(
                     keyFileName = remembered.keyFileName,
                     biometricOn = biometric.isOn(uri),
                 ),
+                read = true,
             )
         } else {
-            UnlockState(databaseUri = uri, fileName = nameOf(uri))
+            UnlockState(databaseUri = uri, fileName = nameOf(uri), read = true)
         }
         // A file deleted outside the app is said now, not after the password was typed for it
         val gone = if (isReachable(uri)) null else DATABASE_GONE

@@ -107,7 +107,7 @@ enum class SecurityPart { Cipher, Kdf, Rounds, KeyFile }
 /** One KDF pass on this phone: the open time is a pass times the rounds. */
 sealed interface KdfPass {
 
-    /** Measured in the background, after the screen is read - a skeleton meanwhile. */
+    /** Measured in the background, after the screen is read - no open time meanwhile, it opens out once known. */
     data object Measuring : KdfPass
 
     data class Measured(val pass: Duration) : KdfPass

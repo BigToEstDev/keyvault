@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import ru.kino.dev.ui.theme.DISABLED_ALPHA
 
 /**
  * A setting with a value: a title, a line under it when there is one, the value at the end; a tap - to change

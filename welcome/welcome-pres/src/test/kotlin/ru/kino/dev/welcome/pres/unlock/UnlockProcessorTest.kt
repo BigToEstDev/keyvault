@@ -74,7 +74,7 @@ class UnlockProcessorTest {
         processor.testWithInternalState(this) {
             runOnCreate().join()
 
-            expectInternalState(UnlockState(databaseUri = OTHER, fileName = "other.kdbx"))
+            expectInternalState(UnlockState(databaseUri = OTHER, fileName = "other.kdbx", read = true))
         }
     }
 
@@ -239,7 +239,7 @@ class UnlockProcessorTest {
             expectSideEffect(UnlockSideEffect.PickDatabase)
 
             containerHost.action(UnlockAction.DatabasePicked(OTHER))
-            expectInternalState(UnlockState(databaseUri = OTHER, fileName = "other.kdbx"))
+            expectInternalState(UnlockState(databaseUri = OTHER, fileName = "other.kdbx", read = true))
         }
     }
 
@@ -458,6 +458,7 @@ class UnlockProcessorTest {
         databaseName = "Passwords",
         fileName = "passwords.kdbx",
         entry = PasswordEntry(keyFileUri = KEY, keyFileName = "my.keyx"),
+        read = true,
     )
 
     private companion object {

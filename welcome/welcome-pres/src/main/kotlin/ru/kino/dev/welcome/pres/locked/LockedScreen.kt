@@ -51,6 +51,7 @@ internal fun LockedScreen(
         onCreateDatabase = null,
         onDatabaseClick = null,
         onPickAnotherDatabase = null,
+        read = state.read,
         locked = true,
     )
 }
