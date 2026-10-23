@@ -26,8 +26,10 @@ import ru.kino.dev.ui.components.CopyButton
 import ru.kino.dev.ui.components.FieldRow
 import ru.kino.dev.ui.components.FieldRowsSection
 import ru.kino.dev.ui.components.FieldSection
+import ru.kino.dev.ui.components.OpenLinkButton
 import ru.kino.dev.ui.components.SensitiveClipboard
 import ru.kino.dev.ui.components.VisibilityToggle
+import ru.kino.dev.ui.components.linkOf
 import ru.kino.dev.ui.components.rememberSecretText
 import ru.kino.dev.ui.components.rememberSensitiveClipboard
 import ru.kino.dev.ui.preset.fieldLabel
@@ -172,9 +174,10 @@ private fun PresetRow(
     } else {
         val private = privacy.protection.protects(key)
         val shown = key in privacy.shownKeys
+        val value = content.value(key)
         ReadRow(
             label = fieldLabel(key),
-            value = content.value(key),
+            value = value,
             clipboard = clipboard,
             hidden = private && !shown,
             secret = private,
@@ -184,6 +187,9 @@ private fun PresetRow(
             } else {
                 null
             },
+            // The URL opens where it copies; a private one is a secret as any other - the eye and "copy" only
+            // (pass-docs, Step 73, item 7)
+            link = linkOf(value).takeIf { key == StandardPreset.URL && !private && clipboard != null },
         )
     }
 }
@@ -225,6 +231,7 @@ private class Privacy(
  * A row that shows a value, with "copy" - when [clipboard] is given - and the eye of a protected one.
  *
  * @param secret a protected one: shown in clear, it is colored as a password is (pass-docs, Step 58)
+ * @param link where the value leads - colored, with "open" before "copy"
  */
 @Composable
 private fun ReadRow(
@@ -235,18 +242,21 @@ private fun ReadRow(
     secret: Boolean,
     shown: Boolean,
     onToggleShown: (() -> Unit)?,
+    link: String? = null,
 ) {
     FieldRow(
         label = label,
         value = value,
         hidden = hidden,
         secret = secret,
+        link = link != null,
         actions = if (clipboard == null && onToggleShown == null) {
             null
         } else {
             {
-                // The eye first, then "copy" - as on the password
+                // The eye or "open" first, then "copy" - as on the password
                 onToggleShown?.let { VisibilityToggle(visible = shown, onToggle = it) }
+                link?.let { OpenLinkButton(it) }
                 clipboard?.let { CopyButton(onCopy = { it.copy(label, value) }) }
             }
         },

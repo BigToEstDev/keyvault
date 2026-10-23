@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.password
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
  *
  * @param hidden the value as dots - a secret
  * @param secret the value is a secret: shown in clear, colored by kind, as in a [TextField]
+ * @param link the value is a link - in the primary color (pass-docs, Step 73, item 7)
  * @param actions buttons at the end of the row
  */
 @Composable
@@ -33,6 +35,7 @@ fun FieldRow(
     modifier: Modifier = Modifier,
     hidden: Boolean = false,
     secret: Boolean = false,
+    link: Boolean = false,
     actions: (@Composable RowScope.() -> Unit)? = null,
 ) {
     Row(
@@ -48,6 +51,7 @@ fun FieldRow(
             Text(
                 text = rememberSecretText(value, hidden, secret),
                 style = MaterialTheme.typography.bodyLarge,
+                color = if (link) MaterialTheme.colorScheme.primary else Color.Unspecified,
                 // Dots are no text to read out
                 modifier = if (hidden) Modifier.semantics { password() } else Modifier,
             )

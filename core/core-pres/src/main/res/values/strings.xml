@@ -25,6 +25,7 @@
     <string name="action_apply">Apply</string>
     <string name="action_reset">Reset</string>
     <string name="action_copy">Copy</string>
+    <string name="action_open_link">Open link</string>
     <string name="action_restore">Restore</string>
     <string name="action_select_all">Select all</string>
     <string name="action_pick_another_file">Choose another file</string>
@@ -162,6 +163,7 @@
     <string name="group_delete_text">«%1$s» and the groups inside it are deleted, its entries go to the recycle bin.</string>
     <string name="group_delete_forever_text">«%1$s» is deleted for good with everything in it. This cannot be undone.</string>
     <string name="message_file_not_saved">The change is made, but the file was not written</string>
+    <string name="message_no_app_for_link">No app to open the link</string>
     <string name="vault_message_load_failed">Could not read the group</string>
     <string name="vault_message_search_failed">Could not search</string>
     <string name="vault_message_filter_not_saved">The filter is applied, but will not be remembered</string>
