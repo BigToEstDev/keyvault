@@ -14,6 +14,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -35,17 +36,38 @@ import ru.kino.dev.core.pres.R
  */
 @Composable
 fun FieldSection(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = SECTION_SHAPE,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-    ) {
+    SectionCard(modifier) {
         Column(
             modifier = Modifier.padding(SECTION_PADDING),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             content = content,
         )
     }
+}
+
+/**
+ * A section of [FieldRow]s - a card as a [FieldSection], to read: the rows run to its edges, a thin line between
+ * each two (pass-docs, Step 73, item 3).
+ */
+@Composable
+fun FieldRowsSection(rows: List<@Composable () -> Unit>, modifier: Modifier = Modifier) {
+    val divider = MaterialTheme.colorScheme.outline.copy(alpha = DIVIDER_ALPHA)
+    SectionCard(modifier) {
+        rows.forEachIndexed { index, row ->
+            if (index > 0) HorizontalDivider(color = divider)
+            row()
+        }
+    }
+}
+
+@Composable
+private fun SectionCard(modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = SECTION_SHAPE,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        content = content,
+    )
 }
 
 /**
@@ -83,3 +105,6 @@ val SECTION_PADDING = 16.dp
 
 /** Rounder than a plain card of the theme - a section is wide and tall. */
 private val SECTION_SHAPE = RoundedCornerShape(16.dp)
+
+/** The line between rows - faint: it parts them, the fill of the card groups them. */
+private const val DIVIDER_ALPHA = 0.25f
