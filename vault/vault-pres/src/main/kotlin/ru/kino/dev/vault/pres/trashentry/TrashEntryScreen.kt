@@ -41,8 +41,9 @@ import ru.kino.dev.vault.pres.common.EntryTimesText
 import ru.kino.dev.vault.pres.trash.components.TrashDialogs
 
 /**
- * An entry of the recycle bin, read: its fields with copying, no group; under them its times and when it was
- * deleted. The bin in the top bar deletes it for good, the fab restores it (pass-docs, Step 71).
+ * An entry of the recycle bin, read: its fields with copying, no group - when it was deleted in its place, under the
+ * title (pass-docs, Step 72, item 6); under the fields its times. The bin in the top bar deletes it for good, the fab
+ * restores it (pass-docs, Step 71).
  */
 @Composable
 internal fun TrashEntryScreen(
@@ -119,8 +120,9 @@ internal fun TrashEntryScreen(
                             protection = state.protection,
                             shownKeys = state.shownKeys,
                             onToggleKey = { processor.action(TrashEntryAction.ToggleKey(it)) },
+                            deletedAt = trashed?.deletedAt,
                         )
-                        EntryTimesText(entry.times, deletedAt = trashed?.deletedAt)
+                        EntryTimesText(entry.times)
                     }
                     skeleton != null -> EntryReadSkeleton(brush = skeleton)
                 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.password
 import androidx.compose.ui.semantics.semantics
@@ -43,6 +45,8 @@ import ru.kino.dev.vault.entry.EntryField
  * Rows of a label and a value, not fields: a field to read is no field to type into (pass-docs, Step 73, item 3).
  *
  * @param group where the entry is - a chip under the title; null - none: a version does not keep its group
+ * @param deletedAt an entry of the recycle bin - when it went there: a chip under the title, where the group's is -
+ * it has none (pass-docs, Step 72, item 6)
  * @param copyable "copy" by the values; an old version has none - restore it to copy (owner, 17.10.26)
  * @param shownOwn indexes of the protected own fields shown in clear
  * @param protection the fields private by the database - hidden, with the eye, whatever the preset (Step 65)
@@ -59,6 +63,7 @@ internal fun EntryReadFields(
     shownKeys: Set<String>,
     onToggleKey: (String) -> Unit,
     group: GroupChoice? = null,
+    deletedAt: Long? = null,
     copyable: Boolean = true,
 ) {
     val clipboard = rememberSensitiveClipboard().takeIf { copyable }
@@ -67,7 +72,23 @@ internal fun EntryReadFields(
     TitleSection(content.value(StandardPreset.TITLE), clipboard, privacy)
 
     // Where the entry is: the path down to it, the group at its end (pass-docs, Step 48, Step 73 item 3)
-    group?.let { GroupChip(path = it.subtitle() ?: it.title()) }
+    group?.let {
+        InfoChip(
+            icon = Icons.Filled.Folder,
+            description = stringResource(R.string.entry_field_group),
+            text = it.subtitle() ?: it.title(),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+    }
+    // In the bin: when it went there - in sight, not under the cards (pass-docs, Step 72, item 6)
+    deletedAt?.let {
+        InfoChip(
+            icon = Icons.Filled.Delete,
+            description = null,
+            text = stringResource(R.string.trash_deleted_at, entryTimeText(it)),
+            tint = MaterialTheme.colorScheme.onSurface,
+        )
+    }
 
     // The cards of the preset, as the preset has them - each with the fields that hold something, if any
     content.preset.cards.forEach { card ->
@@ -121,9 +142,14 @@ private fun TitleSection(title: String, clipboard: SensitiveClipboard?, privacy:
     }
 }
 
-/** The group of the entry: a chip outlined, the folder and the path; a long path is cut at the start. */
+/**
+ * A fact about the entry under its title - where it is, when it was deleted: a chip outlined, the [icon] in [tint]
+ * and the [text] - one line, a long one cut at the start (the end of a path tells it). It takes no tap.
+ *
+ * @param description what the icon says, when the text does not say it itself
+ */
 @Composable
-private fun GroupChip(path: String) {
+private fun InfoChip(icon: ImageVector, description: String?, text: String, tint: Color) {
     val colors = MaterialTheme.colorScheme
     Surface(
         shape = MaterialTheme.shapes.medium,
@@ -136,13 +162,13 @@ private fun GroupChip(path: String) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                Icons.Filled.Folder,
-                contentDescription = stringResource(R.string.entry_field_group),
-                tint = colors.primary,
+                icon,
+                contentDescription = description,
+                tint = tint,
                 modifier = Modifier.size(CHIP_ICON_SIZE),
             )
             Text(
-                text = path,
+                text = text,
                 style = MaterialTheme.typography.labelLarge,
                 maxLines = 1,
                 overflow = TextOverflow.StartEllipsis,
