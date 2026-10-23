@@ -90,6 +90,7 @@ internal fun PasswordDialog(dialog: PasswordDialog, action: (SecurityAction) -> 
                     },
                     enabled = enabled,
                     imeAction = ImeAction.Next,
+                    newPassword = true,
                     modifier = Modifier
                         .fillMaxWidth()
                         .then(if (dialog.needsCurrent) Modifier else Modifier.focusRequester(focus)),

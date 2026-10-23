@@ -25,6 +25,7 @@ import ru.kino.dev.vault.entries.EntrySettingsRepository
  * @param themeMode the chosen mode; null until read - its choice is disabled
  * @param language the chosen language; null until read - its choice is disabled
  * @param passwordColoring whether passwords are colored; null until read - its choice is disabled
+ * @param passwordStrength whether a password made shows its strength; null until read - its choice is disabled
  * @param userNameInList whether the list shows user names; null until read - its choice is disabled
  * @param entryCount whether groups show their number; null until read - its choice is disabled
  * @param entryCountNested whether the number counts the groups below; null until read - its choice is disabled
@@ -35,6 +36,7 @@ data class AppearanceState(
     val themeMode: ThemeMode? = null,
     val language: AppLanguage? = null,
     val passwordColoring: Boolean? = null,
+    val passwordStrength: Boolean? = null,
     val userNameInList: Boolean? = null,
     val entryCount: Boolean? = null,
     val entryCountNested: Boolean? = null,
@@ -43,8 +45,8 @@ data class AppearanceState(
 )
 
 /**
- * How the app looks (pass-docs, Step 55, Step 57, Step 58): the mode of the theme, the language, the coloring
- * of passwords, the user names in the list, the number of entries of a group. A choice is shown at once and written in the background - only
+ * How the app looks (pass-docs, Step 55, Step 57, Step 58, Step 74): the mode of the theme, the language, the
+ * coloring of passwords and their strength, the user names in the list, the number of entries of a group. A choice is shown at once and written in the background - only
  * the store of the app settings, not the database: the screen does not wait for it, nothing is disabled
  * meanwhile (pass-docs, Step 56, item 4). The whole app takes it from the repository; one not written shows
  * what the repository holds, with a snackbar.
@@ -75,6 +77,7 @@ class AppearanceProcessor @AssistedInject constructor(
                 val mode = repository.themeMode.first()
                 val language = repository.language.first()
                 val passwordColoring = repository.passwordColoring.first()
+                val passwordStrength = repository.passwordStrength.first()
                 val userNameInList = repository.userNameInList.first()
                 val entryCount = repository.entryCount.first()
                 val entryCountNested = repository.entryCountNested.first()
@@ -84,6 +87,7 @@ class AppearanceProcessor @AssistedInject constructor(
                         themeMode = mode,
                         language = language,
                         passwordColoring = passwordColoring,
+                        passwordStrength = passwordStrength,
                         userNameInList = userNameInList,
                         entryCount = entryCount,
                         entryCountNested = entryCountNested,
@@ -107,6 +111,11 @@ class AppearanceProcessor @AssistedInject constructor(
             is AppearanceAction.SetPasswordColoring ->
                 keep(action.on, state.passwordColoring, repository.passwordColoring, { copy(passwordColoring = it) }) {
                     repository.savePasswordColoring(it)
+                }
+
+            is AppearanceAction.SetPasswordStrength ->
+                keep(action.on, state.passwordStrength, repository.passwordStrength, { copy(passwordStrength = it) }) {
+                    repository.savePasswordStrength(it)
                 }
 
             is AppearanceAction.SetUserNameInList -> if (!state.userNameHidden) {

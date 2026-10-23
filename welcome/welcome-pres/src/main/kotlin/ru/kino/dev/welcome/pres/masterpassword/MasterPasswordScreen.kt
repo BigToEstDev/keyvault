@@ -117,6 +117,7 @@ private fun MasterPasswordContent(state: MasterPasswordState, onAction: (MasterP
                 },
                 enabled = enabled,
                 imeAction = ImeAction.Next,
+                newPassword = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focus),

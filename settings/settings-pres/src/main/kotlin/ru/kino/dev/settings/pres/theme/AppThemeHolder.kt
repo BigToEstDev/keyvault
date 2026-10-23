@@ -50,10 +50,16 @@ class AppThemeHolder @Inject constructor(
         ) { userNameInList, entryCount, entryCountNested ->
             AppDisplay(userNameInList = userNameInList, entryCount = entryCount, entryCountNested = entryCountNested)
         },
-        repository.passwordColoring,
+        // ...and what a password shows - its colors and its strength
+        combine(repository.passwordColoring, repository.passwordStrength, ::Pair),
         lock.lockButton,
         presets.usePresets,
-    ) { list, passwordColoring, lockButton, usePresets ->
-        list.copy(passwordColoring = passwordColoring, lockButton = lockButton, presets = usePresets)
+    ) { list, (passwordColoring, passwordStrength), lockButton, usePresets ->
+        list.copy(
+            passwordColoring = passwordColoring,
+            passwordStrength = passwordStrength,
+            lockButton = lockButton,
+            presets = usePresets,
+        )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }

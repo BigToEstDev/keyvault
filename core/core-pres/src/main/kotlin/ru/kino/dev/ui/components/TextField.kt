@@ -1,7 +1,11 @@
 package ru.kino.dev.ui.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +22,8 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
+import ru.kino.dev.ui.theme.DISABLED_ALPHA
 import ru.kino.dev.ui.theme.AppDisplay
 import ru.kino.dev.ui.theme.LocalAppColors
 import ru.kino.dev.ui.theme.LocalAppDisplay
@@ -40,6 +46,8 @@ import ru.kino.dev.ui.theme.LocalAppDisplay
  * @param singleLine false lets the text wrap and the field grow with it - notes
  * @param minLines how tall a multi-line field starts
  * @param actions buttons at the end of the field, after the "!" of the error
+ * @param strength a password being made: its strength on the bottom edge of the border, when
+ * [AppDisplay.passwordStrength] is on (pass-docs, Step 74); none while the field has an error
  */
 @Composable
 fun TextField(
@@ -59,38 +67,73 @@ fun TextField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     actions: (@Composable RowScope.() -> Unit)? = null,
+    strength: Boolean = false,
 ) {
     val errorState = rememberFieldErrorState(error)
     val transformation = secretTransformation(hidden, secret)
 
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier
-            .onFocusChanged { errorState.onFocusChanged(it.isFocused, enabled) }
-            // A field only to read takes no focus: focus would light it up as a field to type into, and there
-            // is nothing to select it for - its value is copied by its button (Step 40, fix 16)
-            .focusProperties { canFocus = !readOnly },
-        enabled = enabled,
-        readOnly = readOnly,
-        label = { FieldLabel(label, required) },
-        singleLine = singleLine,
-        minLines = minLines,
-        isError = error != null,
-        supportingText = hint?.let { { Text(it) } },
-        visualTransformation = transformation,
-        keyboardOptions = keyboardOptions,
-        keyboardActions = keyboardActions,
-        trailingIcon = if (error == null && actions == null) {
-            null
-        } else {
-            {
-                Row {
-                    error?.let { FieldErrorIcon(error = it, state = errorState) }
-                    actions?.invoke(this)
+    val field: @Composable (Modifier, Boolean) -> Unit = { fieldModifier, withHint ->
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = fieldModifier
+                .onFocusChanged { errorState.onFocusChanged(it.isFocused, enabled) }
+                // A field only to read takes no focus: focus would light it up as a field to type into, and there
+                // is nothing to select it for - its value is copied by its button (Step 40, fix 16)
+                .focusProperties { canFocus = !readOnly },
+            enabled = enabled,
+            readOnly = readOnly,
+            label = { FieldLabel(label, required) },
+            singleLine = singleLine,
+            minLines = minLines,
+            isError = error != null,
+            supportingText = if (withHint) hint?.let { { Text(it) } } else null,
+            visualTransformation = transformation,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            trailingIcon = if (error == null && actions == null) {
+                null
+            } else {
+                {
+                    Row {
+                        error?.let { FieldErrorIcon(error = it, state = errorState) }
+                        actions?.invoke(this)
+                    }
                 }
+            },
+        )
+    }
+
+    if (strength && LocalAppDisplay.current.passwordStrength) {
+        // The hint under the field, not in it: in it, the bottom of the field would be the hint's, not the border's
+        Column(modifier = modifier) {
+            Box {
+                field(Modifier.fillMaxWidth(), false)
+                StrengthBar(
+                    strength = passwordStrength(value).takeIf { error == null },
+                    modifier = Modifier.matchParentSize(),
+                )
             }
+            hint?.let { HintText(it, isError = error != null, enabled = enabled) }
+        }
+    } else {
+        field(modifier, true)
+    }
+}
+
+/** A hint under a field, as Material 3 puts its supporting text - for a field that has it outside. */
+@Composable
+private fun HintText(text: String, isError: Boolean, enabled: Boolean) {
+    val colors = MaterialTheme.colorScheme
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = when {
+            !enabled -> colors.onSurface.copy(alpha = DISABLED_ALPHA)
+            isError -> colors.error
+            else -> colors.onSurfaceVariant
         },
+        modifier = Modifier.padding(start = 16.dp, top = 4.dp, end = 16.dp),
     )
 }
 

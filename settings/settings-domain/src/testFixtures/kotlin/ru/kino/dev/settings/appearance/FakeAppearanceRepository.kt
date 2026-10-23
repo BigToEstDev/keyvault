@@ -26,6 +26,10 @@ class FakeAppearanceRepository(
 
     private val coloring = MutableStateFlow(true)
 
+    val savedStrength = mutableListOf<Boolean>()
+
+    private val strength = MutableStateFlow(false)
+
     val savedUserNameInList = mutableListOf<Boolean>()
 
     private val userNames = MutableStateFlow(initialUserNameInList)
@@ -43,6 +47,8 @@ class FakeAppearanceRepository(
     override val language: Flow<AppLanguage> = chosenLanguage
 
     override val passwordColoring: Flow<Boolean> = coloring
+
+    override val passwordStrength: Flow<Boolean> = strength
 
     override val userNameInList: Flow<Boolean> = userNames
 
@@ -66,6 +72,12 @@ class FakeAppearanceRepository(
         if (failSave) throw IOException("disk full")
         savedColoring += on
         coloring.value = on
+    }
+
+    override suspend fun savePasswordStrength(on: Boolean) {
+        if (failSave) throw IOException("disk full")
+        savedStrength += on
+        strength.value = on
     }
 
     override suspend fun saveUserNameInList(on: Boolean) {
