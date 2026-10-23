@@ -1,5 +1,6 @@
 package ru.kino.dev.ui.components
 
+import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,10 +13,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -23,6 +26,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.core.view.doOnAttach
 import ru.kino.dev.ui.theme.DISABLED_ALPHA
 import ru.kino.dev.ui.theme.AppDisplay
 import ru.kino.dev.ui.theme.LocalAppColors
@@ -33,6 +37,10 @@ import ru.kino.dev.ui.theme.LocalAppDisplay
  * come from the caller. Every other field - a password, the field of a dialog - is built on it.
  *
  * It does not limit the length itself - the processor decides what a value too long means.
+ *
+ * No autofill service sees it: it takes its window - the screen or a dialog, a window of its own - out of autofill,
+ * so the master password never goes to the account of another manager, nor does a "generate a password" bubble
+ * cover the form (pass-docs, Step 74, item 5).
  *
  * @param required puts a star after the label: the field must be filled
  * @param error marks the field as wrong and puts a "!" in it; the text is a bubble under the field, over the
@@ -71,6 +79,14 @@ fun TextField(
 ) {
     val errorState = rememberFieldErrorState(error)
     val transformation = secretTransformation(hidden, secret)
+
+    // The root of the window, not the view of Compose: that one reports itself important for autofill whatever it is
+    // told (`AndroidComposeView.getImportantForAutofill`), the root above it is asked too. Once the view is in its window
+    val view = LocalView.current
+    DisposableEffect(view) {
+        view.doOnAttach { it.rootView.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS }
+        onDispose {}
+    }
 
     val field: @Composable (Modifier, Boolean) -> Unit = { fieldModifier, withHint ->
         OutlinedTextField(
