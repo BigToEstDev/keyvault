@@ -19,12 +19,20 @@ import androidx.compose.runtime.remember
 fun <T : Any> Reveal(value: T?, content: @Composable (T) -> Unit) {
     val last = remember { LastValue<T>() }
     value?.let { last.value = it }
+    Reveal(visible = value != null) {
+        last.value?.let { content(it) }
+    }
+}
+
+/** [content] that opens out when [visible] and folds away when not - as [Reveal] of a value, with nothing to keep. */
+@Composable
+fun Reveal(visible: Boolean, content: @Composable () -> Unit) {
     AnimatedVisibility(
-        visible = value != null,
+        visible = visible,
         enter = expandVertically() + fadeIn(),
         exit = shrinkVertically() + fadeOut(),
     ) {
-        last.value?.let { content(it) }
+        content()
     }
 }
 

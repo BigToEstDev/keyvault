@@ -48,5 +48,6 @@ internal fun UnlockScreen(
         onCreateDatabase = { processor.action(UnlockAction.CreateDatabase) },
         onDatabaseClick = { changeDatabase() },
         onPickAnotherDatabase = { changeDatabase() },
+        read = state.read,
     )
 }
