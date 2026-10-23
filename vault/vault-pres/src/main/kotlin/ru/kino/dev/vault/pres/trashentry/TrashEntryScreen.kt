@@ -36,7 +36,7 @@ import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.pres.common.EntryReadFields
-import ru.kino.dev.vault.pres.common.EntrySkeleton
+import ru.kino.dev.vault.pres.common.EntryReadSkeleton
 import ru.kino.dev.vault.pres.common.EntryTimesText
 import ru.kino.dev.vault.pres.trash.components.TrashDialogs
 
@@ -122,7 +122,7 @@ internal fun TrashEntryScreen(
                         )
                         EntryTimesText(entry.times, deletedAt = trashed?.deletedAt)
                     }
-                    skeleton != null -> EntrySkeleton(brush = skeleton)
+                    skeleton != null -> EntryReadSkeleton(brush = skeleton)
                 }
             }
         }

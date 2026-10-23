@@ -30,7 +30,7 @@ import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.pres.common.EntryReadFields
-import ru.kino.dev.vault.pres.common.EntrySkeleton
+import ru.kino.dev.vault.pres.common.EntryReadSkeleton
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.RestoreVersionDialog
 import ru.kino.dev.vault.pres.common.entryTimeText
@@ -107,7 +107,7 @@ internal fun EntryVersionScreen(
                         onToggleKey = { processor.action(EntryVersionAction.ToggleKey(it)) },
                         copyable = false,
                     )
-                    skeleton != null -> EntrySkeleton(brush = skeleton)
+                    skeleton != null -> EntryReadSkeleton(brush = skeleton)
                 }
             }
         }

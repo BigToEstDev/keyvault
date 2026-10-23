@@ -34,7 +34,7 @@ import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.pres.common.EntryReadFields
-import ru.kino.dev.vault.pres.common.EntrySkeleton
+import ru.kino.dev.vault.pres.common.EntryReadSkeleton
 import ru.kino.dev.vault.pres.common.EntryTimesText
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.LockFab
@@ -123,7 +123,7 @@ internal fun EntryReadScreen(
                         )
                         EntryTimesText(state.times)
                     }
-                    skeleton != null -> EntrySkeleton(brush = skeleton)
+                    skeleton != null -> EntryReadSkeleton(brush = skeleton)
                 }
             }
         }

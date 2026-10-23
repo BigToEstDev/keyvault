@@ -20,10 +20,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.BackTopBar
+import ru.kino.dev.ui.components.FieldRowsSection
 import ru.kino.dev.ui.components.FieldSection
 import ru.kino.dev.ui.components.MenuItem
 import ru.kino.dev.ui.components.MoreMenuButton
 import ru.kino.dev.ui.components.SkeletonField
+import ru.kino.dev.ui.components.SkeletonFieldRow
+import ru.kino.dev.ui.components.SkeletonText
 import ru.kino.dev.ui.theme.DISABLED_ALPHA
 import ru.kino.dev.ui.theme.DISABLED_CONTAINER_ALPHA
 
@@ -108,17 +111,15 @@ internal fun EntryTitleSection(
     }
 }
 
-/** The cards while the entry is read: the shape of the title card and of the fields of the standard preset. */
+/**
+ * The cards of the form while the entry is read: the shape of the title card and of the fields of the standard
+ * preset.
+ */
 @Composable
 internal fun EntrySkeleton(brush: Brush) {
     FieldSection {
         Row(verticalAlignment = Alignment.Bottom) {
-            Box(
-                modifier = Modifier
-                    .size(ICON_SIZE)
-                    .clip(ICON_SHAPE)
-                    .background(brush),
-            )
+            SkeletonIcon(brush)
             SkeletonField(
                 brush = brush,
                 modifier = Modifier
@@ -130,6 +131,37 @@ internal fun EntrySkeleton(brush: Brush) {
     FieldSection {
         repeat(SKELETON_FIELDS) { SkeletonField(brush = brush) }
     }
+}
+
+/**
+ * The cards of a reading while the entry is read - the entry, one in the bin, an old version: the icon and a bar
+ * of the large title beside it, rows under them, not fields (pass-docs, Step 73, item 6).
+ */
+@Composable
+internal fun EntryReadSkeleton(brush: Brush) {
+    FieldSection {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SkeletonIcon(brush)
+            SkeletonText(
+                brush = brush,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+            )
+        }
+    }
+    FieldRowsSection(rows = List(SKELETON_FIELDS) { { SkeletonFieldRow(brush = brush) } })
+}
+
+@Composable
+private fun SkeletonIcon(brush: Brush) {
+    Box(
+        modifier = Modifier
+            .size(ICON_SIZE)
+            .clip(ICON_SHAPE)
+            .background(brush),
+    )
 }
 
 /** The tile of the icon: as tall as the box of an outlined field, rounded as the section it stands in. */
