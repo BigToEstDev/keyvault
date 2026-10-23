@@ -35,7 +35,7 @@ import ru.kino.dev.ui.preset.presetName
  * The choice of presets (pass-docs, vault-our.md "Фича создание кастомных пресетов"): the standard one, then
  * [presets] - those of one's own, in the order they were made. Each is a card; the one of the form - [selected],
  * null for the standard one - is filled with the accent container; a tap picks one and closes. A long list
- * scrolls inside a height of its own, so the dialog does not spread over the screen. Under it - "+ create
+ * scrolls inside a height of its own, so the dialog does not spread over the screen. Under it - "create
  * preset", while one more can be made.
  *
  * A dialog of its own, not the filters' one: a list of cards under the title, not a form (pass-docs, Step 40,
@@ -95,7 +95,7 @@ internal fun PresetChoiceDialog(
                 // No button past the most presets a person has (pass-docs, vault-our.md)
                 if (PresetValidator.canAdd(presets)) {
                     SecondaryButton(
-                        text = stringResource(R.string.preset_create),
+                        text = stringResource(R.string.preset_create_title),
                         onClick = onCreate,
                         modifier = Modifier
                             .fillMaxWidth()

@@ -8,6 +8,7 @@ com-google-dagger = "2.60"
 gradle = "9.2.1"
 junit = "4.13.2"
 junitVersion = "1.1.5"
+robolectric = "4.17"
 espressoCore = "3.7.0"
 kotlinGradlePlugin = "2.3.20"
 lifecycleRuntimeKtx = "2.11.0"
@@ -32,6 +33,7 @@ androidx-biometric = { group = "androidx.biometric", name = "biometric", version
 android-gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 android-gradle-api = { module = "com.android.tools.build:gradle-api", version.ref = "gradle" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }

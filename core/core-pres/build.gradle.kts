@@ -7,6 +7,10 @@ android {
         resValues = false
         viewBinding = true
     }
+    // Robolectric reads the strings of the module - the language of the windows (pass-docs, Step 72)
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 dependencies {
@@ -40,4 +44,7 @@ dependencies {
     implementation(libs.androidx.biometric)
 
     testImplementation(libs.junit)
+    // A dialog and a menu in the language of the app - Android on the JVM, no device (pass-docs, Step 72)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
 }

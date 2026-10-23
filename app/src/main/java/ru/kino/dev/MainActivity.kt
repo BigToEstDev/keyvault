@@ -1,5 +1,6 @@
 package ru.kino.dev
 
+import android.content.res.Resources
 import android.graphics.Color
 import android.os.Bundle
 import android.view.WindowManager
@@ -27,6 +28,7 @@ import ru.kino.dev.settings.privacy.PrivacySettingsRepository
 import ru.kino.dev.ui.theme.AppLocale
 import ru.kino.dev.ui.theme.KeyVaultTheme
 import ru.kino.dev.ui.theme.LocalAppDisplay
+import ru.kino.dev.ui.theme.LocaleResources
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.welcome.pres.start.WelcomeStartResolver
 import java.util.Locale
@@ -56,6 +58,8 @@ class MainActivity : FragmentActivity() {
 
     private val theme: AppThemeHolder by viewModels()
 
+    private val localeResources = LocaleResources()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Before super: the splash replaces the launch theme. It stays up until the start route is known -
         // reading the remembered database takes a moment, and there is nothing to show before it - and the
@@ -71,6 +75,9 @@ class MainActivity : FragmentActivity() {
         // release (pass-docs, Step 61)
         secureWindow(true)
         lifecycleScope.launch { privacy.allowScreenshots.collect { secureWindow(!it) } }
+        // The windows of dialogs and menus take the language from the activity, not from `AppLocale`
+        // (pass-docs, Step 72, fix 1)
+        lifecycleScope.launch { theme.language.collect { localeResources.locale = it?.locale } }
 
         enableEdgeToEdge()
         setContent {
@@ -105,6 +112,10 @@ class MainActivity : FragmentActivity() {
             AppLanguage.English -> Locale.ENGLISH
             AppLanguage.Russian -> Locale.forLanguageTag("ru")
         }
+
+    // In the language of the app - for the windows built on the activity: dialogs, menus, popups. The screens
+    // take it from `AppLocale`, which also redraws them when the language changes (pass-docs, Step 72, fix 1)
+    override fun getResources(): Resources = localeResources.of(baseContext, super.getResources())
 
     // Screenshots, recording, casting and the preview in the recent apps - all at once, Android does not tell
     // them apart
