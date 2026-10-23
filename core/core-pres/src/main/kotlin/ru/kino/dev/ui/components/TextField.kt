@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -60,13 +61,7 @@ fun TextField(
     actions: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val errorState = rememberFieldErrorState(error)
-    val colors = LocalAppColors.current
-    val transformation = when {
-        hidden -> PasswordVisualTransformation()
-        secret && LocalAppDisplay.current.passwordColoring ->
-            remember(colors) { SecretColorTransformation(colors.passwordDigit, colors.passwordSymbol) }
-        else -> VisualTransformation.None
-    }
+    val transformation = secretTransformation(hidden, secret)
 
     OutlinedTextField(
         value = value,
@@ -97,6 +92,31 @@ fun TextField(
             }
         },
     )
+}
+
+/**
+ * How a value is drawn: as dots while [hidden]; a [secret] in clear - its digits and symbols in their colors when
+ * [AppDisplay.passwordColoring] is on (pass-docs, Step 58); anything else as it is.
+ */
+@Composable
+private fun secretTransformation(hidden: Boolean, secret: Boolean): VisualTransformation {
+    val colors = LocalAppColors.current
+    return when {
+        hidden -> PasswordVisualTransformation()
+        secret && LocalAppDisplay.current.passwordColoring ->
+            remember(colors) { SecretColorTransformation(colors.passwordDigit, colors.passwordSymbol) }
+        else -> VisualTransformation.None
+    }
+}
+
+/**
+ * [value] drawn as a [TextField] draws it - dots while [hidden], a [secret] colored by kind - for a text that only
+ * shows it (pass-docs, Step 73, item 3).
+ */
+@Composable
+fun rememberSecretText(value: String, hidden: Boolean, secret: Boolean): AnnotatedString {
+    val transformation = secretTransformation(hidden, secret)
+    return remember(value, transformation) { transformation.filter(AnnotatedString(value)).text }
 }
 
 /** The label of a field; a required one ends with a star in the color of errors. */

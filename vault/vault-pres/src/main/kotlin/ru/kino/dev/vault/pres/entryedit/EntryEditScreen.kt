@@ -32,6 +32,7 @@ import ru.kino.dev.core.preset.PresetField
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.Dropdown
 import ru.kino.dev.ui.components.FieldSection
+import ru.kino.dev.ui.components.PickerField
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.SaveFab
@@ -45,7 +46,6 @@ import ru.kino.dev.ui.preset.fieldLabel
 import ru.kino.dev.ui.preset.presetName
 import ru.kino.dev.ui.theme.LocalAppDisplay
 import ru.kino.dev.vault.entry.EntryContent
-import ru.kino.dev.vault.pres.common.EntryPresetSection
 import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
 import ru.kino.dev.vault.pres.common.EntryTopBar
@@ -192,11 +192,11 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         }
     }
 
-    EntryTitleSection(enabled = enabled) { modifier ->
-        PresetText(field = content.preset.fields.first(), modifier = modifier)
-    }
-
-    FieldSection {
+    // The group and the preset in the card of the title, under it (pass-docs, Step 73, item 4)
+    EntryTitleSection(
+        enabled = enabled,
+        title = { modifier -> PresetText(field = content.preset.fields.first(), modifier = modifier) },
+    ) {
         Dropdown(
             selected = state.group,
             options = state.groups.map { it.option() },
@@ -205,16 +205,18 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
         )
-    }
 
-    // Presets switched off in the settings: no choice - a new entry stays with the standard preset, one saved with
-    // its own (pass-docs, Step 62)
-    if (LocalAppDisplay.current.presets) {
-        EntryPresetSection(
-            name = presetName(content.preset),
-            onClick = { action(EntryEditAction.ChoosePreset) },
-            enabled = enabled,
-        )
+        // Presets switched off in the settings: no choice - a new entry stays with the standard preset, one saved
+        // with its own (pass-docs, Step 62). A field as the group's, opening the dialog (Step 73, item 5)
+        if (LocalAppDisplay.current.presets) {
+            PickerField(
+                value = presetName(content.preset),
+                label = stringResource(R.string.entry_preset),
+                onClick = { action(EntryEditAction.ChoosePreset) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
+            )
+        }
     }
 
     // The cards of the preset, as the preset has them

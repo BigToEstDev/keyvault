@@ -24,6 +24,7 @@
     <string name="action_apply">Применить</string>
     <string name="action_reset">Сбросить</string>
     <string name="action_copy">Копировать</string>
+    <string name="action_open_link">Открыть ссылку</string>
     <string name="action_restore">Восстановить</string>
     <string name="action_select_all">Выбрать все</string>
     <string name="action_pick_another_file">Выбрать другой файл</string>
@@ -165,6 +166,7 @@
     <string name="group_delete_text">«%1$s» и вложенные группы удалятся, записи попадут в корзину.</string>
     <string name="group_delete_forever_text">«%1$s» удалится со всем содержимым насовсем. Это нельзя отменить.</string>
     <string name="message_file_not_saved">Изменение сделано, но файл не записан</string>
+    <string name="message_no_app_for_link">Нет приложения, чтобы открыть ссылку</string>
     <string name="vault_message_load_failed">Не удалось прочитать группу</string>
     <string name="vault_message_search_failed">Не удалось выполнить поиск</string>
     <string name="vault_message_filter_not_saved">Фильтр применён, но не будет запомнен</string>
