@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -15,12 +16,9 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -86,9 +84,10 @@ fun PasswordField(
 }
 
 /**
- * The strength of a password on the bottom edge of the border of its field: a thin line, a third of the width for a
- * weak one, two thirds for a medium one, whole for a strong one (pass-docs, Step 74). Laid over the field, clipped to
- * its corners; [strength] null - none. It grows and changes color smoothly as the password is typed.
+ * The strength of a password in a thin line under the border of its field, not over it (pass-docs, Step 74, item 6):
+ * a third of the width for a weak one, two thirds for a medium one, whole for a strong one. Its room is kept with
+ * [strength] null too - nothing under the field moves at the first character. It grows and changes color smoothly
+ * as the password is typed.
  */
 @Composable
 internal fun StrengthBar(strength: PasswordStrength?, modifier: Modifier = Modifier) {
@@ -110,12 +109,12 @@ internal fun StrengthBar(strength: PasswordStrength?, modifier: Modifier = Modif
         },
         label = "strength-color",
     )
-    Box(modifier = modifier.clip(OutlinedTextFieldDefaults.shape), contentAlignment = Alignment.BottomStart) {
+    Box(modifier = modifier.height(BAR_HEIGHT)) {
         Box(
             modifier = Modifier
                 .fillMaxWidth(fraction)
                 .height(BAR_HEIGHT)
-                .background(color),
+                .background(color, CircleShape),
         )
     }
 }
@@ -123,7 +122,7 @@ internal fun StrengthBar(strength: PasswordStrength?, modifier: Modifier = Modif
 private const val WEAK_SHARE = 1f / 3
 private const val MEDIUM_SHARE = 2f / 3
 
-/** Thin - over the line of the border, a little thicker than it. */
+/** Thin - a little thicker than the line of the border above it. */
 private val BAR_HEIGHT = 3.dp
 
 /** The eye that shows or hides a secret. */

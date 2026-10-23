@@ -1,7 +1,6 @@
 package ru.kino.dev.ui.components
 
 import android.view.View
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -54,7 +53,7 @@ import ru.kino.dev.ui.theme.LocalAppDisplay
  * @param singleLine false lets the text wrap and the field grow with it - notes
  * @param minLines how tall a multi-line field starts
  * @param actions buttons at the end of the field, after the "!" of the error
- * @param strength a password being made: its strength on the bottom edge of the border, when
+ * @param strength a password being made: its strength in a line under the border, when
  * [AppDisplay.passwordStrength] is on (pass-docs, Step 74); none while the field has an error
  */
 @Composable
@@ -121,15 +120,15 @@ fun TextField(
     }
 
     if (strength && LocalAppDisplay.current.passwordStrength) {
-        // The hint under the field, not in it: in it, the bottom of the field would be the hint's, not the border's
+        // The line right under the border, the hint under the line - not in the field, where it would come first
         Column(modifier = modifier) {
-            Box {
-                field(Modifier.fillMaxWidth(), false)
-                StrengthBar(
-                    strength = passwordStrength(value).takeIf { error == null },
-                    modifier = Modifier.matchParentSize(),
-                )
-            }
+            field(Modifier.fillMaxWidth(), false)
+            StrengthBar(
+                strength = passwordStrength(value).takeIf { error == null },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+            )
             hint?.let { HintText(it, isError = error != null, enabled = enabled) }
         }
     } else {
