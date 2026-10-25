@@ -16,7 +16,6 @@
     <string name="action_back">Назад</string>
     <string name="action_delete">Удалить</string>
     <string name="action_edit">Редактировать</string>
-    <string name="action_rename">Переименовать</string>
     <string name="action_add">Добавить</string>
     <string name="action_change">Сменить</string>
     <string name="action_remove">Убрать</string>
@@ -226,7 +225,8 @@
     <string name="entry_field_menu">Действия с полем</string>
     <string name="entry_add_field">+ Добавить поле</string>
     <string name="entry_add_field_title">Новое поле</string>
-    <string name="entry_rename_field_title">Переименовать поле</string>
+    <string name="entry_edit_field_title">Изменить поле</string>
+    <string name="field_protected">Защищённое поле</string>
     <string name="entry_delete_field_title">Удалить поле?</string>
     <string name="entry_delete_field_text">«%1$s» и его значение будут удалены из записи.</string>
     <string name="entry_save">Сохранить запись</string>

@@ -7,9 +7,9 @@ import java.util.UUID
  * Creating, changing and deleting presets of one's own, the way a person does it. Each change is checked by
  * [PresetValidator] here and not on the screen alone: a screen can be wrong, the store cannot.
  *
- * A preset is given as the person sets it - its name and the names of the fields of each card, as
- * [CustomPreset.of] takes them. Names go without the spaces around them; a card the person added and left
- * empty is dropped - it would show nothing.
+ * A preset is given as the person sets it - its name, the names of the fields of each card and the names of
+ * those that are protected, as [CustomPreset.of] takes them. Names go without the spaces around them; a card
+ * the person added and left empty is dropped - it would show nothing.
  *
  * The problems it refuses with point at the cards as given, the empty ones counted. `standardName` is what
  * the screens call the standard preset - see [PresetValidator.nameProblem].
@@ -22,16 +22,30 @@ class PresetEditor(
 ) {
 
     /** Makes a preset and returns it. */
-    suspend fun create(name: String, cards: List<List<String>>, standardName: String): EntryPreset {
+    suspend fun create(
+        name: String,
+        cards: List<List<String>>,
+        standardName: String,
+        protectedKeys: Set<String> = emptySet(),
+    ): EntryPreset {
         val existing = presets.presets.first()
-        return save(newId(), name, cards, standardName, existing, editedId = null)
+        return save(newId(), name, cards, protectedKeys, standardName, existing, editedId = null)
     }
 
-    /** Puts [name] and [cards] into the preset of [id] and returns it; its id - and so its entries - stay. */
-    suspend fun update(id: PresetId, name: String, cards: List<List<String>>, standardName: String): EntryPreset {
+    /**
+     * Puts [name], [cards] and [protectedKeys] into the preset of [id] and returns it; its id - and so its
+     * entries - stay.
+     */
+    suspend fun update(
+        id: PresetId,
+        name: String,
+        cards: List<List<String>>,
+        standardName: String,
+        protectedKeys: Set<String> = emptySet(),
+    ): EntryPreset {
         val existing = presets.presets.first()
         if (existing.none { it.id == id }) throw PresetFailure.NotFound()
-        return save(id, name, cards, standardName, existing, editedId = id)
+        return save(id, name, cards, protectedKeys, standardName, existing, editedId = id)
     }
 
     /**
@@ -46,6 +60,7 @@ class PresetEditor(
         id: PresetId,
         name: String,
         cards: List<List<String>>,
+        protectedKeys: Set<String>,
         standardName: String,
         existing: List<EntryPreset>,
         editedId: PresetId?,
@@ -57,7 +72,7 @@ class PresetEditor(
 
         // The first card is always there - the user name and the password are in it
         val kept = listOf(named.first()) + named.drop(1).filter { it.isNotEmpty() }
-        val preset = CustomPreset.of(id, normalizedName, kept)
+        val preset = CustomPreset.of(id, normalizedName, kept, protectedKeys.map(PresetValidator::normalize).toSet())
         presets.save(preset)
         return preset
     }

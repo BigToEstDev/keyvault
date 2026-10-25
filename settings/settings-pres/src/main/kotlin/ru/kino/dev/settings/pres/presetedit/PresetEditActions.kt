@@ -11,10 +11,11 @@ sealed interface PresetEditAction {
     /** The name of the preset, typed. */
     data class NameChanged(val name: String) : PresetEditAction
 
-    /** "+ Add field" of the card [card]: asks for the name. */
+    /** "+ Add field" of the card [card]: asks for the name and whether it is protected. */
     data class AddField(val card: Int) : PresetEditAction
 
-    data class RenameField(val at: FieldPosition) : PresetEditAction
+    /** "Edit" in the menu of the field [at]: its name and whether it is protected. */
+    data class EditField(val at: FieldPosition) : PresetEditAction
 
     data class DeleteField(val at: FieldPosition) : PresetEditAction
 
@@ -25,6 +26,9 @@ sealed interface PresetEditAction {
     data class DeleteCard(val card: Int) : PresetEditAction
 
     data class DialogNameChanged(val name: String) : PresetEditAction
+
+    /** The switch "protected field" of the dialog of a field. */
+    data class DialogProtectedChanged(val protected: Boolean) : PresetEditAction
 
     data object DialogConfirm : PresetEditAction
 
@@ -46,11 +50,21 @@ sealed interface PresetEditAction {
 /** The dialog over the form, if any. */
 sealed interface PresetEditDialog {
 
-    /** The name of a new field of the card [card]. */
-    data class AddField(val card: Int, val name: String = "", val problem: FieldNameProblem? = null) : PresetEditDialog
+    /** A new field of the card [card]: its name, and whether it is protected - not, until switched (Step 75). */
+    data class AddField(
+        val card: Int,
+        val name: String = "",
+        val protected: Boolean = false,
+        val problem: FieldNameProblem? = null,
+    ) : PresetEditDialog
 
-    /** A new name for the field [at]. */
-    data class RenameField(val at: FieldPosition, val name: String, val problem: FieldNameProblem? = null) : PresetEditDialog
+    /** The field [at] changed: its name and whether it is protected, opened as they are. */
+    data class EditField(
+        val at: FieldPosition,
+        val name: String,
+        val protected: Boolean,
+        val problem: FieldNameProblem? = null,
+    ) : PresetEditDialog
 
     /** "Delete the field?" - the field [at], called [name]. */
     data class DeleteField(val at: FieldPosition, val name: String) : PresetEditDialog

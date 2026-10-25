@@ -1,9 +1,16 @@
 package ru.kino.dev.settings.pres.presetedit.components
 
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.FieldMenuButton
 import ru.kino.dev.ui.components.TextField
 
@@ -13,8 +20,10 @@ import ru.kino.dev.ui.components.TextField
  * person named has the pen of [FieldMenuButton] by it; a fixed one - the user name, the password, the notes -
  * has none and takes the card's full width, as the name of the preset does (pass-docs, Step 40, fix 18.2).
  *
+ * @param protected protected in a new entry - a lock at the end of the field, where the entry has its eye
+ *   (pass-docs, Step 75)
  * @param error why its name cannot be saved, if it cannot
- * @param onRename with [onDelete]: null for a fixed field
+ * @param onEdit with [onDelete]: null for a fixed field
  */
 @Composable
 internal fun PresetFieldRow(
@@ -22,8 +31,9 @@ internal fun PresetFieldRow(
     enabled: Boolean,
     modifier: Modifier = Modifier,
     required: Boolean = false,
+    protected: Boolean = false,
     error: String? = null,
-    onRename: (() -> Unit)? = null,
+    onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
@@ -36,9 +46,21 @@ internal fun PresetFieldRow(
             error = error,
             enabled = enabled,
             readOnly = true,
+            actions = if (protected) {
+                {
+                    // As wide as the eye of the entry: the button's room around the icon
+                    Icon(
+                        imageVector = Icons.Filled.Lock,
+                        contentDescription = stringResource(R.string.field_protected),
+                        modifier = Modifier.padding(12.dp),
+                    )
+                }
+            } else {
+                null
+            },
         )
-        if (onRename != null && onDelete != null) {
-            FieldMenuButton(enabled = enabled, onRename = onRename, onDelete = onDelete)
+        if (onEdit != null && onDelete != null) {
+            FieldMenuButton(enabled = enabled, onEdit = onEdit, onDelete = onDelete)
         }
     }
 }

@@ -112,6 +112,7 @@ internal fun PresetEditScreen(
         PresetEditDialogs(
             dialog = state.dialog,
             onNameChange = { processor.action(PresetEditAction.DialogNameChanged(it)) },
+            onProtectedChange = { processor.action(PresetEditAction.DialogProtectedChanged(it)) },
             onConfirm = { processor.action(PresetEditAction.DialogConfirm) },
             onDismiss = { processor.action(PresetEditAction.DialogDismiss) },
         )
@@ -183,7 +184,7 @@ private fun PresetCard(
         if (card == 0) {
             // The first card holds the user name and the password - in every preset, not to be removed
             PresetFieldRow(name = fieldLabel(StandardPreset.USER_NAME), enabled = enabled, required = true)
-            PresetFieldRow(name = fieldLabel(StandardPreset.PASSWORD), enabled = enabled, required = true)
+            PresetFieldRow(name = fieldLabel(StandardPreset.PASSWORD), enabled = enabled, required = true, protected = true)
         }
 
         keys.forEachIndexed { index, key ->
@@ -191,8 +192,9 @@ private fun PresetCard(
             PresetFieldRow(
                 name = key,
                 enabled = enabled,
+                protected = key in state.protectedKeys,
                 error = state.fieldProblem(at)?.let { fieldNameProblemText(it) },
-                onRename = { action(PresetEditAction.RenameField(at)) },
+                onEdit = { action(PresetEditAction.EditField(at)) },
                 onDelete = { action(PresetEditAction.DeleteField(at)) },
             )
         }

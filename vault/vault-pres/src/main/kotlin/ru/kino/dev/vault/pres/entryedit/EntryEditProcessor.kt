@@ -220,8 +220,14 @@ class EntryEditProcessor @AssistedInject constructor(
                 reduce { state.copy(dialog = EntryEditDialog.AddField()) }
             }
 
-            is EntryEditAction.RenameField -> state.ownField(action.index)?.let { field ->
-                if (state.editable) reduce { state.copy(dialog = EntryEditDialog.RenameField(action.index, field.key)) }
+            is EntryEditAction.EditField -> state.ownField(action.index)?.let { field ->
+                if (state.editable) {
+                    reduce { state.copy(dialog = EntryEditDialog.EditField(action.index, field.key, field.protected)) }
+                }
+            }
+
+            is EntryEditAction.DialogProtectedChanged -> reduce {
+                state.copy(dialog = state.dialog?.switched(action.protected))
             }
 
             is EntryEditAction.DeleteField -> state.ownField(action.index)?.let { field ->
@@ -343,12 +349,12 @@ class EntryEditProcessor @AssistedInject constructor(
                 if (problem != null) {
                     reduce { state.copy(dialog = dialog.copy(problem = problem)) }
                 } else {
-                    val field = EntryField(EntryValidator.normalizeName(dialog.name), value = "", protected = false)
+                    val field = EntryField(EntryValidator.normalizeName(dialog.name), value = "", protected = dialog.protected)
                     reduce { state.edited { copy(ownFields = ownFields + field) }.copy(dialog = null) }
                 }
             }
 
-            is EntryEditDialog.RenameField -> {
+            is EntryEditDialog.EditField -> {
                 val problem = EntryValidator.nameProblem(content, dialog.name, renamedIndex = dialog.index)
                 if (problem != null) {
                     reduce { state.copy(dialog = dialog.copy(problem = problem)) }
@@ -356,8 +362,17 @@ class EntryEditProcessor @AssistedInject constructor(
                     val name = EntryValidator.normalizeName(dialog.name)
                     reduce {
                         state.edited {
-                            copy(ownFields = ownFields.mapIndexed { i, field -> if (i == dialog.index) field.copy(key = name) else field })
-                        }.copy(dialog = null, problems = state.problems.withoutName(dialog.index))
+                            copy(
+                                ownFields = ownFields.mapIndexed { i, field ->
+                                    if (i == dialog.index) field.copy(key = name, protected = dialog.protected) else field
+                                },
+                            )
+                        }.copy(
+                            dialog = null,
+                            problems = state.problems.withoutName(dialog.index),
+                            // Protected now - it starts hidden, as one read so does
+                            shownOwn = if (dialog.protected) state.shownOwn - dialog.index else state.shownOwn,
+                        )
                     }
                 }
             }
@@ -486,6 +501,12 @@ private fun List<FieldProblem>.withoutName(index: Int) = filterNot { it is Field
 
 private fun EntryEditDialog.typed(name: String): EntryEditDialog = when (this) {
     is EntryEditDialog.AddField -> copy(name = name, problem = null)
-    is EntryEditDialog.RenameField -> copy(name = name, problem = null)
+    is EntryEditDialog.EditField -> copy(name = name, problem = null)
+    else -> this
+}
+
+private fun EntryEditDialog.switched(protected: Boolean): EntryEditDialog = when (this) {
+    is EntryEditDialog.AddField -> copy(protected = protected)
+    is EntryEditDialog.EditField -> copy(protected = protected)
     else -> this
 }

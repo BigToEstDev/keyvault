@@ -9,41 +9,42 @@ import ru.kino.dev.core.preset.PresetLimits
 import ru.kino.dev.core.preset.PresetNameProblem
 import ru.kino.dev.settings.pres.presetedit.PresetEditDialog
 import ru.kino.dev.ui.components.ConfirmDialog
-import ru.kino.dev.ui.components.TextInputDialog
+import ru.kino.dev.ui.components.FieldDialog
 
 /**
- * The dialog over the form of a preset: the name of a field, "delete the field?", "delete the card?", "leave?",
+ * The dialog over the form of a preset: a field - its name and protection, "delete the field?", "delete the card?", "leave?",
  * "entries will show the old fields as their own".
  */
 @Composable
 internal fun PresetEditDialogs(
     dialog: PresetEditDialog?,
     onNameChange: (String) -> Unit,
+    onProtectedChange: (Boolean) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     when (dialog) {
         null -> Unit
 
-        is PresetEditDialog.AddField -> TextInputDialog(
+        is PresetEditDialog.AddField -> FieldDialog(
             title = stringResource(R.string.entry_add_field_title),
-            value = dialog.name,
-            onValueChange = onNameChange,
-            label = stringResource(R.string.entry_field_name),
+            name = dialog.name,
+            onNameChange = onNameChange,
+            protected = dialog.protected,
+            onProtectedChange = onProtectedChange,
             confirmText = stringResource(R.string.action_add),
-            dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             error = dialog.problem?.let { fieldNameProblemText(it) },
         )
 
-        is PresetEditDialog.RenameField -> TextInputDialog(
-            title = stringResource(R.string.entry_rename_field_title),
-            value = dialog.name,
-            onValueChange = onNameChange,
-            label = stringResource(R.string.entry_field_name),
+        is PresetEditDialog.EditField -> FieldDialog(
+            title = stringResource(R.string.entry_edit_field_title),
+            name = dialog.name,
+            onNameChange = onNameChange,
+            protected = dialog.protected,
+            onProtectedChange = onProtectedChange,
             confirmText = stringResource(R.string.action_save),
-            dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             error = dialog.problem?.let { fieldNameProblemText(it) },

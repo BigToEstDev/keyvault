@@ -30,6 +30,22 @@ class PresetEditorTest {
     }
 
     @Test
+    fun `the protected fields go by their names without the spaces, a name of no field is dropped`() = runTest {
+        val preset = editor.create("Card", listOf(listOf(" PIN "), listOf("CVC")), standardName, setOf(" PIN ", "Bank"))
+
+        assertEquals(setOf("PIN"), CustomPreset.protectedKeys(preset))
+    }
+
+    @Test
+    fun `a preset changed takes the protection given`() = runTest {
+        val made = editor.create("Card", listOf(listOf("PIN")), standardName, setOf("PIN"))
+
+        val changed = editor.update(requireNotNull(made.id), "Card", listOf(listOf("PIN")), standardName)
+
+        assertEquals(emptySet<String>(), CustomPreset.protectedKeys(changed))
+    }
+
+    @Test
     fun `a preset with problems is refused with every one of them, pointing at the cards as given`() = runTest {
         val failure = expectFailure<PresetFailure.Invalid> {
             editor.create(" ", listOf(emptyList(), emptyList(), listOf("Password")), standardName)

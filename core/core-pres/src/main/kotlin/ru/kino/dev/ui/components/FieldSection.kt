@@ -72,14 +72,14 @@ private fun SectionCard(modifier: Modifier, content: @Composable ColumnScope.() 
 
 /**
  * The pen by a field the person named - outside the field, as the filter button sits by the search: it opens a
- * menu, rename and delete (pass-docs, vault-our.md "Свое поле").
+ * menu, edit - the name and the protection - and delete (pass-docs, vault-our.md "Свое поле", Step 75).
  */
 @Composable
-fun FieldMenuButton(enabled: Boolean, onRename: () -> Unit, onDelete: () -> Unit) {
+fun FieldMenuButton(enabled: Boolean, onEdit: () -> Unit, onDelete: () -> Unit) {
     MenuButton(
         icon = Icons.Filled.Edit,
         contentDescription = stringResource(R.string.entry_field_menu),
-        items = listOf(renameMenuItem(onRename), deleteMenuItem(onDelete)),
+        items = listOf(editMenuItem(onEdit), deleteMenuItem(onDelete)),
         enabled = enabled,
     )
 }

@@ -36,14 +36,18 @@ sealed interface EntryEditAction {
     /** The screen is shown - again, maybe, after a preset was made: that one is picked. */
     data object Resumed : EntryEditAction
 
-    /** "+ Add field": asks for the name of a new own field. */
+    /** "+ Add field": asks for the name of a new own field and whether it is protected. */
     data object AddField : EntryEditAction
 
-    data class RenameField(val index: Int) : EntryEditAction
+    /** "Edit" in the menu of the own field at [index]: its name and whether it is protected. */
+    data class EditField(val index: Int) : EntryEditAction
 
     data class DeleteField(val index: Int) : EntryEditAction
 
     data class DialogNameChanged(val name: String) : EntryEditAction
+
+    /** The switch "protected field" of the dialog of a field. */
+    data class DialogProtectedChanged(val protected: Boolean) : EntryEditAction
 
     data object DialogConfirm : EntryEditAction
 
@@ -68,11 +72,20 @@ sealed interface EntryEditAction {
 /** The dialog over the form, if any. */
 sealed interface EntryEditDialog {
 
-    /** The name of a new own field. */
-    data class AddField(val name: String = "", val problem: NameProblem? = null) : EntryEditDialog
+    /** A new own field: its name, and whether it is protected - not, until switched (pass-docs, Step 75). */
+    data class AddField(
+        val name: String = "",
+        val protected: Boolean = false,
+        val problem: NameProblem? = null,
+    ) : EntryEditDialog
 
-    /** A new name for the own field at [index]. */
-    data class RenameField(val index: Int, val name: String, val problem: NameProblem? = null) : EntryEditDialog
+    /** The own field at [index] changed: its name and whether it is protected, opened as they are. */
+    data class EditField(
+        val index: Int,
+        val name: String,
+        val protected: Boolean,
+        val problem: NameProblem? = null,
+    ) : EntryEditDialog
 
     /** "Delete the field?" - the own field at [index], called [name]. */
     data class DeleteField(val index: Int, val name: String) : EntryEditDialog

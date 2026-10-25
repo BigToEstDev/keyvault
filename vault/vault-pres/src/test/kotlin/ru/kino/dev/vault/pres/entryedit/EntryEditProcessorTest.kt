@@ -548,14 +548,14 @@ class EntryEditProcessorTest {
     fun `an added field named as a field of the preset stays in the dialog with the reason`() = runTest {
         val (state, _) = adding("password")
 
-        assertEquals(EntryEditDialog.AddField("password", NameProblem.TAKEN), state.dialog)
+        assertEquals(EntryEditDialog.AddField("password", problem = NameProblem.TAKEN), state.dialog)
     }
 
     @Test
     fun `an added field named as another own one, in another case, stays in the dialog`() = runTest {
         val (state, _) = adding("pin")
 
-        assertEquals(EntryEditDialog.AddField("pin", NameProblem.TAKEN), state.dialog)
+        assertEquals(EntryEditDialog.AddField("pin", problem = NameProblem.TAKEN), state.dialog)
         assertEquals(2, state.content?.ownFields?.size)
     }
 
@@ -563,13 +563,13 @@ class EntryEditProcessorTest {
     fun `an added field with no name stays in the dialog`() = runTest {
         val (state, _) = adding("  ")
 
-        assertEquals(EntryEditDialog.AddField("  ", NameProblem.EMPTY), state.dialog)
+        assertEquals(EntryEditDialog.AddField("  ", problem = NameProblem.EMPTY), state.dialog)
     }
 
     @Test
     fun `a renamed field keeps its value`() = runTest {
         val (state, _) = editing(
-            EntryEditAction.RenameField(1),
+            EntryEditAction.EditField(1),
             EntryEditAction.DialogNameChanged("Recovery words"),
             EntryEditAction.DialogConfirm,
         )
@@ -579,17 +579,73 @@ class EntryEditProcessorTest {
 
     @Test
     fun `a field renamed to its own name is no rival and no change`() = runTest {
-        val (state, _) = editing(EntryEditAction.RenameField(1), EntryEditAction.DialogConfirm)
+        val (state, _) = editing(EntryEditAction.EditField(1), EntryEditAction.DialogConfirm)
 
         assertNull(state.dialog)
         assertFalse(state.changed)
     }
 
     @Test
-    fun `rename starts from the current name`() = runTest {
-        val (state, _) = editing(EntryEditAction.RenameField(0))
+    fun `edit starts from the current name and protection`() = runTest {
+        val (state, _) = editing(EntryEditAction.EditField(0))
 
-        assertEquals(EntryEditDialog.RenameField(0, "PIN"), state.dialog)
+        assertEquals(EntryEditDialog.EditField(0, "PIN", protected = true), state.dialog)
+    }
+
+    @Test
+    fun `an added field is not protected unless switched`() = runTest {
+        val (state, _) = adding("Code")
+
+        assertEquals(field("Code", ""), state.content?.ownFields?.last())
+    }
+
+    @Test
+    fun `an added field switched to protected is protected`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.AddField,
+            EntryEditAction.DialogNameChanged("Code"),
+            EntryEditAction.DialogProtectedChanged(true),
+            EntryEditAction.DialogConfirm,
+        )
+
+        assertEquals(field("Code", "", protected = true), state.content?.ownFields?.last())
+    }
+
+    @Test
+    fun `an edited field takes the protection switched, keeps its value, and is a change`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.EditField(0),
+            EntryEditAction.DialogProtectedChanged(false),
+            EntryEditAction.DialogConfirm,
+        )
+
+        assertEquals(field("PIN", "1234"), state.content?.ownFields?.get(0))
+        assertTrue(state.changed)
+    }
+
+    @Test
+    fun `a field made protected starts hidden`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.ToggleOwn(1),
+            EntryEditAction.EditField(1),
+            EntryEditAction.DialogProtectedChanged(true),
+            EntryEditAction.DialogConfirm,
+        )
+
+        assertEquals(field("Recovery", "words", protected = true), state.content?.ownFields?.get(1))
+        assertTrue(state.shownOwn.isEmpty())
+    }
+
+    @Test
+    fun `the protection switched is saved into the entry`() = runTest {
+        editing(
+            EntryEditAction.EditField(1),
+            EntryEditAction.DialogProtectedChanged(true),
+            EntryEditAction.DialogConfirm,
+            EntryEditAction.Save,
+        )
+
+        assertEquals(listOf(true), entries.stored.getValue(mail).fields.filter { it.key == "Recovery" }.map { it.protected })
     }
 
     @Test

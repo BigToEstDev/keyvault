@@ -130,6 +130,7 @@ internal fun EntryEditScreen(
         EntryEditDialogs(
             dialog = state.dialog,
             onNameChange = { processor.action(EntryEditAction.DialogNameChanged(it)) },
+            onProtectedChange = { processor.action(EntryEditAction.DialogProtectedChanged(it)) },
             onConfirm = { processor.action(EntryEditAction.DialogConfirm) },
             onDismiss = { processor.action(EntryEditAction.DialogDismiss) },
             onPresetChosen = { processor.action(EntryEditAction.PresetChosen(it)) },
@@ -238,7 +239,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
                 enabled = enabled,
                 onValueChange = { action(EntryEditAction.OwnValueChanged(index, it)) },
                 onToggleShown = { action(EntryEditAction.ToggleOwn(index)) },
-                onRename = { action(EntryEditAction.RenameField(index)) },
+                onEdit = { action(EntryEditAction.EditField(index)) },
                 onDelete = { action(EntryEditAction.DeleteField(index)) },
             )
         }

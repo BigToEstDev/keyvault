@@ -17,7 +17,6 @@
     <string name="action_back">Back</string>
     <string name="action_delete">Delete</string>
     <string name="action_edit">Edit</string>
-    <string name="action_rename">Rename</string>
     <string name="action_add">Add</string>
     <string name="action_change">Change</string>
     <string name="action_remove">Remove</string>
@@ -220,7 +219,8 @@
     <string name="entry_field_menu">Field actions</string>
     <string name="entry_add_field">+ Add field</string>
     <string name="entry_add_field_title">New field</string>
-    <string name="entry_rename_field_title">Rename field</string>
+    <string name="entry_edit_field_title">Edit field</string>
+    <string name="field_protected">Protected field</string>
     <string name="entry_delete_field_title">Delete the field?</string>
     <string name="entry_delete_field_text">«%1$s» and its value leave the entry.</string>
     <string name="entry_save">Save entry</string>

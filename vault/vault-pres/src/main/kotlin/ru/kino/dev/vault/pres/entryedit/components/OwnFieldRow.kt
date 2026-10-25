@@ -28,7 +28,7 @@ internal fun OwnFieldRow(
     enabled: Boolean,
     onValueChange: (String) -> Unit,
     onToggleShown: () -> Unit,
-    onRename: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -49,6 +49,6 @@ internal fun OwnFieldRow(
                 null
             },
         )
-        FieldMenuButton(enabled = enabled, onRename = onRename, onDelete = onDelete)
+        FieldMenuButton(enabled = enabled, onEdit = onEdit, onDelete = onDelete)
     }
 }

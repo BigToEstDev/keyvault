@@ -8,19 +8,20 @@ import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.ui.components.ConfirmDialog
+import ru.kino.dev.ui.components.FieldDialog
 import ru.kino.dev.vault.pres.common.EntryDeleteDialog
-import ru.kino.dev.ui.components.TextInputDialog
 import ru.kino.dev.vault.entry.NameProblem
 import ru.kino.dev.vault.pres.entryedit.EntryEditDialog
 
 /**
- * The dialog over the form: the name of an own field, "delete the field?", the presets, fields outside the
- * preset, "leave?", "not written".
+ * The dialog over the form: an own field - its name and protection, "delete the field?", the presets, fields
+ * outside the preset, "leave?", "not written".
  */
 @Composable
 internal fun EntryEditDialogs(
     dialog: EntryEditDialog?,
     onNameChange: (String) -> Unit,
+    onProtectedChange: (Boolean) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     onPresetChosen: (PresetId?) -> Unit,
@@ -30,25 +31,25 @@ internal fun EntryEditDialogs(
     when (dialog) {
         null -> Unit
 
-        is EntryEditDialog.AddField -> TextInputDialog(
+        is EntryEditDialog.AddField -> FieldDialog(
             title = stringResource(R.string.entry_add_field_title),
-            value = dialog.name,
-            onValueChange = onNameChange,
-            label = stringResource(R.string.entry_field_name),
+            name = dialog.name,
+            onNameChange = onNameChange,
+            protected = dialog.protected,
+            onProtectedChange = onProtectedChange,
             confirmText = stringResource(R.string.action_add),
-            dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             error = dialog.problem?.let { nameProblemText(it) },
         )
 
-        is EntryEditDialog.RenameField -> TextInputDialog(
-            title = stringResource(R.string.entry_rename_field_title),
-            value = dialog.name,
-            onValueChange = onNameChange,
-            label = stringResource(R.string.entry_field_name),
+        is EntryEditDialog.EditField -> FieldDialog(
+            title = stringResource(R.string.entry_edit_field_title),
+            name = dialog.name,
+            onNameChange = onNameChange,
+            protected = dialog.protected,
+            onProtectedChange = onProtectedChange,
             confirmText = stringResource(R.string.action_save),
-            dismissText = stringResource(R.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             error = dialog.problem?.let { nameProblemText(it) },
