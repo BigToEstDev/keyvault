@@ -61,7 +61,8 @@ fun FieldDialog(
                     label = stringResource(R.string.field_type),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                HintText(stringResource(R.string.field_type_hint))
+                // In line with the field and the switch above it, as the rest of the dialog
+                HintText(stringResource(R.string.field_type_hint), indented = false)
             }
         },
     )

@@ -136,9 +136,14 @@ fun TextField(
     }
 }
 
-/** A hint under a field, as Material 3 puts its supporting text - for a field that has it outside. */
+/**
+ * A hint under a field, as Material 3 puts its supporting text - for a field that has it outside.
+ *
+ * @param indented in from the edge of the field, as the text in it; not - in line with the field, as a line of a
+ *   dialog under it
+ */
 @Composable
-internal fun HintText(text: String, isError: Boolean = false, enabled: Boolean = true) {
+internal fun HintText(text: String, isError: Boolean = false, enabled: Boolean = true, indented: Boolean = true) {
     val colors = MaterialTheme.colorScheme
     Text(
         text = text,
@@ -148,7 +153,7 @@ internal fun HintText(text: String, isError: Boolean = false, enabled: Boolean =
             isError -> colors.error
             else -> colors.onSurfaceVariant
         },
-        modifier = Modifier.padding(start = 16.dp, top = 4.dp, end = 16.dp),
+        modifier = if (indented) Modifier.padding(start = 16.dp, top = 4.dp, end = 16.dp) else Modifier.padding(top = 4.dp),
     )
 }
 
