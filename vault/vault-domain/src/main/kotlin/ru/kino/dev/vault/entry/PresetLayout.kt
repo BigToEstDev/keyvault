@@ -24,11 +24,11 @@ fun EntryPreset.layout(fields: List<EntryField>): EntryContent {
     return EntryContent(this, presetFields, rest)
 }
 
-/** The content of a new entry: every field of the preset empty, protected as the preset says. */
+/** The content of a new entry: every field of the preset empty, protected and typed as the preset says. */
 fun EntryPreset.blank(): EntryContent = EntryContent(this, fields.map { it.empty() }, emptyList())
 
 /** The preset the entry of [fields] links to, or null when it links to none - an entry of the standard one. */
 fun presetLink(fields: List<EntryField>): PresetId? =
     fields.firstOrNull { it.key == PresetLink.KEY }?.value?.takeIf { it.isNotEmpty() }?.let(::PresetId)
 
-internal fun PresetField.empty() = EntryField(key, value = "", protected = protected)
+internal fun PresetField.empty() = EntryField(key, value = "", protected = protected, type = type)

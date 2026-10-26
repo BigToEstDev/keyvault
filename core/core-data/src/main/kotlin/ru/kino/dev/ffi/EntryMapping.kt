@@ -12,18 +12,20 @@ import java.time.format.DateTimeParseException
 
 /** The strings of the entry, in its order - all the rest of the form stays in this module. */
 internal fun EntryFormDataDto.fieldsToDomain(): List<EntryFieldData> =
-    fields.map { EntryFieldData(key = it.key, value = it.value.orEmpty(), protected = it.protected) }
+    fields.map { EntryFieldData(key = it.key, value = it.value.orEmpty(), protected = it.protected, type = it.fieldType) }
 
 /**
  * The same entry holding [fields] instead of its own. Everything else goes back as read: the core takes
  * the whole form on `insert_entry_from_form_data` and `update_entry_from_form_data`, and a field left out
  * here would be a field reset there.
  *
- * Every field goes as text: the core does not read the data type of a field on the way in - it only
- * reports one, for an otp it can generate codes from.
+ * Every field goes with the data type text: the core does not read it on the way in - it only reports one, for an
+ * otp it can generate codes from. The type the app gives a field goes as it is (pass-docs, Step 76).
  */
 internal fun EntryFormDataDto.withFields(fields: List<EntryFieldData>) = copy(
-    fields = fields.map { KeyValueDataDto(key = it.key, value = it.value, protected = it.protected, dataType = TEXT) },
+    fields = fields.map {
+        KeyValueDataDto(key = it.key, value = it.value, protected = it.protected, dataType = TEXT, fieldType = it.type)
+    },
 )
 
 /**

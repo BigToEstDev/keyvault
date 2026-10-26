@@ -11,6 +11,7 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.core.FieldProtection
+import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.core.preset.PresetRepository
@@ -222,12 +223,18 @@ class EntryEditProcessor @AssistedInject constructor(
 
             is EntryEditAction.EditField -> state.ownField(action.index)?.let { field ->
                 if (state.editable) {
-                    reduce { state.copy(dialog = EntryEditDialog.EditField(action.index, field.key, field.protected)) }
+                    reduce {
+                        state.copy(dialog = EntryEditDialog.EditField(action.index, field.key, field.protected, field.type))
+                    }
                 }
             }
 
             is EntryEditAction.DialogProtectedChanged -> reduce {
                 state.copy(dialog = state.dialog?.switched(action.protected))
+            }
+
+            is EntryEditAction.DialogTypeChanged -> reduce {
+                state.copy(dialog = state.dialog?.typedAs(action.type))
             }
 
             is EntryEditAction.DeleteField -> state.ownField(action.index)?.let { field ->
@@ -349,7 +356,12 @@ class EntryEditProcessor @AssistedInject constructor(
                 if (problem != null) {
                     reduce { state.copy(dialog = dialog.copy(problem = problem)) }
                 } else {
-                    val field = EntryField(EntryValidator.normalizeName(dialog.name), value = "", protected = dialog.protected)
+                    val field = EntryField(
+                        EntryValidator.normalizeName(dialog.name),
+                        value = "",
+                        protected = dialog.protected,
+                        type = dialog.type,
+                    )
                     reduce { state.edited { copy(ownFields = ownFields + field) }.copy(dialog = null) }
                 }
             }
@@ -364,7 +376,7 @@ class EntryEditProcessor @AssistedInject constructor(
                         state.edited {
                             copy(
                                 ownFields = ownFields.mapIndexed { i, field ->
-                                    if (i == dialog.index) field.copy(key = name, protected = dialog.protected) else field
+                                    if (i == dialog.index) field.edited(name, dialog.protected, dialog.type) else field
                                 },
                             )
                         }.copy(
@@ -510,3 +522,13 @@ private fun EntryEditDialog.switched(protected: Boolean): EntryEditDialog = when
     is EntryEditDialog.EditField -> copy(protected = protected)
     else -> this
 }
+
+private fun EntryEditDialog.typedAs(type: FieldType): EntryEditDialog = when (this) {
+    is EntryEditDialog.AddField -> copy(type = type.key)
+    is EntryEditDialog.EditField -> copy(type = type.key)
+    else -> this
+}
+
+// The value of one type is no value of another: a new type starts the field empty (pass-docs, Step 75, item 3)
+private fun EntryField.edited(name: String, protected: Boolean, type: String?): EntryField =
+    copy(key = name, protected = protected, type = type, value = if (type == this.type) value else "")

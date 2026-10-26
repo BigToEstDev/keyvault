@@ -8,14 +8,17 @@ import ru.kino.dev.vault.group.GroupId
  * protected.
  *
  * Values are never trimmed: a password of spaces is a password (pass-docs, Step 42, decision 12).
+ *
+ * @param type the type the app gives the field, as the file holds it - see [ru.kino.dev.core.FieldType]; null - text
  */
 data class EntryField(
     val key: String,
     val value: String,
     val protected: Boolean,
+    val type: String? = null,
 ) {
     // The value is a secret more often than not: it stays out of logs and crash reports
-    override fun toString(): String = "EntryField(key=$key, protected=$protected)"
+    override fun toString(): String = "EntryField(key=$key, protected=$protected, type=$type)"
 }
 
 /** An entry as a card shows it. */

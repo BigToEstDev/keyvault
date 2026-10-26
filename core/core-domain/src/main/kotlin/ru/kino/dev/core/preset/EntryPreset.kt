@@ -11,6 +11,8 @@ value class PresetId(val value: String)
  * @param required must be filled: when the entry is created, and must not be emptied after (pass-docs,
  *   Step 42, decision 11)
  * @param protected protected in the file when the entry is new; a field read from a file keeps its own
+ * @param type the type of the field when the entry is new - see [ru.kino.dev.core.FieldType]; null - text. A field
+ *   read from a file keeps its own (pass-docs, Step 75, item 3)
  * @param writtenWhenEmpty written into the file even when empty - the kdbx standard fields, as KeePass
  *   writes them. A field of ours is written only when filled, so saving does not give every entry, a
  *   foreign one too, an empty field of its own
@@ -20,6 +22,7 @@ data class PresetField(
     val required: Boolean = false,
     val protected: Boolean = false,
     val writtenWhenEmpty: Boolean = false,
+    val type: String? = null,
 )
 
 /** One card of a preset: the fields the screens of an entry show together, in their order. */

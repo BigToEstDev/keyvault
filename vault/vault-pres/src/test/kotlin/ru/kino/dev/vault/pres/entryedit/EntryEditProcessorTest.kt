@@ -10,6 +10,7 @@ import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.FieldProtection
+import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.preset.CustomPreset
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.PresetId
@@ -589,7 +590,7 @@ class EntryEditProcessorTest {
     fun `edit starts from the current name and protection`() = runTest {
         val (state, _) = editing(EntryEditAction.EditField(0))
 
-        assertEquals(EntryEditDialog.EditField(0, "PIN", protected = true), state.dialog)
+        assertEquals(EntryEditDialog.EditField(0, "PIN", protected = true, type = null), state.dialog)
     }
 
     @Test
@@ -646,6 +647,60 @@ class EntryEditProcessorTest {
         )
 
         assertEquals(listOf(true), entries.stored.getValue(mail).fields.filter { it.key == "Recovery" }.map { it.protected })
+    }
+
+    // The type of a field (pass-docs, Step 75, item 3) - "card" is one this app does not know: a newer client wrote it
+
+    @Test
+    fun `edit starts from the type of the field as the file gives it`() = runTest {
+        val (state, _) = editing(EntryEditAction.EditField(0), entryId = cardEntry())
+
+        assertEquals(EntryEditDialog.EditField(0, "Card", protected = false, type = "card"), state.dialog)
+    }
+
+    @Test
+    fun `a type this app does not know stays, with the value, until another is picked`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.EditField(0),
+            EntryEditAction.DialogNameChanged("Card number"),
+            EntryEditAction.DialogConfirm,
+            entryId = cardEntry(),
+        )
+
+        assertEquals(field("Card number", "4111", type = "card"), state.content?.ownFields?.get(0))
+    }
+
+    @Test
+    fun `another type picked clears the value of the field and is a change`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.EditField(0),
+            EntryEditAction.DialogTypeChanged(FieldType.TEXT),
+            EntryEditAction.DialogConfirm,
+            entryId = cardEntry(),
+        )
+
+        assertEquals(field("Card", ""), state.content?.ownFields?.get(0))
+        assertTrue(state.changed)
+    }
+
+    @Test
+    fun `a type this app does not know is saved into the entry as it came`() = runTest {
+        val id = cardEntry()
+        editing(EntryEditAction.ValueChanged(StandardPreset.TITLE, "Bank card"), EntryEditAction.Save, entryId = id)
+
+        assertEquals(listOf("card"), entries.stored.getValue(EntryId(id)).fields.filter { it.key == "Card" }.map { it.type })
+    }
+
+    @Test
+    fun `an added field is text unless another type is picked`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.AddField,
+            EntryEditAction.DialogNameChanged("Code"),
+            EntryEditAction.DialogTypeChanged(FieldType.TEXT),
+            EntryEditAction.DialogConfirm,
+        )
+
+        assertNull(state.content?.ownFields?.last()?.type)
     }
 
     @Test
@@ -804,6 +859,18 @@ class EntryEditProcessorTest {
     private suspend fun TestScope.adding(name: String) =
         editing(EntryEditAction.AddField, EntryEditAction.DialogNameChanged(name), EntryEditAction.DialogConfirm)
 
+    /** An entry with an own field of a type this app does not know; its id. */
+    private fun cardEntry(): String = entries.add(
+        "typed",
+        group,
+        listOf(
+            field(StandardPreset.TITLE, "Bank"),
+            field(StandardPreset.USER_NAME, "me"),
+            field(StandardPreset.PASSWORD, "secret", protected = true),
+            field("Card", "4111", type = "card"),
+        ),
+    ).value
+
     /** An entry of another program with two fields under one key; its id. */
     private fun twin(): String = entries.add(
         "twin",
@@ -858,5 +925,6 @@ class EntryEditProcessorTest {
         return processor.container.stateFlow.value to events
     }
 
-    private fun field(key: String, value: String, protected: Boolean = false) = EntryField(key, value, protected)
+    private fun field(key: String, value: String, protected: Boolean = false, type: String? = null) =
+        EntryField(key, value, protected, type)
 }

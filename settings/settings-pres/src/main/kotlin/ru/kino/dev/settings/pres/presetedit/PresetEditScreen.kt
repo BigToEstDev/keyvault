@@ -113,6 +113,7 @@ internal fun PresetEditScreen(
             dialog = state.dialog,
             onNameChange = { processor.action(PresetEditAction.DialogNameChanged(it)) },
             onProtectedChange = { processor.action(PresetEditAction.DialogProtectedChanged(it)) },
+            onTypeChange = { processor.action(PresetEditAction.DialogTypeChanged(it)) },
             onConfirm = { processor.action(PresetEditAction.DialogConfirm) },
             onDismiss = { processor.action(PresetEditAction.DialogDismiss) },
         )

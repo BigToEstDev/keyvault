@@ -5,6 +5,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.ui.components.ConfirmDialog
@@ -22,6 +23,7 @@ internal fun EntryEditDialogs(
     dialog: EntryEditDialog?,
     onNameChange: (String) -> Unit,
     onProtectedChange: (Boolean) -> Unit,
+    onTypeChange: (FieldType) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     onPresetChosen: (PresetId?) -> Unit,
@@ -37,6 +39,8 @@ internal fun EntryEditDialogs(
             onNameChange = onNameChange,
             protected = dialog.protected,
             onProtectedChange = onProtectedChange,
+            type = FieldType.of(dialog.type),
+            onTypeChange = onTypeChange,
             confirmText = stringResource(R.string.action_add),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
@@ -49,6 +53,8 @@ internal fun EntryEditDialogs(
             onNameChange = onNameChange,
             protected = dialog.protected,
             onProtectedChange = onProtectedChange,
+            type = FieldType.of(dialog.type),
+            onTypeChange = onTypeChange,
             confirmText = stringResource(R.string.action_save),
             onConfirm = onConfirm,
             onDismiss = onDismiss,

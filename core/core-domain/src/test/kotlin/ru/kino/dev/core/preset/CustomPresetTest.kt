@@ -74,6 +74,20 @@ class CustomPresetTest {
         assertEquals(emptySet<String>(), CustomPreset.protectedKeys(preset))
     }
 
+    @Test
+    fun `the types of the fields are in the preset, and are built back - a name in no card is nothing`() {
+        val preset = CustomPreset.of(
+            id,
+            "Card",
+            listOf(listOf("PIN"), listOf("Number")),
+            fieldTypes = mapOf("Number" to "card", "CVC" to "card"),
+        )
+
+        assertEquals("card", preset.fields.first { it.key == "Number" }.type)
+        assertEquals(null, preset.fields.first { it.key == "PIN" }.type)
+        assertEquals(mapOf("Number" to "card"), CustomPreset.fieldTypes(preset))
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun `a key twice is no preset`() {
         CustomPreset.of(id, "Card", listOf(listOf("PIN"), listOf("PIN")))

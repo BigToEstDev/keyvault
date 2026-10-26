@@ -59,9 +59,9 @@ internal class EntryRepositoryImpl @Inject constructor(
             core.moveEntry(dbKey, entryId.value, groupId.value)
         }
 
-    private fun EntryFieldData.toField() = EntryField(key = key, value = value, protected = protected)
+    private fun EntryFieldData.toField() = EntryField(key = key, value = value, protected = protected, type = type)
 
-    private fun EntryField.toData() = EntryFieldData(key = key, value = value, protected = protected)
+    private fun EntryField.toData() = EntryFieldData(key = key, value = value, protected = protected, type = type)
 }
 
 /** An entry as a list shows it - also in the recycle bin. */

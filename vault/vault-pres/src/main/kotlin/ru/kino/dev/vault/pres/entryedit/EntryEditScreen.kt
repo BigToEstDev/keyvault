@@ -131,6 +131,7 @@ internal fun EntryEditScreen(
             dialog = state.dialog,
             onNameChange = { processor.action(EntryEditAction.DialogNameChanged(it)) },
             onProtectedChange = { processor.action(EntryEditAction.DialogProtectedChanged(it)) },
+            onTypeChange = { processor.action(EntryEditAction.DialogTypeChanged(it)) },
             onConfirm = { processor.action(EntryEditAction.DialogConfirm) },
             onDismiss = { processor.action(EntryEditAction.DialogDismiss) },
             onPresetChosen = { processor.action(EntryEditAction.PresetChosen(it)) },

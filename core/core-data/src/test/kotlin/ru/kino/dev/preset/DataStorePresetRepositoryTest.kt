@@ -109,6 +109,24 @@ class DataStorePresetRepositoryTest {
     }
 
     @Test
+    fun `the types of the fields are kept by name in the same version, and read back`() = runTest {
+        val typedCard = CustomPreset.of(
+            PresetId("card"),
+            "Card",
+            listOf(listOf("PIN"), listOf("Number", "CVC")),
+            fieldTypes = mapOf("Number" to "card"),
+        )
+        val store = MemoryStore()
+        DataStorePresetRepository(store).save(typedCard)
+
+        assertEquals(
+            """{"version":1,"presets":[{"id":"card","name":"Card","cards":[["PIN"],["Number","CVC"]],"fieldTypes":{"Number":"card"}}]}""",
+            store.data.first()[DataStorePresetRepository.PRESETS_KEY],
+        )
+        assertEquals(listOf(typedCard), DataStorePresetRepository(store).presets.first())
+    }
+
+    @Test
     fun `json that does not parse is no presets`() = runTest {
         assertEquals(emptyList<EntryPreset>(), stored("{not json").presets.first())
     }

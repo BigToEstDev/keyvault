@@ -9,8 +9,8 @@ import ru.kino.dev.core.preset.StandardPreset.USER_NAME
  * password, required, and after them the fields the person adds to it; the cards the person adds; the notes,
  * a card of their own, last.
  *
- * What the person sets is only the names - of the preset and of its fields - and which of its fields are
- * protected (pass-docs, Step 75). The rest is fixed here, so a preset is stored as that and built back by [of].
+ * What the person sets is only the names - of the preset and of its fields -, which of its fields are protected
+ * and their types (pass-docs, Step 75). The rest is fixed here, so a preset is stored as that and built back by [of].
  */
 object CustomPreset {
 
@@ -32,10 +32,17 @@ object CustomPreset {
      *   person names is plain text, not required, written only when filled
      * @param protectedKeys the names of those fields that are protected in a new entry; a name in no card is
      *   nothing
+     * @param fieldTypes the type of a field in a new entry, by its name - text is none; a name in no card is nothing
      */
-    fun of(id: PresetId, name: String, cards: List<List<String>>, protectedKeys: Set<String> = emptySet()): EntryPreset {
+    fun of(
+        id: PresetId,
+        name: String,
+        cards: List<List<String>>,
+        protectedKeys: Set<String> = emptySet(),
+        fieldTypes: Map<String, String> = emptyMap(),
+    ): EntryPreset {
         require(cards.isNotEmpty()) { "a preset has its first card" }
-        fun field(key: String) = PresetField(key, protected = key in protectedKeys)
+        fun field(key: String) = PresetField(key, protected = key in protectedKeys, type = fieldTypes[key])
         val first = PresetCard(listOf(USER_NAME_FIELD, PASSWORD_FIELD) + cards.first().map(::field))
         val added = cards.drop(1).map { keys -> PresetCard(keys.map(::field)) }
         return EntryPreset(id, name, listOf(first) + added + NOTES_CARD)
@@ -47,6 +54,10 @@ object CustomPreset {
     /** What [of] was built from: the names of the fields the person made protected. */
     fun protectedKeys(preset: EntryPreset): Set<String> =
         ownCards(preset).flatten().filter { it.protected }.map { it.key }.toSet()
+
+    /** What [of] was built from: the types of the fields the person put in, by name - text is none. */
+    fun fieldTypes(preset: EntryPreset): Map<String, String> =
+        ownCards(preset).flatten().mapNotNull { field -> field.type?.let { field.key to it } }.toMap()
 
     // The fields the person put in each card: past the user name and the password, without the notes
     private fun ownCards(preset: EntryPreset): List<List<PresetField>> {

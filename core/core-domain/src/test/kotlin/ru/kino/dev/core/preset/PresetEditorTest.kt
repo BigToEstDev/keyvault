@@ -37,6 +37,18 @@ class PresetEditorTest {
     }
 
     @Test
+    fun `the types go by the names of the fields without the spaces, a name of no field is dropped`() = runTest {
+        val preset = editor.create(
+            "Card",
+            listOf(listOf(" Number ")),
+            standardName,
+            fieldTypes = mapOf(" Number " to "card", "Bank" to "card"),
+        )
+
+        assertEquals(mapOf("Number" to "card"), CustomPreset.fieldTypes(preset))
+    }
+
+    @Test
     fun `a preset changed takes the protection given`() = runTest {
         val made = editor.create("Card", listOf(listOf("PIN")), standardName, setOf("PIN"))
 

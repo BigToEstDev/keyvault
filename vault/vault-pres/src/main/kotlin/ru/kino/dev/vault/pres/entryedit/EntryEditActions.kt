@@ -1,5 +1,6 @@
 package ru.kino.dev.vault.pres.entryedit
 
+import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.vault.entry.NameProblem
@@ -36,10 +37,10 @@ sealed interface EntryEditAction {
     /** The screen is shown - again, maybe, after a preset was made: that one is picked. */
     data object Resumed : EntryEditAction
 
-    /** "+ Add field": asks for the name of a new own field and whether it is protected. */
+    /** "+ Add field": asks for the name of a new own field, whether it is protected and its type. */
     data object AddField : EntryEditAction
 
-    /** "Edit" in the menu of the own field at [index]: its name and whether it is protected. */
+    /** "Edit" in the menu of the own field at [index]: its name, whether it is protected and its type. */
     data class EditField(val index: Int) : EntryEditAction
 
     data class DeleteField(val index: Int) : EntryEditAction
@@ -48,6 +49,9 @@ sealed interface EntryEditAction {
 
     /** The switch "protected field" of the dialog of a field. */
     data class DialogProtectedChanged(val protected: Boolean) : EntryEditAction
+
+    /** The type picked in the dialog of a field. */
+    data class DialogTypeChanged(val type: FieldType) : EntryEditAction
 
     data object DialogConfirm : EntryEditAction
 
@@ -72,18 +76,26 @@ sealed interface EntryEditAction {
 /** The dialog over the form, if any. */
 sealed interface EntryEditDialog {
 
-    /** A new own field: its name, and whether it is protected - not, until switched (pass-docs, Step 75). */
+    /**
+     * A new own field: its name, whether it is protected - not, until switched - and its [type], as the file keeps
+     * it - text, until picked (pass-docs, Step 75).
+     */
     data class AddField(
         val name: String = "",
         val protected: Boolean = false,
+        val type: String? = null,
         val problem: NameProblem? = null,
     ) : EntryEditDialog
 
-    /** The own field at [index] changed: its name and whether it is protected, opened as they are. */
+    /**
+     * The own field at [index] changed: its name, whether it is protected and its [type], opened as they are - a
+     * type this app does not know stays, until another is picked. Another type clears the value (Step 75, item 3).
+     */
     data class EditField(
         val index: Int,
         val name: String,
         val protected: Boolean,
+        val type: String?,
         val problem: NameProblem? = null,
     ) : EntryEditDialog
 

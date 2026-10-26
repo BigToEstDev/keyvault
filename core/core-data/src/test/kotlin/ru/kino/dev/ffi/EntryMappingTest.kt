@@ -50,6 +50,25 @@ class EntryMappingTest {
         assertEquals(JsonPrimitive(true), (sent.getValue("fields") as JsonArray)[1].jsonObject.getValue("protected"))
     }
 
+    // The type the app gives a field travels as it is, one this app does not know too (pass-docs, Step 76)
+    @Test
+    fun `the type of a field comes from the form and goes back to it`() {
+        val form = json.decodeFromString(
+            EntryFormDataDto.serializer(),
+            ENTRY.replace(""""key": "PIN", "value": "1111",""", """"key": "PIN", "value": "1111", "field_type": "card","""),
+        )
+
+        assertEquals("card", form.fieldsToDomain()[1].type)
+        assertEquals(null, form.fieldsToDomain()[0].type)
+
+        val fields = listOf(EntryFieldData("Card", "4111", protected = false, type = "card"))
+        val sent = json.encodeToJsonElement(EntryFormDataDto.serializer(), form.withFields(fields)).jsonObject
+        assertEquals(
+            JsonPrimitive("card"),
+            (sent.getValue("fields") as JsonArray)[0].jsonObject.getValue("field_type"),
+        )
+    }
+
     @Test
     fun `a summary without a title or a user name has them empty`() {
         val summary = json.decodeFromString(

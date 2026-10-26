@@ -1,5 +1,6 @@
 package ru.kino.dev.settings.pres.presetedit
 
+import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.preset.FieldNameProblem
 import ru.kino.dev.core.preset.FieldPosition
 
@@ -11,10 +12,10 @@ sealed interface PresetEditAction {
     /** The name of the preset, typed. */
     data class NameChanged(val name: String) : PresetEditAction
 
-    /** "+ Add field" of the card [card]: asks for the name and whether it is protected. */
+    /** "+ Add field" of the card [card]: asks for the name, whether it is protected and the type. */
     data class AddField(val card: Int) : PresetEditAction
 
-    /** "Edit" in the menu of the field [at]: its name and whether it is protected. */
+    /** "Edit" in the menu of the field [at]: its name, whether it is protected and its type. */
     data class EditField(val at: FieldPosition) : PresetEditAction
 
     data class DeleteField(val at: FieldPosition) : PresetEditAction
@@ -29,6 +30,9 @@ sealed interface PresetEditAction {
 
     /** The switch "protected field" of the dialog of a field. */
     data class DialogProtectedChanged(val protected: Boolean) : PresetEditAction
+
+    /** The type picked in the dialog of a field. */
+    data class DialogTypeChanged(val type: FieldType) : PresetEditAction
 
     data object DialogConfirm : PresetEditAction
 
@@ -50,19 +54,24 @@ sealed interface PresetEditAction {
 /** The dialog over the form, if any. */
 sealed interface PresetEditDialog {
 
-    /** A new field of the card [card]: its name, and whether it is protected - not, until switched (Step 75). */
+    /**
+     * A new field of the card [card]: its name, whether it is protected - not, until switched - and its [type] -
+     * text, until picked (Step 75).
+     */
     data class AddField(
         val card: Int,
         val name: String = "",
         val protected: Boolean = false,
+        val type: String? = null,
         val problem: FieldNameProblem? = null,
     ) : PresetEditDialog
 
-    /** The field [at] changed: its name and whether it is protected, opened as they are. */
+    /** The field [at] changed: its name, whether it is protected and its [type], opened as they are. */
     data class EditField(
         val at: FieldPosition,
         val name: String,
         val protected: Boolean,
+        val type: String?,
         val problem: FieldNameProblem? = null,
     ) : PresetEditDialog
 

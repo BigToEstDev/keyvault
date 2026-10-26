@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.preset.CustomPreset
 import ru.kino.dev.core.preset.FieldNameProblem
 import ru.kino.dev.core.preset.FieldPosition
@@ -30,6 +31,7 @@ import ru.kino.dev.navigation.Navigator
  * @param cards the names of the fields of each card, as [ru.kino.dev.core.preset.CustomPreset.of] takes them:
  * the first - what goes after the user name and the password; the rest - the cards the person added
  * @param protectedKeys the names of the fields of [cards] that are protected in a new entry (pass-docs, Step 75)
+ * @param fieldTypes the types of the fields of [cards] in a new entry, by name - text is none (Step 75, item 3)
  * @param problems what the last save was refused for, until that part is edited
  * @param saving the preset is being made - the fab waits, the form takes nothing
  * @param editing a preset that is there is edited, not a new one made
@@ -37,12 +39,14 @@ import ru.kino.dev.navigation.Navigator
  * @param initialName the name as read; empty for a new preset
  * @param initialCards the cards as read; the first card alone for a new preset
  * @param initialProtectedKeys the protected fields as read; none for a new preset
+ * @param initialFieldTypes the types of the fields as read; none for a new preset
  * @param message for the snackbar, until it takes it
  */
 data class PresetEditState(
     val name: String = "",
     val cards: List<List<String>> = EMPTY_CARDS,
     val protectedKeys: Set<String> = emptySet(),
+    val fieldTypes: Map<String, String> = emptyMap(),
     val problems: List<PresetProblem> = emptyList(),
     val saving: Boolean = false,
     val editing: Boolean = false,
@@ -50,12 +54,14 @@ data class PresetEditState(
     val initialName: String = "",
     val initialCards: List<List<String>> = EMPTY_CARDS,
     val initialProtectedKeys: Set<String> = emptySet(),
+    val initialFieldTypes: Map<String, String> = emptyMap(),
     val dialog: PresetEditDialog? = null,
     val message: PresetEditMessage? = null,
 ) {
     /** Anything typed, added, removed or switched since it was read: "back" asks first. */
     val changed: Boolean
-        get() = name != initialName || cards != initialCards || protectedKeys != initialProtectedKeys
+        get() = name != initialName || cards != initialCards || protectedKeys != initialProtectedKeys ||
+            fieldTypes != initialFieldTypes
 
     /**
      * A name of a field read is gone - renamed, deleted, gone with its card: entries with the preset will show
@@ -136,12 +142,20 @@ class PresetEditProcessor @AssistedInject constructor(
 
             is PresetEditAction.EditField -> state.fieldName(action.at)?.let { name ->
                 if (!state.saving) {
-                    reduce { state.copy(dialog = PresetEditDialog.EditField(action.at, name, name in state.protectedKeys)) }
+                    reduce {
+                        state.copy(
+                            dialog = PresetEditDialog.EditField(action.at, name, name in state.protectedKeys, state.fieldTypes[name]),
+                        )
+                    }
                 }
             }
 
             is PresetEditAction.DialogProtectedChanged -> reduce {
                 state.copy(dialog = state.dialog?.switched(action.protected))
+            }
+
+            is PresetEditAction.DialogTypeChanged -> reduce {
+                state.copy(dialog = state.dialog?.typedAs(action.type))
             }
 
             is PresetEditAction.DeleteField -> state.fieldName(action.at)?.let { name ->
@@ -187,6 +201,7 @@ class PresetEditProcessor @AssistedInject constructor(
                         state.copy(
                             cards = state.cards.mapIndexed { i, keys -> if (i == dialog.card) keys + name else keys },
                             protectedKeys = state.protectedKeys.with(name, dialog.protected),
+                            fieldTypes = state.fieldTypes.with(name, dialog.type),
                             dialog = null,
                         )
                     }
@@ -205,8 +220,9 @@ class PresetEditProcessor @AssistedInject constructor(
                             cards = state.cards.change(dialog.at.card) { keys ->
                                 keys.mapIndexed { i, key -> if (i == dialog.at.index) name else key }
                             },
-                            // The protection goes with the field, under its new name
+                            // The protection and the type go with the field, under its new name
                             protectedKeys = (state.protectedKeys - old).with(name, dialog.protected),
+                            fieldTypes = (state.fieldTypes - old).with(name, dialog.type),
                             dialog = null,
                             problems = state.problems.filterNot { it is PresetProblem.FieldName && it.at == dialog.at },
                         )
@@ -219,6 +235,7 @@ class PresetEditProcessor @AssistedInject constructor(
                 state.copy(
                     cards = state.cards.change(dialog.at.card) { keys -> keys.filterIndexed { i, _ -> i != dialog.at.index } },
                     protectedKeys = state.protectedKeys - dialog.name,
+                    fieldTypes = state.fieldTypes - dialog.name,
                     dialog = null,
                     problems = state.problems.filterNot { it is PresetProblem.FieldName },
                 )
@@ -228,6 +245,7 @@ class PresetEditProcessor @AssistedInject constructor(
                 state.copy(
                     cards = state.cards.filterIndexed { i, _ -> i != dialog.card },
                     protectedKeys = state.protectedKeys - state.cards[dialog.card].toSet(),
+                    fieldTypes = state.fieldTypes - state.cards[dialog.card].toSet(),
                     dialog = null,
                     problems = state.problems.filterNot { it is PresetProblem.FieldName },
                 )
@@ -254,14 +272,17 @@ class PresetEditProcessor @AssistedInject constructor(
         val name = preset.name.orEmpty()
         val cards = CustomPreset.cards(preset)
         val protectedKeys = CustomPreset.protectedKeys(preset)
+        val fieldTypes = CustomPreset.fieldTypes(preset)
         reduce {
             state.copy(
                 name = name,
                 cards = cards,
                 protectedKeys = protectedKeys,
+                fieldTypes = fieldTypes,
                 initialName = name,
                 initialCards = cards,
                 initialProtectedKeys = protectedKeys,
+                initialFieldTypes = fieldTypes,
                 loading = false,
             )
         }
@@ -281,9 +302,9 @@ class PresetEditProcessor @AssistedInject constructor(
         try {
             val id = presetId
             if (id == null) {
-                editor.create(state.name, state.cards, standardName, state.protectedKeys)
+                editor.create(state.name, state.cards, standardName, state.protectedKeys, state.fieldTypes)
             } else {
-                editor.update(PresetId(id), state.name, state.cards, standardName, state.protectedKeys)
+                editor.update(PresetId(id), state.name, state.cards, standardName, state.protectedKeys, state.fieldTypes)
             }
             leave()
         } catch (failure: PresetFailure.Invalid) {
@@ -330,3 +351,13 @@ private fun PresetEditDialog.switched(protected: Boolean): PresetEditDialog = wh
 }
 
 private fun Set<String>.with(name: String, protected: Boolean): Set<String> = if (protected) this + name else this - name
+
+private fun PresetEditDialog.typedAs(type: FieldType): PresetEditDialog = when (this) {
+    is PresetEditDialog.AddField -> copy(type = type.key)
+    is PresetEditDialog.EditField -> copy(type = type.key)
+    else -> this
+}
+
+// Text is no type: the field is left out
+private fun Map<String, String>.with(name: String, type: String?): Map<String, String> =
+    if (type == null) this - name else this + (name to type)

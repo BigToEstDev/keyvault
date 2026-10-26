@@ -138,7 +138,7 @@ fun TextField(
 
 /** A hint under a field, as Material 3 puts its supporting text - for a field that has it outside. */
 @Composable
-private fun HintText(text: String, isError: Boolean, enabled: Boolean) {
+internal fun HintText(text: String, isError: Boolean = false, enabled: Boolean = true) {
     val colors = MaterialTheme.colorScheme
     Text(
         text = text,

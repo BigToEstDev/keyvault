@@ -227,6 +227,9 @@
     <string name="entry_add_field_title">Новое поле</string>
     <string name="entry_edit_field_title">Изменить поле</string>
     <string name="field_protected">Защищённое поле</string>
+    <string name="field_type">Тип поля</string>
+    <string name="field_type_text">Текстовое</string>
+    <string name="field_type_hint">При смене типа значение поля очистится — сохраните его в буфер</string>
     <string name="entry_delete_field_title">Удалить поле?</string>
     <string name="entry_delete_field_text">«%1$s» и его значение будут удалены из записи.</string>
     <string name="entry_save">Сохранить запись</string>
