@@ -16,6 +16,9 @@ import ru.kino.dev.vault.entry.EntryField
  * A private one - protected in a database of another program, or by the settings of the database - is hidden
  * behind dots with an eye, as the password is; one added here is plain text.
  *
+ * It wraps and grows with the text as notes do, from one line; behind dots - in one line (pass-docs, Step 75,
+ * item 2).
+ *
  * @param private hidden behind dots, with the eye
  * @param error why its name cannot be saved, if it cannot
  */
@@ -41,6 +44,7 @@ internal fun OwnFieldRow(
             error = error,
             enabled = enabled,
             hidden = private && !shown,
+            singleLine = private && !shown,
             // Shown in clear, colored as a password is (pass-docs, Step 58)
             secret = private,
             actions = if (private) {
