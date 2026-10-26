@@ -19,6 +19,9 @@ dependencies {
     // The presets of one's own: one json string in preferences, kept across launches
     implementation(libs.androidx.datastore.preferences)
 
+    // Phone numbers of every country, offline: the field of the type "phone" (pass-docs, Step 77)
+    implementation(libs.libphonenumber)
+
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }
