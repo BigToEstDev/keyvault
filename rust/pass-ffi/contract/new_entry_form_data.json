@@ -14,6 +14,7 @@
     {
       "current_opt_token": "null-in-this-sample",
       "data_type": "string",
+      "field_type": "null-in-this-sample",
       "key": "string",
       "password_score": "null-in-this-sample",
       "protected": "bool",

@@ -343,3 +343,47 @@ fn a_form_with_a_repeated_key_is_refused_with_its_own_kind() {
 
     close_database(&db_key);
 }
+
+// The type our app gives a field travels as a string both ways, one the app does not know too: it is
+// the app's, kept by the core in the entry's CustomData (Step 76)
+#[test]
+fn the_type_of_a_field_travels_both_ways() {
+    let db_key = key_of("entry-field-type");
+    open_database(&db_key);
+    let root = root_uuid(&db_key);
+
+    let mut form = call_ok("new_entry_form_data", json!({ "parent_group_uuid": root }));
+    set_form_field(&mut form, "Title", "Bank");
+    let fields = form["fields"].as_array_mut().unwrap();
+    for (key, field_type) in [("Phone", "phone"), ("Card", "from-a-newer-client")] {
+        fields.push(json!({
+            "key": key,
+            "value": "1234",
+            "protected": false,
+            "data_type": "Text",
+            "field_type": field_type,
+        }));
+    }
+    call_ok(
+        "insert_entry_from_form_data",
+        json!({"db_key": db_key, "form_data": form}),
+    );
+
+    let read = call_ok(
+        "get_entry_form_data_by_id",
+        json!({"db_key": db_key, "entry_uuid": uuid_of(&form)}),
+    );
+    let type_of = |key: &str| {
+        read["fields"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|f| f["key"] == key)
+            .map(|f| f["field_type"].clone())
+    };
+    assert_eq!(type_of("Phone"), Some(json!("phone")));
+    assert_eq!(type_of("Card"), Some(json!("from-a-newer-client")));
+    assert_eq!(type_of("Title"), Some(Value::Null));
+
+    close_database(&db_key);
+}
