@@ -1,6 +1,8 @@
 package ru.kino.dev.ui.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -49,30 +51,33 @@ fun PhoneField(
     actions: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val grouping = remember(format) { GroupingTransformation(format) }
-    TextField(
-        value = digits,
-        onValueChange = { typed -> onDigitsChange(typed.filter(Char::isDigit)) },
-        label = label,
-        modifier = modifier,
-        error = error,
-        hint = hint,
-        enabled = enabled,
-        hidden = hidden,
-        secret = secret,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-        actions = actions,
-        transformation = grouping,
-        leading = {
-            TextButton(
-                onClick = onPrefixClick,
-                enabled = enabled,
-                modifier = Modifier.padding(start = 4.dp),
-            ) {
-                Text(prefix)
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = stringResource(R.string.phone_prefix_choose))
-            }
-        },
-    )
+    // The hint under the border in line with the field, not in from its edge as Material puts its supporting text
+    Column(modifier = modifier) {
+        TextField(
+            value = digits,
+            onValueChange = { typed -> onDigitsChange(typed.filter(Char::isDigit)) },
+            label = label,
+            modifier = Modifier.fillMaxWidth(),
+            error = error,
+            enabled = enabled,
+            hidden = hidden,
+            secret = secret,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            actions = actions,
+            transformation = grouping,
+            leading = {
+                TextButton(
+                    onClick = onPrefixClick,
+                    enabled = enabled,
+                    modifier = Modifier.padding(start = 4.dp),
+                ) {
+                    Text(prefix)
+                    Icon(Icons.Filled.ArrowDropDown, contentDescription = stringResource(R.string.phone_prefix_choose))
+                }
+            },
+        )
+        hint?.let { HintText(it, enabled = enabled, indented = false) }
+    }
 }
 
 /**

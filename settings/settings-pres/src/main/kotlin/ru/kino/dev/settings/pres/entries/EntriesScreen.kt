@@ -35,6 +35,7 @@ import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.settings.pres.entries.components.EntriesSkeleton
+import ru.kino.dev.settings.pres.entries.components.PhonePrefixRow
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.ConfirmDialog
@@ -194,7 +195,7 @@ private fun LazyListScope.phoneRows(phone: PhonePrefix, action: (EntriesAction) 
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut(),
                 ) {
-                    ValueRow(
+                    PhonePrefixRow(
                         title = stringResource(R.string.settings_phone_prefix),
                         value = "${phonePrefix(phone.region)} ${phoneCountryName(phone.region)}",
                         onClick = { action(EntriesAction.ChoosePrefix) },
