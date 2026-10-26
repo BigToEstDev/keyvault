@@ -1,6 +1,7 @@
 package ru.kino.dev.vault.pres.entryedit
 
 import ru.kino.dev.core.FieldType
+import ru.kino.dev.core.phone.PhoneCountry
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.vault.entry.NameProblem
@@ -53,6 +54,15 @@ sealed interface EntryEditAction {
     /** The type picked in the dialog of a field. */
     data class DialogTypeChanged(val type: FieldType) : EntryEditAction
 
+    /** The digits of the phone field [target] typed - after the calling code (pass-docs, Step 77). */
+    data class PhoneDigitsChanged(val target: PhoneTarget, val digits: String) : EntryEditAction
+
+    /** The prefix of the phone field [target] tapped: asks for the country. */
+    data class ChoosePhoneCountry(val target: PhoneTarget) : EntryEditAction
+
+    /** The country picked in [EntryEditDialog.PhoneCountries] - its code. */
+    data class PhoneCountryChosen(val region: String) : EntryEditAction
+
     data object DialogConfirm : EntryEditAction
 
     data object DialogDismiss : EntryEditAction
@@ -102,6 +112,13 @@ sealed interface EntryEditDialog {
     /** "Delete the field?" - the own field at [index], called [name]. */
     data class DeleteField(val index: Int, val name: String) : EntryEditDialog
 
+    /** The country of the phone field [target]: [countries] to choose from, [selected] - the one it has. */
+    data class PhoneCountries(
+        val target: PhoneTarget,
+        val selected: String,
+        val countries: List<PhoneCountry>,
+    ) : EntryEditDialog
+
     /**
      * The choice of presets: the standard one, then [presets] - those of one's own, in the order they were
      * made; [selected] is the one of the form, null for the standard one.
@@ -132,3 +149,9 @@ sealed interface EntryEditDialog {
 
 /** What the snackbar says. */
 enum class EntryEditMessage { LoadFailed, NotSaved, Unexpected }
+
+/** A phone field of the form: of the preset - by its key, or own - by its index. */
+sealed interface PhoneTarget {
+    data class Preset(val key: String) : PhoneTarget
+    data class Own(val index: Int) : PhoneTarget
+}

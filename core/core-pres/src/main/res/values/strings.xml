@@ -223,6 +223,13 @@
     <string name="field_protected">Protected field</string>
     <string name="field_type">Field type</string>
     <string name="field_type_text">Text</string>
+    <string name="field_type_phone">Phone</string>
+    <string name="phone_prefix_choose">Choose the country</string>
+    <string name="phone_country_title">Country</string>
+    <string name="settings_phone_group">Phone</string>
+    <string name="settings_phone_remember">Remember the phone prefix</string>
+    <string name="settings_phone_prefix">Phone prefix by default</string>
+    <string name="phone_not_of_country">Does not look like a number of %1$s</string>
     <string name="field_type_hint">Changing the type clears the value of the field - copy it first</string>
     <string name="entry_delete_field_title">Delete the field?</string>
     <string name="entry_delete_field_text">«%1$s» and its value leave the entry.</string>

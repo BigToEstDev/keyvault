@@ -22,6 +22,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.FieldProtection
+import ru.kino.dev.core.FieldType
+import ru.kino.dev.core.phone.PhoneType
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.CopyButton
@@ -34,6 +36,7 @@ import ru.kino.dev.ui.components.VisibilityToggle
 import ru.kino.dev.ui.components.linkOf
 import ru.kino.dev.ui.components.rememberSecretText
 import ru.kino.dev.ui.components.rememberSensitiveClipboard
+import ru.kino.dev.ui.phone.phoneShown
 import ru.kino.dev.ui.preset.fieldLabel
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryField
@@ -204,6 +207,7 @@ private fun PresetRow(
         ReadRow(
             label = fieldLabel(key),
             value = value,
+            shownValue = phoneShownOrValue(content.presetFields.first { it.key == key }),
             clipboard = clipboard,
             hidden = private && !shown,
             secret = private,
@@ -234,6 +238,7 @@ private fun OwnRow(
     ReadRow(
         label = field.key,
         value = field.value,
+        shownValue = phoneShownOrValue(field),
         clipboard = clipboard,
         hidden = private && !shown,
         secret = private,
@@ -258,11 +263,13 @@ private class Privacy(
  *
  * @param secret a protected one: shown in clear, it is colored as a password is (pass-docs, Step 58)
  * @param link where the value leads - colored, with "open" before "copy"
+ * @param shownValue the value as it is shown - a phone grouped; "copy" takes [value], as kept
  */
 @Composable
 private fun ReadRow(
     label: String,
     value: String,
+    shownValue: String = value,
     clipboard: SensitiveClipboard?,
     hidden: Boolean,
     secret: Boolean,
@@ -272,7 +279,7 @@ private fun ReadRow(
 ) {
     FieldRow(
         label = label,
-        value = value,
+        value = if (hidden) value else shownValue,
         hidden = hidden,
         secret = secret,
         link = link != null,
@@ -287,6 +294,13 @@ private fun ReadRow(
             }
         },
     )
+}
+
+/** A phone with its country - the prefix, then the number grouped (pass-docs, Step 77); anything else as it is. */
+@Composable
+private fun phoneShownOrValue(field: EntryField): String {
+    val region = PhoneType.region(field.type)
+    return if (FieldType.of(field.type) == FieldType.PHONE && region != null) phoneShown(field.value, region) else field.value
 }
 
 private val CHIP_ICON_SIZE = 18.dp

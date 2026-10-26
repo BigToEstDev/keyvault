@@ -229,6 +229,13 @@
     <string name="field_protected">Защищённое поле</string>
     <string name="field_type">Тип поля</string>
     <string name="field_type_text">Текст</string>
+    <string name="field_type_phone">Телефон</string>
+    <string name="phone_prefix_choose">Выбрать страну</string>
+    <string name="phone_country_title">Страна</string>
+    <string name="settings_phone_group">Телефон</string>
+    <string name="settings_phone_remember">Запоминать префикс телефона</string>
+    <string name="settings_phone_prefix">Префикс телефона по умолчанию</string>
+    <string name="phone_not_of_country">Номер не похож на номер страны %1$s</string>
     <string name="field_type_hint">При смене типа значение поля очистится — сохраните его в буфер</string>
     <string name="entry_delete_field_title">Удалить поле?</string>
     <string name="entry_delete_field_text">«%1$s» и его значение будут удалены из записи.</string>

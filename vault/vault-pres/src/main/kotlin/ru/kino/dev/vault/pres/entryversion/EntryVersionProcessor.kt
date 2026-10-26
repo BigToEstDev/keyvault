@@ -10,6 +10,7 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.core.FieldProtection
+import ru.kino.dev.core.phone.PhoneNumbers
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
@@ -19,6 +20,7 @@ import ru.kino.dev.vault.entry.OpenedEntry
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.history.EntryHistoryEditor
 import ru.kino.dev.vault.history.EntryVersionOpener
+import ru.kino.dev.vault.pres.common.prepareFor
 import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.common.toggled
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
@@ -58,6 +60,7 @@ class EntryVersionProcessor @AssistedInject constructor(
     private val opener: EntryVersionOpener,
     private val settings: EntrySettingsRepository,
     private val editor: EntryHistoryEditor,
+    private val phones: PhoneNumbers,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryVersionState, EntryVersionState, Nothing> {
@@ -103,6 +106,7 @@ class EntryVersionProcessor @AssistedInject constructor(
         try {
             val version = opener.open(dbKey, EntryId(entryId), index)
             val protection = settings.protectionOrDefault(dbKey, log, TAG)
+            phones.prepareFor(version.content)
             reduce { state.copy(loading = false, version = version, protection = protection) }
         } catch (_: EntryFailure.EntryNotFound) {
             navigator.navigate(MviNavEvent.NavigateBack)

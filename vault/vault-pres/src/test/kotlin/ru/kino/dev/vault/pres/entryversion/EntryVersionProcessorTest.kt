@@ -10,6 +10,7 @@ import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.FieldProtection
+import ru.kino.dev.core.phone.FakePhoneNumbers
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
@@ -146,6 +147,7 @@ class EntryVersionProcessorTest {
             EntryVersionOpener(history, EntryOpener(entries, FakePresetRepository())),
             settings,
             EntryHistoryEditor(history, database),
+            FakePhoneNumbers(),
             navigator,
             log,
         )

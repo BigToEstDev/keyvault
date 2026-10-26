@@ -10,6 +10,7 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.core.FieldProtection
+import ru.kino.dev.core.phone.PhoneNumbers
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
@@ -26,6 +27,7 @@ import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.common.groupChoice
+import ru.kino.dev.vault.pres.common.prepareFor
 import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.common.toggled
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
@@ -81,6 +83,7 @@ class EntryReadProcessor @AssistedInject constructor(
     private val editor: EntryEditor,
     private val trash: TrashRepository,
     private val autoLock: AutoLock,
+    private val phones: PhoneNumbers,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryReadState, EntryReadState, Nothing> {
@@ -190,6 +193,7 @@ class EntryReadProcessor @AssistedInject constructor(
         val content = opened.content
         // Read anew too: it may come back from the settings changed
         val protection = settings.protectionOrDefault(dbKey, log, TAG)
+        phones.prepareFor(content)
 
         reduce {
             if (content == state.content && protection == state.protection) {

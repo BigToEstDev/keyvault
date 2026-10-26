@@ -10,8 +10,9 @@ import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.FieldDialog
-import ru.kino.dev.vault.pres.common.EntryDeleteDialog
+import ru.kino.dev.ui.phone.PhoneCountryDialog
 import ru.kino.dev.vault.entry.NameProblem
+import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.pres.entryedit.EntryEditDialog
 
 /**
@@ -29,6 +30,7 @@ internal fun EntryEditDialogs(
     onPresetChosen: (PresetId?) -> Unit,
     onCreatePreset: () -> Unit,
     onKeepHidden: () -> Unit,
+    onPhoneCountryChosen: (String) -> Unit,
 ) {
     when (dialog) {
         null -> Unit
@@ -69,6 +71,13 @@ internal fun EntryEditDialogs(
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             destructive = true,
+        )
+
+        is EntryEditDialog.PhoneCountries -> PhoneCountryDialog(
+            countries = dialog.countries,
+            selected = dialog.selected,
+            onChoose = onPhoneCountryChosen,
+            onClose = onDismiss,
         )
 
         is EntryEditDialog.Preset -> PresetChoiceDialog(

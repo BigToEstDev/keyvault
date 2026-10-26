@@ -2,6 +2,7 @@ package ru.kino.dev.settings.pres.entries
 
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.HistoryLimits
+import ru.kino.dev.core.phone.PhoneCountry
 
 sealed interface EntriesAction {
 
@@ -35,6 +36,17 @@ sealed interface EntriesAction {
 
     data object TrimDismiss : EntriesAction
 
+    /** "Remember the phone prefix" flipped (pass-docs, Step 77, decision 6). */
+    data class RememberPrefix(val on: Boolean) : EntriesAction
+
+    /** "The phone prefix by default" tapped: the countries to choose from. */
+    data object ChoosePrefix : EntriesAction
+
+    /** The country picked for the prefix by default - its code. */
+    data class PrefixChosen(val region: String) : EntriesAction
+
+    data object DismissPrefix : EntriesAction
+
     /** The snackbar took the message. */
     data object MessageShown : EntriesAction
 }
@@ -51,6 +63,14 @@ enum class EntriesPart { Protection, Items, Size }
  * @param part the row that asked it
  */
 data class TrimDialog(val history: HistoryLimits, val part: EntriesPart)
+
+/**
+ * The prefix a new phone field starts with - of the app, not of the database (pass-docs, Step 77).
+ *
+ * @param region the country it is of: the one chosen, or of the device
+ * @param countries to choose from, while the choice is open
+ */
+data class PhonePrefix(val remember: Boolean, val region: String, val countries: List<PhoneCountry>? = null)
 
 /** What the snackbar says. */
 enum class EntriesMessage {

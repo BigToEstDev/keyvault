@@ -15,10 +15,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import ru.kino.dev.core.phone.PhoneNumbers
 import ru.kino.dev.navigation.AppNavHost
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.appearance.AppLanguage
@@ -26,6 +27,7 @@ import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
 import ru.kino.dev.settings.privacy.PrivacySettingsRepository
+import ru.kino.dev.ui.phone.LocalPhoneNumbers
 import ru.kino.dev.ui.theme.AppLocale
 import ru.kino.dev.ui.theme.KeyVaultTheme
 import ru.kino.dev.ui.theme.LocalAppDisplay
@@ -54,6 +56,10 @@ class MainActivity : FragmentActivity() {
 
     @Inject
     lateinit var privacy: PrivacySettingsRepository
+
+    // The phone fields draw with them (pass-docs, Step 77)
+    @Inject
+    lateinit var phones: PhoneNumbers
 
     private val startResolver: WelcomeStartResolver by viewModels()
 
@@ -99,7 +105,7 @@ class MainActivity : FragmentActivity() {
             val shown = display ?: return@setContent
             AppLocale(locale = (language ?: return@setContent).locale) {
                 // What the screens show, as chosen in the settings: the features read it, not `settings`
-                CompositionLocalProvider(LocalAppDisplay provides shown) {
+                CompositionLocalProvider(LocalAppDisplay provides shown, LocalPhoneNumbers provides phones) {
                     KeyVaultTheme(darkTheme = darkTheme) {
                         val start by startResolver.start.collectAsStateWithLifecycle()
                         start?.let { AppNavHost(navigator = navigator, autoLock = autoLock, start = it) }

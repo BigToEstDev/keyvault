@@ -26,8 +26,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.core.view.doOnAttach
-import ru.kino.dev.ui.theme.DISABLED_ALPHA
 import ru.kino.dev.ui.theme.AppDisplay
+import ru.kino.dev.ui.theme.DISABLED_ALPHA
 import ru.kino.dev.ui.theme.LocalAppColors
 import ru.kino.dev.ui.theme.LocalAppDisplay
 
@@ -55,6 +55,8 @@ import ru.kino.dev.ui.theme.LocalAppDisplay
  * @param actions buttons at the end of the field, after the "!" of the error
  * @param strength a password being made: its strength in a line under the border, when
  * [AppDisplay.passwordStrength] is on (pass-docs, Step 74); none while the field has an error
+ * @param leading what goes before the value, inside the border - the prefix of a phone (pass-docs, Step 77)
+ * @param transformation how the value is drawn while not [hidden] - a phone grouped; null - as a [secret] is
  */
 @Composable
 fun TextField(
@@ -75,9 +77,11 @@ fun TextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     actions: (@Composable RowScope.() -> Unit)? = null,
     strength: Boolean = false,
+    leading: (@Composable () -> Unit)? = null,
+    transformation: VisualTransformation? = null,
 ) {
     val errorState = rememberFieldErrorState(error)
-    val transformation = secretTransformation(hidden, secret)
+    val drawn = if (transformation != null && !hidden) transformation else secretTransformation(hidden, secret)
 
     // The root of the window, not the view of Compose: that one reports itself important for autofill whatever it is
     // told (`AndroidComposeView.getImportantForAutofill`), the root above it is asked too. Once the view is in its window
@@ -103,8 +107,9 @@ fun TextField(
             minLines = minLines,
             isError = error != null,
             supportingText = if (withHint) hint?.let { { Text(it) } } else null,
-            visualTransformation = transformation,
+            visualTransformation = drawn,
             keyboardOptions = keyboardOptions,
+            leadingIcon = leading,
             keyboardActions = keyboardActions,
             trailingIcon = if (error == null && actions == null) {
                 null
