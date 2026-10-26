@@ -2,14 +2,21 @@ package ru.kino.dev.vault.pres.entryedit.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import ru.kino.dev.core.FieldType
 import ru.kino.dev.ui.components.FieldMenuButton
+import ru.kino.dev.ui.components.PhoneField
 import ru.kino.dev.ui.components.TextField
 import ru.kino.dev.ui.components.VisibilityToggle
+import ru.kino.dev.ui.phone.LocalPhoneNumbers
+import ru.kino.dev.ui.phone.phoneHint
+import ru.kino.dev.ui.phone.phonePrefix
+import ru.kino.dev.ui.phone.rememberPhoneFormat
 import ru.kino.dev.vault.entry.EntryField
 
 /**
@@ -22,8 +29,11 @@ import ru.kino.dev.vault.entry.EntryField
  * It wraps and grows with the text as notes do, from one line; behind dots - in one line (pass-docs, Step 75,
  * item 2). The pen stays by its first line, not in the middle of a tall field.
  *
+ * A phone - of the type "phone" - is a [PhoneField] of the country [phoneRegion] (pass-docs, Step 77).
+ *
  * @param private hidden behind dots, with the eye
  * @param error why its name cannot be saved, if it cannot
+ * @param phoneRegion the country of a phone field; null - the field is not drawn as a phone yet
  */
 @Composable
 internal fun OwnFieldRow(
@@ -36,26 +46,49 @@ internal fun OwnFieldRow(
     onToggleShown: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    phoneRegion: String?,
+    onPhoneDigitsChange: (String) -> Unit,
+    onPhonePrefixClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val eye: (@Composable RowScope.() -> Unit)? = if (private) {
+        { VisibilityToggle(visible = shown, onToggle = onToggleShown, enabled = enabled) }
+    } else {
+        null
+    }
     Row(modifier = modifier, verticalAlignment = Alignment.Top) {
-        TextField(
-            value = field.value,
-            onValueChange = onValueChange,
-            label = field.key,
-            modifier = Modifier.weight(1f),
-            error = error,
-            enabled = enabled,
-            hidden = private && !shown,
-            singleLine = private && !shown,
-            // Shown in clear, colored as a password is (pass-docs, Step 58)
-            secret = private,
-            actions = if (private) {
-                { VisibilityToggle(visible = shown, onToggle = onToggleShown, enabled = enabled) }
-            } else {
-                null
-            },
-        )
+        if (FieldType.of(field.type) == FieldType.PHONE && phoneRegion != null) {
+            val digits = LocalPhoneNumbers.current.digits(field.value, phoneRegion)
+            PhoneField(
+                prefix = phonePrefix(phoneRegion),
+                digits = digits,
+                onDigitsChange = onPhoneDigitsChange,
+                format = rememberPhoneFormat(phoneRegion),
+                onPrefixClick = onPhonePrefixClick,
+                label = field.key,
+                modifier = Modifier.weight(1f),
+                error = error,
+                hint = phoneHint(phoneRegion, digits),
+                enabled = enabled,
+                hidden = private && !shown,
+                secret = private,
+                actions = eye,
+            )
+        } else {
+            TextField(
+                value = field.value,
+                onValueChange = onValueChange,
+                label = field.key,
+                modifier = Modifier.weight(1f),
+                error = error,
+                enabled = enabled,
+                hidden = private && !shown,
+                singleLine = private && !shown,
+                // Shown in clear, colored as a password is (pass-docs, Step 58)
+                secret = private,
+                actions = eye,
+            )
+        }
         Box(modifier = Modifier.padding(top = PEN_TOP)) {
             FieldMenuButton(enabled = enabled, onEdit = onEdit, onDelete = onDelete)
         }

@@ -12,6 +12,9 @@ import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.FieldType
+import ru.kino.dev.core.phone.PhoneDefaults
+import ru.kino.dev.core.phone.PhoneNumbers
+import ru.kino.dev.core.phone.PhoneType
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.core.preset.PresetRepository
@@ -61,6 +64,8 @@ import ru.kino.dev.vault.trash.deletesToBin
  * @param shownOwn indexes of protected own fields shown in clear
  * @param protection the fields private by the database (pass-docs, Step 65); only the password until read
  * @param shownKeys keys of the fields of the preset private by the database shown in clear
+ * @param phoneRegion the country a phone field of none yet is shown with - a field of a preset; null until read
+ *   (pass-docs, Step 77)
  * @param problems what the last save was refused for, until the field is edited
  * @param saving the change is being made and written - the fab waits, the fields take nothing
  * @param message for the snackbar, until it takes it
@@ -79,6 +84,7 @@ data class EntryEditState(
     val shownOwn: Set<Int> = emptySet(),
     val protection: FieldProtection = FieldProtection.DEFAULT,
     val shownKeys: Set<String> = emptySet(),
+    val phoneRegion: String? = null,
     val problems: List<FieldProblem> = emptyList(),
     val saving: Boolean = false,
     val dialog: EntryEditDialog? = null,
@@ -123,6 +129,8 @@ class EntryEditProcessor @AssistedInject constructor(
     private val editor: EntryEditor,
     private val trash: TrashRepository,
     private val presets: PresetRepository,
+    private val phones: PhoneNumbers,
+    private val phoneDefaults: PhoneDefaults,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryEditState, EntryEditState, Nothing> {
@@ -173,6 +181,10 @@ class EntryEditProcessor @AssistedInject constructor(
             reduce { state.copy(dialog = state.dialog?.typed(action.name)) }
         }
 
+        is EntryEditAction.PhoneDigitsChanged -> textIntent {
+            reduce { state.withPhoneDigits(action.target, action.digits) }
+        }
+
         else -> intent { handle(action) }
     }
 
@@ -181,7 +193,21 @@ class EntryEditProcessor @AssistedInject constructor(
             is EntryEditAction.ValueChanged,
             is EntryEditAction.OwnValueChanged,
             is EntryEditAction.DialogNameChanged,
+            is EntryEditAction.PhoneDigitsChanged,
             -> Unit // in action()
+
+            is EntryEditAction.ChoosePhoneCountry -> state.phoneField(action.target)?.let { field ->
+                val selected = state.regionOf(field) ?: return@let
+                if (state.editable) {
+                    val countries = phones.countries()
+                    reduce { state.copy(dialog = EntryEditDialog.PhoneCountries(action.target, selected, countries)) }
+                }
+            }
+
+            is EntryEditAction.PhoneCountryChosen -> (state.dialog as? EntryEditDialog.PhoneCountries)?.let { dialog ->
+                phones.prepare(listOf(action.region))
+                reduce { state.withPhoneCountry(dialog.target, action.region).copy(dialog = null) }
+            }
 
             EntryEditAction.TogglePassword -> reduce { state.copy(passwordVisible = !state.passwordVisible) }
 
@@ -309,10 +335,12 @@ class EntryEditProcessor @AssistedInject constructor(
             val opened = opener.open(dbKey, id)
             val groups = groupRepository.tree(dbKey).groupChoices()
             val protection = settings.protectionOrDefault(dbKey, log, TAG)
+            val phoneRegion = preparePhones(opened.content)
             reduce {
                 state.copy(
                     loading = false,
                     protection = protection,
+                    phoneRegion = phoneRegion,
                     content = opened.content,
                     initial = opened.content,
                     groups = groups,
@@ -335,7 +363,8 @@ class EntryEditProcessor @AssistedInject constructor(
             val groups = groupRepository.tree(dbKey).groupChoices()
             // Hidden while typed as it will be in the file (pass-docs, Step 65)
             val protection = settings.protectionOrDefault(dbKey, log, TAG)
-            reduce { state.copy(groups = groups, protection = protection) }
+            val phoneRegion = state.content?.let { preparePhones(it) }
+            reduce { state.copy(groups = groups, protection = protection, phoneRegion = phoneRegion) }
         } catch (failure: GroupFailure) {
             loadFailed(failure)
         }
@@ -360,7 +389,7 @@ class EntryEditProcessor @AssistedInject constructor(
                         EntryValidator.normalizeName(dialog.name),
                         value = "",
                         protected = dialog.protected,
-                        type = dialog.type,
+                        type = dialog.type.withRegion(state.phoneRegion),
                     )
                     reduce { state.edited { copy(ownFields = ownFields + field) }.copy(dialog = null) }
                 }
@@ -376,7 +405,11 @@ class EntryEditProcessor @AssistedInject constructor(
                         state.edited {
                             copy(
                                 ownFields = ownFields.mapIndexed { i, field ->
-                                    if (i == dialog.index) field.edited(name, dialog.protected, dialog.type) else field
+                                    if (i == dialog.index) {
+                                        field.edited(name, dialog.protected, dialog.type.withRegion(state.phoneRegion))
+                                    } else {
+                                        field
+                                    }
                                 },
                             )
                         }.copy(
@@ -395,7 +428,7 @@ class EntryEditProcessor @AssistedInject constructor(
                     .copy(dialog = null)
             }
 
-            is EntryEditDialog.Preset -> reduce { state.copy(dialog = null) }
+            is EntryEditDialog.Preset, is EntryEditDialog.PhoneCountries -> reduce { state.copy(dialog = null) }
 
             is EntryEditDialog.HiddenFields -> {
                 reduce { state.copy(dialog = null) }
@@ -476,6 +509,36 @@ class EntryEditProcessor @AssistedInject constructor(
     }
 
     /**
+     * The country a phone field of none starts with; the countries of the phone fields of [content] and it read
+     * ahead, so the form draws them without waiting (pass-docs, Step 77).
+     */
+    private suspend fun preparePhones(content: EntryContent): String {
+        val region = phoneDefaults.region()
+        val fields = content.presetFields + content.ownFields
+        phones.prepare(fields.mapNotNull { PhoneType.region(it.type) }.toSet() + region)
+        return region
+    }
+
+    private fun EntryEditState.withPhoneDigits(target: PhoneTarget, digits: String): EntryEditState {
+        val field = phoneField(target) ?: return this
+        val region = regionOf(field) ?: return this
+        val value = phones.e164(region, digits)
+        val edited = withPhoneField(target) { it.copy(value = value, type = PhoneType.of(region)) }
+        return if (target is PhoneTarget.Preset) {
+            edited.copy(problems = problems.filterNot { it is FieldProblem.Required && it.key == target.key })
+        } else {
+            edited
+        }
+    }
+
+    // The digits of the number stay, the calling code is of the country now (pass-docs, Step 77, decision 10)
+    private fun EntryEditState.withPhoneCountry(target: PhoneTarget, region: String): EntryEditState {
+        val field = phoneField(target) ?: return this
+        val digits = regionOf(field)?.let { phones.digits(field.value, it) }.orEmpty()
+        return withPhoneField(target) { it.copy(value = phones.e164(region, digits), type = PhoneType.of(region)) }
+    }
+
+    /**
      * The entry [id] deleted: back to the list it was opened from - past its reading too, when the form was
      * opened from it, so that screen does not flash on the way (pass-docs, Step 50, item 2).
      */
@@ -492,6 +555,26 @@ class EntryEditProcessor @AssistedInject constructor(
 private val EntryEditState.editable: Boolean get() = content != null && !saving
 
 private fun EntryEditState.ownField(index: Int): EntryField? = content?.ownFields?.getOrNull(index)
+
+/** The country of the phone field [field]: its own, or - none yet - the one by default. */
+internal fun EntryEditState.regionOf(field: EntryField): String? = PhoneType.region(field.type) ?: phoneRegion
+
+private fun EntryEditState.phoneField(target: PhoneTarget): EntryField? = when (target) {
+    is PhoneTarget.Preset -> content?.presetFields?.firstOrNull { it.key == target.key }
+    is PhoneTarget.Own -> ownField(target.index)
+}?.takeIf { FieldType.of(it.type) == FieldType.PHONE }
+
+private fun EntryEditState.withPhoneField(target: PhoneTarget, change: (EntryField) -> EntryField): EntryEditState =
+    edited {
+        when (target) {
+            is PhoneTarget.Preset -> copy(presetFields = presetFields.map { if (it.key == target.key) change(it) else it })
+            is PhoneTarget.Own -> copy(ownFields = ownFields.mapIndexed { i, field -> if (i == target.index) change(field) else field })
+        }
+    }
+
+// A phone of no country yet - picked just now in the dialog - takes the one by default
+private fun String?.withRegion(region: String?): String? =
+    if (FieldType.of(this) == FieldType.PHONE && PhoneType.region(this) == null && region != null) PhoneType.of(region) else this
 
 private inline fun EntryEditState.edited(change: EntryContent.() -> EntryContent): EntryEditState =
     if (content == null || saving) this else copy(content = content.change())

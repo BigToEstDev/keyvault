@@ -27,6 +27,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.PresetField
 import ru.kino.dev.core.preset.StandardPreset
@@ -35,6 +36,7 @@ import ru.kino.dev.ui.components.FieldSection
 import ru.kino.dev.ui.components.PickerField
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PasswordField
+import ru.kino.dev.ui.components.PhoneField
 import ru.kino.dev.ui.components.SaveFab
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.SnackbarMessage
@@ -42,6 +44,10 @@ import ru.kino.dev.ui.components.TextField
 import ru.kino.dev.ui.components.VisibilityToggle
 import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.phone.LocalPhoneNumbers
+import ru.kino.dev.ui.phone.phoneHint
+import ru.kino.dev.ui.phone.phonePrefix
+import ru.kino.dev.ui.phone.rememberPhoneFormat
 import ru.kino.dev.ui.preset.fieldLabel
 import ru.kino.dev.ui.preset.presetName
 import ru.kino.dev.ui.theme.LocalAppDisplay
@@ -137,6 +143,7 @@ internal fun EntryEditScreen(
             onPresetChosen = { processor.action(EntryEditAction.PresetChosen(it)) },
             onCreatePreset = { processor.action(EntryEditAction.CreatePreset) },
             onKeepHidden = { processor.action(EntryEditAction.KeepHidden) },
+            onPhoneCountryChosen = { processor.action(EntryEditAction.PhoneCountryChosen(it)) },
         )
     }
 }
@@ -177,9 +184,39 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         )
     }
 
+    // A field of the preset of the type "phone" - in the entry, as the file has it (pass-docs, Step 77)
+    @Composable
+    fun PresetPhone(key: String, region: String) {
+        val private = state.protection.protects(key)
+        val shown = key in state.shownKeys
+        val digits = LocalPhoneNumbers.current.digits(content.value(key), region)
+        PhoneField(
+            prefix = phonePrefix(region),
+            digits = digits,
+            onDigitsChange = { action(EntryEditAction.PhoneDigitsChanged(PhoneTarget.Preset(key), it)) },
+            format = rememberPhoneFormat(region),
+            onPrefixClick = { action(EntryEditAction.ChoosePhoneCountry(PhoneTarget.Preset(key))) },
+            label = fieldLabel(key),
+            modifier = Modifier.fillMaxWidth(),
+            hint = phoneHint(region, digits),
+            enabled = enabled,
+            hidden = private && !shown,
+            secret = private,
+            actions = if (private) {
+                { VisibilityToggle(visible = shown, onToggle = { action(EntryEditAction.ToggleKey(key)) }, enabled = enabled) }
+            } else {
+                null
+            },
+        )
+    }
+
     @Composable
     fun PresetInput(field: PresetField) {
-        if (field.key == StandardPreset.PASSWORD) {
+        val inEntry = content.presetFields.first { it.key == field.key }
+        val phoneRegion = state.regionOf(inEntry)
+        if (FieldType.of(inEntry.type) == FieldType.PHONE && phoneRegion != null) {
+            PresetPhone(field.key, phoneRegion)
+        } else if (field.key == StandardPreset.PASSWORD) {
             PasswordField(
                 value = content.value(field.key),
                 onValueChange = { action(EntryEditAction.ValueChanged(field.key, it)) },
@@ -245,6 +282,9 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
                 onToggleShown = { action(EntryEditAction.ToggleOwn(index)) },
                 onEdit = { action(EntryEditAction.EditField(index)) },
                 onDelete = { action(EntryEditAction.DeleteField(index)) },
+                phoneRegion = state.regionOf(field),
+                onPhoneDigitsChange = { action(EntryEditAction.PhoneDigitsChanged(PhoneTarget.Own(index), it)) },
+                onPhonePrefixClick = { action(EntryEditAction.ChoosePhoneCountry(PhoneTarget.Own(index))) },
             )
         }
 

@@ -11,6 +11,9 @@ import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.FieldType
+import ru.kino.dev.core.phone.FakePhoneNumbers
+import ru.kino.dev.core.phone.PhoneCountry
+import ru.kino.dev.core.phone.PhoneDefaults
 import ru.kino.dev.core.preset.CustomPreset
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.PresetId
@@ -66,6 +69,8 @@ class EntryEditProcessorTest {
     private val log = RecordingLog()
     private val settings = FakeEntrySettingsRepository()
     private val trash = FakeTrashRepository()
+    private val phones = FakePhoneNumbers()
+    private val phoneDefaults = PhoneDefaults { "RU" }
 
     // Groups
 
@@ -703,6 +708,82 @@ class EntryEditProcessorTest {
         assertNull(state.content?.ownFields?.last()?.type)
     }
 
+    // A phone field (pass-docs, Step 77) - the country by default here is RU
+
+    @Test
+    fun `a phone field added takes the country by default`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.AddField,
+            EntryEditAction.DialogNameChanged("Phone"),
+            EntryEditAction.DialogTypeChanged(FieldType.PHONE),
+            EntryEditAction.DialogConfirm,
+        )
+
+        assertEquals(field("Phone", "", type = "phone:RU"), state.content?.ownFields?.last())
+    }
+
+    @Test
+    fun `the countries of the phone fields and the one by default are read ahead`() = runTest {
+        editing(entryId = phoneEntry())
+
+        assertEquals(setOf("KZ", "RU"), phones.prepared.toSet())
+    }
+
+    @Test
+    fun `digits typed are kept in E164 of the country of the field`() = runTest {
+        val (state, _) = editing(EntryEditAction.PhoneDigitsChanged(PhoneTarget.Own(0), "7011112233"), entryId = phoneEntry())
+
+        assertEquals(field("Phone", "+77011112233", type = "phone:KZ"), state.content?.ownFields?.get(0))
+        assertTrue(state.changed)
+    }
+
+    @Test
+    fun `the prefix asks for the country, the one of the field chosen`() = runTest {
+        val (state, _) = editing(EntryEditAction.ChoosePhoneCountry(PhoneTarget.Own(0)), entryId = phoneEntry())
+
+        val dialog = state.dialog as EntryEditDialog.PhoneCountries
+        assertEquals("KZ", dialog.selected)
+        assertEquals(PhoneCountry("NL", 31), dialog.countries.last())
+    }
+
+    @Test
+    fun `another country keeps the digits of the number, the calling code changed`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.ChoosePhoneCountry(PhoneTarget.Own(0)),
+            EntryEditAction.PhoneCountryChosen("NL"),
+            entryId = phoneEntry(),
+        )
+
+        assertEquals(field("Phone", "+317011234567", type = "phone:NL"), state.content?.ownFields?.get(0))
+        assertNull(state.dialog)
+        assertTrue("NL" in phones.prepared)
+    }
+
+    @Test
+    fun `a phone field made text again loses its number`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.EditField(0),
+            EntryEditAction.DialogTypeChanged(FieldType.TEXT),
+            EntryEditAction.DialogConfirm,
+            entryId = phoneEntry(),
+        )
+
+        assertEquals(field("Phone", ""), state.content?.ownFields?.get(0))
+    }
+
+    @Test
+    fun `phone picked again keeps the country and the number`() = runTest {
+        val (state, _) = editing(
+            EntryEditAction.EditField(0),
+            EntryEditAction.DialogTypeChanged(FieldType.PHONE),
+            EntryEditAction.DialogConfirm,
+            entryId = phoneEntry(),
+        )
+
+        assertEquals(field("Phone", "+77011234567", type = "phone:KZ"), state.content?.ownFields?.get(0))
+        assertFalse(state.changed)
+    }
+
     @Test
     fun `delete asks first, naming the field`() = runTest {
         val (state, _) = editing(EntryEditAction.DeleteField(0))
@@ -859,6 +940,18 @@ class EntryEditProcessorTest {
     private suspend fun TestScope.adding(name: String) =
         editing(EntryEditAction.AddField, EntryEditAction.DialogNameChanged(name), EntryEditAction.DialogConfirm)
 
+    /** An entry with an own phone field of Kazakhstan; its id. */
+    private fun phoneEntry(): String = entries.add(
+        "phone",
+        group,
+        listOf(
+            field(StandardPreset.TITLE, "Bank"),
+            field(StandardPreset.USER_NAME, "me"),
+            field(StandardPreset.PASSWORD, "secret", protected = true),
+            field("Phone", "+77011234567", type = "phone:KZ"),
+        ),
+    ).value
+
     /** An entry with an own field of a type this app does not know; its id. */
     private fun cardEntry(): String = entries.add(
         "typed",
@@ -915,7 +1008,21 @@ class EntryEditProcessorTest {
         initial: EntryEditState? = null,
     ): Pair<EntryEditState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryEditProcessor(DB, groupId, entryId, opener, settings, groups, EntryEditor(entries, opener, settings, database), trash, presets, navigator, log)
+        val processor = EntryEditProcessor(
+            DB,
+            groupId,
+            entryId,
+            opener,
+            settings,
+            groups,
+            EntryEditor(entries, opener, settings, database),
+            trash,
+            presets,
+            phones,
+            phoneDefaults,
+            navigator,
+            log,
+        )
 
         processor.testWithInternalState(this, initial) {
             if (initial == null) runOnCreate().join()

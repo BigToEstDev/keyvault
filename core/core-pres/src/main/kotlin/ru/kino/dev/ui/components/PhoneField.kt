@@ -29,7 +29,8 @@ import ru.kino.dev.core.pres.R
  *
  * @param prefix the calling code of the country, as it is shown - `+7`
  * @param format the [digits] grouped - see `PhoneNumbers.formatNational`
- * @param hint under the field, not an error - a number that is not of its country is kept all the same
+ * @param error marks the field as wrong - its name, say; [hint] - not an error: a number that is not of its country
+ *   is kept all the same
  */
 @Composable
 fun PhoneField(
@@ -40,6 +41,7 @@ fun PhoneField(
     onPrefixClick: () -> Unit,
     label: String,
     modifier: Modifier = Modifier,
+    error: String? = null,
     hint: String? = null,
     enabled: Boolean = true,
     hidden: Boolean = false,
@@ -52,6 +54,7 @@ fun PhoneField(
         onValueChange = { typed -> onDigitsChange(typed.filter(Char::isDigit)) },
         label = label,
         modifier = modifier,
+        error = error,
         hint = hint,
         enabled = enabled,
         hidden = hidden,
