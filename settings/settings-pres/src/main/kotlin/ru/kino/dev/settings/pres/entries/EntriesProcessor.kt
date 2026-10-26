@@ -5,7 +5,6 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.io.IOException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -14,6 +13,9 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.core.DatabaseEntries
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.HistoryLimits
+import ru.kino.dev.core.phone.PhoneDefaults
+import ru.kino.dev.core.phone.PhoneNumbers
+import ru.kino.dev.core.phone.PhoneSettingsRepository
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
@@ -22,6 +24,7 @@ import ru.kino.dev.vault.entries.EntrySettingsEditor
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entries.trims
+import java.io.IOException
 
 /**
  * @param entries the settings of the entries; null until read - the screen is a skeleton meanwhile
@@ -30,6 +33,7 @@ import ru.kino.dev.vault.entries.trims
  * @param choosing the wheel of a limit, while open
  * @param trimming "trim the history?", while asked
  * @param saving the part written into the file - every row waits, that one shows progress
+ * @param phone the prefix of a new phone field; null until read (pass-docs, Step 77)
  * @param message for the snackbar, until it takes it
  */
 data class EntriesState(
@@ -39,6 +43,7 @@ data class EntriesState(
     val choosing: HistoryLimit? = null,
     val trimming: TrimDialog? = null,
     val saving: EntriesPart? = null,
+    val phone: PhonePrefix? = null,
     val message: EntriesMessage? = null,
 )
 
@@ -58,6 +63,9 @@ class EntriesProcessor @AssistedInject constructor(
     private val settings: EntrySettingsRepository,
     private val editor: EntrySettingsEditor,
     private val appearance: AppearanceRepository,
+    private val phoneSettings: PhoneSettingsRepository,
+    private val phoneDefaults: PhoneDefaults,
+    private val phones: PhoneNumbers,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntriesState, EntriesState, Nothing> {
@@ -110,11 +118,36 @@ class EntriesProcessor @AssistedInject constructor(
 
             EntriesAction.TrimDismiss -> reduce { state.copy(trimming = null) }
 
+            is EntriesAction.RememberPrefix -> state.phone?.let { phone ->
+                if (saved { phoneSettings.saveRememberPrefix(action.on) }) {
+                    val region = phoneDefaults.region()
+                    phones.prepare(listOf(region))
+                    reduce { state.copy(phone = phone.copy(remember = action.on, region = region)) }
+                }
+            }
+
+            EntriesAction.ChoosePrefix -> state.phone?.let { phone ->
+                if (phone.remember) {
+                    val countries = phones.countries()
+                    reduce { state.copy(phone = phone.copy(countries = countries)) }
+                }
+            }
+
+            is EntriesAction.PrefixChosen -> state.phone?.let { phone ->
+                phones.prepare(listOf(action.region))
+                if (saved { phoneSettings.savePrefixRegion(action.region) }) {
+                    reduce { state.copy(phone = phone.copy(region = action.region, countries = null)) }
+                }
+            }
+
+            EntriesAction.DismissPrefix -> state.phone?.let { reduce { state.copy(phone = it.copy(countries = null)) } }
+
             EntriesAction.MessageShown -> reduce { state.copy(message = null) }
         }
     }
 
     private suspend fun Syntax<EntriesState, Nothing>.load() {
+        loadPhone()
         try {
             val entries = settings.read(dbKey)
             reduce {
@@ -127,6 +160,24 @@ class EntriesProcessor @AssistedInject constructor(
         } catch (failure: EntrySettingsFailure) {
             failed(failure)
         }
+    }
+
+    // The prefix of the app: read whatever the database does (pass-docs, Step 77)
+    private suspend fun Syntax<EntriesState, Nothing>.loadPhone() {
+        val region = phoneDefaults.region()
+        phones.prepare(listOf(region))
+        val remember = phoneSettings.rememberPrefix.first()
+        reduce { state.copy(phone = PhonePrefix(remember, region)) }
+    }
+
+    // A setting of the app kept; not written - the snackbar says so, the screen shows it as it was
+    private suspend fun Syntax<EntriesState, Nothing>.saved(save: suspend () -> Unit): Boolean = try {
+        save()
+        true
+    } catch (e: IOException) {
+        log.unexpected(TAG, e)
+        reduce { state.copy(message = EntriesMessage.Failed) }
+        false
     }
 
     private suspend fun Syntax<EntriesState, Nothing>.setProtection(protection: FieldProtection) {

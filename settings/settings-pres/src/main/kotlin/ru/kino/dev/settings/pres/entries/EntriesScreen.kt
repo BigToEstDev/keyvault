@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import java.text.NumberFormat
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.DatabaseEntries
 import ru.kino.dev.core.FieldProtection
@@ -45,7 +44,11 @@ import ru.kino.dev.ui.components.SwitchRow
 import ru.kino.dev.ui.components.ValueRow
 import ru.kino.dev.ui.components.WheelPickerDialog
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.phone.PhoneCountryDialog
+import ru.kino.dev.ui.phone.phoneCountryName
+import ru.kino.dev.ui.phone.phonePrefix
 import ru.kino.dev.ui.preset.fieldLabel
+import java.text.NumberFormat
 
 /**
  * The entries of the database: the fields hidden on every entry, how much history an entry keeps (pass-docs,
@@ -99,6 +102,7 @@ internal fun EntriesScreen(
                 } else {
                     protectionRows(entries.protection, state.saving, processor::action)
                     historyRows(entries, state.saving, processor::action)
+                    state.phone?.let { phoneRows(it, processor::action) }
                 }
             }
         }
@@ -166,6 +170,38 @@ private fun LazyListScope.historyRows(
             onLimit = { action(EntriesAction.LimitSize(it)) },
             onChoose = { action(EntriesAction.Choose(HistoryLimit.Size)) },
         )
+    }
+}
+
+/**
+ * The prefix of a new phone field (pass-docs, Step 77, decision 6): the switch, and under it - only while the prefix
+ * is remembered - the country, as the limits of the history show their values.
+ */
+private fun LazyListScope.phoneRows(phone: PhonePrefix, action: (EntriesAction) -> Unit) {
+    item(key = "phone") {
+        SettingsSectionHeader(title = stringResource(R.string.settings_phone_group), top = 8.dp)
+    }
+    item(key = "prefix") {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column {
+                SwitchRow(
+                    title = stringResource(R.string.settings_phone_remember),
+                    checked = phone.remember,
+                    onCheckedChange = { action(EntriesAction.RememberPrefix(it)) },
+                )
+                AnimatedVisibility(
+                    visible = phone.remember,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut(),
+                ) {
+                    ValueRow(
+                        title = stringResource(R.string.settings_phone_prefix),
+                        value = "${phonePrefix(phone.region)} ${phoneCountryName(phone.region)}",
+                        onClick = { action(EntriesAction.ChoosePrefix) },
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -248,6 +284,15 @@ private fun Dialogs(state: EntriesState, action: (EntriesAction) -> Unit) {
         }
 
         null -> Unit
+    }
+
+    state.phone?.countries?.let { countries ->
+        PhoneCountryDialog(
+            countries = countries,
+            selected = state.phone.region,
+            onChoose = { action(EntriesAction.PrefixChosen(it)) },
+            onClose = { action(EntriesAction.DismissPrefix) },
+        )
     }
 
     if (state.trimming != null) {

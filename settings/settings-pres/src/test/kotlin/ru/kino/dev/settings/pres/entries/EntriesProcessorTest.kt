@@ -1,14 +1,18 @@
 package ru.kino.dev.settings.pres.entries
 
-import java.io.IOException
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.HistoryLimits
+import ru.kino.dev.core.phone.FakePhoneNumbers
+import ru.kino.dev.core.phone.FakePhoneSettingsRepository
+import ru.kino.dev.core.phone.PhoneDefaults
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.settings.appearance.FakeAppearanceRepository
 import ru.kino.dev.settings.pres.testing.RecordingLog
@@ -17,6 +21,7 @@ import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entries.EntrySettingsEditor
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
+import java.io.IOException
 
 class EntriesProcessorTest {
 
@@ -24,6 +29,8 @@ class EntriesProcessorTest {
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
     private var appearance = FakeAppearanceRepository(initialUserNameInList = true)
+    private val phoneSettings = FakePhoneSettingsRepository()
+    private val phones = FakePhoneNumbers()
 
     @Test
     fun `the screen shown reads the settings`() = runTest {
@@ -191,10 +198,56 @@ class EntriesProcessorTest {
         assertEquals(51, HistoryChoices.items(10).size)
     }
 
+    // The prefix of a new phone field (pass-docs, Step 77) - the device here is of NL
+
+    @Test
+    fun `the prefix is read - not remembered, of the device`() = runTest {
+        val (state, _) = perform(EntriesAction.Load)
+
+        assertEquals(PhonePrefix(remember = false, region = "NL"), state.phone)
+        assertEquals(listOf("NL"), phones.prepared)
+    }
+
+    @Test
+    fun `remembering the prefix is kept`() = runTest {
+        perform(EntriesAction.Load, EntriesAction.RememberPrefix(true))
+
+        assertTrue(phoneSettings.rememberPrefix.first())
+    }
+
+    @Test
+    fun `the prefix asks for the country while it is remembered`() = runTest {
+        phoneSettings.saveRememberPrefix(true)
+
+        val (state, _) = perform(EntriesAction.Load, EntriesAction.ChoosePrefix)
+
+        assertEquals(phones.countries(), state.phone?.countries)
+    }
+
+    @Test
+    fun `the country chosen is kept and shown, the choice closed`() = runTest {
+        phoneSettings.saveRememberPrefix(true)
+
+        val (state, _) = perform(EntriesAction.Load, EntriesAction.ChoosePrefix, EntriesAction.PrefixChosen("KZ"))
+
+        assertEquals(PhonePrefix(remember = true, region = "KZ"), state.phone)
+        assertEquals("KZ", phoneSettings.prefixRegion.first())
+    }
+
     /** Runs [steps] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(vararg steps: Any): Pair<EntriesState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntriesProcessor(DB, settings, EntrySettingsEditor(settings, database), appearance, navigator, log)
+        val processor = EntriesProcessor(
+            DB,
+            settings,
+            EntrySettingsEditor(settings, database),
+            appearance,
+            phoneSettings,
+            PhoneDefaults { phoneSettings.prefixRegion.first().takeIf { phoneSettings.rememberPrefix.first() } ?: "NL" },
+            phones,
+            navigator,
+            log,
+        )
 
         processor.testWithInternalState(this) {
             steps.forEach { step ->
