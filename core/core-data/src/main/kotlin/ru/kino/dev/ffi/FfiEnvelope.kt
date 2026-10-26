@@ -336,6 +336,9 @@ internal data class KeyValueDataDto(
     val value: String? = null,
     val protected: Boolean,
     @SerialName("data_type") val dataType: String,
+    // The type the app gives the field - a phone, ...; null - text. Kept by the core in the entry's CustomData
+    // as it comes, one this app does not know too (pass-docs, Step 76)
+    @SerialName("field_type") val fieldType: String? = null,
     @SerialName("password_score") val passwordScore: JsonElement? = null,
     @SerialName("current_opt_token") val currentOtpToken: JsonElement? = null,
 )
