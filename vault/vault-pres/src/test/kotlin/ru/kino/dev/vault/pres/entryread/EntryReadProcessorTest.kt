@@ -11,6 +11,7 @@ import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.FieldProtection
+import ru.kino.dev.core.phone.FakePhoneNumbers
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
@@ -321,7 +322,7 @@ class EntryReadProcessorTest {
     ): Pair<EntryReadState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val editor = EntryEditor(entries, opener, settings, database)
-        val processor = EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, trash, autoLock, navigator, log)
+        val processor = EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, trash, autoLock, FakePhoneNumbers(), navigator, log)
 
         processor.testWithInternalState(this, initial) {
             actions.forEach { containerHost.action(it).join() }

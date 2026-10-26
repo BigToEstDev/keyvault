@@ -11,8 +11,8 @@ import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.FieldDialog
 import ru.kino.dev.ui.phone.PhoneCountryDialog
-import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.entry.NameProblem
+import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.pres.entryedit.EntryEditDialog
 
 /**

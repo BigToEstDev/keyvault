@@ -1,6 +1,5 @@
 package ru.kino.dev.vault.pres.trashentry
 
-import java.io.IOException
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -9,6 +8,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
+import ru.kino.dev.core.phone.FakePhoneNumbers
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
@@ -28,6 +28,7 @@ import ru.kino.dev.vault.trash.FakeTrashRepository
 import ru.kino.dev.vault.trash.TrashEditor
 import ru.kino.dev.vault.trash.TrashEntry
 import ru.kino.dev.vault.trash.TrashFailure
+import java.io.IOException
 
 class TrashEntryProcessorTest {
 
@@ -153,6 +154,7 @@ class TrashEntryProcessorTest {
             trash,
             TrashEditor(trash, database),
             groups,
+            FakePhoneNumbers(),
             navigator,
             log,
         )

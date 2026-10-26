@@ -15,8 +15,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import ru.kino.dev.core.phone.PhoneNumbers
@@ -27,11 +27,11 @@ import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
 import ru.kino.dev.settings.privacy.PrivacySettingsRepository
+import ru.kino.dev.ui.phone.LocalPhoneNumbers
 import ru.kino.dev.ui.theme.AppLocale
 import ru.kino.dev.ui.theme.KeyVaultTheme
 import ru.kino.dev.ui.theme.LocalAppDisplay
 import ru.kino.dev.ui.theme.LocaleResources
-import ru.kino.dev.ui.phone.LocalPhoneNumbers
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.welcome.pres.start.WelcomeStartResolver
 import java.util.Locale

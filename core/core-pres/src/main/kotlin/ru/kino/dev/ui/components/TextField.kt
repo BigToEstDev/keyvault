@@ -26,8 +26,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.core.view.doOnAttach
-import ru.kino.dev.ui.theme.DISABLED_ALPHA
 import ru.kino.dev.ui.theme.AppDisplay
+import ru.kino.dev.ui.theme.DISABLED_ALPHA
 import ru.kino.dev.ui.theme.LocalAppColors
 import ru.kino.dev.ui.theme.LocalAppDisplay
 

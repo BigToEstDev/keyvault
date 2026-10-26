@@ -10,6 +10,7 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.core.FieldProtection
+import ru.kino.dev.core.phone.PhoneNumbers
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
@@ -20,6 +21,7 @@ import ru.kino.dev.vault.entry.OpenedEntry
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupRepository
+import ru.kino.dev.vault.pres.common.prepareFor
 import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.common.toggled
 import ru.kino.dev.vault.pres.trash.TrashDialog
@@ -71,6 +73,7 @@ class TrashEntryProcessor @AssistedInject constructor(
     private val trash: TrashRepository,
     private val editor: TrashEditor,
     private val groups: GroupRepository,
+    private val phones: PhoneNumbers,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<TrashEntryState, TrashEntryState, Nothing> {
@@ -127,6 +130,7 @@ class TrashEntryProcessor @AssistedInject constructor(
             }
             val entry = opener.open(dbKey, id)
             val protection = settings.protectionOrDefault(dbKey, log, TAG)
+            phones.prepareFor(entry.content)
             reduce { state.copy(entry = entry, trashed = trashed, protection = protection) }
         } catch (_: EntryFailure.EntryNotFound) {
             navigator.navigate(MviNavEvent.NavigateBack)
