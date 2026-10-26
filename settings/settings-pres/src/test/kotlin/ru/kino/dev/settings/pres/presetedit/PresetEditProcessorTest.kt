@@ -9,6 +9,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.orbitmvi.orbit.test.testWithInternalState
+import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.preset.CustomPreset
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.FakePresetRepository
@@ -58,7 +59,7 @@ class PresetEditProcessorTest {
             PresetEditAction.DialogConfirm,
         )
 
-        assertEquals(PresetEditDialog.AddField(0, "password", FieldNameProblem.TAKEN), state.dialog)
+        assertEquals(PresetEditDialog.AddField(0, "password", problem = FieldNameProblem.TAKEN), state.dialog)
     }
 
     @Test
@@ -79,12 +80,82 @@ class PresetEditProcessorTest {
         val (state, _) = perform(
             *addField(0, "PIN"),
             *addField(0, "Bank"),
-            PresetEditAction.RenameField(FieldPosition(0, 0)),
+            PresetEditAction.EditField(FieldPosition(0, 0)),
             PresetEditAction.DialogNameChanged("pin code"),
             PresetEditAction.DialogConfirm,
         )
 
         assertEquals(listOf(listOf("pin code", "Bank")), state.cards)
+    }
+
+    @Test
+    fun `a field added is not protected unless switched`() = runTest {
+        val (state, _) = perform(*addField(0, "PIN"))
+
+        assertTrue(state.protectedKeys.isEmpty())
+    }
+
+    @Test
+    fun `a field added switched to protected is protected`() = runTest {
+        val (state, _) = perform(*addField(0, "PIN", protected = true))
+
+        assertEquals(setOf("PIN"), state.protectedKeys)
+        assertTrue(state.changed)
+    }
+
+    @Test
+    fun `edit opens with the name and the protection of the field`() = runTest {
+        val (state, _) = perform(*addField(0, "PIN", protected = true), PresetEditAction.EditField(FieldPosition(0, 0)))
+
+        assertEquals(PresetEditDialog.EditField(FieldPosition(0, 0), "PIN", protected = true, type = null), state.dialog)
+    }
+
+    @Test
+    fun `a field renamed keeps its protection under the new name`() = runTest {
+        val (state, _) = perform(
+            *addField(0, "PIN", protected = true),
+            PresetEditAction.EditField(FieldPosition(0, 0)),
+            PresetEditAction.DialogNameChanged("Code"),
+            PresetEditAction.DialogConfirm,
+        )
+
+        assertEquals(setOf("Code"), state.protectedKeys)
+    }
+
+    @Test
+    fun `a field edited takes the protection switched`() = runTest {
+        val (state, _) = perform(
+            *addField(0, "PIN", protected = true),
+            PresetEditAction.EditField(FieldPosition(0, 0)),
+            PresetEditAction.DialogProtectedChanged(false),
+            PresetEditAction.DialogConfirm,
+        )
+
+        assertEquals(listOf(listOf("PIN")), state.cards)
+        assertTrue(state.protectedKeys.isEmpty())
+    }
+
+    @Test
+    fun `a field deleted takes its protection with it`() = runTest {
+        val (state, _) = perform(
+            *addField(0, "PIN", protected = true),
+            PresetEditAction.DeleteField(FieldPosition(0, 0)),
+            PresetEditAction.DialogConfirm,
+        )
+
+        assertTrue(state.protectedKeys.isEmpty())
+    }
+
+    @Test
+    fun `a card deleted takes the protection of its fields with it`() = runTest {
+        val (state, _) = perform(
+            PresetEditAction.AddCard,
+            *addField(1, "CVC", protected = true),
+            PresetEditAction.DeleteCard(1),
+            PresetEditAction.DialogConfirm,
+        )
+
+        assertTrue(state.protectedKeys.isEmpty())
     }
 
     @Test
@@ -296,7 +367,7 @@ class PresetEditProcessorTest {
 
         val (_, events) = perform(
             PresetEditAction.Load,
-            PresetEditAction.RenameField(FieldPosition(0, 0)),
+            PresetEditAction.EditField(FieldPosition(0, 0)),
             PresetEditAction.DialogNameChanged("Issuer"),
             PresetEditAction.DialogConfirm,
             PresetEditAction.Save(STANDARD),
@@ -306,6 +377,94 @@ class PresetEditProcessorTest {
 
         assertEquals(listOf(listOf("Issuer"), listOf("CVC")), CustomPreset.cards(repository.presets.first().single()))
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `an edit reads the protection of the fields, nothing changed`() = runTest {
+        repository.save(CARD_PROTECTED)
+
+        val (state, _) = perform(PresetEditAction.Load, presetId = CARD_ID)
+
+        assertEquals(setOf("CVC"), state.protectedKeys)
+        assertFalse(state.changed)
+    }
+
+    @Test
+    fun `an edit that switches the protection saves it without asking - no field is dropped`() = runTest {
+        repository.save(CARD)
+
+        val (_, events) = perform(
+            PresetEditAction.Load,
+            PresetEditAction.EditField(FieldPosition(1, 0)),
+            PresetEditAction.DialogProtectedChanged(true),
+            PresetEditAction.DialogConfirm,
+            PresetEditAction.Save(STANDARD),
+            presetId = CARD_ID,
+        )
+
+        assertEquals(setOf("CVC"), CustomPreset.protectedKeys(repository.presets.first().single()))
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    // The types of the fields (pass-docs, Step 75, item 3) - "card" is one this app does not know: a newer client wrote it
+
+    @Test
+    fun `an edit reads the types of the fields, nothing changed`() = runTest {
+        repository.save(CARD_TYPED)
+
+        val (state, _) = perform(PresetEditAction.Load, PresetEditAction.EditField(FieldPosition(1, 0)), presetId = CARD_ID)
+
+        assertEquals(mapOf("CVC" to "card"), state.fieldTypes)
+        assertEquals(PresetEditDialog.EditField(FieldPosition(1, 0), "CVC", protected = false, type = "card"), state.dialog)
+        assertFalse(state.changed)
+    }
+
+    @Test
+    fun `a field renamed keeps its type under the new name, and it is saved`() = runTest {
+        repository.save(CARD_TYPED)
+
+        perform(
+            PresetEditAction.Load,
+            PresetEditAction.EditField(FieldPosition(1, 0)),
+            PresetEditAction.DialogNameChanged("Code"),
+            PresetEditAction.DialogConfirm,
+            PresetEditAction.Save(STANDARD),
+            // The old name is dropped from the preset: it asks first
+            PresetEditAction.DialogConfirm,
+            presetId = CARD_ID,
+        )
+
+        assertEquals(mapOf("Code" to "card"), CustomPreset.fieldTypes(repository.presets.first().single()))
+    }
+
+    @Test
+    fun `text picked takes the type off the field and is a change`() = runTest {
+        repository.save(CARD_TYPED)
+
+        val (state, _) = perform(
+            PresetEditAction.Load,
+            PresetEditAction.EditField(FieldPosition(1, 0)),
+            PresetEditAction.DialogTypeChanged(FieldType.TEXT),
+            PresetEditAction.DialogConfirm,
+            presetId = CARD_ID,
+        )
+
+        assertTrue(state.fieldTypes.isEmpty())
+        assertTrue(state.changed)
+    }
+
+    @Test
+    fun `a deleted card takes the types of its fields`() = runTest {
+        repository.save(CARD_TYPED)
+
+        val (state, _) = perform(
+            PresetEditAction.Load,
+            PresetEditAction.DeleteCard(1),
+            PresetEditAction.DialogConfirm,
+            presetId = CARD_ID,
+        )
+
+        assertTrue(state.fieldTypes.isEmpty())
     }
 
     @Test
@@ -321,9 +480,10 @@ class PresetEditProcessorTest {
         assertEquals(0, log.logged.size)
     }
 
-    private fun addField(card: Int, name: String) = arrayOf(
+    private fun addField(card: Int, name: String, protected: Boolean = false) = arrayOf(
         PresetEditAction.AddField(card),
         PresetEditAction.DialogNameChanged(name),
+        PresetEditAction.DialogProtectedChanged(protected),
         PresetEditAction.DialogConfirm,
     )
 
@@ -348,5 +508,12 @@ class PresetEditProcessorTest {
         const val STANDARD = "Стандарт"
         const val CARD_ID = "card"
         val CARD = CustomPreset.of(PresetId(CARD_ID), "Card", listOf(listOf("Bank"), listOf("CVC")))
+        val CARD_PROTECTED = CustomPreset.of(PresetId(CARD_ID), "Card", listOf(listOf("Bank"), listOf("CVC")), setOf("CVC"))
+        val CARD_TYPED = CustomPreset.of(
+            PresetId(CARD_ID),
+            "Card",
+            listOf(listOf("Bank"), listOf("CVC")),
+            fieldTypes = mapOf("CVC" to "card"),
+        )
     }
 }

@@ -26,7 +26,7 @@ internal class EntryHistoryRepositoryImpl @Inject constructor(
         val version = core.historyVersion(dbKey, entryId.value, index)
         EntryRecord(
             groupId = GroupId(version.groupId),
-            fields = version.fields.map { EntryField(key = it.key, value = it.value, protected = it.protected) },
+            fields = version.fields.map { EntryField(key = it.key, value = it.value, protected = it.protected, type = it.type) },
             times = EntryTimes(created = version.createdAt, modified = version.modifiedAt),
         )
     }

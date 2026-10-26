@@ -130,6 +130,8 @@ internal fun EntryEditScreen(
         EntryEditDialogs(
             dialog = state.dialog,
             onNameChange = { processor.action(EntryEditAction.DialogNameChanged(it)) },
+            onProtectedChange = { processor.action(EntryEditAction.DialogProtectedChanged(it)) },
+            onTypeChange = { processor.action(EntryEditAction.DialogTypeChanged(it)) },
             onConfirm = { processor.action(EntryEditAction.DialogConfirm) },
             onDismiss = { processor.action(EntryEditAction.DialogDismiss) },
             onPresetChosen = { processor.action(EntryEditAction.PresetChosen(it)) },
@@ -151,6 +153,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         // Private by the database: behind dots with the eye, as the password (pass-docs, Step 65)
         val private = state.protection.protects(key)
         val shown = key in state.shownKeys
+        val hidden = private && !shown
         TextField(
             value = content.value(key),
             onValueChange = { action(EntryEditAction.ValueChanged(key, it)) },
@@ -159,10 +162,12 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             required = field.required,
             error = if (state.isMissing(key)) missing else null,
             enabled = enabled,
-            singleLine = !notes,
+            // A field the person named wraps and grows as notes do, from one line; behind dots - in one line
+            // (pass-docs, Step 75, item 2)
+            singleLine = !notes && (key in ONE_LINE_KEYS || hidden),
             minLines = if (notes) NOTES_LINES else 1,
             keyboardOptions = keyboardFor(key),
-            hidden = private && !shown,
+            hidden = hidden,
             secret = private,
             actions = if (private) {
                 { VisibilityToggle(visible = shown, onToggle = { action(EntryEditAction.ToggleKey(key)) }, enabled = enabled) }
@@ -238,7 +243,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
                 enabled = enabled,
                 onValueChange = { action(EntryEditAction.OwnValueChanged(index, it)) },
                 onToggleShown = { action(EntryEditAction.ToggleOwn(index)) },
-                onRename = { action(EntryEditAction.RenameField(index)) },
+                onEdit = { action(EntryEditAction.EditField(index)) },
                 onDelete = { action(EntryEditAction.DeleteField(index)) },
             )
         }
@@ -257,7 +262,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
 
 /**
  * The keyboard of a field of a preset: the standard ones each their own, a field the person named plain
- * text. Notes - the last of every preset - leave "next" to the line break.
+ * text. Notes and a field the person named - both of many lines - leave "next" to the line break.
  */
 private fun keyboardFor(key: String): KeyboardOptions = when (key) {
     StandardPreset.TITLE, StandardPreset.SERVICE ->
@@ -266,8 +271,11 @@ private fun keyboardFor(key: String): KeyboardOptions = when (key) {
     StandardPreset.URL ->
         KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false, imeAction = ImeAction.Next)
     StandardPreset.NOTES -> KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
-    else -> KeyboardOptions(imeAction = ImeAction.Next)
+    else -> KeyboardOptions.Default
 }
+
+/** The standard fields of a preset typed in one line; the password has a field of its own. */
+private val ONE_LINE_KEYS = setOf(StandardPreset.TITLE, StandardPreset.USER_NAME, StandardPreset.SERVICE, StandardPreset.URL)
 
 /** Room around the cards; at the bottom - for the fab, so it never covers the last field. */
 private val CONTENT_PADDING = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 96.dp)

@@ -1,5 +1,6 @@
 package ru.kino.dev.ui.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
  * [TextField]
  * @param secret a password rather than a name: a [PasswordField] with its eye, no capitals, no corrections
  * (pass-docs, Step 59, item 7)
+ * @param below what goes under the field - a setting of what is named (pass-docs, Step 75)
  */
 @Composable
 fun TextInputDialog(
@@ -49,6 +51,7 @@ fun TextInputDialog(
     error: String? = null,
     loading: Boolean = false,
     secret: Boolean = false,
+    below: (@Composable () -> Unit)? = null,
 ) {
     val focus = remember { FocusRequester() }
     var visible by rememberSaveable { mutableStateOf(false) }
@@ -57,42 +60,45 @@ fun TextInputDialog(
         onDismissRequest = { if (!loading) onDismiss() },
         title = { Text(title) },
         text = {
-            // Here, inside the dialog: it is a window of its own, composed after the caller, and the field
-            // has to exist before it can take focus
-            val keyboard = LocalSoftwareKeyboardController.current
-            LaunchedEffect(Unit) {
-                focus.requestFocus()
-                keyboard?.show()
-            }
-            val modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focus)
-            if (secret) {
-                PasswordField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    label = label,
-                    visible = visible,
-                    onToggleVisible = { visible = !visible },
-                    modifier = modifier,
-                    error = error,
-                    enabled = !loading,
-                    onImeAction = { if (!loading) onConfirm() },
-                )
-            } else {
-                TextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    label = label,
-                    modifier = modifier,
-                    enabled = !loading,
-                    error = error,
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        imeAction = ImeAction.Done,
-                    ),
-                    keyboardActions = KeyboardActions(onDone = { if (!loading) onConfirm() }),
-                )
+            Column {
+                // Here, inside the dialog: it is a window of its own, composed after the caller, and the field
+                // has to exist before it can take focus
+                val keyboard = LocalSoftwareKeyboardController.current
+                LaunchedEffect(Unit) {
+                    focus.requestFocus()
+                    keyboard?.show()
+                }
+                val modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focus)
+                if (secret) {
+                    PasswordField(
+                        value = value,
+                        onValueChange = onValueChange,
+                        label = label,
+                        visible = visible,
+                        onToggleVisible = { visible = !visible },
+                        modifier = modifier,
+                        error = error,
+                        enabled = !loading,
+                        onImeAction = { if (!loading) onConfirm() },
+                    )
+                } else {
+                    TextField(
+                        value = value,
+                        onValueChange = onValueChange,
+                        label = label,
+                        modifier = modifier,
+                        enabled = !loading,
+                        error = error,
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            imeAction = ImeAction.Done,
+                        ),
+                        keyboardActions = KeyboardActions(onDone = { if (!loading) onConfirm() }),
+                    )
+                }
+                below?.invoke()
             }
         },
         confirmButton = {

@@ -3,7 +3,6 @@ package ru.kino.dev.ui.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DriveFileRenameOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -24,18 +23,13 @@ import ru.kino.dev.core.pres.R
 /** One choice of [ItemMenu]: what it says, its icon, what it does. */
 data class MenuItem(val text: String, val icon: ImageVector, val onClick: () -> Unit)
 
-/** "Edit" - a group, an entry, a preset. */
+/** "Edit" - a group, an entry, a preset, a field the person named. */
 @Composable
 fun editMenuItem(onClick: () -> Unit) = MenuItem(stringResource(R.string.action_edit), Icons.Filled.Edit, onClick)
 
 /** "Delete" - a group, an entry, a preset, a field. */
 @Composable
 fun deleteMenuItem(onClick: () -> Unit) = MenuItem(stringResource(R.string.action_delete), Icons.Filled.Delete, onClick)
-
-/** "Rename" - a field the person named. */
-@Composable
-fun renameMenuItem(onClick: () -> Unit) =
-    MenuItem(stringResource(R.string.action_rename), Icons.Filled.DriveFileRenameOutline, onClick)
 
 /**
  * The menu of an item - [items] in their order - under its anchor: a card held long, the button of a top bar,

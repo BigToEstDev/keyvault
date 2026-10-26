@@ -12,9 +12,11 @@ data class EntryFieldData(
     val value: String,
     /** Protected in the file: KeePass protects the password, another program may protect more */
     val protected: Boolean,
+    /** The type the app gives the field as the file holds it - see [FieldType]; null - text */
+    val type: String? = null,
 ) {
     // The value is a secret more often than not: it stays out of logs and crash reports
-    override fun toString(): String = "EntryFieldData(key=$key, protected=$protected)"
+    override fun toString(): String = "EntryFieldData(key=$key, protected=$protected, type=$type)"
 }
 
 /** An entry as its screens read it: where it is, what it holds and when it was made and changed. */

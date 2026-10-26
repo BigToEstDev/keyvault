@@ -59,6 +59,35 @@ class CustomPresetTest {
         assertEquals(cards, CustomPreset.cards(CustomPreset.of(id, "Card", cards)))
     }
 
+    @Test
+    fun `the fields the person made protected are protected, and are built back`() {
+        val preset = CustomPreset.of(id, "Card", listOf(listOf("PIN"), listOf("Number", "CVC")), setOf("PIN", "CVC"))
+
+        assertEquals(listOf(PASSWORD, "PIN", "CVC"), preset.fields.filter { it.protected }.map { it.key })
+        assertEquals(setOf("PIN", "CVC"), CustomPreset.protectedKeys(preset))
+    }
+
+    @Test
+    fun `a protected name in no card is nothing`() {
+        val preset = CustomPreset.of(id, "Card", listOf(listOf("PIN")), setOf("CVC"))
+
+        assertEquals(emptySet<String>(), CustomPreset.protectedKeys(preset))
+    }
+
+    @Test
+    fun `the types of the fields are in the preset, and are built back - a name in no card is nothing`() {
+        val preset = CustomPreset.of(
+            id,
+            "Card",
+            listOf(listOf("PIN"), listOf("Number")),
+            fieldTypes = mapOf("Number" to "card", "CVC" to "card"),
+        )
+
+        assertEquals("card", preset.fields.first { it.key == "Number" }.type)
+        assertEquals(null, preset.fields.first { it.key == "PIN" }.type)
+        assertEquals(mapOf("Number" to "card"), CustomPreset.fieldTypes(preset))
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun `a key twice is no preset`() {
         CustomPreset.of(id, "Card", listOf(listOf("PIN"), listOf("PIN")))
