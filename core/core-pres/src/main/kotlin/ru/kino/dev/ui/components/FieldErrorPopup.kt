@@ -95,16 +95,25 @@ internal fun rememberFieldErrorState(error: String?): FieldErrorState {
  * The bubble is a popup under the field, over whatever is below: the layout does not move when an error comes
  * or goes. It does not take focus - the keyboard stays - and does not close on a tap outside: that tap may be
  * the "!" itself, which would close it and open it again.
+ *
+ * A popup is a window of its own: scrolled with the form, it would not go with the field but stop at the edge of
+ * the screen, the bubbles of several fields one over the other. So it is shown only while the "!" is whole in
+ * sight; cut by the edge of what scrolls even a little, the bubble goes, the "!" stays - and the bubble comes back
+ * with the field (pass-docs, Step 72, item 7).
  */
 @Composable
 internal fun FieldErrorIcon(error: String, state: FieldErrorState) {
     // Under the icon, the popup reaches as far as the window lets it toward the start of the field
     var maxWidthPx by remember { mutableIntStateOf(0) }
+    var inSight by remember { mutableStateOf(true) }
     val layoutDirection = LocalLayoutDirection.current
 
     Box(
         modifier = Modifier.onGloballyPositioned { coordinates ->
+            // Clipped by what scrolls and by every parent: smaller than the button - the field is going out of sight
             val bounds = coordinates.boundsInWindow()
+            inSight = bounds.width >= coordinates.size.width - SIGHT_SLACK &&
+                bounds.height >= coordinates.size.height - SIGHT_SLACK
             val windowWidth = coordinates.findRootCoordinates().size.width
             val room = if (layoutDirection == LayoutDirection.Ltr) bounds.right else windowWidth - bounds.left
             maxWidthPx = room.toInt()
@@ -117,7 +126,7 @@ internal fun FieldErrorIcon(error: String, state: FieldErrorState) {
                 tint = MaterialTheme.colorScheme.error,
             )
         }
-        ErrorBubblePopup(error = error, visible = state.shown, maxWidthPx = maxWidthPx)
+        ErrorBubblePopup(error = error, visible = state.shown && inSight, maxWidthPx = maxWidthPx)
     }
 }
 
@@ -210,4 +219,7 @@ private val TailInsetEnd = 24.dp - TailWidth / 2
 private val BubbleGap = 4.dp
 
 private val WindowMargin = 16.dp
+
+// The bounds are floats; under a pixel of a cut is no cut
+private const val SIGHT_SLACK = 0.5f
 private val MinBubbleWidth = 120.dp
