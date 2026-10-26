@@ -26,6 +26,9 @@ interface PhoneNumbers {
     /** The calling code of the country [region]; null for a code there is no country of. */
     fun callingCode(region: String): Int?
 
+    /** The main country of the calling code [callingCode] - `US` of 1, `RU` of 7; null for a code of no country. */
+    fun mainRegion(callingCode: Int): String?
+
     /**
      * The [digits] of a number of [region] after the calling code, grouped as the country writes them while they
      * are typed; digits the country has no grouping for come as they are.

@@ -72,4 +72,5 @@ fun FieldDialog(
 @Composable
 fun fieldTypeTitle(type: FieldType): String = when (type) {
     FieldType.TEXT -> stringResource(R.string.field_type_text)
+    FieldType.PHONE -> stringResource(R.string.field_type_phone)
 }

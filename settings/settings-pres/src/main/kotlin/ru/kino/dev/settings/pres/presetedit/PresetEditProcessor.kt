@@ -352,11 +352,15 @@ private fun PresetEditDialog.switched(protected: Boolean): PresetEditDialog = wh
 
 private fun Set<String>.with(name: String, protected: Boolean): Set<String> = if (protected) this + name else this - name
 
+// The kind picked again keeps what the type carries - the country of a phone (pass-docs, Step 77)
 private fun PresetEditDialog.typedAs(type: FieldType): PresetEditDialog = when (this) {
-    is PresetEditDialog.AddField -> copy(type = type.key)
-    is PresetEditDialog.EditField -> copy(type = type.key)
+    is PresetEditDialog.AddField -> copy(type = this.type.retyped(type))
+    is PresetEditDialog.EditField -> copy(type = this.type.retyped(type))
     else -> this
 }
+
+// By the key itself: a type this app does not know, shown as text, becomes text when text is picked
+private fun String?.retyped(type: FieldType): String? = if (this?.substringBefore(':') == type.key) this else type.key
 
 // Text is no type: the field is left out
 private fun Map<String, String>.with(name: String, type: String?): Map<String, String> =

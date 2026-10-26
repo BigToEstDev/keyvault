@@ -39,6 +39,9 @@ internal class LibPhoneNumbers @Inject constructor() : PhoneNumbers {
 
     override fun callingCode(region: String): Int? = util.getCountryCodeForRegion(region).takeIf { it != 0 }
 
+    override fun mainRegion(callingCode: Int): String? =
+        util.getRegionCodeForCountryCode(callingCode).takeIf { it != UNKNOWN_REGION && it != NON_GEO_REGION }
+
     override fun formatNational(region: String, digits: String): String {
         val code = callingCode(region) ?: return digits
         if (digits.isEmpty()) return ""
@@ -70,5 +73,11 @@ internal class LibPhoneNumbers @Inject constructor() : PhoneNumbers {
         val prefix = callingCode(region)?.let { "+$it" }
         val rest = if (prefix != null && e164.startsWith(prefix)) e164.removePrefix(prefix) else e164
         return rest.filter(Char::isDigit)
+    }
+
+    private companion object {
+        // What the library answers for a calling code of no country, and for one of numbers of no country
+        const val UNKNOWN_REGION = "ZZ"
+        const val NON_GEO_REGION = "001"
     }
 }

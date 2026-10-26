@@ -523,11 +523,15 @@ private fun EntryEditDialog.switched(protected: Boolean): EntryEditDialog = when
     else -> this
 }
 
+// The kind picked again keeps what the type carries - the country of a phone (pass-docs, Step 77)
 private fun EntryEditDialog.typedAs(type: FieldType): EntryEditDialog = when (this) {
-    is EntryEditDialog.AddField -> copy(type = type.key)
-    is EntryEditDialog.EditField -> copy(type = type.key)
+    is EntryEditDialog.AddField -> copy(type = this.type.retyped(type))
+    is EntryEditDialog.EditField -> copy(type = this.type.retyped(type))
     else -> this
 }
+
+// By the key itself: a type this app does not know, shown as text, becomes text when text is picked
+private fun String?.retyped(type: FieldType): String? = if (this?.substringBefore(':') == type.key) this else type.key
 
 // The value of one type is no value of another: a new type starts the field empty (pass-docs, Step 75, item 3)
 private fun EntryField.edited(name: String, protected: Boolean, type: String?): EntryField =
