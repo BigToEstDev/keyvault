@@ -10,7 +10,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * The models here against the shapes Rust pins in `rust/pass-ffi/contract/`.
+ * The models here against the shapes Rust pins in `pass-rust-core/crates/pass-api/contract/`.
  *
  * A renamed field in the core changes the json and nothing else: Kotlin would keep compiling and fail on
  * a device, on the one screen that reads that field. The Rust test notices that the shape changed; this
@@ -233,7 +233,7 @@ class FfiContractTest {
     private fun contractFile(command: String): File {
         var directory: File? = File(".").absoluteFile
         while (directory != null) {
-            val contract = File(directory, "rust/pass-ffi/contract/$command.json")
+            val contract = File(directory, "pass-rust-core/crates/pass-api/contract/$command.json")
             if (contract.isFile) return contract
             directory = directory.parentFile
         }
