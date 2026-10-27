@@ -5,14 +5,12 @@
 
 use std::sync::Once;
 
-use crate::key_store;
-
 static INIT: Once = Once::new();
 
 pub(crate) fn ensure() {
     INIT.call_once(|| {
         install_logger();
-        key_store::install();
+        pass_api::init();
         log::debug!("pass-ffi initialised");
     });
 }

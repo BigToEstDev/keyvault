@@ -14,29 +14,18 @@ license = "GPL-3.0-only"
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-## The core lives in its own repository, checked out next to pass-app. Moves to git + rev once there
-## is a CI that cannot rely on a sibling directory.
-kdbx-rust-core = { path = "../../../pass-rust-core" }
+## The api of the core - commands, handlers, the envelope - shared with the desktop app. It lives in the
+## core's repository (a workspace), checked out next to pass-app. Moves to git + rev once there is a CI
+## that cannot rely on a sibling directory.
+pass-api = { path = "../../../pass-rust-core/crates/pass-api" }
 
 ## Jni bindings. This crate is the only place in the project allowed to contain unsafe code: the core
-## is #![forbid(unsafe_code)] and cannot host a #[no_mangle] function at all.
+## and pass-api are #![forbid(unsafe_code)] and cannot host a #[no_mangle] function at all.
 jni = "0.21"
 
 ## Wiping buffers that held a password. Already in the tree as a dependency of the core, declared here
 ## because this crate wipes its own copies at the boundary - nothing new is pulled in.
 zeroize = "1"
-
-## The content of a key file travels base64 inside the json arguments (see src/key_file.rs). Already in
-## the tree as a dependency of the core, the same version - nothing new is pulled in.
-base64 = "0.22.1"
-
-## The uuids of groups and entries travel as strings and are parsed by serde before any database is
-## touched. The same version the core already depends on, so cargo resolves it to one crate and the
-## types are the ones the core's signatures ask for.
-uuid = { version = "1.18.1", features = ["serde"] }
-
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
 
 ## The log facade, with the ceiling for release builds compiled in. `release_max_level_warn` makes the
 ## macros below warn expand to nothing when `debug_assertions` are off, so the strings never reach the

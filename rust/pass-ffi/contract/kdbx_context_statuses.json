@@ -1,5 +1,0 @@
-{
-  "last_read_time": "string",
-  "last_write_time": "string",
-  "save_pending": "bool"
-}

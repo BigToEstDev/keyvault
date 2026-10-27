@@ -6,12 +6,13 @@
 //!
 //! What the boundary does and deliberately does not do:
 //!
-//! - it converts strings and catches panics, nothing else. The decisions live in `dispatch`;
+//! - it converts strings and catches panics, nothing else. The decisions live in `pass-api`
+//!   (`pass-rust-core/crates/pass-api`), shared with the desktop app;
 //! - it is synchronous. Argon2 and file io simply block the calling thread, and Kotlin calls from
 //!   `Dispatchers.IO`. No async across the boundary and no callbacks back into Kotlin - a ticking
 //!   coroutine asking for the current totp codes is simpler than a callback from Rust;
 //! - a panic becomes a Java exception rather than a dead process. Ordinary failures are not exceptions:
-//!   they come back inside the json envelope, see `errors`.
+//!   they come back inside the json envelope, see `pass-api`.
 //!
 //! The function names carry the Kotlin package (`ru.kino.dev.ffi.PassFfi`); renaming that
 //! package means renaming these functions. The package must not contain underscores, because jni
@@ -24,38 +25,8 @@ use jni::sys::{jbyteArray, jstring};
 use jni::JNIEnv;
 use zeroize::Zeroize;
 
-mod commands;
-#[cfg(test)]
-mod contract;
-mod dispatch;
-#[cfg(test)]
-mod entry_tests;
-mod errors;
 mod frame;
-#[cfg(test)]
-mod generator_tests;
-#[cfg(test)]
-mod group_tests;
-mod handlers;
-#[cfg(test)]
-mod history_tests;
 mod init;
-#[cfg(test)]
-mod integrity_tests;
-mod key_file;
-mod key_store;
-#[cfg(test)]
-mod lifecycle_tests;
-#[cfg(test)]
-mod otp_tests;
-#[cfg(test)]
-mod search_tests;
-#[cfg(test)]
-mod settings_tests;
-#[cfg(test)]
-mod test_support;
-#[cfg(test)]
-mod trash_tests;
 
 /// Version of this crate plus the time it was built, so a stale `.so` is visible in the log instead of
 /// being debugged for an hour. Logged by the app on start.
@@ -87,7 +58,7 @@ pub extern "system" fn Java_ru_kino_dev_ffi_PassFfi_invoke<'local>(
     guarded(&mut env, |env| {
         let command = read_string(env, &command, "command")?;
         let args_json = read_string(env, &args_json, "argsJson")?;
-        Ok(dispatch::run(&command, &args_json))
+        Ok(pass_api::run(&command, &args_json))
     })
 }
 
@@ -119,7 +90,7 @@ pub extern "system" fn Java_ru_kino_dev_ffi_PassFfi_invokeBinary<'local>(
             }
         };
 
-        let answer = dispatch::run_with_bytes(&command, &args_json, input_bytes);
+        let answer = pass_api::run_with_bytes(&command, &args_json, input_bytes);
 
         // The arguments may have carried a password, so neither copy outlives the call: this one here,
         // and the Java array on the Kotlin side
