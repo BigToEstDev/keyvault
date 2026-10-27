@@ -68,11 +68,13 @@ fun registerCargoTask(buildType: String, release: Boolean) = tasks.register<Exec
 
     workingDir = crateDir
 
-    // Rebuilt when the crate or the core changes; the core is a path dependency, so cargo sees it too
+    // Rebuilt when the crate or the core changes; the core is a path dependency, so cargo sees it too.
+    // crates/ holds both the core and pass-api, the root manifest the shared versions of the workspace
     inputs.dir(crateDir.resolve("src"))
     inputs.file(crateDir.resolve("Cargo.toml"))
     inputs.file(crateDir.resolve("build.rs"))
-    inputs.dir(rootProject.file("../pass-rust-core/src"))
+    inputs.dir(rootProject.file("../pass-rust-core/crates"))
+    inputs.file(rootProject.file("../pass-rust-core/Cargo.toml"))
     outputs.dir(jniLibsDir)
 
     doFirst {

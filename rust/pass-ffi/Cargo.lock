@@ -315,9 +315,9 @@ dependencies = [
 
 [[package]]
 name = "ctutils"
-version = "0.4.2"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d5515a3834141de9eafb9717ad39eea8247b5674e6066c404e8c4b365d2a29e"
+checksum = "fe3e9d21d39e6f39ff46e03d5b621424f88ee23d8a1672c6bfc9ccc7f2da4f6a"
 dependencies = [
  "cmov",
 ]
@@ -769,17 +769,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
-name = "pass-ffi"
+name = "pass-api"
 version = "0.1.0"
 dependencies = [
- "android_logger",
  "base64",
- "jni",
  "kdbx-rust-core",
  "log",
  "serde",
  "serde_json",
  "uuid",
+ "zeroize",
+]
+
+[[package]]
+name = "pass-ffi"
+version = "0.1.0"
+dependencies = [
+ "android_logger",
+ "jni",
+ "log",
+ "pass-api",
  "zeroize",
 ]
 
@@ -1139,9 +1148,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.53.1"
+version = "1.54.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed"
+checksum = "b52fd3255258d26fac7264ab5a76b53c13367136dc011d3d6ad4f8ed070396a3"
 dependencies = [
  "pin-project-lite",
 ]
