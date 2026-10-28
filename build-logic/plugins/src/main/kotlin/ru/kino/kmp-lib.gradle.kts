@@ -19,8 +19,11 @@ kotlin {
         compilerOptions {
             jvmTarget.set(JVM_TARGET)
         }
-        // commonTest runs on android too, as host tests on the jvm of the machine (androidHostTest)
-        withHostTest {}
+        // commonTest runs on android too, as host tests on the jvm of the machine (androidHostTest). With the
+        // resources of the module: Robolectric tests of core-pres read its strings (pass-docs, Step 72, 87)
+        withHostTest {
+            isIncludeAndroidResources = true
+        }
     }
 
     jvm("desktop") {
