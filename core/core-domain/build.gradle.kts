@@ -1,16 +1,19 @@
 plugins {
-    id("java-lib")
-    // Fakes of the interfaces declared here, shared by the tests of every module that depends on them
-    `java-test-fixtures`
+    id("kmp-lib")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-dependencies {
-    api(libs.kotlinx.coroutines.core)
-    api(libs.kotlinx.datetime)
-    api(libs.kotlinx.serialization.core)
-    api(libs.kotlinx.serialization.json)
-
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            api(libs.kotlinx.coroutines.core)
+            api(libs.kotlinx.datetime)
+            api(libs.kotlinx.serialization.core)
+            api(libs.kotlinx.serialization.json)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(projects.core.coreDomainFakes)
+        }
+    }
 }
