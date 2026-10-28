@@ -13,16 +13,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.settings.pres.navigation.route
 import ru.kino.dev.settings.pres.settings.components.SettingsCard
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * The settings: the cards of the app and of the database under their sections, "About" at the bottom, apart
@@ -39,7 +39,7 @@ internal fun SettingsScreen(
             containerColor = Color.Transparent,
             topBar = {
                 BackTopBar(
-                    title = stringResource(R.string.settings_title),
+                    title = stringResource(Res.string.settings_title),
                     onBack = { processor.action(SettingsAction.Back) },
                 )
             },
@@ -71,7 +71,7 @@ internal fun SettingsScreen(
                 }
                 item(key = "divider") { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
                 item(key = "about") {
-                    SettingsCard(icon = Icons.Filled.Info, title = stringResource(R.string.settings_about))
+                    SettingsCard(icon = Icons.Filled.Info, title = stringResource(Res.string.settings_about))
                 }
             }
         }

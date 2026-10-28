@@ -18,18 +18,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.orbitmvi.orbit.compose.collectAsState
-import org.orbitmvi.orbit.compose.collectSideEffect
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.biometric.BiometricPurpose
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.SecondaryButton
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.welcome.pres.common.rememberBiometricPrompt
 import ru.kino.dev.welcome.pres.create.CreateDraft
 
@@ -67,14 +67,14 @@ internal fun BiometricSetupScreen(
             )
             Spacer(Modifier.height(24.dp))
             Text(
-                text = stringResource(R.string.biometric_title),
+                text = stringResource(Res.string.biometric_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.biometric_text),
+                text = stringResource(Res.string.biometric_text),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -82,7 +82,7 @@ internal fun BiometricSetupScreen(
             Spacer(Modifier.height(48.dp))
             if (state.failed) {
                 Text(
-                    text = stringResource(R.string.biometric_enable_failed),
+                    text = stringResource(Res.string.biometric_enable_failed),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center,
@@ -90,12 +90,12 @@ internal fun BiometricSetupScreen(
                 Spacer(Modifier.height(8.dp))
             }
             PrimaryButton(
-                text = stringResource(R.string.biometric_enable),
+                text = stringResource(Res.string.biometric_enable),
                 onClick = { processor.action(BiometricSetupAction.Enable) },
                 loading = state.busy,
             )
             Spacer(Modifier.height(12.dp))
-            SecondaryButton(text = stringResource(R.string.biometric_skip), onClick = { skip() }, enabled = !state.busy)
+            SecondaryButton(text = stringResource(Res.string.biometric_skip), onClick = { skip() }, enabled = !state.busy)
         }
     }
 }

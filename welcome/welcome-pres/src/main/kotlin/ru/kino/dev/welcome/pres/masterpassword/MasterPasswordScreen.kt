@@ -24,20 +24,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import org.orbitmvi.orbit.compose.collectAsState
-import org.orbitmvi.orbit.compose.collectSideEffect
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.core.CredentialLimits
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.files.rememberCreateDocument
+import ru.kino.dev.ui.res.pluralStringResource
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.welcome.pres.create.CreateDraft
 import ru.kino.dev.welcome.pres.create.CreateProblemText
 import ru.kino.dev.welcome.pres.create.OverwriteDialog
@@ -84,13 +84,13 @@ private fun MasterPasswordContent(state: MasterPasswordState, onAction: (MasterP
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = stringResource(R.string.create_password_title),
+                text = stringResource(Res.string.create_password_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.create_password_text),
+                text = stringResource(Res.string.create_password_text),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -99,18 +99,18 @@ private fun MasterPasswordContent(state: MasterPasswordState, onAction: (MasterP
             PasswordField(
                 value = state.password,
                 onValueChange = { onAction(MasterPasswordAction.PasswordChanged(it)) },
-                label = stringResource(R.string.entry_password),
+                label = stringResource(Res.string.entry_password),
                 visible = state.passwordVisible,
                 onToggleVisible = { onAction(MasterPasswordAction.TogglePasswordVisible) },
                 error = if (state.tooLong) {
                     val max = CredentialLimits.PASSWORD_MAX_CHARS
-                    pluralStringResource(R.plurals.create_password_too_long, max, max)
+                    pluralStringResource(Res.plurals.create_password_too_long, max, max)
                 } else {
                     null
                 },
                 hint = if (state.tooShort) {
                     val min = CredentialLimits.PASSWORD_MIN_CHARS
-                    pluralStringResource(R.plurals.create_password_too_short, min, min)
+                    pluralStringResource(Res.plurals.create_password_too_short, min, min)
                 } else {
                     null
                 },
@@ -126,10 +126,10 @@ private fun MasterPasswordContent(state: MasterPasswordState, onAction: (MasterP
             PasswordField(
                 value = state.confirm,
                 onValueChange = { onAction(MasterPasswordAction.ConfirmChanged(it)) },
-                label = stringResource(R.string.create_password_confirm),
+                label = stringResource(Res.string.create_password_confirm),
                 visible = state.passwordVisible,
                 onToggleVisible = null,
-                error = if (state.mismatch) stringResource(R.string.create_password_mismatch) else null,
+                error = if (state.mismatch) stringResource(Res.string.create_password_mismatch) else null,
                 enabled = enabled,
                 onImeAction = { onAction(MasterPasswordAction.Next) },
                 modifier = Modifier
@@ -147,7 +147,7 @@ private fun MasterPasswordContent(state: MasterPasswordState, onAction: (MasterP
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                text = stringResource(R.string.create_sync_hint),
+                text = stringResource(Res.string.create_sync_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -158,7 +158,7 @@ private fun MasterPasswordContent(state: MasterPasswordState, onAction: (MasterP
                 Spacer(Modifier.height(8.dp))
             }
             PrimaryButton(
-                text = stringResource(R.string.action_next),
+                text = stringResource(Res.string.action_next),
                 onClick = { onAction(MasterPasswordAction.Next) },
                 enabled = state.canGoOn,
                 loading = state.stage.busy,
@@ -172,12 +172,12 @@ private fun KeyFileSwitch(checked: Boolean, enabled: Boolean, onChange: (Boolean
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stringResource(R.string.create_key_file_switch),
+                text = stringResource(Res.string.create_key_file_switch),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
-                text = stringResource(R.string.create_key_file_switch_hint),
+                text = stringResource(Res.string.create_key_file_switch_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

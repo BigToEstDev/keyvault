@@ -32,14 +32,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.orbitmvi.orbit.compose.collectAsState
+import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.EmptySearchIllustration
 import ru.kino.dev.ui.components.EmptyState
@@ -50,6 +50,7 @@ import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.SearchBar
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.SnackbarMessage
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.pres.common.SkeletonCard
 import ru.kino.dev.vault.pres.trash.components.TrashCard
 import ru.kino.dev.vault.pres.trash.components.TrashDialogs
@@ -87,13 +88,13 @@ internal fun TrashScreen(
                         ChoiceTopBar(count = state.picked.size, action = processor::action)
                     } else {
                         BackTopBar(
-                            title = stringResource(R.string.settings_recycle_bin),
+                            title = stringResource(Res.string.settings_recycle_bin),
                             onBack = { processor.action(TrashAction.Back) },
                             actions = {
                                 MoreMenuButton(
-                                    contentDescription = stringResource(R.string.trash_menu),
+                                    contentDescription = stringResource(Res.string.trash_menu),
                                     items = listOf(
-                                        MenuItem(stringResource(R.string.trash_empty_action), Icons.Filled.DeleteForever) {
+                                        MenuItem(stringResource(Res.string.trash_empty_action), Icons.Filled.DeleteForever) {
                                             processor.action(TrashAction.Empty)
                                         },
                                     ),
@@ -105,7 +106,7 @@ internal fun TrashScreen(
                     SearchBar(
                         query = state.query,
                         onQueryChange = { processor.action(TrashAction.QueryChanged(it)) },
-                        placeholder = stringResource(R.string.vault_search),
+                        placeholder = stringResource(Res.string.vault_search),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
@@ -141,10 +142,10 @@ private fun ChoiceTopBar(count: Int, action: (TrashAction) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = { action(TrashAction.ClearChoice) }) {
-            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_close))
+            Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.action_close))
         }
         Text(
-            text = stringResource(R.string.trash_picked, count),
+            text = stringResource(Res.string.trash_picked, count),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier
@@ -152,7 +153,7 @@ private fun ChoiceTopBar(count: Int, action: (TrashAction) -> Unit) {
                 .padding(start = 8.dp),
         )
         IconButton(onClick = { action(TrashAction.PickAll) }) {
-            Icon(Icons.Filled.SelectAll, contentDescription = stringResource(R.string.action_select_all))
+            Icon(Icons.Filled.SelectAll, contentDescription = stringResource(Res.string.action_select_all))
         }
     }
 }
@@ -168,12 +169,12 @@ private fun ChoiceButtons(action: (TrashAction) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         SecondaryButton(
-            text = stringResource(R.string.action_delete),
+            text = stringResource(Res.string.action_delete),
             onClick = { action(TrashAction.Remove) },
             modifier = Modifier.weight(1f),
         )
         PrimaryButton(
-            text = stringResource(R.string.action_restore),
+            text = stringResource(Res.string.action_restore),
             onClick = { action(TrashAction.Restore) },
             modifier = Modifier.weight(1f),
         )
@@ -226,26 +227,26 @@ private fun TrashContent(state: TrashState, padding: PaddingValues, action: (Tra
 private fun TrashEmptyState(reason: TrashEmpty, query: String) {
     when (reason) {
         TrashEmpty.Bin -> EmptyState(
-            title = stringResource(R.string.trash_empty),
-            hint = stringResource(R.string.trash_empty_hint),
+            title = stringResource(Res.string.trash_empty),
+            hint = stringResource(Res.string.trash_empty_hint),
         )
 
         TrashEmpty.NothingFound -> EmptyState(
-            title = stringResource(R.string.vault_search_nothing_found, query.trim()),
-            hint = stringResource(R.string.vault_search_hint_fields) + "\n" +
-                stringResource(R.string.vault_search_check_spelling),
+            title = stringResource(Res.string.vault_search_nothing_found, query.trim()),
+            hint = stringResource(Res.string.vault_search_hint_fields) + "\n" +
+                stringResource(Res.string.vault_search_check_spelling),
             illustration = { EmptySearchIllustration() },
         )
     }
 }
 
-private val TrashMessage.text: Int
+private val TrashMessage.text: StringResource
     get() = when (this) {
-        TrashMessage.LoadFailed -> R.string.vault_message_load_failed
-        TrashMessage.SearchFailed -> R.string.vault_message_search_failed
-        TrashMessage.NotSaved -> R.string.message_file_not_saved
-        TrashMessage.Changed -> R.string.trash_message_changed
-        TrashMessage.Unexpected -> R.string.error_unexpected
+        TrashMessage.LoadFailed -> Res.string.vault_message_load_failed
+        TrashMessage.SearchFailed -> Res.string.vault_message_search_failed
+        TrashMessage.NotSaved -> Res.string.message_file_not_saved
+        TrashMessage.Changed -> Res.string.trash_message_changed
+        TrashMessage.Unexpected -> Res.string.error_unexpected
     }
 
 /** The empty state a little above the middle, as in the list of `vault`. */

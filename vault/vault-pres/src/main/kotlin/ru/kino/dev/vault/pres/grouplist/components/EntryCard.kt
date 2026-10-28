@@ -6,10 +6,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.editMenuItem
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.ui.theme.LocalAppDisplay
 import ru.kino.dev.vault.pres.common.MenuCard
 import ru.kino.dev.vault.pres.grouplist.EntryItem
@@ -32,7 +32,7 @@ internal fun EntryCard(
     MenuCard(
         // The color of the folder of a group card, so the two kinds of cards match
         icon = { Icon(Icons.Filled.Key, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-        title = entry.title.ifEmpty { stringResource(R.string.entry_untitled) },
+        title = entry.title.ifEmpty { stringResource(Res.string.entry_untitled) },
         detail = entry.userName.takeIf { LocalAppDisplay.current.userNameInList && it.isNotEmpty() },
         subtitle = location,
         items = listOf(editMenuItem(onEdit), deleteMenuItem(onDelete)),

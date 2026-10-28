@@ -3,11 +3,11 @@ package ru.kino.dev.vault.pres.trash.components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.Dropdown
+import ru.kino.dev.ui.res.pluralStringResource
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.common.option
 import ru.kino.dev.vault.pres.trash.TrashDialog
@@ -27,10 +27,10 @@ internal fun TrashDialogs(
         null -> Unit
 
         is TrashDialog.Restore -> ConfirmDialog(
-            title = stringResource(R.string.trash_restore_title),
-            text = stringResource(R.string.trash_restore_text),
-            confirmText = stringResource(R.string.action_restore),
-            dismissText = stringResource(R.string.action_cancel),
+            title = stringResource(Res.string.trash_restore_title),
+            text = stringResource(Res.string.trash_restore_text),
+            confirmText = stringResource(Res.string.action_restore),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             loading = dialog.saving,
@@ -40,17 +40,17 @@ internal fun TrashDialogs(
                 selected = dialog.group,
                 options = dialog.groups.map { it.option() },
                 onSelect = onGroup,
-                label = stringResource(R.string.entry_field_group),
+                label = stringResource(Res.string.entry_field_group),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !dialog.saving,
             )
         }
 
         is TrashDialog.Remove -> ConfirmDialog(
-            title = stringResource(R.string.trash_remove_title),
-            text = pluralStringResource(R.plurals.trash_remove_text, dialog.count, dialog.count),
-            confirmText = stringResource(R.string.action_delete),
-            dismissText = stringResource(R.string.action_cancel),
+            title = stringResource(Res.string.trash_remove_title),
+            text = pluralStringResource(Res.plurals.trash_remove_text, dialog.count, dialog.count),
+            confirmText = stringResource(Res.string.action_delete),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             destructive = true,
@@ -58,10 +58,10 @@ internal fun TrashDialogs(
         )
 
         is TrashDialog.Empty -> ConfirmDialog(
-            title = stringResource(R.string.trash_empty_title),
-            text = stringResource(R.string.trash_empty_text),
-            confirmText = stringResource(R.string.trash_empty_confirm),
-            dismissText = stringResource(R.string.action_cancel),
+            title = stringResource(Res.string.trash_empty_title),
+            text = stringResource(Res.string.trash_empty_text),
+            confirmText = stringResource(Res.string.trash_empty_confirm),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             destructive = true,

@@ -26,14 +26,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.orbitmvi.orbit.compose.collectAsState
+import java.text.NumberFormat
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.DatabaseEntries
 import ru.kino.dev.core.FieldProtection
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.settings.pres.entries.components.EntriesSkeleton
 import ru.kino.dev.settings.pres.entries.components.PhonePrefixRow
@@ -50,7 +50,7 @@ import ru.kino.dev.ui.phone.PhoneCountryDialog
 import ru.kino.dev.ui.phone.phoneCountryName
 import ru.kino.dev.ui.phone.phonePrefix
 import ru.kino.dev.ui.preset.fieldLabel
-import java.text.NumberFormat
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * The entries of the database: the fields hidden on every entry, how much history an entry keeps (pass-docs,
@@ -69,8 +69,8 @@ internal fun EntriesScreen(
     val message = state.message?.let {
         stringResource(
             when (it) {
-                EntriesMessage.NotSaved -> R.string.message_file_not_saved
-                EntriesMessage.Failed -> R.string.error_unexpected
+                EntriesMessage.NotSaved -> Res.string.message_file_not_saved
+                EntriesMessage.Failed -> Res.string.error_unexpected
             },
         )
     }
@@ -82,7 +82,7 @@ internal fun EntriesScreen(
             containerColor = Color.Transparent,
             topBar = {
                 BackTopBar(
-                    title = stringResource(R.string.settings_entries),
+                    title = stringResource(Res.string.settings_entries),
                     onBack = { processor.action(EntriesAction.Back) },
                 )
             },
@@ -118,8 +118,8 @@ private fun LazyListScope.protectionRows(
 ) {
     item(key = "hidden") {
         SettingsSectionHeader(
-            title = stringResource(R.string.settings_entries_hidden_group),
-            hint = stringResource(R.string.settings_entries_hidden_hint),
+            title = stringResource(Res.string.settings_entries_hidden_group),
+            hint = stringResource(Res.string.settings_entries_hidden_hint),
         )
     }
     item(key = "fields") {
@@ -147,12 +147,12 @@ private fun LazyListScope.historyRows(
     val history = entries.history
     item(key = "history") {
         // Set apart from the group above, as the sections of the main screen
-        SettingsSectionHeader(title = stringResource(R.string.settings_history_group), top = 8.dp)
+        SettingsSectionHeader(title = stringResource(Res.string.settings_history_group), top = 8.dp)
     }
     item(key = "items") {
         LimitCard(
-            limitTitle = stringResource(R.string.settings_history_limit_items),
-            valueTitle = stringResource(R.string.settings_history_items),
+            limitTitle = stringResource(Res.string.settings_history_limit_items),
+            valueTitle = stringResource(Res.string.settings_history_items),
             value = history.maxItems?.toString(),
             saving = saving,
             part = EntriesPart.Items,
@@ -162,8 +162,8 @@ private fun LazyListScope.historyRows(
     }
     item(key = "size") {
         LimitCard(
-            limitTitle = stringResource(R.string.settings_history_limit_size),
-            valueTitle = stringResource(R.string.settings_history_size),
+            limitTitle = stringResource(Res.string.settings_history_limit_size),
+            valueTitle = stringResource(Res.string.settings_history_size),
             value = history.maxSize?.let { sizeLabel(it) },
             saving = saving,
             part = EntriesPart.Size,
@@ -179,13 +179,13 @@ private fun LazyListScope.historyRows(
  */
 private fun LazyListScope.phoneRows(phone: PhonePrefix, action: (EntriesAction) -> Unit) {
     item(key = "phone") {
-        SettingsSectionHeader(title = stringResource(R.string.settings_phone_group), top = 8.dp)
+        SettingsSectionHeader(title = stringResource(Res.string.settings_phone_group), top = 8.dp)
     }
     item(key = "prefix") {
         Card(modifier = Modifier.fillMaxWidth()) {
             Column {
                 SwitchRow(
-                    title = stringResource(R.string.settings_phone_remember),
+                    title = stringResource(Res.string.settings_phone_remember),
                     checked = phone.remember,
                     onCheckedChange = { action(EntriesAction.RememberPrefix(it)) },
                 )
@@ -195,7 +195,7 @@ private fun LazyListScope.phoneRows(phone: PhonePrefix, action: (EntriesAction) 
                     exit = shrinkVertically() + fadeOut(),
                 ) {
                     PhonePrefixRow(
-                        title = stringResource(R.string.settings_phone_prefix),
+                        title = stringResource(Res.string.settings_phone_prefix),
                         value = "${phonePrefix(phone.region)} ${phoneCountryName(phone.region)}",
                         onClick = { action(EntriesAction.ChoosePrefix) },
                     )
@@ -263,7 +263,7 @@ private fun Dialogs(state: EntriesState, action: (EntriesAction) -> Unit) {
     when (state.choosing) {
         HistoryLimit.Items -> history?.maxItems?.let { items ->
             WheelPickerDialog(
-                title = stringResource(R.string.settings_history_items),
+                title = stringResource(Res.string.settings_history_items),
                 options = HistoryChoices.items(items),
                 selected = items,
                 label = { it.toString() },
@@ -274,7 +274,7 @@ private fun Dialogs(state: EntriesState, action: (EntriesAction) -> Unit) {
 
         HistoryLimit.Size -> history?.maxSize?.let { size ->
             WheelPickerDialog(
-                title = stringResource(R.string.settings_history_size),
+                title = stringResource(Res.string.settings_history_size),
                 options = HistoryChoices.sizes(size),
                 selected = size,
                 label = { sizeLabel(it) },
@@ -297,10 +297,10 @@ private fun Dialogs(state: EntriesState, action: (EntriesAction) -> Unit) {
 
     if (state.trimming != null) {
         ConfirmDialog(
-            title = stringResource(R.string.settings_history_trim_title),
-            text = stringResource(R.string.settings_history_trim_text),
-            confirmText = stringResource(R.string.settings_history_trim_confirm),
-            dismissText = stringResource(R.string.action_cancel),
+            title = stringResource(Res.string.settings_history_trim_title),
+            text = stringResource(Res.string.settings_history_trim_text),
+            confirmText = stringResource(Res.string.settings_history_trim_confirm),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = { action(EntriesAction.TrimConfirm) },
             onDismiss = { action(EntriesAction.TrimDismiss) },
             destructive = true,
@@ -312,7 +312,7 @@ private fun Dialogs(state: EntriesState, action: (EntriesAction) -> Unit) {
 @Composable
 private fun sizeLabel(bytes: Long): String {
     val number = NumberFormat.getNumberInstance().apply { maximumFractionDigits = 1 }
-    return stringResource(R.string.settings_megabytes_short, number.format(bytes.toDouble() / MEGABYTE))
+    return stringResource(Res.string.settings_megabytes_short, number.format(bytes.toDouble() / MEGABYTE))
 }
 
 /** The same protection with the field of [key] private or not. */

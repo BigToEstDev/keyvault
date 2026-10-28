@@ -15,10 +15,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * A dialog with a title and a "close" button in its corner, and [content] under them - the filters of the list.
@@ -46,7 +46,7 @@ internal fun ClosableDialog(title: String, onClose: () -> Unit, content: @Compos
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = onClose) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_close))
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.action_close))
                     }
                 }
                 content()

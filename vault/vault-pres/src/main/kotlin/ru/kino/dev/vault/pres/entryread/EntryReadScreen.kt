@@ -20,19 +20,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.orbitmvi.orbit.compose.collectAsState
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.pres.common.EntryReadFields
 import ru.kino.dev.vault.pres.common.EntryReadSkeleton
@@ -58,9 +58,9 @@ internal fun EntryReadScreen(
     val message = state.message?.let {
         stringResource(
             when (it) {
-                EntryReadMessage.LoadFailed -> R.string.entry_message_load_failed
-                EntryReadMessage.NotSaved -> R.string.message_file_not_saved
-                EntryReadMessage.Unexpected -> R.string.error_unexpected
+                EntryReadMessage.LoadFailed -> Res.string.entry_message_load_failed
+                EntryReadMessage.NotSaved -> Res.string.message_file_not_saved
+                EntryReadMessage.Unexpected -> Res.string.error_unexpected
             },
         )
     }
@@ -77,7 +77,7 @@ internal fun EntryReadScreen(
                 // The title of the entry; a skeleton while it is read, nothing if it could not be
                 val title = state.content?.value(StandardPreset.TITLE)
                 EntryTopBar(
-                    title = title?.ifEmpty { stringResource(R.string.entry_untitled) }.orEmpty(),
+                    title = title?.ifEmpty { stringResource(Res.string.entry_untitled) }.orEmpty(),
                     onBack = { processor.action(EntryReadAction.Back) },
                     skeleton = skeleton,
                     // Once the entry is read: there is nothing to delete before
@@ -94,7 +94,7 @@ internal fun EntryReadScreen(
             floatingActionButton = {
                 if (state.content != null) {
                     FloatingActionButton(onClick = { processor.action(EntryReadAction.Edit) }) {
-                        Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.entry_edit))
+                        Icon(Icons.Filled.Edit, contentDescription = stringResource(Res.string.entry_edit))
                     }
                 }
             },

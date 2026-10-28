@@ -21,13 +21,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.orbitmvi.orbit.compose.collectAsState
 import org.koin.compose.viewmodel.koinViewModel
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.settings.pres.presets.components.PresetCard
 import ru.kino.dev.settings.pres.presets.components.PresetCardSkeleton
@@ -41,6 +40,7 @@ import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.editMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.ui.preset.presetName
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * The presets: "Use presets" on top; on - the standard preset, those of one's own with their pen - "Edit", "Delete" -
@@ -57,8 +57,8 @@ internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
     val message = state.message?.let {
         stringResource(
             when (it) {
-                PresetsMessage.NotSaved -> R.string.settings_message_not_saved
-                PresetsMessage.NotDeleted -> R.string.preset_not_deleted
+                PresetsMessage.NotSaved -> Res.string.settings_message_not_saved
+                PresetsMessage.NotDeleted -> Res.string.preset_not_deleted
             },
         )
     }
@@ -71,7 +71,7 @@ internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
             containerColor = Color.Transparent,
             topBar = {
                 BackTopBar(
-                    title = stringResource(R.string.settings_presets),
+                    title = stringResource(Res.string.settings_presets),
                     onBack = { processor.action(PresetsAction.Back) },
                 )
             },
@@ -79,7 +79,7 @@ internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
                 // Past the most presets a person has there is none; a preset deleted brings it back
                 if (shown && state.canCreate) {
                     FloatingActionButton(onClick = { processor.action(PresetsAction.Create) }) {
-                        Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.action_create))
+                        Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.action_create))
                     }
                 }
             },
@@ -108,8 +108,8 @@ internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
                 item(key = "use-presets") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
-                            title = stringResource(R.string.settings_use_presets),
-                            text = stringResource(R.string.settings_use_presets_hint),
+                            title = stringResource(Res.string.settings_use_presets),
+                            text = stringResource(Res.string.settings_use_presets_hint),
                             checked = usePresets,
                             onCheckedChange = { processor.action(PresetsAction.SetUsePresets(it)) },
                         )
@@ -135,10 +135,10 @@ internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
 
     state.deleting?.let { preset ->
         ConfirmDialog(
-            title = stringResource(R.string.preset_delete_title, presetName(preset)),
-            text = stringResource(R.string.preset_delete_text),
-            confirmText = stringResource(R.string.action_delete),
-            dismissText = stringResource(R.string.action_cancel),
+            title = stringResource(Res.string.preset_delete_title, presetName(preset)),
+            text = stringResource(Res.string.preset_delete_text),
+            confirmText = stringResource(Res.string.action_delete),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = { processor.action(PresetsAction.DeleteConfirm) },
             onDismiss = { processor.action(PresetsAction.DeleteDismiss) },
             destructive = true,

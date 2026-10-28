@@ -2,16 +2,16 @@ package ru.kino.dev.welcome.pres.unlock
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.res.stringResource
-import org.orbitmvi.orbit.compose.collectAsState
-import org.orbitmvi.orbit.compose.collectSideEffect
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.biometric.BiometricPurpose
+import ru.kino.dev.ui.files.rememberOpenDocument
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.welcome.pres.common.PasswordEntryContent
 import ru.kino.dev.welcome.pres.common.rememberBiometricPrompt
-import ru.kino.dev.ui.files.rememberOpenDocument
 
 /** "Back" is the default here: out of the app on start, back to the welcome screen after picking a file. */
 @Composable
@@ -34,9 +34,9 @@ internal fun UnlockScreen(
 
     val changeDatabase = { processor.action(UnlockAction.ChangeDatabase) }
     PasswordEntryContent(
-        databaseName = state.title ?: stringResource(R.string.entry_database_fallback),
+        databaseName = state.title ?: stringResource(Res.string.entry_database_fallback),
         entry = state.entry,
-        submitText = stringResource(R.string.entry_open),
+        submitText = stringResource(Res.string.entry_open),
         onPasswordChange = { processor.action(UnlockAction.PasswordChanged(it)) },
         onTogglePasswordVisible = { processor.action(UnlockAction.TogglePasswordVisible) },
         onSubmit = { processor.action(UnlockAction.Submit) },

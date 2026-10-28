@@ -16,9 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.FieldRowsSection
 import ru.kino.dev.ui.components.FieldSection
@@ -27,6 +26,7 @@ import ru.kino.dev.ui.components.MoreMenuButton
 import ru.kino.dev.ui.components.SkeletonField
 import ru.kino.dev.ui.components.SkeletonFieldRow
 import ru.kino.dev.ui.components.SkeletonText
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.ui.theme.DISABLED_ALPHA
 import ru.kino.dev.ui.theme.DISABLED_CONTAINER_ALPHA
 
@@ -51,7 +51,7 @@ internal fun EntryTopBar(
     BackTopBar(title = title, onBack = onBack, modifier = modifier, skeleton = skeleton) {
         if (menu.isNotEmpty()) {
             MoreMenuButton(
-                contentDescription = stringResource(R.string.entry_menu),
+                contentDescription = stringResource(Res.string.entry_menu),
                 items = menu,
                 enabled = menuEnabled,
             )

@@ -16,13 +16,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.orbitmvi.orbit.compose.collectAsState
-import org.orbitmvi.orbit.compose.collectSideEffect
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.settings.lock.AutoLockTimeout
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
 import ru.kino.dev.ui.biometric.BiometricPurpose
@@ -35,6 +34,7 @@ import ru.kino.dev.ui.components.SwitchRow
 import ru.kino.dev.ui.components.TextInputDialog
 import ru.kino.dev.ui.components.ValueRow
 import ru.kino.dev.ui.components.WheelPickerDialog
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * How the database locks and how one gets in: the group "Locking" - the auto-lock, locking on leaving the app,
@@ -63,8 +63,8 @@ internal fun LockScreen(
     val message = state.message?.let {
         stringResource(
             when (it) {
-                LockMessage.NotSaved -> R.string.settings_message_not_saved
-                LockMessage.BiometricFailed -> R.string.settings_message_biometric_failed
+                LockMessage.NotSaved -> Res.string.settings_message_not_saved
+                LockMessage.BiometricFailed -> Res.string.settings_message_biometric_failed
             },
         )
     }
@@ -76,7 +76,7 @@ internal fun LockScreen(
             containerColor = Color.Transparent,
             topBar = {
                 BackTopBar(
-                    title = stringResource(R.string.settings_lock),
+                    title = stringResource(Res.string.settings_lock),
                     onBack = { processor.action(LockAction.Back) },
                 )
             },
@@ -89,12 +89,12 @@ internal fun LockScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                item(key = "locking") { SettingsSectionHeader(title = stringResource(R.string.settings_lock_group)) }
+                item(key = "locking") { SettingsSectionHeader(title = stringResource(Res.string.settings_lock_group)) }
                 item(key = "auto-lock") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         ValueRow(
-                            title = stringResource(R.string.settings_auto_lock),
-                            text = stringResource(R.string.settings_auto_lock_hint),
+                            title = stringResource(Res.string.settings_auto_lock),
+                            text = stringResource(Res.string.settings_auto_lock_hint),
                             // Until read nothing is chosen for real: the row is disabled meanwhile
                             value = state.timeout?.let { timeoutLabel(it) }.orEmpty(),
                             onClick = { processor.action(LockAction.ChooseTimeout) },
@@ -105,8 +105,8 @@ internal fun LockScreen(
                 item(key = "lock-on-leave") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
-                            title = stringResource(R.string.settings_lock_on_leave),
-                            text = stringResource(R.string.settings_lock_on_leave_hint),
+                            title = stringResource(Res.string.settings_lock_on_leave),
+                            text = stringResource(Res.string.settings_lock_on_leave_hint),
                             checked = state.lockOnLeave ?: false,
                             onCheckedChange = { processor.action(LockAction.SetLockOnLeave(it)) },
                             enabled = state.lockOnLeave != null,
@@ -116,8 +116,8 @@ internal fun LockScreen(
                 item(key = "lock-button") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
-                            title = stringResource(R.string.settings_lock_button),
-                            text = stringResource(R.string.settings_lock_button_hint),
+                            title = stringResource(Res.string.settings_lock_button),
+                            text = stringResource(Res.string.settings_lock_button_hint),
                             checked = state.lockButton ?: false,
                             onCheckedChange = { processor.action(LockAction.SetLockButton(it)) },
                             enabled = state.lockButton != null,
@@ -126,18 +126,18 @@ internal fun LockScreen(
                 }
                 item(key = "sign-in") {
                     // Set apart from the group above, as the sections of the main screen
-                    SettingsSectionHeader(title = stringResource(R.string.settings_sign_in_group), top = 8.dp)
+                    SettingsSectionHeader(title = stringResource(Res.string.settings_sign_in_group), top = 8.dp)
                 }
                 item(key = "biometric") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         val row = state.biometric
                         SwitchRow(
-                            title = stringResource(R.string.settings_biometric),
+                            title = stringResource(Res.string.settings_biometric),
                             text = stringResource(
                                 when (row?.unavailable) {
-                                    BiometricUnavailable.NoHardware -> R.string.settings_biometric_no_hardware
-                                    BiometricUnavailable.NoPassword -> R.string.settings_biometric_no_password
-                                    null -> R.string.settings_biometric_hint
+                                    BiometricUnavailable.NoHardware -> Res.string.settings_biometric_no_hardware
+                                    BiometricUnavailable.NoPassword -> Res.string.settings_biometric_no_password
+                                    null -> Res.string.settings_biometric_hint
                                 },
                             ),
                             checked = row?.on ?: false,
@@ -150,8 +150,8 @@ internal fun LockScreen(
                 item(key = "auto-biometric-prompt") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
-                            title = stringResource(R.string.settings_auto_biometric_prompt),
-                            text = stringResource(R.string.settings_auto_biometric_prompt_hint),
+                            title = stringResource(Res.string.settings_auto_biometric_prompt),
+                            text = stringResource(Res.string.settings_auto_biometric_prompt_hint),
                             checked = state.autoBiometricPrompt ?: false,
                             onCheckedChange = { processor.action(LockAction.SetAutoBiometricPrompt(it)) },
                             enabled = state.autoBiometricPrompt != null,
@@ -161,8 +161,8 @@ internal fun LockScreen(
                 item(key = "clear-password") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
-                            title = stringResource(R.string.settings_clear_password),
-                            text = stringResource(R.string.settings_clear_password_hint),
+                            title = stringResource(Res.string.settings_clear_password),
+                            text = stringResource(Res.string.settings_clear_password_hint),
                             checked = state.clearPasswordOnError ?: false,
                             onCheckedChange = { processor.action(LockAction.SetClearPasswordOnError(it)) },
                             enabled = state.clearPasswordOnError != null,
@@ -175,15 +175,15 @@ internal fun LockScreen(
 
     state.biometricPassword?.let { dialog ->
         TextInputDialog(
-            title = stringResource(R.string.settings_biometric_password_title),
+            title = stringResource(Res.string.settings_biometric_password_title),
             value = dialog.password,
             onValueChange = { processor.action(LockAction.BiometricPasswordChanged(it)) },
-            label = stringResource(R.string.entry_field_password),
-            confirmText = stringResource(R.string.action_next),
-            dismissText = stringResource(R.string.action_cancel),
+            label = stringResource(Res.string.entry_field_password),
+            confirmText = stringResource(Res.string.action_next),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = { processor.action(LockAction.BiometricPasswordConfirm) },
             onDismiss = { processor.action(LockAction.BiometricPasswordDismiss) },
-            error = if (dialog.wrong) stringResource(R.string.settings_biometric_wrong_password) else null,
+            error = if (dialog.wrong) stringResource(Res.string.settings_biometric_wrong_password) else null,
             loading = dialog.checking,
             secret = true,
         )
@@ -191,10 +191,10 @@ internal fun LockScreen(
 
     if (state.forgettingBiometric) {
         ConfirmDialog(
-            title = stringResource(R.string.settings_biometric_forget_title),
-            text = stringResource(R.string.settings_biometric_forget_text),
-            confirmText = stringResource(R.string.settings_biometric_forget),
-            dismissText = stringResource(R.string.action_cancel),
+            title = stringResource(Res.string.settings_biometric_forget_title),
+            text = stringResource(Res.string.settings_biometric_forget_text),
+            confirmText = stringResource(Res.string.settings_biometric_forget),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = { processor.action(LockAction.BiometricForgetConfirm) },
             onDismiss = { processor.action(LockAction.BiometricForgetDismiss) },
         )
@@ -203,7 +203,7 @@ internal fun LockScreen(
     val timeout = state.timeout
     if (state.choosingTimeout && timeout != null) {
         WheelPickerDialog(
-            title = stringResource(R.string.settings_auto_lock),
+            title = stringResource(Res.string.settings_auto_lock),
             options = AutoLockTimeout.entries,
             selected = timeout,
             label = { timeoutLabel(it) },
@@ -218,9 +218,9 @@ internal fun LockScreen(
 private fun timeoutLabel(timeout: AutoLockTimeout): String {
     val seconds = timeout.duration.inWholeSeconds.toInt()
     return if (seconds < SECONDS_IN_MINUTE) {
-        stringResource(R.string.settings_seconds_short, seconds)
+        stringResource(Res.string.settings_seconds_short, seconds)
     } else {
-        stringResource(R.string.settings_minutes_short, seconds / SECONDS_IN_MINUTE)
+        stringResource(Res.string.settings_minutes_short, seconds / SECONDS_IN_MINUTE)
     }
 }
 

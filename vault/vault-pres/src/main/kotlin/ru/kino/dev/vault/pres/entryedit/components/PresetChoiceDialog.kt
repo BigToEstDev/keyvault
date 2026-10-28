@@ -18,11 +18,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.core.preset.PresetValidator
@@ -30,6 +29,7 @@ import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.verticalFadingEdges
 import ru.kino.dev.ui.preset.presetName
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * The choice of presets (pass-docs, vault-our.md "Фича создание кастомных пресетов"): the standard one, then
@@ -72,7 +72,7 @@ internal fun PresetChoiceDialog(
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = onClose) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_close))
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.action_close))
                     }
                 }
                 val scroll = rememberScrollState()
@@ -95,7 +95,7 @@ internal fun PresetChoiceDialog(
                 // No button past the most presets a person has (pass-docs, vault-our.md)
                 if (PresetValidator.canAdd(presets)) {
                     SecondaryButton(
-                        text = stringResource(R.string.preset_create_title),
+                        text = stringResource(Res.string.preset_create_title),
                         onClick = onCreate,
                         modifier = Modifier
                             .fillMaxWidth()

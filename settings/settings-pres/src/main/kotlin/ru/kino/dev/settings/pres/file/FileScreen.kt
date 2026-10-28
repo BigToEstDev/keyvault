@@ -21,14 +21,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.orbitmvi.orbit.compose.collectAsState
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.Compression
 import ru.kino.dev.core.KdbxVersion
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.settings.pres.file.components.FileSkeleton
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.GradientBackground
@@ -37,6 +36,7 @@ import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.TextInputDialog
 import ru.kino.dev.ui.components.ValueRow
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.file.DatabaseFileInfo
 
 /**
@@ -56,8 +56,8 @@ internal fun FileScreen(
     val message = state.message?.let {
         stringResource(
             when (it) {
-                FileMessage.NotSaved -> R.string.message_file_not_saved
-                FileMessage.Failed -> R.string.error_unexpected
+                FileMessage.NotSaved -> Res.string.message_file_not_saved
+                FileMessage.Failed -> Res.string.error_unexpected
             },
         )
     }
@@ -69,7 +69,7 @@ internal fun FileScreen(
             containerColor = Color.Transparent,
             topBar = {
                 BackTopBar(
-                    title = stringResource(R.string.settings_file),
+                    title = stringResource(Res.string.settings_file),
                     onBack = { processor.action(FileAction.Back) },
                 )
             },
@@ -95,15 +95,15 @@ internal fun FileScreen(
 
     state.renaming?.let { dialog ->
         TextInputDialog(
-            title = stringResource(R.string.settings_file_name),
+            title = stringResource(Res.string.settings_file_name),
             value = dialog.name,
             onValueChange = { processor.action(FileAction.RenameChanged(it)) },
-            label = stringResource(R.string.settings_file_name),
-            confirmText = stringResource(R.string.action_save),
-            dismissText = stringResource(R.string.action_cancel),
+            label = stringResource(Res.string.settings_file_name),
+            confirmText = stringResource(Res.string.action_save),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = { processor.action(FileAction.RenameConfirm) },
             onDismiss = { processor.action(FileAction.RenameDismiss) },
-            error = if (dialog.empty) stringResource(R.string.error_name_empty) else null,
+            error = if (dialog.empty) stringResource(Res.string.error_name_empty) else null,
             loading = dialog.saving,
         )
     }
@@ -118,7 +118,7 @@ private fun LazyListScope.fileRows(
         Card(modifier = Modifier.fillMaxWidth()) {
             // The name under the title, not at the end: a name is often longer than a value
             ValueRow(
-                title = stringResource(R.string.settings_file_name),
+                title = stringResource(Res.string.settings_file_name),
                 text = file.name,
                 value = "",
                 onClick = { action(FileAction.Rename) },
@@ -131,8 +131,8 @@ private fun LazyListScope.fileRows(
     item(key = "file") {
         Card(modifier = Modifier.fillMaxWidth()) {
             ValueRow(
-                title = stringResource(R.string.settings_file_file),
-                text = file.fileName ?: stringResource(R.string.settings_file_file_unknown),
+                title = stringResource(Res.string.settings_file_file),
+                text = file.fileName ?: stringResource(Res.string.settings_file_file_unknown),
                 value = "",
                 onClick = null,
             )
@@ -141,13 +141,13 @@ private fun LazyListScope.fileRows(
     item(key = "format") {
         Card(modifier = Modifier.fillMaxWidth()) {
             ValueRow(
-                title = stringResource(R.string.settings_file_format),
+                title = stringResource(Res.string.settings_file_format),
                 value = when (file.version) {
                     KdbxVersion.V40 -> FORMAT_40
                     KdbxVersion.V41 -> FORMAT_41
                 },
                 // The core writes 4.1 alone: a file of 4.0 becomes 4.1 with its next save
-                text = if (file.version == KdbxVersion.V40) stringResource(R.string.settings_file_format_upgrade) else null,
+                text = if (file.version == KdbxVersion.V40) stringResource(Res.string.settings_file_format_upgrade) else null,
                 onClick = null,
             )
         }
@@ -156,14 +156,14 @@ private fun LazyListScope.fileRows(
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 RadioGroup(
-                    title = stringResource(R.string.settings_file_compression),
+                    title = stringResource(Res.string.settings_file_compression),
                     options = listOf(Compression.GZip, Compression.None),
                     selected = file.compression,
                     label = { compressionLabel(it) },
                     onSelect = { action(FileAction.SelectCompression(it)) },
                     // While the file is written with the one chosen, the choice waits
                     enabled = !savingCompression,
-                    text = stringResource(R.string.settings_file_compression_hint),
+                    text = stringResource(Res.string.settings_file_compression_hint),
                 )
                 if (savingCompression) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 12.dp))
@@ -175,8 +175,8 @@ private fun LazyListScope.fileRows(
 
 @Composable
 private fun compressionLabel(compression: Compression): String = when (compression) {
-    Compression.GZip -> stringResource(R.string.settings_file_compression_gzip)
-    Compression.None -> stringResource(R.string.settings_file_compression_none)
+    Compression.GZip -> stringResource(Res.string.settings_file_compression_gzip)
+    Compression.None -> stringResource(Res.string.settings_file_compression_none)
 }
 
 /** The names of the formats - the same in every language. */

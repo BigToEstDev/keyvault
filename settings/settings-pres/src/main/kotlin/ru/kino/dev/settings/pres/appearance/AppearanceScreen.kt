@@ -18,12 +18,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.orbitmvi.orbit.compose.collectAsState
+import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.pres.settings.components.SettingsCard
@@ -35,6 +35,7 @@ import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.RadioGroup
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.SwitchRow
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * How the app looks: the group "Theme" - the theme of the app and the color theme to come (pass-docs, Step 55);
@@ -53,7 +54,7 @@ internal fun AppearanceScreen(
     val message = state.message?.let {
         stringResource(
             when (it) {
-                AppearanceMessage.NotSaved -> R.string.settings_message_not_saved
+                AppearanceMessage.NotSaved -> Res.string.settings_message_not_saved
             },
         )
     }
@@ -65,7 +66,7 @@ internal fun AppearanceScreen(
             containerColor = Color.Transparent,
             topBar = {
                 BackTopBar(
-                    title = stringResource(R.string.settings_appearance),
+                    title = stringResource(Res.string.settings_appearance),
                     onBack = { processor.action(AppearanceAction.Back) },
                 )
             },
@@ -78,11 +79,11 @@ internal fun AppearanceScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                item(key = "theme") { SettingsSectionHeader(title = stringResource(R.string.settings_theme)) }
+                item(key = "theme") { SettingsSectionHeader(title = stringResource(Res.string.settings_theme)) }
                 item(key = "mode") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         RadioGroup(
-                            title = stringResource(R.string.settings_theme_mode),
+                            title = stringResource(Res.string.settings_theme_mode),
                             options = ThemeMode.entries,
                             // Until read nothing is chosen for real: the choice is disabled meanwhile
                             selected = state.themeMode ?: ThemeMode.System,
@@ -97,14 +98,14 @@ internal fun AppearanceScreen(
                 item(key = "colors") {
                     SettingsCard(
                         icon = Icons.Filled.Palette,
-                        title = stringResource(R.string.settings_color_theme),
-                        text = stringResource(R.string.settings_coming_soon),
+                        title = stringResource(Res.string.settings_color_theme),
+                        text = stringResource(Res.string.settings_coming_soon),
                         enabled = false,
                     )
                 }
                 item(key = "language-header") {
                     // Set apart from the group above, as the sections of the main screen
-                    SettingsSectionHeader(title = stringResource(R.string.settings_language), top = 8.dp)
+                    SettingsSectionHeader(title = stringResource(Res.string.settings_language), top = 8.dp)
                 }
                 item(key = "language") {
                     Card(modifier = Modifier.fillMaxWidth()) {
@@ -112,7 +113,7 @@ internal fun AppearanceScreen(
                             selected = state.language,
                             options = AppLanguage.entries.map { DropdownOption(it, stringResource(it.label)) },
                             onSelect = { processor.action(AppearanceAction.SelectLanguage(it)) },
-                            label = stringResource(R.string.settings_language),
+                            label = stringResource(Res.string.settings_language),
                             // Until read nothing is chosen for real: the choice is disabled meanwhile
                             enabled = state.language != null,
                             modifier = Modifier.padding(16.dp),
@@ -120,13 +121,13 @@ internal fun AppearanceScreen(
                     }
                 }
                 item(key = "entries-header") {
-                    SettingsSectionHeader(title = stringResource(R.string.settings_entries), top = 8.dp)
+                    SettingsSectionHeader(title = stringResource(Res.string.settings_entries), top = 8.dp)
                 }
                 item(key = "password-coloring") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
-                            title = stringResource(R.string.settings_password_coloring),
-                            text = stringResource(R.string.settings_password_coloring_hint),
+                            title = stringResource(Res.string.settings_password_coloring),
+                            text = stringResource(Res.string.settings_password_coloring_hint),
                             // Until read nothing is chosen for real: the switch is disabled meanwhile, shown on
                             checked = state.passwordColoring ?: true,
                             onCheckedChange = { processor.action(AppearanceAction.SetPasswordColoring(it)) },
@@ -137,8 +138,8 @@ internal fun AppearanceScreen(
                 item(key = "password-strength") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
-                            title = stringResource(R.string.settings_password_strength),
-                            text = stringResource(R.string.settings_password_strength_hint),
+                            title = stringResource(Res.string.settings_password_strength),
+                            text = stringResource(Res.string.settings_password_strength_hint),
                             // Until read nothing is chosen for real: the switch is disabled meanwhile, shown off
                             checked = state.passwordStrength ?: false,
                             onCheckedChange = { processor.action(AppearanceAction.SetPasswordStrength(it)) },
@@ -149,13 +150,13 @@ internal fun AppearanceScreen(
                 item(key = "user-name-in-list") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
-                            title = stringResource(R.string.settings_user_name_in_list),
+                            title = stringResource(Res.string.settings_user_name_in_list),
                             // The open database hides user names: off, whatever the app chose (pass-docs, Step 56, item 5)
                             text = stringResource(
                                 if (state.userNameHidden) {
-                                    R.string.settings_user_name_hidden_hint
+                                    Res.string.settings_user_name_hidden_hint
                                 } else {
-                                    R.string.settings_user_name_in_list_hint
+                                    Res.string.settings_user_name_in_list_hint
                                 },
                             ),
                             checked = !state.userNameHidden && state.userNameInList == true,
@@ -167,8 +168,8 @@ internal fun AppearanceScreen(
                 item(key = "entry-count") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
-                            title = stringResource(R.string.settings_entry_count),
-                            text = stringResource(R.string.settings_entry_count_hint),
+                            title = stringResource(Res.string.settings_entry_count),
+                            text = stringResource(Res.string.settings_entry_count_hint),
                             checked = state.entryCount ?: true,
                             onCheckedChange = { processor.action(AppearanceAction.SetEntryCount(it)) },
                             enabled = state.entryCount != null,
@@ -178,8 +179,8 @@ internal fun AppearanceScreen(
                 item(key = "entry-count-nested") {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         SwitchRow(
-                            title = stringResource(R.string.settings_entry_count_nested),
-                            text = stringResource(R.string.settings_entry_count_nested_hint),
+                            title = stringResource(Res.string.settings_entry_count_nested),
+                            text = stringResource(Res.string.settings_entry_count_nested_hint),
                             checked = state.entryCountNested ?: true,
                             onCheckedChange = { processor.action(AppearanceAction.SetEntryCountNested(it)) },
                             // Nothing to count without the number
@@ -192,16 +193,16 @@ internal fun AppearanceScreen(
     }
 }
 
-private val ThemeMode.label: Int
+private val ThemeMode.label: StringResource
     get() = when (this) {
-        ThemeMode.System -> R.string.settings_theme_system
-        ThemeMode.Light -> R.string.settings_theme_light
-        ThemeMode.Dark -> R.string.settings_theme_dark
+        ThemeMode.System -> Res.string.settings_theme_system
+        ThemeMode.Light -> Res.string.settings_theme_light
+        ThemeMode.Dark -> Res.string.settings_theme_dark
     }
 
-private val AppLanguage.label: Int
+private val AppLanguage.label: StringResource
     get() = when (this) {
-        AppLanguage.System -> R.string.settings_language_system
-        AppLanguage.English -> R.string.settings_language_english
-        AppLanguage.Russian -> R.string.settings_language_russian
+        AppLanguage.System -> Res.string.settings_language_system
+        AppLanguage.English -> Res.string.settings_language_english
+        AppLanguage.Russian -> Res.string.settings_language_russian
     }

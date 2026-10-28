@@ -25,17 +25,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.orbitmvi.orbit.compose.collectAsState
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.pres.common.EntryReadFields
 import ru.kino.dev.vault.pres.common.EntryReadSkeleton
 import ru.kino.dev.vault.pres.common.EntryTimesText
@@ -62,8 +62,8 @@ internal fun TrashEntryScreen(
     val message = state.message?.let {
         stringResource(
             when (it) {
-                TrashEntryMessage.LoadFailed -> R.string.entry_message_load_failed
-                TrashEntryMessage.Unexpected -> R.string.error_unexpected
+                TrashEntryMessage.LoadFailed -> Res.string.entry_message_load_failed
+                TrashEntryMessage.Unexpected -> Res.string.error_unexpected
             },
         )
     }
@@ -80,14 +80,14 @@ internal fun TrashEntryScreen(
             containerColor = Color.Transparent,
             topBar = {
                 BackTopBar(
-                    title = entry?.content?.value(StandardPreset.TITLE)?.ifEmpty { stringResource(R.string.entry_untitled) }
+                    title = entry?.content?.value(StandardPreset.TITLE)?.ifEmpty { stringResource(Res.string.entry_untitled) }
                         .orEmpty(),
                     onBack = { processor.action(TrashEntryAction.Back) },
                     skeleton = skeleton,
                 ) {
                     if (trashed != null) {
                         IconButton(onClick = { processor.action(TrashEntryAction.Remove) }) {
-                            Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.trash_remove_title))
+                            Icon(Icons.Filled.Delete, contentDescription = stringResource(Res.string.trash_remove_title))
                         }
                     }
                 }
@@ -95,7 +95,7 @@ internal fun TrashEntryScreen(
             floatingActionButton = {
                 if (trashed != null) {
                     FloatingActionButton(onClick = { processor.action(TrashEntryAction.Restore) }) {
-                        Icon(Icons.Filled.RestoreFromTrash, contentDescription = stringResource(R.string.action_restore))
+                        Icon(Icons.Filled.RestoreFromTrash, contentDescription = stringResource(Res.string.action_restore))
                     }
                 }
             },
@@ -140,11 +140,11 @@ internal fun TrashEntryScreen(
         if (state.notSaved) {
             AlertDialog(
                 onDismissRequest = { processor.action(TrashEntryAction.NotSavedSeen) },
-                title = { Text(stringResource(R.string.entry_not_saved_title)) },
-                text = { Text(stringResource(R.string.entry_not_saved_text)) },
+                title = { Text(stringResource(Res.string.entry_not_saved_title)) },
+                text = { Text(stringResource(Res.string.entry_not_saved_text)) },
                 confirmButton = {
                     TextButton(onClick = { processor.action(TrashEntryAction.NotSavedSeen) }) {
-                        Text(stringResource(R.string.action_ok))
+                        Text(stringResource(Res.string.action_ok))
                     }
                 },
             )

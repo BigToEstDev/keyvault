@@ -8,11 +8,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.FieldMenuButton
 import ru.kino.dev.ui.components.TextField
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * A field of a preset on its form (pass-docs, Step 49, answer 10): it has a name and no value yet, so it is
@@ -51,7 +51,7 @@ internal fun PresetFieldRow(
                     // As wide as the eye of the entry: the button's room around the icon
                     Icon(
                         imageVector = Icons.Filled.Lock,
-                        contentDescription = stringResource(R.string.field_protected),
+                        contentDescription = stringResource(Res.string.field_protected),
                         modifier = Modifier.padding(12.dp),
                     )
                 }

@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.password
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -24,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.phone.PhoneType
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.CopyButton
 import ru.kino.dev.ui.components.FieldRow
@@ -38,6 +37,7 @@ import ru.kino.dev.ui.components.rememberSecretText
 import ru.kino.dev.ui.components.rememberSensitiveClipboard
 import ru.kino.dev.ui.phone.phoneShown
 import ru.kino.dev.ui.preset.fieldLabel
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryField
 
@@ -78,7 +78,7 @@ internal fun EntryReadFields(
     group?.let {
         InfoChip(
             icon = Icons.Filled.Folder,
-            description = stringResource(R.string.entry_field_group),
+            description = stringResource(Res.string.entry_field_group),
             text = it.subtitle() ?: it.title(),
             tint = MaterialTheme.colorScheme.primary,
         )
@@ -88,7 +88,7 @@ internal fun EntryReadFields(
         InfoChip(
             icon = Icons.Filled.Delete,
             description = null,
-            text = stringResource(R.string.trash_deleted_at, entryTimeText(it)),
+            text = stringResource(Res.string.trash_deleted_at, entryTimeText(it)),
             tint = MaterialTheme.colorScheme.onSurface,
         )
     }
@@ -132,7 +132,7 @@ private fun TitleSection(title: String, clipboard: SensitiveClipboard?, privacy:
         Row(verticalAlignment = Alignment.CenterVertically) {
             EntryIconFrame()
             Text(
-                text = rememberSecretText(title.ifEmpty { stringResource(R.string.entry_untitled) }, hidden, private),
+                text = rememberSecretText(title.ifEmpty { stringResource(Res.string.entry_untitled) }, hidden, private),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier
                     .weight(1f)
