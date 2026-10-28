@@ -1,16 +1,22 @@
 plugins {
-    id("android-lib")
+    id("kmp-lib")
 }
 
-dependencies {
-    api(projects.vault.vaultDomain)
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            api(projects.vault.vaultDomain)
+            // The directory of the app and its preferences stores (pass-docs, Step 86)
+            implementation(projects.core.coreData)
 
-    implementation(libs.koin.android)
+            implementation(libs.koin.core)
 
-    // The filter of the list: two codes in preferences, kept across launches
-    implementation(libs.androidx.datastore.preferences)
-
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(projects.core.coreDomainFakes)
+            // The filter of the list: two codes in preferences, kept across launches
+            implementation(libs.androidx.datastore.preferences)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(projects.core.coreDomainFakes)
+        }
+    }
 }
