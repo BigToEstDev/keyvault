@@ -13,7 +13,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.orbit.test)
-    testImplementation(testFixtures(projects.settings.settingsDomain))
-    testImplementation(testFixtures(projects.core.coreDomain))
-    testImplementation(testFixtures(projects.vault.vaultDomain))
+    testImplementation(projects.settings.settingsDomainFakes)
+    testImplementation(projects.core.coreDomainFakes)
+    testImplementation(projects.vault.vaultDomainFakes)
 }
