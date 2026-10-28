@@ -1,11 +1,11 @@
 package ru.kino.dev.vault.data
 
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Test
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.DatabaseFileException
 import ru.kino.dev.core.FakeDatabaseFiles
@@ -24,7 +24,7 @@ class VaultDatabaseRepositoryImplTest {
     fun `saving writes the bytes the core gave into the file`() = runTest {
         repository.save(DB)
 
-        assertArrayEquals(core.databaseBytes, files.contents[DB])
+        assertContentEquals(core.databaseBytes, files.contents[DB])
         assertEquals(listOf("saveDatabase $DB", "writeReplacing $DB"), journal)
     }
 
@@ -63,7 +63,7 @@ class VaultDatabaseRepositoryImplTest {
         files.contents[DB] = byteArrayOf(1, 2)
 
         assertFalse(repository.hasChangedElsewhere(DB))
-        assertArrayEquals(byteArrayOf(1, 2), core.bytesReceived)
+        assertContentEquals(byteArrayOf(1, 2), core.bytesReceived)
     }
 
     @Test
@@ -90,7 +90,7 @@ class VaultDatabaseRepositoryImplTest {
         val summary = repository.merge(DB)
 
         assertEquals(core.mergeSummary, summary)
-        assertArrayEquals(byteArrayOf(7), core.bytesReceived)
+        assertContentEquals(byteArrayOf(7), core.bytesReceived)
     }
 
     private companion object {

@@ -1,8 +1,8 @@
 package ru.kino.dev.vault.data.file
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Test
 import ru.kino.dev.core.Compression
 import ru.kino.dev.core.DatabaseFile
 import ru.kino.dev.core.FakeDatabaseFiles

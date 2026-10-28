@@ -1,13 +1,14 @@
 package ru.kino.dev.welcome.data
 
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
-import org.junit.Test
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.FakeDatabaseFiles
@@ -18,7 +19,6 @@ import ru.kino.dev.core.expectFailure
 import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
-import kotlin.coroutines.cancellation.CancellationException
 
 class WelcomeDatabaseRepositoryImplTest {
 
@@ -57,7 +57,7 @@ class WelcomeDatabaseRepositoryImplTest {
 
         repository.open(DB, "pw", null)
 
-        assertFalse(journal.toString(), journal.contains("forgetAllBiometrics"))
+        assertFalse(journal.contains("forgetAllBiometrics"), journal.toString())
     }
 
     @Test
@@ -68,7 +68,7 @@ class WelcomeDatabaseRepositoryImplTest {
             repository.create(DB, "pw", null)
 
             assertInOrder("remember $DB", "forgetAllBiometrics")
-            assertFalse(journal.toString(), journal.any { it.startsWith("forgetBiometricsOtherThan") })
+            assertFalse(journal.any { it.startsWith("forgetBiometricsOtherThan") }, journal.toString())
         }
 
     @Test
@@ -107,7 +107,7 @@ class WelcomeDatabaseRepositoryImplTest {
 
         repository.open(DB, "pw", KEY)
 
-        assertArrayEquals(DB_BYTES, core.bytesReceived)
+        assertContentEquals(DB_BYTES, core.bytesReceived)
         assertEquals("pw", core.passwordReceived)
         assertEquals("my.keyx", core.keyFilesReceived.single().name)
     }
@@ -152,7 +152,7 @@ class WelcomeDatabaseRepositoryImplTest {
         expectFailure<WelcomeFailure.InvalidCredentials> { repository.open(DB, "wrong", null) }
 
         assertSame(before, store.current.value)
-        assertFalse(journal.toString(), journal.any { it.startsWith("keepAccess") })
+        assertFalse(journal.any { it.startsWith("keepAccess") }, journal.toString())
     }
 
     @Test
@@ -164,7 +164,7 @@ class WelcomeDatabaseRepositoryImplTest {
 
         assertEquals(PickedFile.Database, failure.file)
         assertSame(before, store.current.value)
-        assertFalse(journal.toString(), journal.any { it.startsWith("openDatabase") })
+        assertFalse(journal.any { it.startsWith("openDatabase") }, journal.toString())
     }
 
     @Test
@@ -185,7 +185,7 @@ class WelcomeDatabaseRepositoryImplTest {
 
         expectFailure<WelcomeFailure.KeyFileTooLarge> { repository.open(DB, "pw", KEY) }
 
-        assertFalse(journal.toString(), journal.any { it.startsWith("openDatabase") })
+        assertFalse(journal.any { it.startsWith("openDatabase") }, journal.toString())
     }
 
     @Test
@@ -196,7 +196,7 @@ class WelcomeDatabaseRepositoryImplTest {
         val failure = expectFailure<WelcomeFailure.FileUnreachable> { repository.open(DB, "pw", null) }
 
         assertEquals(PickedFile.Database, failure.file)
-        assertTrue(journal.toString(), "closeDatabase $DB" in journal)
+        assertTrue("closeDatabase $DB" in journal, journal.toString())
         assertFalse(DB in core.opened)
         assertNull(store.current.value)
     }
@@ -265,7 +265,7 @@ class WelcomeDatabaseRepositoryImplTest {
 
         repository.unlock(DB, "pw", KEY)
 
-        assertFalse(journal.toString(), journal.any { it.startsWith("keepAccess") || it.startsWith("remember") })
+        assertFalse(journal.any { it.startsWith("keepAccess") || it.startsWith("remember") }, journal.toString())
     }
 
     @Test
@@ -317,7 +317,7 @@ class WelcomeDatabaseRepositoryImplTest {
 
         repository.unlock(DB, "pw", KEY)
 
-        assertFalse(journal.toString(), journal.any { it.startsWith("remember") })
+        assertFalse(journal.any { it.startsWith("remember") }, journal.toString())
     }
 
     @Test
@@ -346,7 +346,7 @@ class WelcomeDatabaseRepositoryImplTest {
         val dbKey = repository.create(DB, "pw", null)
 
         assertEquals(DB, dbKey)
-        assertArrayEquals(core.databaseBytes, files.contents[DB])
+        assertContentEquals(core.databaseBytes, files.contents[DB])
         assertInOrder("createDatabase $DB", "writeReplacing $DB", "keepAccess $DB", "remember $DB")
         assertTrue(DB in core.opened)
     }
@@ -438,8 +438,8 @@ class WelcomeDatabaseRepositoryImplTest {
 
         expectFailure<WelcomeFailure.Unexpected> { repository.create(DB, "pw", null) }
 
-        assertArrayEquals(byteArrayOf(1, 2, 3), files.contents[DB])
-        assertFalse(journal.toString(), journal.any { it.startsWith("delete") })
+        assertContentEquals(byteArrayOf(1, 2, 3), files.contents[DB])
+        assertFalse(journal.any { it.startsWith("delete") }, journal.toString())
     }
 
     @Test
@@ -450,7 +450,7 @@ class WelcomeDatabaseRepositoryImplTest {
 
         expectFailure<WelcomeFailure.Unexpected> { repository.create(DB, "pw", null) }
 
-        assertTrue(journal.toString(), "delete $DB" in journal)
+        assertTrue("delete $DB" in journal, journal.toString())
     }
 
     @Test
@@ -499,12 +499,12 @@ class WelcomeDatabaseRepositoryImplTest {
         CurrentDatabase(DB, "passwords.kdbx", "Passwords", null, null).also { store.current.value = it }
 
     private fun assertWiped(keyFile: KeyFile) {
-        assertTrue("the key file was not wiped", keyFile.content.all { it == 0.toByte() })
+        assertTrue(keyFile.content.all { it == 0.toByte() }, "the key file was not wiped")
     }
 
     private fun assertInOrder(vararg calls: String) {
-        val positions = calls.map { call -> journal.indexOf(call).also { assertTrue("$call: $journal", it >= 0) } }
-        assertEquals(journal.toString(), positions.sorted(), positions)
+        val positions = calls.map { call -> journal.indexOf(call).also { assertTrue(it >= 0, "$call: $journal") } }
+        assertEquals(positions.sorted(), positions, journal.toString())
     }
 
     private companion object {

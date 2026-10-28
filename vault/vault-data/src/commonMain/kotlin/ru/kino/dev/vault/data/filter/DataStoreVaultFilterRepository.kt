@@ -1,12 +1,10 @@
 package ru.kino.dev.vault.data.filter
 
-import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -63,6 +61,3 @@ internal class DataStoreVaultFilterRepository(
         )
     }
 }
-
-// The extension is the documented way to declare a store: one instance per file for the whole process
-internal val Context.vaultFilterStore: DataStore<Preferences> by preferencesDataStore(name = "vault_filter")

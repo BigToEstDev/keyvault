@@ -1,8 +1,8 @@
 package ru.kino.dev.vault.data.entries
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Test
 import ru.kino.dev.core.DatabaseEntries
 import ru.kino.dev.core.FakeNativeCore
 import ru.kino.dev.core.FieldProtection

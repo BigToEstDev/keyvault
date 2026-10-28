@@ -1,9 +1,9 @@
 package ru.kino.dev.welcome.data
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
 import ru.kino.dev.welcome.CurrentDatabase
 
 class RememberedKeyFileImplTest {

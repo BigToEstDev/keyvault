@@ -1,9 +1,9 @@
 package ru.kino.dev.vault.data.history
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
-import org.junit.Test
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.FakeNativeCore

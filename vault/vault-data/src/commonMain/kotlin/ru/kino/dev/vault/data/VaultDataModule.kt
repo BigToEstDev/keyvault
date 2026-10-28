@@ -1,14 +1,16 @@
 package ru.kino.dev.vault.data
 
-import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import ru.kino.dev.log.ErrorLog
+import ru.kino.dev.storage.AppDataDir
+import ru.kino.dev.storage.preferencesStore
 import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.credentials.DatabaseCredentials
 import ru.kino.dev.vault.data.credentials.DatabaseCredentialsImpl
@@ -16,7 +18,6 @@ import ru.kino.dev.vault.data.entries.EntrySettingsRepositoryImpl
 import ru.kino.dev.vault.data.entry.EntryRepositoryImpl
 import ru.kino.dev.vault.data.file.DatabaseFileRepositoryImpl
 import ru.kino.dev.vault.data.filter.DataStoreVaultFilterRepository
-import ru.kino.dev.vault.data.filter.vaultFilterStore
 import ru.kino.dev.vault.data.group.GroupRepositoryImpl
 import ru.kino.dev.vault.data.history.EntryHistoryRepositoryImpl
 import ru.kino.dev.vault.data.security.SecurityRepositoryImpl
@@ -42,6 +43,8 @@ import ru.kino.dev.vault.security.SecurityEditor
 import ru.kino.dev.vault.security.SecurityRepository
 import ru.kino.dev.vault.trash.TrashEditor
 import ru.kino.dev.vault.trash.TrashRepository
+
+private const val VAULT_FILTER_STORE = "vault_filter"
 
 /** Binds the repositories of `vault` to their implementations, and builds its use cases and its lock. */
 val vaultDataModule = module {
@@ -72,6 +75,7 @@ val vaultDataModule = module {
     single { DatabaseGuard() }
 
     single {
+        val log = get<ErrorLog>()
         AutoLock(
             database = get(),
             guard = get(),
@@ -79,11 +83,15 @@ val vaultDataModule = module {
             timer = get(),
             // The app's own: the lock outlives any screen
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-            onFailure = { Log.e(AUTO_LOCK_TAG, "the core refused to lock the database", it) },
+            // The core refused to lock the database (pass-docs, Step 86: into ErrorLog, not android.util.Log)
+            onFailure = { log.unexpected(AUTO_LOCK_TAG, it) },
         )
     }
 
-    single<VaultFilterRepository> { DataStoreVaultFilterRepository(androidContext().vaultFilterStore) }
+    // One store per file for the whole process (pass-docs, Step 86)
+    single(named(VAULT_FILTER_STORE)) { get<AppDataDir>().preferencesStore(VAULT_FILTER_STORE) }
+
+    single<VaultFilterRepository> { DataStoreVaultFilterRepository(get(named(VAULT_FILTER_STORE))) }
 }
 
 private const val AUTO_LOCK_TAG = "AutoLock"

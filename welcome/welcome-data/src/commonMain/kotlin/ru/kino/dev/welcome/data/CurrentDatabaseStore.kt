@@ -1,11 +1,9 @@
 package ru.kino.dev.welcome.data
 
-import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerialName
@@ -21,15 +19,15 @@ import ru.kino.dev.welcome.CurrentDatabaseRepository
  * of the key file never come near this class.
  */
 internal class CurrentDatabaseStore(
-    private val context: Context,
+    private val store: DataStore<Preferences>,
 ) : CurrentDatabaseRepository, CurrentDatabaseWriter {
 
-    override val current: Flow<CurrentDatabase?> = context.currentDatabase.data.map { preferences ->
+    override val current: Flow<CurrentDatabase?> = store.data.map { preferences ->
         decode(preferences[ENTRY])
     }
 
     override suspend fun remember(database: CurrentDatabase) {
-        context.currentDatabase.edit { preferences ->
+        store.edit { preferences ->
             preferences[ENTRY] = json.encodeToString(CurrentDto.serializer(), database.toDto())
         }
     }
@@ -60,6 +58,3 @@ internal class CurrentDatabaseStore(
         val json = Json { ignoreUnknownKeys = true }
     }
 }
-
-// The extension is the documented way to declare a store: one instance per file for the whole process
-private val Context.currentDatabase: DataStore<Preferences> by preferencesDataStore(name = "current_database")

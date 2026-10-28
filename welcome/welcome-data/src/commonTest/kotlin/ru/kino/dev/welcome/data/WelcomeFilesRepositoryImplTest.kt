@@ -1,12 +1,12 @@
 package ru.kino.dev.welcome.data
 
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.FakeDatabaseFiles
 import ru.kino.dev.core.FakeNativeCore
@@ -38,7 +38,7 @@ class WelcomeFilesRepositoryImplTest {
             assertFalse(repository.isReachable("content://docs/deleted.kdbx"))
             files.unreachable += KEY
             assertFalse(repository.isReachable(KEY))
-            assertFalse(journal.toString(), journal.any { it.startsWith("read") })
+            assertFalse(journal.any { it.startsWith("read") }, journal.toString())
         }
 
     @Test
@@ -48,7 +48,7 @@ class WelcomeFilesRepositoryImplTest {
 
         repository.checkKeyFile(KEY)
 
-        assertFalse(journal.toString(), journal.any { it.startsWith("read") })
+        assertFalse(journal.any { it.startsWith("read") }, journal.toString())
     }
 
     @Test
@@ -96,7 +96,7 @@ class WelcomeFilesRepositoryImplTest {
 
         repository.writeNewKeyFile(KEY)
 
-        assertArrayEquals(core.generatedKeyFile, files.contents[KEY])
+        assertContentEquals(core.generatedKeyFile, files.contents[KEY])
         assertEquals(listOf("generateKeyFile", "writeReplacing $KEY"), journal)
     }
 

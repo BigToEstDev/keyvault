@@ -1,17 +1,17 @@
 package ru.kino.dev.welcome.data
 
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.reflect.KClass
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
-import org.junit.Test
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.DatabaseFileException
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.reflect.KClass
 
 /** The table of pass-docs, `docs/android/screens/welcome/decisions.md`, "Ошибки", kind by kind. */
 class WelcomeFailuresTest {
@@ -43,8 +43,8 @@ class WelcomeFailuresTest {
             val core = CoreException(kind, "from the core")
             val mapped = core.toWelcomeFailure()
 
-            assertEquals(kind, expected, mapped::class)
-            assertSame("the core's failure goes along for the log", core, mapped.cause)
+            assertEquals(expected, mapped::class, kind)
+            assertSame(core, mapped.cause, "the core's failure goes along for the log")
         }
     }
 

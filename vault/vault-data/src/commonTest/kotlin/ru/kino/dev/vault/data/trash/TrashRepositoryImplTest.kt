@@ -1,11 +1,11 @@
 package ru.kino.dev.vault.data.trash
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.FakeNativeCore

@@ -1,9 +1,9 @@
 package ru.kino.dev.vault.data.security
 
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
-import org.junit.Test
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.CredentialsChange
@@ -27,7 +27,7 @@ class SecurityRepositoryImplTest {
         val keyFile = repository.readKeyFile(KEY)
 
         assertEquals("home.keyx", keyFile.name)
-        assertArrayEquals(byteArrayOf(7, 8, 9), keyFile.content)
+        assertContentEquals(byteArrayOf(7, 8, 9), keyFile.content)
         assertEquals(mapOf(KEY to false), documents.kept)
     }
 
