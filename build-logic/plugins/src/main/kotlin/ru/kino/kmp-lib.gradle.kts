@@ -34,4 +34,11 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll(compilerArgs)
     }
+
+    sourceSets {
+        // Every module tests with kotlin.test - the version is the one of the Kotlin plugin
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+    }
 }

@@ -17,5 +17,5 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(testFixtures(projects.core.coreDomain))
+    testImplementation(projects.core.coreDomainFakes)
 }
