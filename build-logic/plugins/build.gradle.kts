@@ -6,8 +6,6 @@ plugins {
 dependencies {
     implementation(libs.kotlin.gradle.plugin)
     implementation(libs.kotlin.compose.gradle.plugin)
-    implementation(libs.hilt.gradle)
-    implementation(libs.ksp.gradle.plugin)
     implementation(libs.android.gradle)
     implementation(libs.android.gradle.api)
     implementation(libs.compose.gradle.plugin)

@@ -10,9 +10,6 @@ dependencies {
     // The password of the open database checked before it is kept for biometrics (pass-docs, Step 59)
     implementation(projects.vault.vaultDomain)
 
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
-
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.orbit.test)

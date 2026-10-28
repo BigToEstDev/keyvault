@@ -35,8 +35,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
+    implementation(libs.koin.android)
     compileOnly(libs.errorprone.annotations)
     // The system splash stays up while the start route is read
     implementation(libs.androidx.core.splashscreen)
@@ -46,9 +45,8 @@ dependencies {
     implementation(projects.core.coreDomain)
     implementation(projects.core.corePres)
     implementation(projects.core.coreNav)
-    // The native core: its Hilt module binds NativeCore to the jni implementation
+    // The native core and the data modules of the features: the app puts their Koin modules into the graph
     implementation(projects.core.coreData)
-    // Feature data modules: nothing here calls them, but Hilt only sees the bindings of what the app depends on
     implementation(projects.welcome.welcomeData)
     implementation(projects.vault.vaultData)
     implementation(projects.settings.settingsData)
@@ -57,4 +55,8 @@ dependencies {
     implementation(projects.settings.settingsPres)
     // The theme of the whole app is a setting: the activity reads it
     implementation(projects.settings.settingsDomain)
+
+    testImplementation(libs.junit)
+    // The graph checked as the compiler of Hilt did: every definition has what it asks for (pass-docs, Step 84)
+    testImplementation(libs.koin.test)
 }

@@ -5,8 +5,7 @@ plugins {
 dependencies {
     api(projects.vault.vaultDomain)
 
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
+    implementation(libs.koin.android)
 
     // The filter of the list: two codes in preferences, kept across launches
     implementation(libs.androidx.datastore.preferences)

@@ -10,9 +10,6 @@ dependencies {
     // The sign-in settings: welcome listens through the domain of settings (pass-docs, Step 59)
     implementation(projects.settings.settingsDomain)
 
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
-
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.orbit.test)

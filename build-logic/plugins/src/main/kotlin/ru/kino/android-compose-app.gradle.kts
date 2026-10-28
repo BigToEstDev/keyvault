@@ -2,10 +2,7 @@ plugins {
     id("com.android.application")
     id("kotlin-parcelize")
     kotlin("plugin.compose")
-    id("com.google.dagger.hilt.android")
 }
-
-apply(plugin = "com.google.devtools.ksp")
 
 //kotlin {
 //    jvmToolchain(JAVA_VERSION.majorVersion.toInt())
@@ -14,10 +11,6 @@ apply(plugin = "com.google.devtools.ksp")
 //        freeCompilerArgs.addAll(compilerArgs)
 //    }
 //}
-
-hilt {
-    enableAggregatingTask = true
-}
 
 android {
 //    namespace = makeNamespace()

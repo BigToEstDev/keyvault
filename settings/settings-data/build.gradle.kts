@@ -7,8 +7,7 @@ plugins {
 dependencies {
     api(projects.settings.settingsDomain)
 
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
+    implementation(libs.koin.android)
 
     // The settings of the app: codes in one preferences file, kept across launches
     implementation(libs.androidx.datastore.preferences)

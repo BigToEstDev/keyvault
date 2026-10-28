@@ -2,10 +2,7 @@ plugins {
     id("com.android.library")
     id("kotlin-parcelize")
     kotlin("plugin.compose")
-    id("com.google.dagger.hilt.android")
 }
-
-apply(plugin = "com.google.devtools.ksp")
 
 kotlin {
     jvmToolchain(JAVA_VERSION.majorVersion.toInt())
@@ -13,10 +10,6 @@ kotlin {
         jvmTarget.set(JVM_TARGET)
         freeCompilerArgs.addAll(compilerArgs)
     }
-}
-
-hilt {
-    enableAggregatingTask = true
 }
 
 android {

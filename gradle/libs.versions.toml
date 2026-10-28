@@ -1,10 +1,8 @@
 [versions]
 agp = "9.2.1"
-androidx-hilt = "1.3.0"
 coreKtx = "1.19.0"
 coreSplashscreen = "1.2.0"
 biometric = "1.1.0"
-com-google-dagger = "2.60"
 gradle = "9.2.1"
 junit = "4.13.2"
 junitVersion = "1.1.5"
@@ -17,7 +15,6 @@ kotlin = "2.3.20"
 composeUi = "1.11.0"
 composeMaterial3 = "1.4.0"
 composeMaterialIcons = "1.7.8"
-ksp = "2.3.7"
 coroutines = "1.11.0"
 datastore = "1.2.1"
 kotlinxDatetime = "0.8.0"
@@ -75,21 +72,7 @@ orbit-compose = { group = "org.orbit-mvi", name = "orbit-compose", version.ref =
 orbit-test = { group = "org.orbit-mvi", name = "orbit-test", version.ref = "orbitMvi" }
 
 kotlin-compose-gradle-plugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
-ksp-gradle-plugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 
-hilt = { module = "com.google.dagger:hilt-android", version.ref = "com-google-dagger" }
-hilt-common = { module = "androidx.hilt:hilt-common", version.ref = "androidx-hilt" }
-hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "com-google-dagger" }
-hilt-ext-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "androidx-hilt" }
-hilt-gradle = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "com-google-dagger" }
-hilt-lifecycle-viewmodel = { module = "androidx.hilt:hilt-lifecycle-viewmodel", version.ref = "androidx-hilt" }
-hilt-navigation = { module = "androidx.hilt:hilt-navigation", version.ref = "androidx-hilt" }
-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "androidx-hilt" }
-hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "androidx-hilt" }
-hilt-navigation-compose-samples = "androidx.hilt:hilt-navigation-compose-samples:1.0.0-alpha03"
-hilt-navigation-fragment = { module = "androidx.hilt:hilt-navigation-fragment", version.ref = "androidx-hilt" }
-hilt-testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "com-google-dagger" }
-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "androidx-hilt" }
 errorprone-annotations = { group = "com.google.errorprone", name = "error_prone_annotations", version.ref = "errorprone" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
 
@@ -104,13 +87,10 @@ cmp-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lif
 cmp-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "cmpNavigation" }
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "coroutines" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
-koin-core = { module = "io.insert-koin:koin-core" }
-koin-android = { module = "io.insert-koin:koin-android" }
-koin-compose = { module = "io.insert-koin:koin-compose" }
-koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
-koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose" }
-koin-test = { module = "io.insert-koin:koin-test" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
+koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

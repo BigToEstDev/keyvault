@@ -7,8 +7,8 @@ plugins {
 dependencies {
     api(projects.core.coreDomain)
 
-    api(libs.hilt)
-    ksp(libs.hilt.compiler)
+    // The graph of the app: Koin, androidContext for the stores and the storage access framework
+    implementation(libs.koin.android)
 
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.coroutines.android)

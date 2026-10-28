@@ -16,10 +16,8 @@ android {
 dependencies {
     api(projects.core.coreDomain)
 
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
-    api(libs.hilt.navigation.compose)
-    api(libs.hilt.lifecycle.viewmodel.compose)
+    // koinViewModel and the viewModel definitions of Koin - multiplatform, for every screen
+    api(libs.koin.compose.viewmodel)
 
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.coroutines.android)
