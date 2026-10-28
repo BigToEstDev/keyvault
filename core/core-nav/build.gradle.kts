@@ -1,12 +1,17 @@
 plugins {
-    id("android-lib")
+    id("kmp-lib")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-dependencies {
-    implementation(libs.koin.core)
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.koin.core)
 
-    // Routes are serializable objects: the type-safe api of navigation-compose
-    api(libs.kotlinx.serialization.core)
-    api(libs.androidx.navigation.compose)
+            // Routes are serializable objects: the type-safe api of navigation-compose - multiplatform (pass-docs,
+            // Step 88)
+            api(libs.kotlinx.serialization.core)
+            api(libs.cmp.navigation.compose)
+        }
+    }
 }
