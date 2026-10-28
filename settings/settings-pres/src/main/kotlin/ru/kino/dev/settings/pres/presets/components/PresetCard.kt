@@ -12,12 +12,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.MenuButton
 import ru.kino.dev.ui.components.MenuItem
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * A preset in the list: its [name], and the pen with [menu] under it - "Edit", "Delete". The standard preset has no
@@ -44,7 +44,7 @@ internal fun PresetCard(name: String, menu: List<MenuItem>) {
             if (menu.isNotEmpty()) {
                 MenuButton(
                     icon = Icons.Filled.Edit,
-                    contentDescription = stringResource(R.string.preset_menu),
+                    contentDescription = stringResource(Res.string.preset_menu),
                     items = menu,
                 )
             }

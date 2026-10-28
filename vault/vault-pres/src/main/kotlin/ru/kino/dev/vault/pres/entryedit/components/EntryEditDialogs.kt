@@ -4,13 +4,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
 import ru.kino.dev.core.FieldType
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.FieldDialog
 import ru.kino.dev.ui.phone.PhoneCountryDialog
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.entry.NameProblem
 import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.pres.entryedit.EntryEditDialog
@@ -36,38 +36,38 @@ internal fun EntryEditDialogs(
         null -> Unit
 
         is EntryEditDialog.AddField -> FieldDialog(
-            title = stringResource(R.string.entry_add_field_title),
+            title = stringResource(Res.string.entry_add_field_title),
             name = dialog.name,
             onNameChange = onNameChange,
             protected = dialog.protected,
             onProtectedChange = onProtectedChange,
             type = FieldType.of(dialog.type),
             onTypeChange = onTypeChange,
-            confirmText = stringResource(R.string.action_add),
+            confirmText = stringResource(Res.string.action_add),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             error = dialog.problem?.let { nameProblemText(it) },
         )
 
         is EntryEditDialog.EditField -> FieldDialog(
-            title = stringResource(R.string.entry_edit_field_title),
+            title = stringResource(Res.string.entry_edit_field_title),
             name = dialog.name,
             onNameChange = onNameChange,
             protected = dialog.protected,
             onProtectedChange = onProtectedChange,
             type = FieldType.of(dialog.type),
             onTypeChange = onTypeChange,
-            confirmText = stringResource(R.string.action_save),
+            confirmText = stringResource(Res.string.action_save),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             error = dialog.problem?.let { nameProblemText(it) },
         )
 
         is EntryEditDialog.DeleteField -> ConfirmDialog(
-            title = stringResource(R.string.entry_delete_field_title),
-            text = stringResource(R.string.entry_delete_field_text, dialog.name),
-            confirmText = stringResource(R.string.action_delete),
-            dismissText = stringResource(R.string.action_cancel),
+            title = stringResource(Res.string.entry_delete_field_title),
+            text = stringResource(Res.string.entry_delete_field_text, dialog.name),
+            confirmText = stringResource(Res.string.action_delete),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             destructive = true,
@@ -81,7 +81,7 @@ internal fun EntryEditDialogs(
         )
 
         is EntryEditDialog.Preset -> PresetChoiceDialog(
-            title = stringResource(R.string.entry_preset),
+            title = stringResource(Res.string.entry_preset),
             presets = dialog.presets,
             selected = dialog.selected,
             onChoose = onPresetChosen,
@@ -105,10 +105,10 @@ internal fun EntryEditDialogs(
         )
 
         EntryEditDialog.Leave -> ConfirmDialog(
-            title = stringResource(R.string.entry_leave_title),
-            text = stringResource(R.string.entry_leave_text),
-            confirmText = stringResource(R.string.entry_leave_confirm),
-            dismissText = stringResource(R.string.entry_leave_stay),
+            title = stringResource(Res.string.entry_leave_title),
+            text = stringResource(Res.string.entry_leave_text),
+            confirmText = stringResource(Res.string.entry_leave_confirm),
+            dismissText = stringResource(Res.string.entry_leave_stay),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
         )
@@ -116,9 +116,9 @@ internal fun EntryEditDialogs(
         // One button: the change is made either way, there is nothing to choose
         EntryEditDialog.NotSaved -> AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text(stringResource(R.string.entry_not_saved_title)) },
-            text = { Text(stringResource(R.string.entry_not_saved_text)) },
-            confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.action_ok)) } },
+            title = { Text(stringResource(Res.string.entry_not_saved_title)) },
+            text = { Text(stringResource(Res.string.entry_not_saved_text)) },
+            confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(Res.string.action_ok)) } },
         )
     }
 }
@@ -126,6 +126,6 @@ internal fun EntryEditDialogs(
 /** Why the name of an own field cannot be used - under the field in a dialog and on the form. */
 @Composable
 internal fun nameProblemText(problem: NameProblem): String = when (problem) {
-    NameProblem.EMPTY -> stringResource(R.string.error_name_empty)
-    NameProblem.TAKEN -> stringResource(R.string.entry_field_name_taken)
+    NameProblem.EMPTY -> stringResource(Res.string.error_name_empty)
+    NameProblem.TAKEN -> stringResource(Res.string.entry_field_name_taken)
 }

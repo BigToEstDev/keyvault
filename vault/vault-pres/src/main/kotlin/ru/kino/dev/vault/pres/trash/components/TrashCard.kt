@@ -21,11 +21,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.pres.common.entryDateText
 import ru.kino.dev.vault.trash.TrashEntry
 
@@ -74,13 +74,13 @@ internal fun TrashCard(
             }
             Column(modifier = Modifier.padding(start = 24.dp)) {
                 Text(
-                    text = item.entry.title.ifEmpty { stringResource(R.string.entry_untitled) },
+                    text = item.entry.title.ifEmpty { stringResource(Res.string.entry_untitled) },
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = stringResource(R.string.trash_deleted_at, entryDateText(item.deletedAt)),
+                    text = stringResource(Res.string.trash_deleted_at, entryDateText(item.deletedAt)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

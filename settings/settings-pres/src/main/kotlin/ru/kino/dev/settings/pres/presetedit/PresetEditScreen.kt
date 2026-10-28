@@ -21,15 +21,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import org.orbitmvi.orbit.compose.collectAsState
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.FieldPosition
 import ru.kino.dev.core.preset.PresetLimits
 import ru.kino.dev.core.preset.StandardPreset
@@ -47,6 +45,8 @@ import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.TextField
 import ru.kino.dev.ui.preset.fieldLabel
+import ru.kino.dev.ui.res.pluralStringResource
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * Creating a preset of one's own, or editing the one of [presetId] (pass-docs, vault-our.md "Экран создания
@@ -59,7 +59,7 @@ internal fun PresetEditScreen(
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
-    val standardName = stringResource(R.string.entry_preset_standard)
+    val standardName = stringResource(Res.string.entry_preset_standard)
 
     LaunchedEffect(Unit) { processor.action(PresetEditAction.Load) }
 
@@ -69,12 +69,12 @@ internal fun PresetEditScreen(
     val message = state.message?.let {
         when (it) {
             PresetEditMessage.TooMany -> pluralStringResource(
-                R.plurals.preset_too_many,
+                Res.plurals.preset_too_many,
                 PresetLimits.MAX_PRESETS,
                 PresetLimits.MAX_PRESETS,
             )
-            PresetEditMessage.NotSaved -> stringResource(R.string.preset_not_saved)
-            PresetEditMessage.Gone -> stringResource(R.string.preset_gone)
+            PresetEditMessage.NotSaved -> stringResource(Res.string.preset_not_saved)
+            PresetEditMessage.Gone -> stringResource(Res.string.preset_gone)
         }
     }
     SnackbarMessage(message, snackbar) { processor.action(PresetEditAction.MessageShown) }
@@ -85,7 +85,7 @@ internal fun PresetEditScreen(
             containerColor = Color.Transparent,
             topBar = {
                 BackTopBar(
-                    title = stringResource(if (state.editing) R.string.preset_edit_title else R.string.preset_create_title),
+                    title = stringResource(if (state.editing) Res.string.preset_edit_title else Res.string.preset_create_title),
                     onBack = { processor.action(PresetEditAction.Back) },
                 )
             },
@@ -127,7 +127,7 @@ private fun PresetForm(state: PresetEditState, action: (PresetEditAction) -> Uni
         TextField(
             value = state.name,
             onValueChange = { action(PresetEditAction.NameChanged(it)) },
-            label = stringResource(R.string.preset_name),
+            label = stringResource(Res.string.preset_name),
             modifier = Modifier.fillMaxWidth(),
             required = true,
             error = state.nameProblem?.let { presetNameProblemText(it) },
@@ -142,7 +142,7 @@ private fun PresetForm(state: PresetEditState, action: (PresetEditAction) -> Uni
             if (card > 0) {
                 // A card the person added: the red badge on its corner deletes it, asking first
                 CardDeleteBadge(
-                    contentDescription = stringResource(R.string.preset_delete_card),
+                    contentDescription = stringResource(Res.string.preset_delete_card),
                     enabled = enabled,
                     onClick = { action(PresetEditAction.DeleteCard(card)) },
                     modifier = Modifier.align(Alignment.TopEnd),
@@ -154,7 +154,7 @@ private fun PresetForm(state: PresetEditState, action: (PresetEditAction) -> Uni
     // Past the most cards a preset takes there is no button; a card deleted brings it back
     if (state.canAddCard) {
         SecondaryButton(
-            text = stringResource(R.string.preset_add_card),
+            text = stringResource(Res.string.preset_add_card),
             onClick = { action(PresetEditAction.AddCard) },
             // As wide as "+ add field" in the cards above: inside the room of a card
             modifier = Modifier
@@ -201,7 +201,7 @@ private fun PresetCard(
         // Past the most fields a card takes there is no button; a field deleted brings it back
         if (state.canAddField(card)) {
             SecondaryButton(
-                text = stringResource(R.string.entry_add_field),
+                text = stringResource(Res.string.entry_add_field),
                 onClick = { action(PresetEditAction.AddField(card)) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = enabled,

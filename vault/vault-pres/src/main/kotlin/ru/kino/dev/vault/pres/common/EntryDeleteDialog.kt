@@ -1,9 +1,9 @@
 package ru.kino.dev.vault.pres.common
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.ConfirmDialog
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * "Delete the entry?" - into the recycle bin, or for good when the database does not use one; from its card in the
@@ -21,12 +21,12 @@ internal fun EntryDeleteDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val name = title.ifEmpty { stringResource(R.string.entry_untitled) }
+    val name = title.ifEmpty { stringResource(Res.string.entry_untitled) }
     ConfirmDialog(
-        title = stringResource(R.string.entry_delete_title),
-        text = stringResource(if (toBin) R.string.entry_delete_text else R.string.entry_delete_forever_text, name),
-        confirmText = stringResource(R.string.action_delete),
-        dismissText = stringResource(R.string.action_cancel),
+        title = stringResource(Res.string.entry_delete_title),
+        text = stringResource(if (toBin) Res.string.entry_delete_text else Res.string.entry_delete_forever_text, name),
+        confirmText = stringResource(Res.string.action_delete),
+        dismissText = stringResource(Res.string.action_cancel),
         onConfirm = onConfirm,
         onDismiss = onDismiss,
         destructive = true,

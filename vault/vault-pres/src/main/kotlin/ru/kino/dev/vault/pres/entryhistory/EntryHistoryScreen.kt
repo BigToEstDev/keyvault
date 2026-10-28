@@ -14,17 +14,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.orbitmvi.orbit.compose.collectAsState
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.history.EntryHistory
 import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.SkeletonCard
@@ -52,9 +52,9 @@ internal fun EntryHistoryScreen(
     val message = state.message?.let {
         stringResource(
             when (it) {
-                EntryHistoryMessage.LoadFailed -> R.string.entry_message_load_failed
-                EntryHistoryMessage.NotSaved -> R.string.message_file_not_saved
-                EntryHistoryMessage.Unexpected -> R.string.error_unexpected
+                EntryHistoryMessage.LoadFailed -> Res.string.entry_message_load_failed
+                EntryHistoryMessage.NotSaved -> Res.string.message_file_not_saved
+                EntryHistoryMessage.Unexpected -> Res.string.error_unexpected
             },
         )
     }
@@ -67,9 +67,9 @@ internal fun EntryHistoryScreen(
             containerColor = Color.Transparent,
             topBar = {
                 // The name of the entry; a skeleton while it is read
-                val title = history?.title?.ifEmpty { stringResource(R.string.entry_untitled) }
+                val title = history?.title?.ifEmpty { stringResource(Res.string.entry_untitled) }
                 EntryTopBar(
-                    title = title?.let { stringResource(R.string.entry_history_title, it) }.orEmpty(),
+                    title = title?.let { stringResource(Res.string.entry_history_title, it) }.orEmpty(),
                     onBack = { processor.action(EntryHistoryAction.Back) },
                     skeleton = if (history == null && state.loading) skeletonBrush() else null,
                     // Only with versions to delete: "Created" is the entry's own and stays
@@ -112,7 +112,7 @@ private fun LazyListScope.historyCards(history: EntryHistory, action: (EntryHist
         // The reader leaves out a version whose time cannot be read
         version.modified?.let { modified ->
             HistoryCard(
-                text = stringResource(R.string.entry_modified_at, entryTimeText(modified)),
+                text = stringResource(Res.string.entry_modified_at, entryTimeText(modified)),
                 items = listOf(
                     restoreMenuItem { action(EntryHistoryAction.Restore(version.index)) },
                     deleteVersionMenuItem { action(EntryHistoryAction.DeleteVersion(version.index)) },
@@ -123,7 +123,7 @@ private fun LazyListScope.historyCards(history: EntryHistory, action: (EntryHist
     }
     history.created?.let { created ->
         item(key = CREATED_KEY) {
-            HistoryCard(text = stringResource(R.string.entry_created_at, entryTimeText(created)))
+            HistoryCard(text = stringResource(Res.string.entry_created_at, entryTimeText(created)))
         }
     }
 }

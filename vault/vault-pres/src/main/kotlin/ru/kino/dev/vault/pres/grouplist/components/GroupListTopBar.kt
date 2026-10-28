@@ -21,10 +21,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.Breadcrumbs
 import ru.kino.dev.ui.components.CountBadgeIcon
 import ru.kino.dev.ui.components.MoreMenuButton
@@ -33,6 +32,7 @@ import ru.kino.dev.ui.components.SkeletonText
 import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.editMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.pres.grouplist.Crumb
 
 /**
@@ -63,7 +63,7 @@ internal fun GroupListTopBar(
     onDeleteGroup: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val fallback = stringResource(R.string.entry_database_fallback)
+    val fallback = stringResource(Res.string.entry_database_fallback)
     val names = path.mapIndexed { index, crumb -> if (index == 0) crumb.name.ifBlank { fallback } else crumb.name }
 
     Column(
@@ -81,7 +81,7 @@ internal fun GroupListTopBar(
         ) {
             if (!isRoot) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.action_back))
                 }
                 if (path.isEmpty()) {
                     // The tree is not read yet: a skeleton for the path, so it does not flash in
@@ -93,7 +93,7 @@ internal fun GroupListTopBar(
                 } else {
                     Breadcrumbs(items = names, onClick = onCrumb, modifier = Modifier.weight(1f))
                     MoreMenuButton(
-                        contentDescription = stringResource(R.string.vault_group_menu),
+                        contentDescription = stringResource(Res.string.vault_group_menu),
                         items = listOf(editMenuItem(onEditGroup), deleteMenuItem(onDeleteGroup)),
                     )
                 }
@@ -110,10 +110,10 @@ internal fun GroupListTopBar(
                         .padding(start = 16.dp),
                 )
                 IconButton(onClick = onTrash) {
-                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.settings_recycle_bin))
+                    Icon(Icons.Filled.Delete, contentDescription = stringResource(Res.string.settings_recycle_bin))
                 }
                 IconButton(onClick = onSettings) {
-                    Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.vault_settings))
+                    Icon(Icons.Filled.Settings, contentDescription = stringResource(Res.string.vault_settings))
                 }
             }
         }
@@ -125,7 +125,7 @@ internal fun GroupListTopBar(
             SearchBar(
                 query = query,
                 onQueryChange = onQueryChange,
-                placeholder = stringResource(R.string.vault_search),
+                placeholder = stringResource(Res.string.vault_search),
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = onFilters) {
@@ -138,7 +138,7 @@ internal fun GroupListTopBar(
 /** The filter button's icon: plain with the default filter; in the accent with a dot over it otherwise. */
 @Composable
 private fun FilterIcon(on: Boolean) {
-    val description = stringResource(if (on) R.string.vault_filters_on else R.string.vault_filters)
+    val description = stringResource(if (on) Res.string.vault_filters_on else Res.string.vault_filters)
     if (!on) {
         Icon(Icons.Filled.Tune, contentDescription = description)
         return

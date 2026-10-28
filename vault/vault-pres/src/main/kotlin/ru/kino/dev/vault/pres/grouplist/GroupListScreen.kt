@@ -24,28 +24,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.orbitmvi.orbit.compose.collectAsState
+import org.jetbrains.compose.resources.StringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.EmptySearchIllustration
 import ru.kino.dev.ui.components.EmptyState
 import ru.kino.dev.ui.components.ExpandableFab
 import ru.kino.dev.ui.components.FabItem
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
+import ru.kino.dev.ui.res.stringResource
+import ru.kino.dev.vault.pres.common.LockFab
+import ru.kino.dev.vault.pres.common.SkeletonCard
 import ru.kino.dev.vault.pres.grouplist.components.EntryCard
 import ru.kino.dev.vault.pres.grouplist.components.FilterDialog
 import ru.kino.dev.vault.pres.grouplist.components.GroupCard
 import ru.kino.dev.vault.pres.grouplist.components.GroupDialogs
 import ru.kino.dev.vault.pres.grouplist.components.GroupListTopBar
 import ru.kino.dev.vault.pres.grouplist.components.shown
-import ru.kino.dev.vault.pres.common.LockFab
-import ru.kino.dev.vault.pres.common.SkeletonCard
 
 /** @param groupId null for the root of the database */
 @Composable
@@ -112,10 +113,10 @@ internal fun GroupListScreen(
             expanded = state.fabExpanded,
             onToggle = { processor.action(GroupListAction.ToggleFab) },
             items = listOf(
-                FabItem(Icons.Filled.Key, stringResource(R.string.vault_create_entry)) {
+                FabItem(Icons.Filled.Key, stringResource(Res.string.vault_create_entry)) {
                     processor.action(GroupListAction.CreateEntry)
                 },
-                FabItem(Icons.Filled.CreateNewFolder, stringResource(R.string.vault_create_group)) {
+                FabItem(Icons.Filled.CreateNewFolder, stringResource(Res.string.vault_create_group)) {
                     processor.action(GroupListAction.CreateGroup)
                 },
             ),
@@ -155,7 +156,7 @@ private fun FabDismissLayer(onDismiss: () -> Unit) {
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClickLabel = stringResource(R.string.action_close),
+                onClickLabel = stringResource(Res.string.action_close),
                 onClick = onDismiss,
             ),
     )
@@ -219,10 +220,10 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
 @Composable
 private fun locationText(names: List<String>?, fromRoot: Boolean): String? {
     if (names == null) return null
-    val fallback = stringResource(R.string.entry_database_fallback)
+    val fallback = stringResource(Res.string.entry_database_fallback)
     return names
         .mapIndexed { index, name -> if (index == 0 && fromRoot) name.ifBlank { fallback } else name }
-        .joinToString(stringResource(R.string.vault_location_separator))
+        .joinToString(stringResource(Res.string.vault_location_separator))
 }
 
 /**
@@ -235,32 +236,32 @@ private fun locationText(names: List<String>?, fromRoot: Boolean): String? {
 private fun GroupListEmpty(reason: EmptyReason, query: String, filterOn: Boolean) {
     when (reason) {
         EmptyReason.EmptyGroup -> EmptyState(
-            title = stringResource(R.string.vault_group_empty),
-            hint = stringResource(R.string.vault_empty_hint),
+            title = stringResource(Res.string.vault_group_empty),
+            hint = stringResource(Res.string.vault_empty_hint),
         )
 
         EmptyReason.NothingFound -> EmptyState(
-            title = stringResource(R.string.vault_search_nothing_found, query.trim()),
+            title = stringResource(Res.string.vault_search_nothing_found, query.trim()),
             // By which fields, then what to check: the filter too, when one is on
-            hint = stringResource(R.string.vault_search_hint_fields) + "\n" + stringResource(
-                if (filterOn) R.string.vault_search_check_spelling_and_filter else R.string.vault_search_check_spelling,
+            hint = stringResource(Res.string.vault_search_hint_fields) + "\n" + stringResource(
+                if (filterOn) Res.string.vault_search_check_spelling_and_filter else Res.string.vault_search_check_spelling,
             ),
             illustration = { EmptySearchIllustration() },
         )
 
-        EmptyReason.NoGroups -> EmptyState(title = stringResource(R.string.vault_filter_no_groups))
+        EmptyReason.NoGroups -> EmptyState(title = stringResource(Res.string.vault_filter_no_groups))
 
-        EmptyReason.NoEntries -> EmptyState(title = stringResource(R.string.vault_filter_no_entries))
+        EmptyReason.NoEntries -> EmptyState(title = stringResource(Res.string.vault_filter_no_entries))
     }
 }
 
-private val GroupListMessage.text: Int
+private val GroupListMessage.text: StringResource
     get() = when (this) {
-        GroupListMessage.NotSaved -> R.string.message_file_not_saved
-        GroupListMessage.LoadFailed -> R.string.vault_message_load_failed
-        GroupListMessage.SearchFailed -> R.string.vault_message_search_failed
-        GroupListMessage.FilterNotSaved -> R.string.vault_message_filter_not_saved
-        GroupListMessage.Unexpected -> R.string.error_unexpected
+        GroupListMessage.NotSaved -> Res.string.message_file_not_saved
+        GroupListMessage.LoadFailed -> Res.string.vault_message_load_failed
+        GroupListMessage.SearchFailed -> Res.string.vault_message_search_failed
+        GroupListMessage.FilterNotSaved -> Res.string.vault_message_filter_not_saved
+        GroupListMessage.Unexpected -> Res.string.error_unexpected
     }
 
 /** The empty state a little above the middle: the eye lands there, and the buttons take the bottom. */

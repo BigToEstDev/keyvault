@@ -12,9 +12,9 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.ui.theme.LocalAppDisplay
 
 /**
@@ -42,7 +42,7 @@ internal fun LockFab(locking: Boolean, onLock: () -> Unit, modifier: Modifier = 
                 color = LocalContentColor.current,
             )
         } else {
-            Icon(Icons.Filled.Lock, contentDescription = stringResource(R.string.vault_lock))
+            Icon(Icons.Filled.Lock, contentDescription = stringResource(Res.string.vault_lock))
         }
     }
 }

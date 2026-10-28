@@ -1,9 +1,9 @@
 package ru.kino.dev.vault.pres.entryhistory.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.ConfirmDialog
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.pres.common.RestoreVersionDialog
 import ru.kino.dev.vault.pres.common.entryTimeText
 import ru.kino.dev.vault.pres.entryhistory.EntryHistoryDialog
@@ -22,10 +22,10 @@ internal fun EntryHistoryDialogs(dialog: EntryHistoryDialog?, onConfirm: () -> U
         )
 
         is EntryHistoryDialog.Delete -> ConfirmDialog(
-            title = stringResource(R.string.history_delete_title),
-            text = stringResource(R.string.history_delete_text, entryTimeText(dialog.modified)),
-            confirmText = stringResource(R.string.action_delete),
-            dismissText = stringResource(R.string.action_cancel),
+            title = stringResource(Res.string.history_delete_title),
+            text = stringResource(Res.string.history_delete_text, entryTimeText(dialog.modified)),
+            confirmText = stringResource(Res.string.action_delete),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             destructive = true,
@@ -33,10 +33,10 @@ internal fun EntryHistoryDialogs(dialog: EntryHistoryDialog?, onConfirm: () -> U
         )
 
         is EntryHistoryDialog.DeleteAll -> ConfirmDialog(
-            title = stringResource(R.string.history_delete_all_title),
-            text = stringResource(R.string.history_delete_all_text),
-            confirmText = stringResource(R.string.action_delete),
-            dismissText = stringResource(R.string.action_cancel),
+            title = stringResource(Res.string.history_delete_all_title),
+            text = stringResource(Res.string.history_delete_all_text),
+            confirmText = stringResource(Res.string.action_delete),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             destructive = true,

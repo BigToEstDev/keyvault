@@ -1,9 +1,9 @@
 package ru.kino.dev.vault.pres.common
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.DropdownOption
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.VaultTree
 
@@ -31,17 +31,17 @@ fun VaultTree.groupChoice(id: GroupId): GroupChoice? =
 @Composable
 internal fun GroupChoice.title(): String {
     val name = path.last()
-    return if (isRoot) name.ifBlank { stringResource(R.string.entry_database_fallback) } else name
+    return if (isRoot) name.ifBlank { stringResource(Res.string.entry_database_fallback) } else name
 }
 
 /** The path under the name, with the group itself at the end; none for the root - nothing above it. */
 @Composable
 internal fun GroupChoice.subtitle(): String? {
     if (isRoot) return null
-    val fallback = stringResource(R.string.entry_database_fallback)
+    val fallback = stringResource(Res.string.entry_database_fallback)
     return path
         .mapIndexed { index, name -> if (index == 0) name.ifBlank { fallback } else name }
-        .joinToString(stringResource(R.string.vault_location_separator))
+        .joinToString(stringResource(Res.string.vault_location_separator))
 }
 
 @Composable

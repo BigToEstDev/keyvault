@@ -8,9 +8,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.entry.EntryTimes
 
 /**
@@ -25,8 +25,8 @@ internal fun EntryTimesText(times: EntryTimes) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        times.modified?.let { TimeLine(stringResource(R.string.entry_modified_at, entryTimeText(it))) }
-        times.created?.let { TimeLine(stringResource(R.string.entry_created_at, entryTimeText(it))) }
+        times.modified?.let { TimeLine(stringResource(Res.string.entry_modified_at, entryTimeText(it))) }
+        times.created?.let { TimeLine(stringResource(Res.string.entry_created_at, entryTimeText(it))) }
     }
 }
 

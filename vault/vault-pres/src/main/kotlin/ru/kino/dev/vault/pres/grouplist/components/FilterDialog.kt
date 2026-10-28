@@ -5,12 +5,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.core.pres.R
+import org.jetbrains.compose.resources.StringResource
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.RadioGroup
 import ru.kino.dev.ui.components.SecondaryButton
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.filter.CreationOrder
 import ru.kino.dev.vault.filter.VaultFilter
 import ru.kino.dev.vault.filter.Visibility
@@ -33,14 +34,14 @@ internal fun FilterDialog(
     onReset: () -> Unit,
     onClose: () -> Unit,
 ) {
-    ClosableDialog(title = stringResource(R.string.vault_filters), onClose = onClose) {
+    ClosableDialog(title = stringResource(Res.string.vault_filters), onClose = onClose) {
         Column(
             // The dialog leaves less room on the right, for its cross
             modifier = Modifier.padding(end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             RadioGroup(
-                title = stringResource(R.string.vault_filter_visibility),
+                title = stringResource(Res.string.vault_filter_visibility),
                 options = Visibility.entries,
                 selected = draft.visibility,
                 label = { stringResource(it.text) },
@@ -48,7 +49,7 @@ internal fun FilterDialog(
                 enabled = !saving,
             )
             RadioGroup(
-                title = stringResource(R.string.vault_filter_order),
+                title = stringResource(Res.string.vault_filter_order),
                 options = CreationOrder.entries,
                 selected = draft.order,
                 label = { stringResource(it.text) },
@@ -56,22 +57,22 @@ internal fun FilterDialog(
                 enabled = !saving,
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                PrimaryButton(text = stringResource(R.string.action_apply), onClick = onApply, loading = saving)
-                SecondaryButton(text = stringResource(R.string.action_reset), onClick = onReset, enabled = !saving)
+                PrimaryButton(text = stringResource(Res.string.action_apply), onClick = onApply, loading = saving)
+                SecondaryButton(text = stringResource(Res.string.action_reset), onClick = onReset, enabled = !saving)
             }
         }
     }
 }
 
-private val Visibility.text: Int
+private val Visibility.text: StringResource
     get() = when (this) {
-        Visibility.All -> R.string.vault_filter_all
-        Visibility.GroupsOnly -> R.string.vault_filter_groups_only
-        Visibility.EntriesOnly -> R.string.vault_filter_entries_only
+        Visibility.All -> Res.string.vault_filter_all
+        Visibility.GroupsOnly -> Res.string.vault_filter_groups_only
+        Visibility.EntriesOnly -> Res.string.vault_filter_entries_only
     }
 
-private val CreationOrder.text: Int
+private val CreationOrder.text: StringResource
     get() = when (this) {
-        CreationOrder.NewestFirst -> R.string.vault_filter_newest_first
-        CreationOrder.OldestFirst -> R.string.vault_filter_oldest_first
+        CreationOrder.NewestFirst -> Res.string.vault_filter_newest_first
+        CreationOrder.OldestFirst -> Res.string.vault_filter_oldest_first
     }

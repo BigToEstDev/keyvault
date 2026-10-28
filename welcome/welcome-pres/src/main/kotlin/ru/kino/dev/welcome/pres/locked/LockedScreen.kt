@@ -4,16 +4,16 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.res.stringResource
-import org.orbitmvi.orbit.compose.collectAsState
-import org.orbitmvi.orbit.compose.collectSideEffect
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.biometric.BiometricPurpose
+import ru.kino.dev.ui.files.rememberOpenDocument
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.welcome.pres.common.PasswordEntryContent
 import ru.kino.dev.welcome.pres.common.rememberBiometricPrompt
-import ru.kino.dev.ui.files.rememberOpenDocument
 
 @Composable
 internal fun LockedScreen(
@@ -36,10 +36,10 @@ internal fun LockedScreen(
     }
 
     PasswordEntryContent(
-        databaseName = state.databaseName ?: stringResource(R.string.entry_database_fallback),
-        subtitle = stringResource(R.string.entry_locked_title),
+        databaseName = state.databaseName ?: stringResource(Res.string.entry_database_fallback),
+        subtitle = stringResource(Res.string.entry_locked_title),
         entry = state.entry,
-        submitText = stringResource(R.string.entry_unlock),
+        submitText = stringResource(Res.string.entry_unlock),
         onPasswordChange = { processor.action(LockedAction.PasswordChanged(it)) },
         onTogglePasswordVisible = { processor.action(LockedAction.TogglePasswordVisible) },
         onSubmit = { processor.action(LockedAction.Submit) },

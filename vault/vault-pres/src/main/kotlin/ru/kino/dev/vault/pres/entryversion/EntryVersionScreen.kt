@@ -19,17 +19,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.orbitmvi.orbit.compose.collectAsState
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.pres.common.EntryReadFields
 import ru.kino.dev.vault.pres.common.EntryReadSkeleton
 import ru.kino.dev.vault.pres.common.EntryTopBar
@@ -53,9 +53,9 @@ internal fun EntryVersionScreen(
     val message = state.message?.let {
         stringResource(
             when (it) {
-                EntryVersionMessage.LoadFailed -> R.string.entry_message_load_failed
-                EntryVersionMessage.NotSaved -> R.string.message_file_not_saved
-                EntryVersionMessage.Unexpected -> R.string.error_unexpected
+                EntryVersionMessage.LoadFailed -> Res.string.entry_message_load_failed
+                EntryVersionMessage.NotSaved -> Res.string.message_file_not_saved
+                EntryVersionMessage.Unexpected -> Res.string.error_unexpected
             },
         )
     }
@@ -81,7 +81,7 @@ internal fun EntryVersionScreen(
             floatingActionButton = {
                 if (modified != null) {
                     FloatingActionButton(onClick = { processor.action(EntryVersionAction.Restore) }) {
-                        Icon(Icons.Filled.History, contentDescription = stringResource(R.string.history_restore))
+                        Icon(Icons.Filled.History, contentDescription = stringResource(Res.string.history_restore))
                     }
                 }
             },

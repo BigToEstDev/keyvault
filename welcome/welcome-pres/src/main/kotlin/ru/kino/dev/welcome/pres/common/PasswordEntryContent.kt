@@ -35,16 +35,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.Reveal
 import ru.kino.dev.ui.components.SecondaryButton
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.ui.theme.DISABLED_ALPHA
 
 /**
@@ -155,7 +155,7 @@ internal fun PasswordEntryContent(
                                     Spacer(Modifier.height(24.dp))
                                     // A button, not a link: it is the way out when the remembered database is gone
                                     SecondaryButton(
-                                        text = stringResource(R.string.entry_create_database),
+                                        text = stringResource(Res.string.entry_create_database),
                                         onClick = it,
                                         enabled = !shown.busy,
                                     )
@@ -193,7 +193,7 @@ private fun DatabaseName(name: String, accent: Boolean, onClick: (() -> Unit)?, 
     if (onClick != null) {
         Spacer(Modifier.height(4.dp))
         Text(
-            text = stringResource(R.string.entry_change_database_hint),
+            text = stringResource(Res.string.entry_change_database_hint),
             style = MaterialTheme.typography.bodySmall,
             color = if (enabled) colors.onSurfaceVariant else disabled,
             textAlign = TextAlign.Center,
@@ -216,11 +216,11 @@ private fun PasswordInput(
     PasswordField(
         value = entry.password,
         onValueChange = onPasswordChange,
-        label = stringResource(R.string.entry_password),
+        label = stringResource(Res.string.entry_password),
         visible = entry.passwordVisible,
         onToggleVisible = onTogglePasswordVisible,
         error = when (entry.problem) {
-            EntryProblem.InvalidCredentials -> stringResource(R.string.error_invalid_credentials)
+            EntryProblem.InvalidCredentials -> stringResource(Res.string.error_invalid_credentials)
             else -> null
         },
         enabled = !entry.busy,
@@ -234,7 +234,7 @@ private fun PasswordInput(
     Reveal(visible = entry.problem == EntryProblem.Unexpected) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(8.dp))
-            ErrorText(stringResource(R.string.error_unexpected))
+            ErrorText(stringResource(Res.string.error_unexpected))
         }
     }
 }
@@ -249,7 +249,7 @@ private fun BiometricSignInRow(entry: PasswordEntry, onBiometric: () -> Unit) {
         Column {
             Spacer(Modifier.height(12.dp))
             SecondaryButton(
-                text = stringResource(R.string.entry_biometric),
+                text = stringResource(Res.string.entry_biometric),
                 onClick = onBiometric,
                 enabled = !entry.busy,
             )
@@ -261,9 +261,9 @@ private fun BiometricSignInRow(entry: PasswordEntry, onBiometric: () -> Unit) {
             ErrorText(
                 stringResource(
                     when (notice) {
-                        BiometricNotice.DeviceChanged -> R.string.biometric_notice_device_changed
-                        BiometricNotice.PasswordChanged -> R.string.biometric_notice_password_changed
-                        BiometricNotice.Failed -> R.string.biometric_notice_failed
+                        BiometricNotice.DeviceChanged -> Res.string.biometric_notice_device_changed
+                        BiometricNotice.PasswordChanged -> Res.string.biometric_notice_password_changed
+                        BiometricNotice.Failed -> Res.string.biometric_notice_failed
                     },
                 ),
             )
@@ -291,7 +291,7 @@ private fun KeyFileRow(entry: PasswordEntry, onAttach: () -> Unit, onRemove: (()
                 TextButton(onClick = onAttach, enabled = !shown.busy) {
                     Icon(imageVector = Icons.Outlined.Key, contentDescription = null)
                     Spacer(Modifier.size(8.dp))
-                    Text(stringResource(R.string.entry_key_file_add))
+                    Text(stringResource(Res.string.entry_key_file_add))
                 }
             }
         } else {
@@ -318,8 +318,8 @@ private fun AttachedKeyFile(entry: PasswordEntry, onAttach: () -> Unit, onRemove
             Spacer(Modifier.size(8.dp))
             Text(
                 text = stringResource(
-                    R.string.entry_key_file_name,
-                    entry.keyFileName ?: stringResource(R.string.entry_key_file_unnamed),
+                    Res.string.entry_key_file_name,
+                    entry.keyFileName ?: stringResource(Res.string.entry_key_file_unnamed),
                 ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = color,
@@ -331,18 +331,18 @@ private fun AttachedKeyFile(entry: PasswordEntry, onAttach: () -> Unit, onRemove
                 ErrorText(
                     when (problem) {
                         is EntryProblem.KeyFileTooLarge ->
-                            stringResource(R.string.error_key_file_too_large, problem.maxMebibytes.toInt())
-                        else -> stringResource(R.string.error_key_file_unreachable)
+                            stringResource(Res.string.error_key_file_too_large, problem.maxMebibytes.toInt())
+                        else -> stringResource(Res.string.error_key_file_unreachable)
                     },
                 )
                 TextButton(onClick = onAttach, enabled = !entry.busy) {
-                    Text(stringResource(R.string.action_pick_another_key_file))
+                    Text(stringResource(Res.string.action_pick_another_key_file))
                 }
             }
         }
         onRemove?.let {
             TextButton(onClick = it, enabled = !entry.busy) {
-                Text(stringResource(R.string.entry_key_file_remove))
+                Text(stringResource(Res.string.entry_key_file_remove))
             }
         }
     }
@@ -358,22 +358,22 @@ private fun FileProblem(
 ) {
     ErrorText(
         when (problem) {
-            EntryProblem.UnsupportedFile -> stringResource(R.string.error_unsupported_file)
-            EntryProblem.CorruptedFile -> stringResource(R.string.error_corrupted_file)
-            else -> stringResource(R.string.error_database_unreachable)
+            EntryProblem.UnsupportedFile -> stringResource(Res.string.error_unsupported_file)
+            EntryProblem.CorruptedFile -> stringResource(Res.string.error_corrupted_file)
+            else -> stringResource(Res.string.error_database_unreachable)
         },
     )
     Spacer(Modifier.height(24.dp))
     onRetry?.let {
-        PrimaryButton(text = stringResource(R.string.action_retry), onClick = it, loading = busy)
+        PrimaryButton(text = stringResource(Res.string.action_retry), onClick = it, loading = busy)
         Spacer(Modifier.height(12.dp))
     }
     onPickAnother?.let {
-        SecondaryButton(text = stringResource(R.string.action_pick_another_file), onClick = it, enabled = !busy)
+        SecondaryButton(text = stringResource(Res.string.action_pick_another_file), onClick = it, enabled = !busy)
     }
     onCreateDatabase?.let {
         Spacer(Modifier.height(12.dp))
-        SecondaryButton(text = stringResource(R.string.entry_create_database), onClick = it, enabled = !busy)
+        SecondaryButton(text = stringResource(Res.string.entry_create_database), onClick = it, enabled = !busy)
     }
 }
 

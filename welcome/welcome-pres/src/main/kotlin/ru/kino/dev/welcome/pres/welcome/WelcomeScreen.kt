@@ -19,17 +19,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import org.orbitmvi.orbit.compose.collectSideEffect
 import org.koin.compose.viewmodel.koinViewModel
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectSideEffect
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.SecondaryButton
-import ru.kino.dev.welcome.pres.common.ShieldImage
 import ru.kino.dev.ui.files.rememberOpenDocument
+import ru.kino.dev.ui.res.stringResource
+import ru.kino.dev.welcome.pres.common.ShieldImage
 
 @Composable
 internal fun WelcomeScreen(processor: WelcomeProcessor = koinViewModel()) {
@@ -68,22 +68,22 @@ private fun WelcomeContent(onOpen: () -> Unit, onCreate: () -> Unit) {
                 ShieldImage(modifier = Modifier.size(140.dp))
                 Spacer(Modifier.height(32.dp))
                 Text(
-                    text = stringResource(R.string.welcome_title),
+                    text = stringResource(Res.string.welcome_title),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = stringResource(R.string.welcome_subtitle),
+                    text = stringResource(Res.string.welcome_subtitle),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(48.dp))
-                PrimaryButton(text = stringResource(R.string.welcome_open), onClick = onOpen)
+                PrimaryButton(text = stringResource(Res.string.welcome_open), onClick = onOpen)
                 Spacer(Modifier.height(12.dp))
-                SecondaryButton(text = stringResource(R.string.welcome_create), onClick = onCreate)
+                SecondaryButton(text = stringResource(Res.string.welcome_create), onClick = onCreate)
             }
         }
     }

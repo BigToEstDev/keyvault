@@ -6,9 +6,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.res.stringResource
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.preset.fieldLabel
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * "Save" with fields the preset chosen lacks - filled ones of a preset chosen before (pass-docs, Step 49,
@@ -27,13 +27,13 @@ internal fun HiddenFieldsDialog(
     val names = keys.map { fieldLabel(it) }.joinToString()
     AlertDialog(
         onDismissRequest = onCancel,
-        title = { Text(stringResource(R.string.entry_hidden_title)) },
-        text = { Text(stringResource(R.string.entry_hidden_text, names)) },
+        title = { Text(stringResource(Res.string.entry_hidden_title)) },
+        text = { Text(stringResource(Res.string.entry_hidden_text, names)) },
         confirmButton = {
             Column(horizontalAlignment = Alignment.End) {
-                TextButton(onClick = onSaveAsIs) { Text(stringResource(R.string.entry_hidden_save)) }
-                TextButton(onClick = onKeep) { Text(stringResource(R.string.entry_hidden_keep)) }
-                TextButton(onClick = onCancel) { Text(stringResource(R.string.action_cancel)) }
+                TextButton(onClick = onSaveAsIs) { Text(stringResource(Res.string.entry_hidden_save)) }
+                TextButton(onClick = onKeep) { Text(stringResource(Res.string.entry_hidden_keep)) }
+                TextButton(onClick = onCancel) { Text(stringResource(Res.string.action_cancel)) }
             }
         },
     )

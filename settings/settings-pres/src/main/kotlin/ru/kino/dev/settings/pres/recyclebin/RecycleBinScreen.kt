@@ -17,14 +17,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.orbitmvi.orbit.compose.collectAsState
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.settings.pres.recyclebin.components.RecycleBinSkeleton
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.ConfirmDialog
@@ -33,6 +32,7 @@ import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.SwitchRow
 import ru.kino.dev.ui.components.ValueRow
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.res.stringResource
 
 /** The recycle bin of the database: whether it is used, and what it holds (pass-docs, Step 70). */
 @Composable
@@ -49,8 +49,8 @@ internal fun RecycleBinScreen(
     val message = state.message?.let {
         stringResource(
             when (it) {
-                RecycleBinMessage.NotSaved -> R.string.message_file_not_saved
-                RecycleBinMessage.Failed -> R.string.error_unexpected
+                RecycleBinMessage.NotSaved -> Res.string.message_file_not_saved
+                RecycleBinMessage.Failed -> Res.string.error_unexpected
             },
         )
     }
@@ -62,7 +62,7 @@ internal fun RecycleBinScreen(
             containerColor = Color.Transparent,
             topBar = {
                 BackTopBar(
-                    title = stringResource(R.string.settings_recycle_bin),
+                    title = stringResource(Res.string.settings_recycle_bin),
                     onBack = { processor.action(RecycleBinAction.Back) },
                 )
             },
@@ -91,10 +91,10 @@ internal fun RecycleBinScreen(
 
     if (state.confirmingOff) {
         ConfirmDialog(
-            title = stringResource(R.string.settings_recycle_bin_off_title),
-            text = stringResource(R.string.settings_recycle_bin_off_text),
-            confirmText = stringResource(R.string.settings_recycle_bin_off_confirm),
-            dismissText = stringResource(R.string.action_cancel),
+            title = stringResource(Res.string.settings_recycle_bin_off_title),
+            text = stringResource(Res.string.settings_recycle_bin_off_text),
+            confirmText = stringResource(Res.string.settings_recycle_bin_off_confirm),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = { processor.action(RecycleBinAction.OffConfirm) },
             onDismiss = { processor.action(RecycleBinAction.OffDismiss) },
             destructive = true,
@@ -107,9 +107,9 @@ private fun UseCard(enabled: Boolean, saving: Boolean, action: (RecycleBinAction
     Card(modifier = Modifier.fillMaxWidth()) {
         Column {
             SwitchRow(
-                title = stringResource(R.string.settings_recycle_bin_use),
+                title = stringResource(Res.string.settings_recycle_bin_use),
                 text = stringResource(
-                    if (enabled) R.string.settings_recycle_bin_use_on else R.string.settings_recycle_bin_use_off,
+                    if (enabled) Res.string.settings_recycle_bin_use_on else Res.string.settings_recycle_bin_use_off,
                 ),
                 checked = enabled,
                 onCheckedChange = { action(RecycleBinAction.SetEnabled(it)) },
@@ -128,8 +128,8 @@ private fun UseCard(enabled: Boolean, saving: Boolean, action: (RecycleBinAction
 private fun DeletedCard(count: Int, saving: Boolean, onOpen: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         ValueRow(
-            title = stringResource(R.string.settings_recycle_bin_deleted),
-            value = if (count == 0) stringResource(R.string.settings_recycle_bin_empty) else count.toString(),
+            title = stringResource(Res.string.settings_recycle_bin_deleted),
+            value = if (count == 0) stringResource(Res.string.settings_recycle_bin_empty) else count.toString(),
             onClick = onOpen,
             enabled = count > 0 && !saving,
         )

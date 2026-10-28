@@ -1,11 +1,11 @@
 package ru.kino.dev.vault.pres.grouplist.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.TextInputDialog
+import ru.kino.dev.ui.res.pluralStringResource
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.group.GroupNameValidator
 import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.pres.grouplist.GroupDialog
@@ -23,7 +23,7 @@ internal fun GroupDialogs(
         null -> Unit
 
         is GroupDialog.Create -> NameDialog(
-            title = stringResource(R.string.group_dialog_create_title),
+            title = stringResource(Res.string.group_dialog_create_title),
             name = dialog.name,
             problem = dialog.problem,
             saving = dialog.saving,
@@ -33,7 +33,7 @@ internal fun GroupDialogs(
         )
 
         is GroupDialog.Rename -> NameDialog(
-            title = stringResource(R.string.group_dialog_rename_title),
+            title = stringResource(Res.string.group_dialog_rename_title),
             name = dialog.name,
             problem = dialog.problem,
             saving = dialog.saving,
@@ -51,13 +51,13 @@ internal fun GroupDialogs(
         )
 
         is GroupDialog.Delete -> ConfirmDialog(
-            title = stringResource(R.string.group_delete_title),
+            title = stringResource(Res.string.group_delete_title),
             text = stringResource(
-                if (dialog.toBin) R.string.group_delete_text else R.string.group_delete_forever_text,
+                if (dialog.toBin) Res.string.group_delete_text else Res.string.group_delete_forever_text,
                 dialog.name,
             ),
-            confirmText = stringResource(R.string.action_delete),
-            dismissText = stringResource(R.string.action_cancel),
+            confirmText = stringResource(Res.string.action_delete),
+            dismissText = stringResource(Res.string.action_cancel),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             destructive = true,
@@ -80,9 +80,9 @@ private fun NameDialog(
         title = title,
         value = name,
         onValueChange = onNameChange,
-        label = stringResource(R.string.group_dialog_name),
-        confirmText = stringResource(R.string.action_save),
-        dismissText = stringResource(R.string.action_cancel),
+        label = stringResource(Res.string.group_dialog_name),
+        confirmText = stringResource(Res.string.action_save),
+        dismissText = stringResource(Res.string.action_cancel),
         onConfirm = onConfirm,
         onDismiss = onDismiss,
         error = problem?.let { text(it) },
@@ -92,11 +92,11 @@ private fun NameDialog(
 
 @Composable
 private fun text(problem: NameProblem): String = when (problem) {
-    NameProblem.Empty -> stringResource(R.string.error_name_empty)
+    NameProblem.Empty -> stringResource(Res.string.error_name_empty)
     NameProblem.TooLong -> pluralStringResource(
-        R.plurals.group_name_too_long,
+        Res.plurals.group_name_too_long,
         GroupNameValidator.MAX_LENGTH,
         GroupNameValidator.MAX_LENGTH,
     )
-    NameProblem.Taken -> stringResource(R.string.group_name_taken)
+    NameProblem.Taken -> stringResource(Res.string.group_name_taken)
 }

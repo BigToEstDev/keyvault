@@ -18,18 +18,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.orbitmvi.orbit.compose.collectAsState
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.FieldType
-import ru.kino.dev.core.pres.R
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.PresetField
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.Dropdown
@@ -51,6 +50,7 @@ import ru.kino.dev.ui.phone.phonePrefix
 import ru.kino.dev.ui.phone.rememberPhoneFormat
 import ru.kino.dev.ui.preset.fieldLabel
 import ru.kino.dev.ui.preset.presetName
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.ui.theme.LocalAppDisplay
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.pres.common.EntrySkeleton
@@ -86,9 +86,9 @@ internal fun EntryEditScreen(
     val message = state.message?.let {
         stringResource(
             when (it) {
-                EntryEditMessage.LoadFailed -> R.string.entry_message_load_failed
-                EntryEditMessage.NotSaved -> R.string.message_file_not_saved
-                EntryEditMessage.Unexpected -> R.string.error_unexpected
+                EntryEditMessage.LoadFailed -> Res.string.entry_message_load_failed
+                EntryEditMessage.NotSaved -> Res.string.message_file_not_saved
+                EntryEditMessage.Unexpected -> Res.string.error_unexpected
             },
         )
     }
@@ -100,7 +100,7 @@ internal fun EntryEditScreen(
             containerColor = Color.Transparent,
             topBar = {
                 EntryTopBar(
-                    title = stringResource(if (state.creating) R.string.entry_title_new else R.string.entry_title_edit),
+                    title = stringResource(if (state.creating) Res.string.entry_title_new else Res.string.entry_title_edit),
                     onBack = { processor.action(EntryEditAction.Back) },
                     // An entry that is there, once read; a new one has nothing to delete
                     menu = if (!state.creating && state.content != null) {
@@ -152,7 +152,7 @@ internal fun EntryEditScreen(
 @Composable
 private fun EntryForm(state: EntryEditState, content: EntryContent, action: (EntryEditAction) -> Unit) {
     val enabled = !state.saving
-    val missing = stringResource(R.string.entry_field_required)
+    val missing = stringResource(Res.string.entry_field_required)
 
     @Composable
     fun PresetText(field: PresetField, modifier: Modifier = Modifier.fillMaxWidth()) {
@@ -245,7 +245,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             selected = state.group,
             options = state.groups.map { it.option() },
             onSelect = { action(EntryEditAction.GroupChosen(it)) },
-            label = stringResource(R.string.entry_field_group),
+            label = stringResource(Res.string.entry_field_group),
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
         )
@@ -255,7 +255,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         if (LocalAppDisplay.current.presets) {
             PickerField(
                 value = presetName(content.preset),
-                label = stringResource(R.string.entry_preset),
+                label = stringResource(Res.string.entry_preset),
                 onClick = { action(EntryEditAction.ChoosePreset) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = enabled,
@@ -292,7 +292,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         // Past the most fields a card takes there is no button; a field deleted brings it back
         if (state.canAddField) {
             SecondaryButton(
-                text = stringResource(R.string.entry_add_field),
+                text = stringResource(Res.string.entry_add_field),
                 onClick = { action(EntryEditAction.AddField) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = enabled,

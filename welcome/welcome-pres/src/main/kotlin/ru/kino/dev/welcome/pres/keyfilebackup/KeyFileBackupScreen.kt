@@ -22,18 +22,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.orbitmvi.orbit.compose.collectAsState
-import org.orbitmvi.orbit.compose.collectSideEffect
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.kino.dev.core.pres.R
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
+import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.files.rememberCreateDocument
 import ru.kino.dev.ui.files.rememberOpenDocument
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.welcome.pres.create.CreateDraft
 import ru.kino.dev.welcome.pres.create.CreateProblemText
 import ru.kino.dev.welcome.pres.create.OverwriteDialog
@@ -90,13 +90,13 @@ private fun KeyFileBackupContent(state: KeyFileBackupState, onContinue: () -> Un
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                text = stringResource(R.string.key_file_title),
+                text = stringResource(Res.string.key_file_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.key_file_text),
+                text = stringResource(Res.string.key_file_text),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -109,31 +109,31 @@ private fun KeyFileBackupContent(state: KeyFileBackupState, onContinue: () -> Un
             }
             if (state.keyFile == null) {
                 PrimaryButton(
-                    text = stringResource(R.string.key_file_create),
+                    text = stringResource(Res.string.key_file_create),
                     onClick = onContinue,
                     loading = state.stage.busy,
                 )
                 Spacer(Modifier.height(12.dp))
                 SecondaryButton(
-                    text = stringResource(R.string.key_file_pick_existing),
+                    text = stringResource(Res.string.key_file_pick_existing),
                     onClick = onPickExisting,
                     enabled = !state.stage.busy,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = stringResource(R.string.key_file_existing_warning),
+                    text = stringResource(Res.string.key_file_existing_warning),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
                 PrimaryButton(
-                    text = stringResource(R.string.action_next),
+                    text = stringResource(Res.string.action_next),
                     onClick = onContinue,
                     loading = state.stage.busy,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = stringResource(R.string.key_file_next_hint),
+                    text = stringResource(Res.string.key_file_next_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -154,9 +154,9 @@ private fun KeyFileReady(keyFile: KeyFileChoice) {
         Spacer(Modifier.width(8.dp))
         Text(
             text = when (keyFile) {
-                KeyFileChoice.Created -> stringResource(R.string.key_file_saved)
-                is KeyFileChoice.Picked -> keyFile.name?.let { stringResource(R.string.key_file_picked, it) }
-                    ?: stringResource(R.string.key_file_picked_unnamed)
+                KeyFileChoice.Created -> stringResource(Res.string.key_file_saved)
+                is KeyFileChoice.Picked -> keyFile.name?.let { stringResource(Res.string.key_file_picked, it) }
+                    ?: stringResource(Res.string.key_file_picked_unnamed)
             },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground,
