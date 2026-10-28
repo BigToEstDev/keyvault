@@ -8,7 +8,6 @@ import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -17,8 +16,9 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import ru.kino.dev.core.phone.PhoneNumbers
 import ru.kino.dev.navigation.AppNavHost
 import ru.kino.dev.navigation.Navigator
@@ -35,35 +35,28 @@ import ru.kino.dev.ui.theme.LocaleResources
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.welcome.pres.start.WelcomeStartResolver
 import java.util.Locale
-import javax.inject.Inject
 
 /**
  * A [FragmentActivity] rather than a plain component one: `BiometricPrompt` shows itself through the
  * fragment manager.
  */
-@AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
-    @Inject
-    lateinit var navigator: Navigator
+    private val navigator: Navigator by inject()
 
-    @Inject
-    lateinit var autoLock: AutoLock
+    private val autoLock: AutoLock by inject()
 
     // Told what the app sees; `vault` listens to it (pass-docs, Step 59)
-    @Inject
-    lateinit var timer: InactivityTimer
+    private val timer: InactivityTimer by inject()
 
-    @Inject
-    lateinit var privacy: PrivacySettingsRepository
+    private val privacy: PrivacySettingsRepository by inject()
 
     // The phone fields draw with them (pass-docs, Step 77)
-    @Inject
-    lateinit var phones: PhoneNumbers
+    private val phones: PhoneNumbers by inject()
 
-    private val startResolver: WelcomeStartResolver by viewModels()
+    private val startResolver: WelcomeStartResolver by viewModel()
 
-    private val theme: AppThemeHolder by viewModels()
+    private val theme: AppThemeHolder by viewModel()
 
     private val localeResources = LocaleResources()
 
