@@ -2,7 +2,7 @@ plugins {
     id("java-lib")
     // Fakes of the interfaces declared here, shared by the tests of every module that depends on them
     `java-test-fixtures`
-    alias(libs.plugins.kotlin.serialization)
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 dependencies {
