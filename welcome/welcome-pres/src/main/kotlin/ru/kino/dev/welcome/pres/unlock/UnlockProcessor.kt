@@ -1,10 +1,6 @@
 package ru.kino.dev.welcome.pres.unlock
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -59,9 +55,8 @@ data class UnlockState(
  *
  * @param pickedUri a file just picked, or null for the remembered database
  */
-@HiltViewModel(assistedFactory = UnlockProcessor.Factory::class)
-class UnlockProcessor @AssistedInject constructor(
-    @Assisted private val pickedUri: String?,
+class UnlockProcessor(
+    private val pickedUri: String?,
     private val database: WelcomeDatabaseRepository,
     private val files: WelcomeFilesRepository,
     private val current: CurrentDatabaseRepository,
@@ -70,11 +65,6 @@ class UnlockProcessor @AssistedInject constructor(
     private val biometric: BiometricSignIn,
     private val signIn: SignInSettingsRepository,
 ) : ViewModel(), OrbitContainerHost<UnlockState, UnlockState, UnlockSideEffect> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(pickedUri: String?): UnlockProcessor
-    }
 
     override val container = orbitContainer<UnlockState, UnlockSideEffect>(UnlockState()) {
         if (pickedUri != null) {

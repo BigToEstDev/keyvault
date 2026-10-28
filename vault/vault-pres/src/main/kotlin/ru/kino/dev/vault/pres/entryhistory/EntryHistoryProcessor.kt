@@ -1,10 +1,6 @@
 package ru.kino.dev.vault.pres.entryhistory
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -43,20 +39,14 @@ data class EntryHistoryState(
  * is read again, the indexes moved. A change not written to the file is said here, and the history is read
  * again (pass-docs, Step 51, item 4). The whole history deleted - back to the entry (item 5).
  */
-@HiltViewModel(assistedFactory = EntryHistoryProcessor.Factory::class)
-class EntryHistoryProcessor @AssistedInject constructor(
-    @Assisted("dbKey") private val dbKey: String,
-    @Assisted("entryId") private val entryId: String,
+class EntryHistoryProcessor(
+    private val dbKey: String,
+    private val entryId: String,
     private val reader: EntryHistoryReader,
     private val editor: EntryHistoryEditor,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryHistoryState, EntryHistoryState, Nothing> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(@Assisted("dbKey") dbKey: String, @Assisted("entryId") entryId: String): EntryHistoryProcessor
-    }
 
     override val container = orbitContainer<EntryHistoryState, Nothing>(EntryHistoryState())
 

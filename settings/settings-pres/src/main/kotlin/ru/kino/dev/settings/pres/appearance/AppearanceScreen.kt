@@ -20,8 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
@@ -42,9 +43,7 @@ import ru.kino.dev.ui.components.SwitchRow
 @Composable
 internal fun AppearanceScreen(
     dbKey: String,
-    processor: AppearanceProcessor = hiltViewModel<AppearanceProcessor, AppearanceProcessor.Factory>(
-        creationCallback = { factory -> factory.create(dbKey) },
-    ),
+    processor: AppearanceProcessor = koinViewModel { parametersOf(dbKey) },
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

@@ -1,10 +1,6 @@
 package ru.kino.dev.vault.pres.entryversion
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -52,11 +48,10 @@ data class EntryVersionState(
  *
  * A version or an entry that is gone sends the screen back to the history, which reads itself anew.
  */
-@HiltViewModel(assistedFactory = EntryVersionProcessor.Factory::class)
-class EntryVersionProcessor @AssistedInject constructor(
-    @Assisted("dbKey") private val dbKey: String,
-    @Assisted("entryId") private val entryId: String,
-    @Assisted("index") private val index: Int,
+class EntryVersionProcessor(
+    private val dbKey: String,
+    private val entryId: String,
+    private val index: Int,
     private val opener: EntryVersionOpener,
     private val settings: EntrySettingsRepository,
     private val editor: EntryHistoryEditor,
@@ -64,15 +59,6 @@ class EntryVersionProcessor @AssistedInject constructor(
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryVersionState, EntryVersionState, Nothing> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(
-            @Assisted("dbKey") dbKey: String,
-            @Assisted("entryId") entryId: String,
-            @Assisted("index") index: Int,
-        ): EntryVersionProcessor
-    }
 
     override val container = orbitContainer<EntryVersionState, Nothing>(EntryVersionState())
 

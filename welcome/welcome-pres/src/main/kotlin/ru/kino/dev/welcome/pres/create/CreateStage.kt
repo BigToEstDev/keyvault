@@ -14,7 +14,6 @@ import ru.kino.dev.welcome.pres.common.EntryProblem
 import ru.kino.dev.welcome.pres.common.toProblem
 import ru.kino.dev.welcome.pres.navigation.BiometricSetupRoute
 import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
-import javax.inject.Inject
 
 /**
  * The part of the state of a creating screen that is about files: the wait, the question about writing
@@ -37,7 +36,7 @@ data class Overwrite(val file: PickedFile, val uri: String)
  *
  * The screens own their state and the order of the steps; this owns the calls and where creating leads.
  */
-class CreateSteps @Inject constructor(
+class CreateSteps(
     private val database: WelcomeDatabaseRepository,
     private val files: WelcomeFilesRepository,
     private val biometrics: BiometricRepository,

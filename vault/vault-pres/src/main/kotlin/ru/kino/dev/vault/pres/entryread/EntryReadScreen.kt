@@ -22,10 +22,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.GradientBackground
@@ -44,9 +45,9 @@ import ru.kino.dev.vault.pres.common.historyMenuItem
 internal fun EntryReadScreen(
     dbKey: String,
     entryId: String,
-    processor: EntryReadProcessor = hiltViewModel<EntryReadProcessor, EntryReadProcessor.Factory>(
-        creationCallback = { factory -> factory.create(dbKey, entryId) },
-    ),
+    processor: EntryReadProcessor = koinViewModel {
+        parametersOf(EntryReadArgs(dbKey = dbKey, entryId = entryId))
+    },
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

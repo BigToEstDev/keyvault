@@ -29,9 +29,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import java.text.NumberFormat
 import org.orbitmvi.orbit.compose.collectAsState
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.Cipher
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.DatabaseSecurity
@@ -62,9 +63,7 @@ import ru.kino.dev.ui.files.rememberOpenDocument
 @Composable
 internal fun SecurityScreen(
     dbKey: String,
-    processor: SecurityProcessor = hiltViewModel<SecurityProcessor, SecurityProcessor.Factory>(
-        creationCallback = { factory -> factory.create(dbKey) },
-    ),
+    processor: SecurityProcessor = koinViewModel { parametersOf(dbKey) },
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

@@ -1,10 +1,6 @@
 package ru.kino.dev.vault.pres.grouplist
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.IOException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -156,10 +152,9 @@ enum class EmptyReason {
  *
  * @param groupId null for the root
  */
-@HiltViewModel(assistedFactory = GroupListProcessor.Factory::class)
-class GroupListProcessor @AssistedInject constructor(
-    @Assisted("dbKey") private val dbKey: String,
-    @Assisted("groupId") private val groupId: String?,
+class GroupListProcessor(
+    private val dbKey: String,
+    private val groupId: String?,
     private val groups: GroupRepository,
     private val editor: GroupEditor,
     private val entries: EntryRepository,
@@ -172,11 +167,6 @@ class GroupListProcessor @AssistedInject constructor(
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<GroupListState, GroupListState, Nothing> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(@Assisted("dbKey") dbKey: String, @Assisted("groupId") groupId: String?): GroupListProcessor
-    }
 
     override val container = orbitContainer<GroupListState, Nothing>(GroupListState(isRoot = groupId == null))
 

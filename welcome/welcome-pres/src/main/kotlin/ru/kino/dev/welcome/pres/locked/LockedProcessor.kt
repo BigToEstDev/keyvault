@@ -1,10 +1,6 @@
 package ru.kino.dev.welcome.pres.locked
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -50,9 +46,8 @@ data class LockedState(
  * There is no changing the database here: it is open and may have unsaved changes, and closing it is for
  * `vault`.
  */
-@HiltViewModel(assistedFactory = LockedProcessor.Factory::class)
-class LockedProcessor @AssistedInject constructor(
-    @Assisted private val dbKey: String,
+class LockedProcessor(
+    private val dbKey: String,
     private val database: WelcomeDatabaseRepository,
     private val files: WelcomeFilesRepository,
     private val current: CurrentDatabaseRepository,
@@ -61,11 +56,6 @@ class LockedProcessor @AssistedInject constructor(
     private val biometric: BiometricSignIn,
     private val signIn: SignInSettingsRepository,
 ) : ViewModel(), OrbitContainerHost<LockedState, LockedState, LockedSideEffect> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(dbKey: String): LockedProcessor
-    }
 
     override val container = orbitContainer<LockedState, LockedSideEffect>(LockedState()) {
         // The key file it was opened with, from the remembered database

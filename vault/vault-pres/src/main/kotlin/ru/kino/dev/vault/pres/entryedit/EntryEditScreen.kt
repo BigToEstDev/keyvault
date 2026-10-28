@@ -23,10 +23,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.PresetField
@@ -69,9 +70,9 @@ internal fun EntryEditScreen(
     dbKey: String,
     groupId: String?,
     entryId: String?,
-    processor: EntryEditProcessor = hiltViewModel<EntryEditProcessor, EntryEditProcessor.Factory>(
-        creationCallback = { factory -> factory.create(dbKey, groupId, entryId) },
-    ),
+    processor: EntryEditProcessor = koinViewModel {
+        parametersOf(EntryEditArgs(dbKey = dbKey, groupId = groupId, entryId = entryId))
+    },
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

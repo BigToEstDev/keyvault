@@ -1,8 +1,6 @@
 package ru.kino.dev.welcome.pres.create
 
 import androidx.lifecycle.ViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 
 /**
  * What the screens of creating a database hand on to each other: the password is set on the first one and
@@ -13,8 +11,7 @@ import javax.inject.Inject
  * navigation argument and not saved state, which may end up on disk. After the process was killed it is
  * empty, and creating starts over.
  */
-@HiltViewModel
-class CreateDraft @Inject constructor() : ViewModel() {
+class CreateDraft : ViewModel() {
 
     /** Null until set, and again after the process was killed. */
     var password: String? = null

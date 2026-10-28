@@ -4,7 +4,6 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.settings.biometric.BiometricFailure
 import ru.kino.dev.settings.biometric.BiometricRepository
 import ru.kino.dev.settings.biometric.BiometricSession
-import javax.inject.Inject
 
 /** What the screen says about biometrics, under the button. */
 enum class BiometricNotice {
@@ -24,7 +23,7 @@ enum class BiometricNotice {
  * biometrics are on for the database, the prompt only on a tap, and what it gives is the password - which
  * the screen then opens with, the usual way.
  */
-class BiometricSignIn @Inject constructor(
+class BiometricSignIn(
     private val biometrics: BiometricRepository,
     private val log: ErrorLog,
 ) {

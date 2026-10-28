@@ -1,10 +1,6 @@
 package ru.kino.dev.vault.pres.trashentry
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -64,10 +60,9 @@ data class TrashEntryState(
  *
  * An entry no longer in the bin - restored or removed meanwhile - sends the screen back.
  */
-@HiltViewModel(assistedFactory = TrashEntryProcessor.Factory::class)
-class TrashEntryProcessor @AssistedInject constructor(
-    @Assisted("dbKey") private val dbKey: String,
-    @Assisted("entryId") private val entryId: String,
+class TrashEntryProcessor(
+    private val dbKey: String,
+    private val entryId: String,
     private val opener: EntryOpener,
     private val settings: EntrySettingsRepository,
     private val trash: TrashRepository,
@@ -77,11 +72,6 @@ class TrashEntryProcessor @AssistedInject constructor(
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<TrashEntryState, TrashEntryState, Nothing> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(@Assisted("dbKey") dbKey: String, @Assisted("entryId") entryId: String): TrashEntryProcessor
-    }
 
     override val container = orbitContainer<TrashEntryState, Nothing>(TrashEntryState())
 

@@ -1,10 +1,6 @@
 package ru.kino.dev.welcome.pres.biometricsetup
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -35,19 +31,13 @@ data class BiometricSetupState(
  * password is not asked again: turning biometrics on encrypts the one still in the draft. Leaving for
  * `vault` wipes the `welcome` graph, the draft with it.
  */
-@HiltViewModel(assistedFactory = BiometricSetupProcessor.Factory::class)
-class BiometricSetupProcessor @AssistedInject constructor(
-    @Assisted private val dbKey: String,
-    @Assisted private val draft: CreateDraft,
+class BiometricSetupProcessor(
+    private val dbKey: String,
+    private val draft: CreateDraft,
     private val biometrics: BiometricRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<BiometricSetupState, BiometricSetupState, BiometricSetupSideEffect> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(dbKey: String, draft: CreateDraft): BiometricSetupProcessor
-    }
 
     override val container = orbitContainer<BiometricSetupState, BiometricSetupSideEffect>(BiometricSetupState())
 

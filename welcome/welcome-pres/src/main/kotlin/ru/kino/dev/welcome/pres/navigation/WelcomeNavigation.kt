@@ -2,13 +2,13 @@ package ru.kino.dev.welcome.pres.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
+import org.koin.compose.viewmodel.koinViewModel
 import ru.kino.dev.navigation.LockedRoute
 import ru.kino.dev.navigation.WelcomeGraph
 import ru.kino.dev.welcome.pres.biometricsetup.BiometricSetupScreen
@@ -59,5 +59,5 @@ fun NavGraphBuilder.welcomeGraph(navController: NavController, start: WelcomeSta
 @Composable
 private fun createDraft(navController: NavController, entry: NavBackStackEntry): CreateDraft {
     val graphEntry = remember(entry) { navController.getBackStackEntry<CreateGraph>() }
-    return hiltViewModel(graphEntry)
+    return koinViewModel(viewModelStoreOwner = graphEntry)
 }

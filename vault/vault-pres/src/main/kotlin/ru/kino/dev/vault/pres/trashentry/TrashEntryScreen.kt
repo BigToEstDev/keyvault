@@ -27,8 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.ui.components.BackTopBar
@@ -49,9 +50,9 @@ import ru.kino.dev.vault.pres.trash.components.TrashDialogs
 internal fun TrashEntryScreen(
     dbKey: String,
     entryId: String,
-    processor: TrashEntryProcessor = hiltViewModel<TrashEntryProcessor, TrashEntryProcessor.Factory>(
-        creationCallback = { factory -> factory.create(dbKey, entryId) },
-    ),
+    processor: TrashEntryProcessor = koinViewModel {
+        parametersOf(TrashEntryArgs(dbKey = dbKey, entryId = entryId))
+    },
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

@@ -2,14 +2,12 @@ package ru.kino.dev.welcome.pres.start
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import ru.kino.dev.welcome.CurrentDatabaseRepository
-import javax.inject.Inject
 
 /** Where the app starts: nothing remembered - the welcome screen, a database remembered - unlocking it. */
 enum class WelcomeStart {
@@ -24,8 +22,7 @@ enum class WelcomeStart {
  * Not a screen: the activity keeps the system splash on until [start] has a value, so there is no screen of
  * our own to wait on.
  */
-@HiltViewModel
-class WelcomeStartResolver @Inject constructor(
+class WelcomeStartResolver(
     private val current: CurrentDatabaseRepository,
 ) : ViewModel() {
 

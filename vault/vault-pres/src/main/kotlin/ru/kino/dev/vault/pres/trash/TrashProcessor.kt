@@ -1,10 +1,6 @@
 package ru.kino.dev.vault.pres.trash
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -72,20 +68,14 @@ data class TrashState(
  * restored - all to one group, the one they came from offered when they share it - or removed for good. The whole bin
  * is emptied from the menu of the top bar. Each is one write of the file; after it the bin is read again.
  */
-@HiltViewModel(assistedFactory = TrashProcessor.Factory::class)
-class TrashProcessor @AssistedInject constructor(
-    @Assisted private val dbKey: String,
+class TrashProcessor(
+    private val dbKey: String,
     private val trash: TrashRepository,
     private val editor: TrashEditor,
     private val groups: GroupRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<TrashState, TrashState, Nothing> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(dbKey: String): TrashProcessor
-    }
 
     override val container = orbitContainer<TrashState, Nothing>(TrashState())
 

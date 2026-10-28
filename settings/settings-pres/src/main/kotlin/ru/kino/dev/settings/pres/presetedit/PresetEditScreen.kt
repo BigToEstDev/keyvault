@@ -26,8 +26,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.FieldPosition
 import ru.kino.dev.core.preset.PresetLimits
@@ -54,10 +55,7 @@ import ru.kino.dev.ui.preset.fieldLabel
 @Composable
 internal fun PresetEditScreen(
     presetId: String?,
-    processor: PresetEditProcessor = hiltViewModel<PresetEditProcessor, PresetEditProcessor.Factory>(
-        key = presetId,
-        creationCallback = { factory -> factory.create(presetId) },
-    ),
+    processor: PresetEditProcessor = koinViewModel(key = presetId) { parametersOf(presetId) },
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

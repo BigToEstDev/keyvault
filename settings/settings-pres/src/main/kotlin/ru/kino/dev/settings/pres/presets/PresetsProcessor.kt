@@ -1,7 +1,6 @@
 package ru.kino.dev.settings.pres.presets
 
 import androidx.lifecycle.ViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -18,7 +17,6 @@ import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.settings.pres.common.keepSetting
 import ru.kino.dev.settings.presets.PresetSettingsRepository
-import javax.inject.Inject
 
 /**
  * @param usePresets whether presets are used; null until read - its choice is disabled
@@ -43,8 +41,7 @@ data class PresetsState(
  * Read each time the screen is shown: back from a preset made or edited, the list is as kept. A preset deleted -
  * its entries open with the standard preset, its fields as their own (pass-docs, `vault-our.md`).
  */
-@HiltViewModel
-class PresetsProcessor @Inject constructor(
+class PresetsProcessor(
     private val settings: PresetSettingsRepository,
     private val presets: PresetRepository,
     private val editor: PresetEditor,

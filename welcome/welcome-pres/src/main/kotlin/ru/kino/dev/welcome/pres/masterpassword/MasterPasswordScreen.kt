@@ -28,9 +28,10 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.GradientBackground
@@ -44,9 +45,7 @@ import ru.kino.dev.welcome.pres.create.OverwriteDialog
 @Composable
 internal fun MasterPasswordScreen(
     draft: CreateDraft,
-    processor: MasterPasswordProcessor = hiltViewModel<MasterPasswordProcessor, MasterPasswordProcessor.Factory>(
-        creationCallback = { factory -> factory.create(draft) },
-    ),
+    processor: MasterPasswordProcessor = koinViewModel { parametersOf(draft) },
 ) {
     val state by processor.collectAsState()
     val pickDatabase = rememberCreateDocument { processor.action(MasterPasswordAction.DatabasePicked(it)) }

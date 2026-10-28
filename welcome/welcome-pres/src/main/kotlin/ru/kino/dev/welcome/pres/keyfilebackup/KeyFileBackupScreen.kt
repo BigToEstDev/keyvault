@@ -24,9 +24,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PrimaryButton
@@ -40,9 +41,7 @@ import ru.kino.dev.welcome.pres.create.OverwriteDialog
 @Composable
 internal fun KeyFileBackupScreen(
     draft: CreateDraft,
-    processor: KeyFileBackupProcessor = hiltViewModel<KeyFileBackupProcessor, KeyFileBackupProcessor.Factory>(
-        creationCallback = { factory -> factory.create(draft) },
-    ),
+    processor: KeyFileBackupProcessor = koinViewModel { parametersOf(draft) },
 ) {
     val state by processor.collectAsState()
     val pickKeyFile = rememberCreateDocument { processor.action(KeyFileBackupAction.KeyFilePicked(it)) }
