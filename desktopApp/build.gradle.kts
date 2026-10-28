@@ -15,6 +15,10 @@ kotlin {
 }
 
 dependencies {
+    // The core, the files and the settings of the desktop (pass-docs, Step 86)
+    implementation(projects.core.coreData)
+    implementation(libs.koin.core)
+
     implementation(compose.desktop.currentOs)
     implementation(libs.cmp.material3)
     implementation(libs.kotlinx.coroutines.swing)
