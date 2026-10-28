@@ -44,7 +44,7 @@ class AppGraphTest {
     @Test
     fun `every definition finds what its constructor asks for`() {
         // One module with all of them: verifyAll would check each alone, without what the others give
-        module { includes(appModules) }.verify(
+        module { includes(appModules + coreDataModule) }.verify(
             extraTypes = listOf(
                 // androidContext() of KeyVaultApp
                 Context::class,

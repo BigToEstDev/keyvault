@@ -45,7 +45,9 @@ dependencies {
     implementation(projects.core.coreDomain)
     implementation(projects.core.corePres)
     implementation(projects.core.coreNav)
-    // The native core and the data modules of the features: the app puts their Koin modules into the graph
+    // The app itself, common to the platforms (pass-docs, Step 88)
+    implementation(projects.composeApp)
+    // The native core: its Koin module is of the jvm of both platforms - the app adds it to the graph
     implementation(projects.core.coreData)
     implementation(projects.welcome.welcomeData)
     implementation(projects.vault.vaultData)

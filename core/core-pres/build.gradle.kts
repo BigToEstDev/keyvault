@@ -38,6 +38,10 @@ kotlin {
             // The system prompt of strong biometrics - one for welcome and settings (pass-docs, Step 59)
             implementation(libs.androidx.biometric)
         }
+        getByName("desktopMain").dependencies {
+            // "Back" of the desktop - Esc - for BackHandler (pass-docs, Step 88)
+            implementation(libs.cmp.navigationevent.compose)
+        }
         getByName("androidHostTest").dependencies {
             // A dialog and a menu in the language of the app - Android on the JVM, no device (pass-docs, Step 72)
             implementation(libs.junit)

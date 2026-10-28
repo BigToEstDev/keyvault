@@ -31,6 +31,7 @@ dependencyResolutionManagement {
 
 include(":app")
 include(":desktopApp")
+include(":composeApp")
 include(":core:core-domain")
 include(":core:core-domain-fakes")
 include(":core:core-pres")

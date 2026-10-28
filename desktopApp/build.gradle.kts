@@ -15,12 +15,13 @@ kotlin {
 }
 
 dependencies {
-    // The core, the files and the settings of the desktop (pass-docs, Step 86)
+    // The app common to the platforms, and the core of the jvm its graph lacks (pass-docs, Step 88)
+    implementation(projects.composeApp)
     implementation(projects.core.coreData)
+    implementation(projects.settings.settingsDomain)
     implementation(libs.koin.core)
 
     implementation(compose.desktop.currentOs)
-    implementation(libs.cmp.material3)
     implementation(libs.kotlinx.coroutines.swing)
 }
 

@@ -29,6 +29,7 @@ cmpMaterial3 = "1.9.0"
 cmpMaterialIcons = "1.7.3"
 cmpLifecycle = "2.11.0"
 cmpNavigation = "2.10.0"
+cmpNavigationEvent = "1.1.0"
 koin = "4.2.2"
 
 [libraries]
@@ -87,6 +88,7 @@ cmp-material-icons-extended = { module = "org.jetbrains.compose.material:materia
 cmp-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 cmp-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "cmpLifecycle" }
 cmp-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "cmpLifecycle" }
+cmp-navigationevent-compose = { module = "org.jetbrains.androidx.navigationevent:navigationevent-compose", version.ref = "cmpNavigationEvent" }
 cmp-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "cmpNavigation" }
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "coroutines" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

@@ -1,17 +1,21 @@
 plugins {
-    id("android-compose-lib")
+    id("kmp-compose-lib")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-dependencies {
-    implementation(projects.core.corePres)
-    implementation(projects.core.coreNav)
-    implementation(projects.welcome.welcomeDomain)
-    // The sign-in settings: welcome listens through the domain of settings (pass-docs, Step 59)
-    implementation(projects.settings.settingsDomain)
-
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.orbit.test)
-    testImplementation(projects.settings.settingsDomainFakes)
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.core.corePres)
+            implementation(projects.core.coreNav)
+            implementation(projects.welcome.welcomeDomain)
+            // The sign-in settings: welcome listens through the domain of settings (pass-docs, Step 59)
+            implementation(projects.settings.settingsDomain)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.orbit.test)
+            implementation(projects.settings.settingsDomainFakes)
+        }
+    }
 }
