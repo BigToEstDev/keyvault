@@ -4,24 +4,27 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import java.io.File
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
+import okio.Path.Companion.toPath
+import ru.kino.dev.core.TemporaryFolder
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
-import java.io.File
 
 class DataStoreAppearanceRepositoryTest {
 
-    @get:Rule
-    val folder = TemporaryFolder()
+    private val folder = TemporaryFolder()
+
+    @AfterTest
+    fun deleteFolder() = folder.delete()
 
     @Test
     fun `nothing chosen yet reads as the system mode`() = runTest {
@@ -175,5 +178,5 @@ class DataStoreAppearanceRepositoryTest {
     private fun TestScope.store(
         file: File,
         scope: CoroutineScope = backgroundScope,
-    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(scope = scope) { file }
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.createWithPath(scope = scope) { file.absolutePath.toPath() }
 }

@@ -1,17 +1,17 @@
 package ru.kino.dev.settings.data.biometric
 
-import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Test
-import ru.kino.dev.core.expectFailure
-import ru.kino.dev.settings.biometric.BiometricFailure
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
+import ru.kino.dev.core.expectFailure
+import ru.kino.dev.settings.biometric.BiometricFailure
 
 class BiometricRepositoryImplTest {
 

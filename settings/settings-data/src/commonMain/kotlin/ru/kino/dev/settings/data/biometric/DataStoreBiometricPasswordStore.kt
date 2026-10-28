@@ -1,11 +1,9 @@
 package ru.kino.dev.settings.data.biometric
 
-import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -19,20 +17,20 @@ import java.util.Base64
  * biometrics on this phone.
  */
 internal class DataStoreBiometricPasswordStore(
-    private val context: Context,
+    private val store: DataStore<Preferences>,
 ) : BiometricPasswordStore {
 
     override suspend fun read(): StoredPassword? =
-        context.biometricPassword.data.first()[ENTRY]
+        store.data.first()[ENTRY]
             // A record that cannot be read is none: biometrics are offered to be turned on again
             ?.let { runCatching { json.decodeFromString(StoredDto.serializer(), it).toStored() }.getOrNull() }
 
     override suspend fun write(password: StoredPassword) {
-        context.biometricPassword.edit { it[ENTRY] = json.encodeToString(StoredDto.serializer(), password.toDto()) }
+        store.edit { it[ENTRY] = json.encodeToString(StoredDto.serializer(), password.toDto()) }
     }
 
     override suspend fun clear() {
-        context.biometricPassword.edit { it.remove(ENTRY) }
+        store.edit { it.remove(ENTRY) }
     }
 
     @Serializable
@@ -54,5 +52,3 @@ internal class DataStoreBiometricPasswordStore(
         val base64: Base64.Encoder = Base64.getEncoder()
     }
 }
-
-private val Context.biometricPassword: DataStore<Preferences> by preferencesDataStore(name = "biometric_password")

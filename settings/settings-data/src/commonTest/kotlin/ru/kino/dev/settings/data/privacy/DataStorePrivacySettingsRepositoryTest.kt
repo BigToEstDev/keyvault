@@ -3,19 +3,22 @@ package ru.kino.dev.settings.data.privacy
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import java.io.File
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import java.io.File
+import okio.Path.Companion.toPath
+import ru.kino.dev.core.TemporaryFolder
 
 class DataStorePrivacySettingsRepositoryTest {
 
-    @get:Rule
-    val folder = TemporaryFolder()
+    private val folder = TemporaryFolder()
+
+    @AfterTest
+    fun deleteFolder() = folder.delete()
 
     @Test
     fun `screenshots are not allowed until chosen`() = runTest {
@@ -36,5 +39,5 @@ class DataStorePrivacySettingsRepositoryTest {
     private fun newFile(): File = File(folder.newFolder(), "app_settings.preferences_pb")
 
     private fun TestScope.store(file: File): DataStore<Preferences> =
-        PreferenceDataStoreFactory.create(scope = backgroundScope) { file }
+        PreferenceDataStoreFactory.createWithPath(scope = backgroundScope) { file.absolutePath.toPath() }
 }
