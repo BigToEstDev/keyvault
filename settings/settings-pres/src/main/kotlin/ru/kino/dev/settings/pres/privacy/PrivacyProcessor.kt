@@ -1,7 +1,6 @@
 package ru.kino.dev.settings.pres.privacy
 
 import androidx.lifecycle.ViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -10,7 +9,6 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.pres.common.keepSetting
 import ru.kino.dev.settings.privacy.PrivacySettingsRepository
-import javax.inject.Inject
 
 /**
  * @param allowScreenshots whether the screen of the app may be captured; null until read - its choice is disabled
@@ -26,8 +24,7 @@ data class PrivacyState(
  * recent apps - one switch, Android does not tell them apart. A choice is kept at once - the activity takes it from
  * the repository and lifts or puts the flag of the window without a restart.
  */
-@HiltViewModel
-class PrivacyProcessor @Inject constructor(
+class PrivacyProcessor(
     private val repository: PrivacySettingsRepository,
     private val navigator: Navigator,
 ) : ViewModel(), OrbitContainerHost<PrivacyState, PrivacyState, Nothing> {

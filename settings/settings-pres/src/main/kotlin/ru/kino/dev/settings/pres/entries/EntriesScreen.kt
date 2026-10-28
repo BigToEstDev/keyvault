@@ -28,8 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.DatabaseEntries
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.pres.R
@@ -58,9 +59,7 @@ import java.text.NumberFormat
 @Composable
 internal fun EntriesScreen(
     dbKey: String,
-    processor: EntriesProcessor = hiltViewModel<EntriesProcessor, EntriesProcessor.Factory>(
-        creationCallback = { factory -> factory.create(dbKey) },
-    ),
+    processor: EntriesProcessor = koinViewModel { parametersOf(dbKey) },
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

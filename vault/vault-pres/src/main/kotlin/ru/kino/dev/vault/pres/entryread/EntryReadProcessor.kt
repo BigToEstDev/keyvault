@@ -1,10 +1,6 @@
 package ru.kino.dev.vault.pres.entryread
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -73,10 +69,9 @@ data class EntryReadState(
  * screen itself; this is the guard for an entry put there otherwise (pass-docs, Step 50, item 2). Deleted
  * here, the screen goes back; deleted but not written, it stays and says so.
  */
-@HiltViewModel(assistedFactory = EntryReadProcessor.Factory::class)
-class EntryReadProcessor @AssistedInject constructor(
-    @Assisted("dbKey") private val dbKey: String,
-    @Assisted("entryId") private val entryId: String,
+class EntryReadProcessor(
+    private val dbKey: String,
+    private val entryId: String,
     private val opener: EntryOpener,
     private val settings: EntrySettingsRepository,
     private val groupRepository: GroupRepository,
@@ -87,11 +82,6 @@ class EntryReadProcessor @AssistedInject constructor(
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryReadState, EntryReadState, Nothing> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(@Assisted("dbKey") dbKey: String, @Assisted("entryId") entryId: String): EntryReadProcessor
-    }
 
     override val container = orbitContainer<EntryReadState, Nothing>(EntryReadState())
 

@@ -15,8 +15,6 @@ import ru.kino.dev.welcome.CurrentDatabase
 import ru.kino.dev.welcome.CurrentDatabaseRepository
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeDatabaseRepository
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * [WelcomeDatabaseRepository] over the native core, the picked files and the remembered database.
@@ -29,8 +27,7 @@ import javax.inject.Singleton
  * The content of a key file is read right before the call that needs it and wiped right after, whatever
  * the call ended with.
  */
-@Singleton
-internal class WelcomeDatabaseRepositoryImpl @Inject constructor(
+internal class WelcomeDatabaseRepositoryImpl(
     private val core: NativeCore,
     private val files: DatabaseFiles,
     private val current: CurrentDatabaseRepository,

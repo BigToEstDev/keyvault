@@ -26,10 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.components.EmptySearchIllustration
 import ru.kino.dev.ui.components.EmptyState
@@ -51,9 +52,9 @@ import ru.kino.dev.vault.pres.common.SkeletonCard
 internal fun GroupListScreen(
     dbKey: String,
     groupId: String?,
-    processor: GroupListProcessor = hiltViewModel<GroupListProcessor, GroupListProcessor.Factory>(
-        creationCallback = { factory -> factory.create(dbKey, groupId) },
-    ),
+    processor: GroupListProcessor = koinViewModel {
+        parametersOf(GroupListArgs(dbKey = dbKey, groupId = groupId))
+    },
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

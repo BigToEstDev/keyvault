@@ -1,21 +1,14 @@
 package ru.kino.dev.vault.data
 
-import android.content.Context
 import android.util.Log
-import dagger.Binds
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import ru.kino.dev.core.preset.PresetRepository
-import ru.kino.dev.settings.biometric.BiometricRepository
-import ru.kino.dev.settings.lock.InactivityTimer
-import ru.kino.dev.settings.signin.RememberedKeyFile
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.module.dsl.bind
+import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.singleOf
+import org.koin.dsl.module
 import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.credentials.DatabaseCredentials
 import ru.kino.dev.vault.data.credentials.DatabaseCredentialsImpl
@@ -51,135 +44,46 @@ import ru.kino.dev.vault.trash.TrashEditor
 import ru.kino.dev.vault.trash.TrashRepository
 
 /** Binds the repositories of `vault` to their implementations, and builds its use cases and its lock. */
-@Module
-@InstallIn(SingletonComponent::class)
-internal interface VaultDataModule {
+val vaultDataModule = module {
+    singleOf(::VaultDatabaseRepositoryImpl) { bind<VaultDatabaseRepository>() }
+    singleOf(::GroupRepositoryImpl) { bind<GroupRepository>() }
+    singleOf(::EntryRepositoryImpl) { bind<EntryRepository>() }
+    singleOf(::EntryHistoryRepositoryImpl) { bind<EntryHistoryRepository>() }
+    factoryOf(::DatabaseCredentialsImpl) { bind<DatabaseCredentials>() }
+    factoryOf(::DatabaseFileRepositoryImpl) { bind<DatabaseFileRepository>() }
+    factoryOf(::EntrySettingsRepositoryImpl) { bind<EntrySettingsRepository>() }
+    factoryOf(::SecurityRepositoryImpl) { bind<SecurityRepository>() }
+    factoryOf(::TrashRepositoryImpl) { bind<TrashRepository>() }
 
-    @Binds
-    fun bindVaultDatabaseRepository(impl: VaultDatabaseRepositoryImpl): VaultDatabaseRepository
+    // vault-domain is plain Kotlin and knows nothing of the graph, so its use cases are built here
+    factory { GroupEditor(get(), get(), get()) }
+    factory { EntryHistoryEditor(get(), get(), get()) }
+    factory { EntryVersionOpener(get(), get()) }
+    factory { EntryHistoryReader(get(), get()) }
+    factory { EntryOpener(get(), get()) }
+    factory { DatabaseFileEditor(get(), get(), get()) }
+    factory { EntrySettingsEditor(get(), get(), get()) }
+    factory { TrashEditor(get(), get(), get()) }
+    factory { SecurityEditor(get(), get(), get(), get(), get()) }
+    factory { EntryEditor(get(), get(), get(), get(), get()) }
+    factory { VaultSearch(get(), get()) }
 
-    @Binds
-    fun bindGroupRepository(impl: GroupRepositoryImpl): GroupRepository
+    // One for the app: the editors and the lock wait for each other on it
+    single { DatabaseGuard() }
 
-    @Binds
-    fun bindEntryRepository(impl: EntryRepositoryImpl): EntryRepository
-
-    @Binds
-    fun bindEntryHistoryRepository(impl: EntryHistoryRepositoryImpl): EntryHistoryRepository
-
-    @Binds
-    fun bindDatabaseCredentials(impl: DatabaseCredentialsImpl): DatabaseCredentials
-
-    @Binds
-    fun bindDatabaseFileRepository(impl: DatabaseFileRepositoryImpl): DatabaseFileRepository
-
-    @Binds
-    fun bindEntrySettingsRepository(impl: EntrySettingsRepositoryImpl): EntrySettingsRepository
-
-    @Binds
-    fun bindSecurityRepository(impl: SecurityRepositoryImpl): SecurityRepository
-
-    @Binds
-    fun bindTrashRepository(impl: TrashRepositoryImpl): TrashRepository
-
-    companion object {
-
-        // vault-domain is plain Kotlin and carries no injection annotations, so its use cases are built here
-        @Provides
-        fun provideGroupEditor(
-            groups: GroupRepository,
-            database: VaultDatabaseRepository,
-            guard: DatabaseGuard,
-        ): GroupEditor = GroupEditor(groups, database, guard)
-
-        @Provides
-        fun provideEntryHistoryEditor(
-            history: EntryHistoryRepository,
-            database: VaultDatabaseRepository,
-            guard: DatabaseGuard,
-        ): EntryHistoryEditor = EntryHistoryEditor(history, database, guard)
-
-        @Provides
-        fun provideEntryVersionOpener(history: EntryHistoryRepository, opener: EntryOpener): EntryVersionOpener =
-            EntryVersionOpener(history, opener)
-
-        @Provides
-        fun provideEntryHistoryReader(entries: EntryRepository, history: EntryHistoryRepository): EntryHistoryReader =
-            EntryHistoryReader(entries, history)
-
-        @Provides
-        fun provideEntryOpener(entries: EntryRepository, presets: PresetRepository): EntryOpener =
-            EntryOpener(entries, presets)
-
-        @Provides
-        fun provideDatabaseFileEditor(
-            files: DatabaseFileRepository,
-            database: VaultDatabaseRepository,
-            guard: DatabaseGuard,
-        ): DatabaseFileEditor = DatabaseFileEditor(files, database, guard)
-
-        @Provides
-        fun provideEntrySettingsEditor(
-            settings: EntrySettingsRepository,
-            database: VaultDatabaseRepository,
-            guard: DatabaseGuard,
-        ): EntrySettingsEditor = EntrySettingsEditor(settings, database, guard)
-
-        @Provides
-        fun provideTrashEditor(
-            trash: TrashRepository,
-            database: VaultDatabaseRepository,
-            guard: DatabaseGuard,
-        ): TrashEditor = TrashEditor(trash, database, guard)
-
-        @Provides
-        fun provideSecurityEditor(
-            security: SecurityRepository,
-            database: VaultDatabaseRepository,
-            biometrics: BiometricRepository,
-            rememberedKeyFile: RememberedKeyFile,
-            guard: DatabaseGuard,
-        ): SecurityEditor = SecurityEditor(security, database, biometrics, rememberedKeyFile, guard)
-
-        @Provides
-        fun provideEntryEditor(
-            entries: EntryRepository,
-            opener: EntryOpener,
-            settings: EntrySettingsRepository,
-            database: VaultDatabaseRepository,
-            guard: DatabaseGuard,
-        ): EntryEditor = EntryEditor(entries, opener, settings, database, guard)
-
-        // One for the app: the editors and the lock wait for each other on it
-        @Provides
-        @Singleton
-        fun provideDatabaseGuard(): DatabaseGuard = DatabaseGuard()
-
-        @Provides
-        @Singleton
-        fun provideAutoLock(
-            database: VaultDatabaseRepository,
-            guard: DatabaseGuard,
-            timer: InactivityTimer,
-        ): AutoLock = AutoLock(
-            database = database,
-            guard = guard,
+    single {
+        AutoLock(
+            database = get(),
+            guard = get(),
             // The count and its time are the settings' (pass-docs, Step 59)
-            timer = timer,
+            timer = get(),
             // The app's own: the lock outlives any screen
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-            onFailure = { Log.e(TAG, "the core refused to lock the database", it) },
+            onFailure = { Log.e(AUTO_LOCK_TAG, "the core refused to lock the database", it) },
         )
-
-        private const val TAG = "AutoLock"
-
-        @Provides
-        @Singleton
-        fun provideVaultFilterRepository(@ApplicationContext context: Context): VaultFilterRepository =
-            DataStoreVaultFilterRepository(context.vaultFilterStore)
-
-        @Provides
-        fun provideVaultSearch(groups: GroupRepository, entries: EntryRepository): VaultSearch =
-            VaultSearch(groups, entries)
     }
+
+    single<VaultFilterRepository> { DataStoreVaultFilterRepository(androidContext().vaultFilterStore) }
 }
+
+private const val AUTO_LOCK_TAG = "AutoLock"

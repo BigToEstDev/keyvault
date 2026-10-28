@@ -1,10 +1,6 @@
 package ru.kino.dev.vault.pres.entryedit
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -118,11 +114,10 @@ data class EntryEditState(
  * @param groupId where a new entry goes; null when editing
  * @param entryId the entry edited; null when creating
  */
-@HiltViewModel(assistedFactory = EntryEditProcessor.Factory::class)
-class EntryEditProcessor @AssistedInject constructor(
-    @Assisted("dbKey") private val dbKey: String,
-    @Assisted("groupId") private val groupId: String?,
-    @Assisted("entryId") private val entryId: String?,
+class EntryEditProcessor(
+    private val dbKey: String,
+    private val groupId: String?,
+    private val entryId: String?,
     private val opener: EntryOpener,
     private val settings: EntrySettingsRepository,
     private val groupRepository: GroupRepository,
@@ -134,15 +129,6 @@ class EntryEditProcessor @AssistedInject constructor(
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryEditState, EntryEditState, Nothing> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(
-            @Assisted("dbKey") dbKey: String,
-            @Assisted("groupId") groupId: String?,
-            @Assisted("entryId") entryId: String?,
-        ): EntryEditProcessor
-    }
 
     init {
         require((groupId == null) != (entryId == null)) { "either a group to create in or an entry to edit" }

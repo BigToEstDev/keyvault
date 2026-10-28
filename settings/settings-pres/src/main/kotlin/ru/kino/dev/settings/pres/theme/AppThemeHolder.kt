@@ -2,8 +2,6 @@ package ru.kino.dev.settings.pres.theme
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -22,8 +20,7 @@ import ru.kino.dev.ui.theme.AppDisplay
  * Not a screen: the activity keeps the system splash on until all have a value, so the app does not
  * flash in the other theme or language first.
  */
-@HiltViewModel
-class AppThemeHolder @Inject constructor(
+class AppThemeHolder(
     repository: AppearanceRepository,
     lock: LockSettingsRepository,
     presets: PresetSettingsRepository,

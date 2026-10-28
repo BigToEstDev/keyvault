@@ -1,10 +1,6 @@
 package ru.kino.dev.settings.pres.lock
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -61,9 +57,8 @@ data class LockState(
  * password that opens the database is kept. It is held here only until the prompt ends. Off - asks first, then
  * forgets (pass-docs, Step 59, item 7).
  */
-@HiltViewModel(assistedFactory = LockProcessor.Factory::class)
-class LockProcessor @AssistedInject constructor(
-    @Assisted private val dbKey: String,
+class LockProcessor(
+    private val dbKey: String,
     private val repository: LockSettingsRepository,
     private val signIn: SignInSettingsRepository,
     private val biometric: BiometricRepository,
@@ -72,11 +67,6 @@ class LockProcessor @AssistedInject constructor(
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<LockState, LockState, LockSideEffect> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(dbKey: String): LockProcessor
-    }
 
     override val container = orbitContainer<LockState, LockSideEffect>(LockState())
 

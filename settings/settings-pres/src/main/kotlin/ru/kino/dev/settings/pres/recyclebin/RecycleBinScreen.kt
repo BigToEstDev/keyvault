@@ -19,10 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.settings.pres.recyclebin.components.RecycleBinSkeleton
 import ru.kino.dev.ui.components.BackTopBar
@@ -37,9 +38,7 @@ import ru.kino.dev.ui.components.skeletonBrush
 @Composable
 internal fun RecycleBinScreen(
     dbKey: String,
-    processor: RecycleBinProcessor = hiltViewModel<RecycleBinProcessor, RecycleBinProcessor.Factory>(
-        creationCallback = { factory -> factory.create(dbKey) },
-    ),
+    processor: RecycleBinProcessor = koinViewModel { parametersOf(dbKey) },
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

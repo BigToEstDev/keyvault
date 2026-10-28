@@ -5,9 +5,10 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.biometric.BiometricPurpose
 import ru.kino.dev.welcome.pres.common.PasswordEntryContent
@@ -17,9 +18,7 @@ import ru.kino.dev.ui.files.rememberOpenDocument
 @Composable
 internal fun LockedScreen(
     dbKey: String,
-    processor: LockedProcessor = hiltViewModel<LockedProcessor, LockedProcessor.Factory>(
-        creationCallback = { factory -> factory.create(dbKey) },
-    ),
+    processor: LockedProcessor = koinViewModel { parametersOf(dbKey) },
 ) {
     val state by processor.collectAsState()
     val pickKeyFile = rememberOpenDocument { processor.action(LockedAction.KeyFilePicked(it)) }

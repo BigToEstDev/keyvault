@@ -1,7 +1,17 @@
 package ru.kino.dev
 
 import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
+import ru.kino.dev.di.appModules
 
-@HiltAndroidApp
-class KeyVaultApp : Application()
+class KeyVaultApp : Application() {
+
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidContext(this@KeyVaultApp)
+            modules(appModules)
+        }
+    }
+}

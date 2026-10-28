@@ -1,10 +1,6 @@
 package ru.kino.dev.welcome.pres.masterpassword
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -63,17 +59,11 @@ data class MasterPasswordState(
  * core never has to refuse it; and it has a minimum length of the app's own. Opening has neither: a
  * database made elsewhere may have any password.
  */
-@HiltViewModel(assistedFactory = MasterPasswordProcessor.Factory::class)
-class MasterPasswordProcessor @AssistedInject constructor(
-    @Assisted private val draft: CreateDraft,
+class MasterPasswordProcessor(
+    private val draft: CreateDraft,
     private val steps: CreateSteps,
     private val navigator: Navigator,
 ) : ViewModel(), OrbitContainerHost<MasterPasswordState, MasterPasswordState, MasterPasswordSideEffect> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(draft: CreateDraft): MasterPasswordProcessor
-    }
 
     override val container = orbitContainer<MasterPasswordState, MasterPasswordSideEffect>(MasterPasswordState())
 

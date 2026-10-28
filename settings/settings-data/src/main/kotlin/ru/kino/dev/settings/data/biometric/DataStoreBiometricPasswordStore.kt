@@ -6,14 +6,11 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.Base64
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * [BiometricPasswordStore] on a preferences data store of its own, apart from the remembered database.
@@ -21,9 +18,8 @@ import javax.inject.Singleton
  * What is written is ciphertext of a key that never leaves the Keystore - useless without the user's
  * biometrics on this phone.
  */
-@Singleton
-internal class DataStoreBiometricPasswordStore @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+internal class DataStoreBiometricPasswordStore(
+    private val context: Context,
 ) : BiometricPasswordStore {
 
     override suspend fun read(): StoredPassword? =

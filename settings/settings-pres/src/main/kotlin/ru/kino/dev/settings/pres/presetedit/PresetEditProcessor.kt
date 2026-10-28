@@ -1,10 +1,6 @@
 package ru.kino.dev.settings.pres.presetedit
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
@@ -97,19 +93,13 @@ data class PresetEditState(
  * the form of the entry picks the new preset up when it is shown again. An edit keeps the id, so the entries keep
  * the preset; one that drops names of its fields asks first - the entries keep their values under those names.
  */
-@HiltViewModel(assistedFactory = PresetEditProcessor.Factory::class)
-class PresetEditProcessor @AssistedInject constructor(
-    @Assisted private val presetId: String?,
+class PresetEditProcessor(
+    private val presetId: String?,
     private val presets: PresetRepository,
     private val editor: PresetEditor,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<PresetEditState, PresetEditState, Nothing> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(presetId: String?): PresetEditProcessor
-    }
 
     override val container = orbitContainer<PresetEditState, Nothing>(
         PresetEditState(editing = presetId != null, loading = presetId != null),

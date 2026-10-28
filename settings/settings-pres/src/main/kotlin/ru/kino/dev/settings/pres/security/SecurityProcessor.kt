@@ -1,10 +1,6 @@
 package ru.kino.dev.settings.pres.security
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -52,20 +48,14 @@ data class SecurityState(
  * A new master password forgets the biometrics of the database - [SecurityEditor] does; the screen says so when
  * they were on, to be turned on again in `Блокировка и вход`.
  */
-@HiltViewModel(assistedFactory = SecurityProcessor.Factory::class)
-class SecurityProcessor @AssistedInject constructor(
-    @Assisted private val dbKey: String,
+class SecurityProcessor(
+    private val dbKey: String,
     private val repository: SecurityRepository,
     private val editor: SecurityEditor,
     private val biometrics: BiometricRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<SecurityState, SecurityState, Nothing> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(dbKey: String): SecurityProcessor
-    }
 
     override val container = orbitContainer<SecurityState, Nothing>(SecurityState())
 

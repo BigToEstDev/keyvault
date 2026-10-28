@@ -1,10 +1,6 @@
 package ru.kino.dev.welcome.pres.keyfilebackup
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -47,17 +43,11 @@ data class KeyFileBackupState(
  * the 2.5 s wait. An existing file is never
  * written over without asking: as a key file it may be the key of another database.
  */
-@HiltViewModel(assistedFactory = KeyFileBackupProcessor.Factory::class)
-class KeyFileBackupProcessor @AssistedInject constructor(
-    @Assisted private val draft: CreateDraft,
+class KeyFileBackupProcessor(
+    private val draft: CreateDraft,
     private val steps: CreateSteps,
     private val navigator: Navigator,
 ) : ViewModel(), OrbitContainerHost<KeyFileBackupState, KeyFileBackupState, KeyFileBackupSideEffect> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(draft: CreateDraft): KeyFileBackupProcessor
-    }
 
     override val container =
         orbitContainer<KeyFileBackupState, KeyFileBackupSideEffect>(KeyFileBackupState()) {

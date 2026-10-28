@@ -23,10 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
+import org.koin.compose.viewmodel.koinViewModel
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.settings.pres.presets.components.PresetCard
@@ -47,7 +47,7 @@ import ru.kino.dev.ui.preset.presetName
  * and the fab "Create" while there is room for one; off - the switch alone (pass-docs, Step 62).
  */
 @Composable
-internal fun PresetsScreen(processor: PresetsProcessor = hiltViewModel()) {
+internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 

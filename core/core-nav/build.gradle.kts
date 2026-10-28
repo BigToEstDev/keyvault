@@ -4,8 +4,7 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
+    implementation(libs.koin.core)
 
     // Routes are serializable objects: the type-safe api of navigation-compose
     api(libs.kotlinx.serialization.core)

@@ -8,8 +8,7 @@ dependencies {
     // Biometrics are of settings: a database remembered anew forgets the stale ones (pass-docs, Step 59)
     implementation(projects.settings.settingsDomain)
 
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
+    implementation(libs.koin.android)
 
     // The remembered database: one json string in preferences, the whole schema
     implementation(libs.androidx.datastore.preferences)

@@ -21,9 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.pres.R
 import ru.kino.dev.ui.biometric.BiometricPurpose
 import ru.kino.dev.ui.components.GradientBackground
@@ -36,9 +37,7 @@ import ru.kino.dev.welcome.pres.create.CreateDraft
 internal fun BiometricSetupScreen(
     dbKey: String,
     draft: CreateDraft,
-    processor: BiometricSetupProcessor = hiltViewModel<BiometricSetupProcessor, BiometricSetupProcessor.Factory>(
-        creationCallback = { factory -> factory.create(dbKey, draft) },
-    ),
+    processor: BiometricSetupProcessor = koinViewModel { parametersOf(dbKey, draft) },
 ) {
     val state by processor.collectAsState()
     val showPrompt = rememberBiometricPrompt { processor.action(BiometricSetupAction.PromptFinished(it)) }

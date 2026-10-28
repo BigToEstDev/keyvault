@@ -7,7 +7,6 @@ import android.database.Cursor
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import androidx.core.net.toUri
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,8 +15,6 @@ import ru.kino.dev.core.DatabaseFiles
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * [DatabaseFiles] on top of the storage access framework.
@@ -26,11 +23,8 @@ import javax.inject.Singleton
  * cloud client or another app entirely, and all of them are reached through the same uri. That is also why
  * every call here is io on a dispatcher - a "file" may be a network round trip.
  */
-@Singleton
-internal class SafDatabaseFiles @Inject constructor(
-    // The use site target is explicit: without it Kotlin warns that a future version would also apply the
-    // annotation to the backing field, and Dagger only ever reads it on the parameter
-    @param:ApplicationContext private val context: Context,
+internal class SafDatabaseFiles(
+    private val context: Context,
 ) : DatabaseFiles {
 
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO

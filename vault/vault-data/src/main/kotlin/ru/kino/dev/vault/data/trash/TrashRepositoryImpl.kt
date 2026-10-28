@@ -10,11 +10,10 @@ import ru.kino.dev.vault.trash.TrashEntry
 import ru.kino.dev.vault.trash.TrashFailure
 import ru.kino.dev.vault.trash.TrashRepository
 import ru.kino.dev.vault.trash.TrashSearch
-import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 /** [TrashRepository] over the native core (pass-docs, Step 69 / 70). Nothing is cached. */
-internal class TrashRepositoryImpl @Inject constructor(
+internal class TrashRepositoryImpl(
     private val core: NativeCore,
 ) : TrashRepository {
 

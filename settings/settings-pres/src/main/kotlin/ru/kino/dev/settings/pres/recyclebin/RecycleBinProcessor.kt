@@ -1,10 +1,6 @@
 package ru.kino.dev.settings.pres.recyclebin
 
 import androidx.lifecycle.ViewModel
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -39,19 +35,13 @@ data class RecycleBinState(
  *
  * Off, a delete is for good, and the bin goes at once with all it holds - asked first when it holds something.
  */
-@HiltViewModel(assistedFactory = RecycleBinProcessor.Factory::class)
-class RecycleBinProcessor @AssistedInject constructor(
-    @Assisted private val dbKey: String,
+class RecycleBinProcessor(
+    private val dbKey: String,
     private val trash: TrashRepository,
     private val editor: TrashEditor,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<RecycleBinState, RecycleBinState, Nothing> {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(dbKey: String): RecycleBinProcessor
-    }
 
     override val container = orbitContainer<RecycleBinState, Nothing>(RecycleBinState())
 

@@ -5,10 +5,9 @@ import ru.kino.dev.core.DatabaseEntries
 import ru.kino.dev.core.NativeCore
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 import ru.kino.dev.vault.entries.EntrySettingsRepository
-import javax.inject.Inject
 
 /** [EntrySettingsRepository] on the core - `get_db_settings` / `set_db_settings` (pass-docs, Step 65). */
-internal class EntrySettingsRepositoryImpl @Inject constructor(
+internal class EntrySettingsRepositoryImpl(
     private val core: NativeCore,
 ) : EntrySettingsRepository {
 

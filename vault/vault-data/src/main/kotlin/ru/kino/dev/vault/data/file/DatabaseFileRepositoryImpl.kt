@@ -7,14 +7,13 @@ import ru.kino.dev.core.NativeCore
 import ru.kino.dev.vault.file.DatabaseFileFailure
 import ru.kino.dev.vault.file.DatabaseFileInfo
 import ru.kino.dev.vault.file.DatabaseFileRepository
-import javax.inject.Inject
 
 /**
  * [DatabaseFileRepository] on the core - `get_db_settings` / `set_db_settings` - and the document: the name of
  * the file is the provider's, what the person sees in the file manager, not the uri the core keeps
  * (pass-docs, Step 63).
  */
-internal class DatabaseFileRepositoryImpl @Inject constructor(
+internal class DatabaseFileRepositoryImpl(
     private val core: NativeCore,
     private val documents: DatabaseFiles,
 ) : DatabaseFileRepository {
