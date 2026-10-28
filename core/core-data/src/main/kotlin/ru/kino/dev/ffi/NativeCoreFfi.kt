@@ -1,8 +1,6 @@
 package ru.kino.dev.ffi
 
 import java.util.Base64
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
@@ -43,11 +41,9 @@ import ru.kino.dev.core.TrashSearchData
  * back into Kotlin - so this is where the work leaves the caller's thread. Argon2 and file io block, and
  * they block a dispatcher thread instead of the main one.
  */
-@Singleton
-internal class NativeCoreFfi @Inject constructor() : NativeCore {
+internal class NativeCoreFfi : NativeCore {
 
-    // Not injected: a default value on an @Inject constructor generates a second constructor and Dagger
-    // refuses that. A qualified dispatcher provider is worth adding once something else needs one too
+    // Fixed, not a parameter: a qualified dispatcher provider is worth adding once something else needs one too
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 
     override suspend fun buildInfo(): String = withContext(dispatcher) {

@@ -9,12 +9,9 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.history.EntryHistoryRepository
 import ru.kino.dev.vault.history.HistoryVersion
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /** [EntryHistoryRepository] over the native core; fails as the entry repository does - the history is the entry's. */
-@Singleton
-internal class EntryHistoryRepositoryImpl @Inject constructor(
+internal class EntryHistoryRepositoryImpl(
     private val core: NativeCore,
 ) : EntryHistoryRepository {
 

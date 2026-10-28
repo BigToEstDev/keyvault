@@ -8,12 +8,9 @@ import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.group.VaultGroup
 import ru.kino.dev.vault.group.VaultTree
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /** [GroupRepository] over the native core. Nothing is cached: the core holds the tree in memory already. */
-@Singleton
-internal class GroupRepositoryImpl @Inject constructor(
+internal class GroupRepositoryImpl(
     private val core: NativeCore,
 ) : GroupRepository {
 

@@ -7,8 +7,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.kino.dev.core.phone.PhoneCountry
 import ru.kino.dev.core.phone.PhoneNumbers
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * [PhoneNumbers] on Google's libphonenumber (pass-docs, Step 77, decision 2) - offline, it asks nothing of the net.
@@ -17,10 +15,9 @@ import javax.inject.Singleton
  * Android that is slow: [prepare] and [countries] do it on the io dispatcher, so the screens never wait for it on
  * the main thread.
  */
-@Singleton
-internal class LibPhoneNumbers @Inject constructor() : PhoneNumbers {
+internal class LibPhoneNumbers : PhoneNumbers {
 
-    // Not injected: see NativeCoreFfi - a default value on an @Inject constructor makes Dagger refuse it
+    // Fixed, not a parameter: see NativeCoreFfi
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 
     // Made on first use: it reads the list of countries

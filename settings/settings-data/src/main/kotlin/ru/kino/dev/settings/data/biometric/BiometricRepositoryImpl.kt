@@ -6,8 +6,6 @@ import ru.kino.dev.settings.biometric.BiometricCleanup
 import ru.kino.dev.settings.biometric.BiometricFailure
 import ru.kino.dev.settings.biometric.BiometricRepository
 import ru.kino.dev.settings.biometric.BiometricSession
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -17,8 +15,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * remembering another one, forgets what was there. The plain password exists only for the length of
  * [save] and [read]; its bytes are wiped right after.
  */
-@Singleton
-internal class BiometricRepositoryImpl @Inject constructor(
+internal class BiometricRepositoryImpl(
     private val keys: BiometricKeys,
     private val store: BiometricPasswordStore,
 ) : BiometricRepository, BiometricCleanup {

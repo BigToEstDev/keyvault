@@ -12,14 +12,13 @@ import ru.kino.dev.core.NativeCore
 import ru.kino.dev.core.readKeyFile
 import ru.kino.dev.vault.security.SecurityFailure
 import ru.kino.dev.vault.security.SecurityRepository
-import javax.inject.Inject
 import kotlin.time.Duration
 
 /**
  * [SecurityRepository] on the core - `get_db_settings` / `set_db_settings`, `verify_password`, `measure_kdf_pass` -
  * and on the documents for the key file (pass-docs, Step 67).
  */
-internal class SecurityRepositoryImpl @Inject constructor(
+internal class SecurityRepositoryImpl(
     private val core: NativeCore,
     private val documents: DatabaseFiles,
 ) : SecurityRepository {

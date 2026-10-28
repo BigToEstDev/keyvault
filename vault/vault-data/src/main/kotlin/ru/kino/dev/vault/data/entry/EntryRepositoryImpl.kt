@@ -12,12 +12,9 @@ import ru.kino.dev.vault.entry.EntrySummary
 import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /** [EntryRepository] over the native core. Nothing is cached: the core holds the entries in memory already. */
-@Singleton
-internal class EntryRepositoryImpl @Inject constructor(
+internal class EntryRepositoryImpl(
     private val core: NativeCore,
 ) : EntryRepository {
 

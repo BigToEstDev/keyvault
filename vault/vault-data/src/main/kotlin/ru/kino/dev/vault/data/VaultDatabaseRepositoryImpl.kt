@@ -7,8 +7,6 @@ import ru.kino.dev.core.DatabaseFiles
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.NativeCore
 import ru.kino.dev.vault.VaultDatabaseRepository
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /**
  * [VaultDatabaseRepository] over the native core and the document the database lives in.
@@ -17,8 +15,7 @@ import javax.inject.Singleton
  * write that half happened is the one failure that loses a database - so writes are shielded from
  * cancellation.
  */
-@Singleton
-internal class VaultDatabaseRepositoryImpl @Inject constructor(
+internal class VaultDatabaseRepositoryImpl(
     private val core: NativeCore,
     private val files: DatabaseFiles,
 ) : VaultDatabaseRepository {

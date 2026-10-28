@@ -7,22 +7,20 @@ import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
-import dagger.hilt.android.qualifiers.ApplicationContext
 import ru.kino.dev.settings.biometric.BiometricFailure
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
-import javax.inject.Inject
 
 /**
  * [BiometricKeys] on the Android Keystore: an AES key that never leaves it and opens only after strong
  * biometrics, for each use - there is no window of validity. Adding or removing a fingerprint invalidates
  * it, so a new finger never reads a password stored before it.
  */
-internal class KeystoreBiometricKeys @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+internal class KeystoreBiometricKeys(
+    private val context: Context,
 ) : BiometricKeys {
 
     override fun isAvailable(): Boolean =

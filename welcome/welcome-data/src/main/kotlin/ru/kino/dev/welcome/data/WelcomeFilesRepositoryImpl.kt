@@ -8,12 +8,9 @@ import ru.kino.dev.core.NativeCore
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.WelcomeFailure
 import ru.kino.dev.welcome.WelcomeFilesRepository
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /** [WelcomeFilesRepository] over the picked documents and the key file generator of the core. */
-@Singleton
-internal class WelcomeFilesRepositoryImpl @Inject constructor(
+internal class WelcomeFilesRepositoryImpl(
     private val core: NativeCore,
     private val files: DatabaseFiles,
 ) : WelcomeFilesRepository {
