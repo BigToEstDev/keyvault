@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "tools"
+rootProject.name = "build-logic"
 include(":plugins")
