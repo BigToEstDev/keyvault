@@ -1,7 +1,7 @@
 plugins {
     id("android-lib")
     // The record of the biometric password is a json string (pass-docs, Step 33)
-    alias(libs.plugins.kotlin.serialization)
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 dependencies {

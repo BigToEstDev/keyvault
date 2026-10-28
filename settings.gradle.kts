@@ -5,7 +5,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "KeyVault"
 
 pluginManagement {
-    includeBuild("tools")
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -30,6 +30,7 @@ dependencyResolutionManagement {
 }
 
 include(":app")
+include(":desktopApp")
 include(":core:core-domain")
 include(":core:core-pres")
 include(":core:core-nav")

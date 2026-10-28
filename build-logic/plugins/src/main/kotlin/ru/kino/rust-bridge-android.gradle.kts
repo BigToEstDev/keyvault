@@ -77,8 +77,10 @@ fun registerCargoTask(buildType: String, release: Boolean) = tasks.register<Exec
     inputs.file(rootProject.file("../pass-rust-core/Cargo.toml"))
     outputs.dir(jniLibsDir)
 
+    // Resolved when the task is configured: a task action that calls into the script object breaks the
+    // configuration cache
+    environment("ANDROID_NDK_HOME", resolveNdkDir().absolutePath)
     doFirst {
-        environment("ANDROID_NDK_HOME", resolveNdkDir().absolutePath)
         // cargo-ndk lays the .so out per abi under the output directory
         jniLibsDir.mkdirs()
     }

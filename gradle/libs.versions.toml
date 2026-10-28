@@ -26,6 +26,13 @@ navigationCompose = "2.9.7"
 orbitMvi = "12.0.1"
 errorprone = "2.49.0"
 libphonenumber = "9.0.40"
+# Compose Multiplatform (pass-docs, Step 83 cmp): next to the androidx versions until the modules move over
+composeMultiplatform = "1.12.2"
+cmpMaterial3 = "1.9.0"
+cmpMaterialIcons = "1.7.3"
+cmpLifecycle = "2.11.0"
+cmpNavigation = "2.10.0"
+koin = "4.2.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -85,6 +92,25 @@ hilt-testing = { module = "com.google.dagger:hilt-android-testing", version.ref 
 hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "androidx-hilt" }
 errorprone-annotations = { group = "com.google.errorprone", name = "error_prone_annotations", version.ref = "errorprone" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
+
+# Compose Multiplatform (pass-docs, Step 83 cmp)
+compose-gradle-plugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "composeMultiplatform" }
+kotlin-serialization-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+cmp-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "cmpMaterial3" }
+cmp-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "cmpMaterialIcons" }
+cmp-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
+cmp-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "cmpLifecycle" }
+cmp-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "cmpLifecycle" }
+cmp-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "cmpNavigation" }
+kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "coroutines" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
+koin-core = { module = "io.insert-koin:koin-core" }
+koin-android = { module = "io.insert-koin:koin-android" }
+koin-compose = { module = "io.insert-koin:koin-compose" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose" }
+koin-test = { module = "io.insert-koin:koin-test" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
