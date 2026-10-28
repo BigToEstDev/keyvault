@@ -8,33 +8,19 @@ import android.view.WindowManager
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import ru.kino.dev.core.phone.PhoneNumbers
-import ru.kino.dev.navigation.AppNavHost
-import ru.kino.dev.navigation.Navigator
-import ru.kino.dev.settings.appearance.AppLanguage
-import ru.kino.dev.settings.appearance.ThemeMode
+import ru.kino.dev.app.App
+import ru.kino.dev.app.locale
 import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
 import ru.kino.dev.settings.privacy.PrivacySettingsRepository
-import ru.kino.dev.ui.phone.LocalPhoneNumbers
-import ru.kino.dev.ui.theme.AppLocale
-import ru.kino.dev.ui.theme.KeyVaultTheme
-import ru.kino.dev.ui.theme.LocalAppDisplay
 import ru.kino.dev.ui.theme.LocaleResources
-import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.welcome.pres.start.WelcomeStartResolver
-import java.util.Locale
 
 /**
  * A [FragmentActivity] rather than a plain component one: `BiometricPrompt` shows itself through the
@@ -42,18 +28,12 @@ import java.util.Locale
  */
 class MainActivity : FragmentActivity() {
 
-    private val navigator: Navigator by inject()
-
-    private val autoLock: AutoLock by inject()
-
     // Told what the app sees; `vault` listens to it (pass-docs, Step 59)
     private val timer: InactivityTimer by inject()
 
     private val privacy: PrivacySettingsRepository by inject()
 
-    // The phone fields draw with them (pass-docs, Step 77)
-    private val phones: PhoneNumbers by inject()
-
+    // The same as the root of `App` takes - the store of the activity: the splash waits for them
     private val startResolver: WelcomeStartResolver by viewModel()
 
     private val theme: AppThemeHolder by viewModel()
@@ -83,38 +63,9 @@ class MainActivity : FragmentActivity() {
         lifecycleScope.launch { theme.language.collect { localeResources.locale = it?.locale } }
 
         enableEdgeToEdge()
-        setContent {
-            val mode by theme.themeMode.collectAsStateWithLifecycle()
-            val darkTheme = when (mode ?: return@setContent) {
-                ThemeMode.System -> isSystemInDarkTheme()
-                ThemeMode.Light -> false
-                ThemeMode.Dark -> true
-            }
-            // The icons of the system bars follow the theme of the app, not the system's
-            LaunchedEffect(darkTheme) { systemBars(darkTheme) }
-
-            val language by theme.language.collectAsStateWithLifecycle()
-            val display by theme.display.collectAsStateWithLifecycle()
-            val shown = display ?: return@setContent
-            AppLocale(locale = (language ?: return@setContent).locale) {
-                // What the screens show, as chosen in the settings: the features read it, not `settings`
-                CompositionLocalProvider(LocalAppDisplay provides shown, LocalPhoneNumbers provides phones) {
-                    KeyVaultTheme(darkTheme = darkTheme) {
-                        val start by startResolver.start.collectAsStateWithLifecycle()
-                        start?.let { AppNavHost(navigator = navigator, autoLock = autoLock, start = it) }
-                    }
-                }
-            }
-        }
+        // The app itself is common to the platforms; the bars of the system follow its theme, not the system's
+        setContent { App(onDarkTheme = ::systemBars) }
     }
-
-    // Null - the language of the system; the others are the languages the app has strings for
-    private val AppLanguage.locale: Locale?
-        get() = when (this) {
-            AppLanguage.System -> null
-            AppLanguage.English -> Locale.ENGLISH
-            AppLanguage.Russian -> Locale.forLanguageTag("ru")
-        }
 
     // In the language of the app - for the windows built on the activity: dialogs, menus, popups. The screens
     // take it from `AppLocale`, which also redraws them when the language changes (pass-docs, Step 72, fix 1)
