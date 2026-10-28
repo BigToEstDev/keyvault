@@ -1,17 +1,21 @@
 plugins {
-    id("android-compose-lib")
+    id("kmp-compose-lib")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-dependencies {
-    implementation(projects.core.corePres)
-    implementation(projects.core.coreNav)
-    implementation(projects.vault.vaultDomain)
-
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.orbit.test)
-    testImplementation(projects.vault.vaultDomainFakes)
-    testImplementation(projects.core.coreDomainFakes)
-    testImplementation(projects.settings.settingsDomainFakes)
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.core.corePres)
+            implementation(projects.core.coreNav)
+            implementation(projects.vault.vaultDomain)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.orbit.test)
+            implementation(projects.vault.vaultDomainFakes)
+            implementation(projects.core.coreDomainFakes)
+            implementation(projects.settings.settingsDomainFakes)
+        }
+    }
 }
