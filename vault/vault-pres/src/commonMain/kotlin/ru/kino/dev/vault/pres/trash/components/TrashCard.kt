@@ -1,7 +1,5 @@
 package ru.kino.dev.vault.pres.trash.components
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.ui.components.contextClickable
 import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.pres.common.entryDateText
 import ru.kino.dev.vault.trash.TrashEntry
@@ -35,15 +34,15 @@ import ru.kino.dev.vault.trash.TrashEntry
  * icon - the card keeps its height (Step 56, item 7) - and a picked card is tinted.
  *
  * @param choosing a choice goes on: a tap picks or lets go
+ * @param onContextClick the gesture of the context - a long press, the right button on the desktop (Step 93)
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun TrashCard(
     item: TrashEntry,
     choosing: Boolean,
     picked: Boolean,
     onTap: () -> Unit,
-    onLongPress: () -> Unit,
+    onContextClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -57,7 +56,7 @@ internal fun TrashCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .combinedClickable(onClick = onTap, onLongClick = onLongPress)
+                .contextClickable(onClick = onTap, onContextClick = { onContextClick() })
                 .padding(horizontal = 16.dp, vertical = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
