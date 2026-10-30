@@ -185,6 +185,7 @@ class LockProcessor(
         return BiometricRow(
             on = biometric.isEnabled(dbKey),
             unavailable = when {
+                !biometric.isSupported() -> BiometricUnavailable.Unsupported
                 !biometric.isAvailable() -> BiometricUnavailable.NoHardware
                 !hasPassword -> BiometricUnavailable.NoPassword
                 else -> null

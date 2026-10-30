@@ -379,7 +379,8 @@
     <string name="settings_sign_in_group">Вход</string>
     <string name="settings_biometric">Биометрия</string>
     <string name="settings_biometric_hint">Вход по отпечатку для этой базы</string>
-    <string name="settings_biometric_no_hardware">На телефоне нет надёжной биометрии</string>
+    <string name="settings_biometric_no_hardware">На устройстве нет надёжной биометрии</string>
+    <string name="settings_biometric_unsupported">Биометрия недоступна</string>
     <string name="settings_biometric_no_password">У базы нет пароля — только key-файл</string>
     <string name="settings_biometric_password_title">Пароль базы</string>
     <string name="settings_biometric_wrong_password">Неверный пароль</string>

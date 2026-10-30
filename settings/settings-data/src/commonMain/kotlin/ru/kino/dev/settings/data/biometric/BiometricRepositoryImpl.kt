@@ -20,6 +20,8 @@ internal class BiometricRepositoryImpl(
     private val store: BiometricPasswordStore,
 ) : BiometricRepository, BiometricCleanup {
 
+    override fun isSupported(): Boolean = true
+
     override fun isAvailable(): Boolean = keys.isAvailable()
 
     override suspend fun isEnabled(dbUri: String): Boolean = biometricCall { store.read()?.dbUri == dbUri }

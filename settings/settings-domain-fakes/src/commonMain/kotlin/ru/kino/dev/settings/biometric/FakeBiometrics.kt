@@ -8,11 +8,14 @@ import javax.crypto.Cipher
  */
 class FakeBiometrics(private val journal: MutableList<String> = mutableListOf()) : BiometricRepository {
 
+    var supported = true
     var available = true
     val passwords = mutableMapOf<String, String>()
 
     /** Thrown by the next [startReading], then forgotten. */
     var startFailure: BiometricFailure? = null
+
+    override fun isSupported() = supported
 
     override fun isAvailable() = available
 

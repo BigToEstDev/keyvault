@@ -18,6 +18,9 @@ import javax.crypto.Cipher
  */
 interface BiometricRepository {
 
+    /** Whether the platform has biometrics at all - none on the desktop yet (pass-docs, Step 90). */
+    fun isSupported(): Boolean
+
     /** Whether the phone has strong biometrics set up - without them nothing here is offered. */
     fun isAvailable(): Boolean
 

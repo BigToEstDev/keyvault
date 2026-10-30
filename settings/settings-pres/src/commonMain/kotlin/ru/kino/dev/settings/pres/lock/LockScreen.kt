@@ -135,6 +135,7 @@ internal fun LockScreen(
                             title = stringResource(Res.string.settings_biometric),
                             text = stringResource(
                                 when (row?.unavailable) {
+                                    BiometricUnavailable.Unsupported -> Res.string.settings_biometric_unsupported
                                     BiometricUnavailable.NoHardware -> Res.string.settings_biometric_no_hardware
                                     BiometricUnavailable.NoPassword -> Res.string.settings_biometric_no_password
                                     null -> Res.string.settings_biometric_hint
