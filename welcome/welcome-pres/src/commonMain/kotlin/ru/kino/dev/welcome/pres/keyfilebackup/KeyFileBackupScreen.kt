@@ -31,6 +31,7 @@ import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.SecondaryButton
+import ru.kino.dev.ui.files.DocumentKind
 import ru.kino.dev.ui.files.rememberCreateDocument
 import ru.kino.dev.ui.files.rememberOpenDocument
 import ru.kino.dev.ui.res.stringResource
@@ -44,9 +45,9 @@ internal fun KeyFileBackupScreen(
     processor: KeyFileBackupProcessor = koinViewModel { parametersOf(draft) },
 ) {
     val state by processor.collectAsState()
-    val pickKeyFile = rememberCreateDocument { processor.action(KeyFileBackupAction.KeyFilePicked(it)) }
-    val pickExisting = rememberOpenDocument { processor.action(KeyFileBackupAction.ExistingPicked(it)) }
-    val pickDatabase = rememberCreateDocument { processor.action(KeyFileBackupAction.DatabasePicked(it)) }
+    val pickKeyFile = rememberCreateDocument(DocumentKind.KeyFile) { processor.action(KeyFileBackupAction.KeyFilePicked(it)) }
+    val pickExisting = rememberOpenDocument(DocumentKind.KeyFile) { processor.action(KeyFileBackupAction.ExistingPicked(it)) }
+    val pickDatabase = rememberCreateDocument(DocumentKind.Database) { processor.action(KeyFileBackupAction.DatabasePicked(it)) }
 
     processor.collectSideEffect { effect ->
         when (effect) {

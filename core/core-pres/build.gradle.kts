@@ -41,6 +41,9 @@ kotlin {
         getByName("desktopMain").dependencies {
             // "Back" of the desktop - Esc - for BackHandler (pass-docs, Step 88)
             implementation(libs.cmp.navigationevent.compose)
+            // The pickers of the system as the system draws them now, in its theme - AWT has the old ones of Windows
+            // (pass-docs, Step 92)
+            implementation(libs.filekit.dialogs)
         }
         getByName("androidHostTest").dependencies {
             // A dialog and a menu in the language of the app - Android on the JVM, no device (pass-docs, Step 72)

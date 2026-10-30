@@ -2,6 +2,7 @@ package ru.kino.dev.desktop
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
@@ -21,6 +22,7 @@ import ru.kino.dev.di.appModules
 import ru.kino.dev.di.coreDataModule
 import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.ui.components.appIcon
+import ru.kino.dev.ui.files.LocalPickerParent
 
 /**
  * The desktop app: the window and the graph around the app common to the platforms (pass-docs, Step 88). The window
@@ -72,7 +74,10 @@ fun main() {
                         }
                     },
             ) {
-                App()
+                // The pickers of files open over this window
+                CompositionLocalProvider(LocalPickerParent provides window) {
+                    App()
+                }
             }
         }
     }

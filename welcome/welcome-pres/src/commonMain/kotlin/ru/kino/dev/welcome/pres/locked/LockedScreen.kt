@@ -10,6 +10,7 @@ import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.biometric.BiometricPurpose
 import ru.kino.dev.ui.components.BackHandler
 import ru.kino.dev.ui.components.rememberPutAppAway
+import ru.kino.dev.ui.files.DocumentKind
 import ru.kino.dev.ui.files.rememberOpenDocument
 import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.welcome.pres.common.PasswordEntryContent
@@ -21,7 +22,7 @@ internal fun LockedScreen(
     processor: LockedProcessor = koinViewModel { parametersOf(dbKey) },
 ) {
     val state by processor.collectAsState()
-    val pickKeyFile = rememberOpenDocument { processor.action(LockedAction.KeyFilePicked(it)) }
+    val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.action(LockedAction.KeyFilePicked(it)) }
     val showBiometricPrompt = rememberBiometricPrompt { processor.action(LockedAction.BiometricFinished(it)) }
     val putAppAway = rememberPutAppAway()
 

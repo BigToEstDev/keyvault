@@ -53,6 +53,7 @@ import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.ValueRow
 import ru.kino.dev.ui.components.WheelPickerDialog
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.files.DocumentKind
 import ru.kino.dev.ui.files.rememberOpenDocument
 import ru.kino.dev.ui.res.stringResource
 
@@ -72,7 +73,7 @@ internal fun SecurityScreen(
 
     val message = state.message?.let { messageText(it) }
     SnackbarMessage(message, snackbar) { processor.action(SecurityAction.MessageShown) }
-    val pickKeyFile = rememberOpenDocument { processor.action(SecurityAction.KeyFilePicked(it)) }
+    val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.action(SecurityAction.KeyFilePicked(it)) }
 
     GradientBackground {
         Scaffold(

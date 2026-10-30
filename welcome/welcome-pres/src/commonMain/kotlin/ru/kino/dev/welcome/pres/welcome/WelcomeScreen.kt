@@ -28,12 +28,13 @@ import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.ShieldImage
+import ru.kino.dev.ui.files.DocumentKind
 import ru.kino.dev.ui.files.rememberOpenDocument
 import ru.kino.dev.ui.res.stringResource
 
 @Composable
 internal fun WelcomeScreen(processor: WelcomeProcessor = koinViewModel()) {
-    val pickDatabase = rememberOpenDocument { processor.action(WelcomeAction.DatabasePicked(it)) }
+    val pickDatabase = rememberOpenDocument(DocumentKind.Database) { processor.action(WelcomeAction.DatabasePicked(it)) }
 
     processor.collectSideEffect { effect ->
         when (effect) {

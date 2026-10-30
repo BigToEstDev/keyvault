@@ -11,10 +11,24 @@ import androidx.compose.runtime.Composable
  * база"). A cancelled picker hands back nothing and nothing happens.
  */
 
-/** Picks an existing file. The returned function launches the picker. */
-@Composable
-expect fun rememberOpenDocument(onPicked: (uri: String) -> Unit): () -> Unit
+/**
+ * What a picker is for - the desktop gives its picker the title and the filter of it (pass-docs, Step 92); android
+ * shows every file either way: a kdbx has no mime type there.
+ */
+enum class DocumentKind {
+    /** A database - a `.kdbx`. */
+    Database,
 
-/** "Save as": the user picks the folder and the name, the returned function takes the name to suggest. */
+    /** A key file - any file at all. */
+    KeyFile,
+}
+
+/** Picks an existing file of [kind]. The returned function launches the picker. */
 @Composable
-expect fun rememberCreateDocument(onPicked: (uri: String) -> Unit): (suggestedName: String) -> Unit
+expect fun rememberOpenDocument(kind: DocumentKind, onPicked: (uri: String) -> Unit): () -> Unit
+
+/**
+ * "Save as" of [kind]: the user picks the folder and the name, the returned function takes the name to suggest.
+ */
+@Composable
+expect fun rememberCreateDocument(kind: DocumentKind, onPicked: (uri: String) -> Unit): (suggestedName: String) -> Unit

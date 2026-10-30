@@ -35,6 +35,7 @@ import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.PrimaryButton
+import ru.kino.dev.ui.files.DocumentKind
 import ru.kino.dev.ui.files.rememberCreateDocument
 import ru.kino.dev.ui.res.pluralStringResource
 import ru.kino.dev.ui.res.stringResource
@@ -48,7 +49,7 @@ internal fun MasterPasswordScreen(
     processor: MasterPasswordProcessor = koinViewModel { parametersOf(draft) },
 ) {
     val state by processor.collectAsState()
-    val pickDatabase = rememberCreateDocument { processor.action(MasterPasswordAction.DatabasePicked(it)) }
+    val pickDatabase = rememberCreateDocument(DocumentKind.Database) { processor.action(MasterPasswordAction.DatabasePicked(it)) }
 
     processor.collectSideEffect { effect ->
         when (effect) {
