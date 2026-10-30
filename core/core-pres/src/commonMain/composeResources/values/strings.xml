@@ -395,4 +395,9 @@
     <string name="settings_allow_screenshots_hint">Allow screenshots and recording of the app screen</string>
     <string name="settings_use_presets">Use presets</string>
     <string name="settings_use_presets_hint">The choice of a preset on the screens of an entry</string>
+    <!-- The titles of the pickers of files on the desktop; android draws its own -->
+    <string name="picker_open_database">Open database</string>
+    <string name="picker_save_database">Save database</string>
+    <string name="picker_open_key_file">Choose key file</string>
+    <string name="picker_save_key_file">Save key file</string>
 </resources>

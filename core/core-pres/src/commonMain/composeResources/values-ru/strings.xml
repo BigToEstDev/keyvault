@@ -397,4 +397,9 @@
     <string name="settings_allow_screenshots_hint">Разрешить снимки и запись экрана приложения</string>
     <string name="settings_use_presets">Использовать пресеты</string>
     <string name="settings_use_presets_hint">Выбор пресета на экранах записи</string>
+    <!-- The titles of the pickers of files on the desktop; android draws its own -->
+    <string name="picker_open_database">Открыть базу</string>
+    <string name="picker_save_database">Сохранить базу</string>
+    <string name="picker_open_key_file">Выбрать ключевой файл</string>
+    <string name="picker_save_key_file">Сохранить ключевой файл</string>
 </resources>
