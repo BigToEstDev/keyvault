@@ -1,4 +1,4 @@
-package ru.kino.dev.welcome.pres.common
+package ru.kino.dev.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.material3.MaterialTheme
@@ -10,6 +10,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
+import ru.kino.dev.ui.theme.OnSurfaceLight1A1C1E
+import ru.kino.dev.ui.theme.Teal119DA4
 
 /**
  * The picture of the app: a shield with a keyhole - on the welcome screen, and over the password on the
@@ -18,13 +20,20 @@ import androidx.compose.ui.unit.dp
  * Built from the theme colors rather than drawn in fixed ones, so it follows light and dark.
  */
 @Composable
-internal fun ShieldImage(modifier: Modifier = Modifier) {
+fun ShieldImage(modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     val image = remember(colors.primary, colors.onPrimary, colors.onBackground) {
         shieldWithKeyhole(shield = colors.primary, shade = colors.onBackground, keyhole = colors.onPrimary)
     }
     Image(imageVector = image, contentDescription = null, modifier = modifier)
 }
+
+/**
+ * The icon of the app on the desktop - the window, the taskbar (pass-docs, Step 90): the shield in the colors of the
+ * light theme, as the launcher icon of android, on nothing. Drawn by the system, outside the theme - so fixed colors.
+ */
+fun appIcon(): ImageVector =
+    shieldWithKeyhole(shield = Teal119DA4, shade = OnSurfaceLight1A1C1E, keyhole = Color.White)
 
 private fun shieldWithKeyhole(shield: Color, shade: Color, keyhole: Color): ImageVector =
     ImageVector.Builder(

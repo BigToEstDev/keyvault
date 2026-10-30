@@ -18,6 +18,7 @@ dependencies {
     // The app common to the platforms, and the core of the jvm its graph lacks (pass-docs, Step 88)
     implementation(projects.composeApp)
     implementation(projects.core.coreData)
+    implementation(projects.core.corePres)
     implementation(projects.settings.settingsDomain)
     implementation(libs.koin.core)
 

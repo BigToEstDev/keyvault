@@ -44,6 +44,7 @@ import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.Reveal
 import ru.kino.dev.ui.components.SecondaryButton
+import ru.kino.dev.ui.components.ShieldImage
 import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.ui.theme.DISABLED_ALPHA
 

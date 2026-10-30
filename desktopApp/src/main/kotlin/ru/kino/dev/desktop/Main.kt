@@ -3,10 +3,12 @@ package ru.kino.dev.desktop
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -17,6 +19,7 @@ import ru.kino.dev.app.App
 import ru.kino.dev.di.appModules
 import ru.kino.dev.di.coreDataModule
 import ru.kino.dev.settings.lock.InactivityTimer
+import ru.kino.dev.ui.components.appIcon
 
 /**
  * The desktop app: the window and the graph around the app common to the platforms (pass-docs, Step 88). The window
@@ -42,6 +45,7 @@ fun main() {
         Window(
             onCloseRequest = ::exitApplication,
             title = "KeyVault",
+            icon = rememberVectorPainter(remember { appIcon() }),
             state = windowState,
             // Every key the window takes - the person is here; the screens get it as before
             onPreviewKeyEvent = {
