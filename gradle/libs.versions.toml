@@ -33,6 +33,8 @@ cmpNavigationEvent = "1.1.0"
 koin = "4.2.2"
 # The last one built for Kotlin 2.3 - newer ones need 2.4 (pass-docs, todo/app/other/dependency-updates.md)
 filekit = "0.14.1"
+# The one FileKit takes - one JNA in the app
+jna = "5.18.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -99,6 +101,7 @@ koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
+jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

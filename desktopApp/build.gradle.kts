@@ -24,6 +24,8 @@ dependencies {
 
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
+    // The title bar of Windows in the theme of the system (pass-docs, Step 93)
+    implementation(libs.jna.platform)
 
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
