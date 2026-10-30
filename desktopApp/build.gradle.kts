@@ -23,13 +23,17 @@ dependencies {
 
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
+
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(projects.settings.settingsDomainFakes)
 }
 
 compose.desktop {
     application {
         mainClass = "ru.kino.dev.desktop.MainKt"
 
-        // Installers and their settings - Step 89 cmp (pass-docs)
+        // Installers and their settings - the build for a release, not planned yet (pass-docs)
         nativeDistributions {
             packageName = "KeyVault"
             packageVersion = "0.1.0"

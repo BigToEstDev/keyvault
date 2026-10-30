@@ -2,6 +2,8 @@ package ru.kino.dev.desktop
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -18,19 +20,29 @@ import ru.kino.dev.settings.lock.InactivityTimer
 
 /**
  * The desktop app: the window and the graph around the app common to the platforms (pass-docs, Step 88). The window
- * is of the size of a phone for now - the layout for a window is Step 89.
+ * is of the size of a phone for now - the layout for a window is Step 90.
  */
 fun main() {
     val koin = startKoin { modules(appModules + coreDataModule) }.koin
-    // Told what the app sees; `vault` listens to it (pass-docs, Step 59). Leaving - the window put away - is Step 89
+    // Told what the app sees; `vault` listens to it (pass-docs, Step 59, Step 89)
     val timer = koin.get<InactivityTimer>()
-    timer.cameBack()
 
     application {
+        val windowState = rememberWindowState(width = 420.dp, height = 860.dp)
+
+        // Put away - leaving, as on android; shown again - coming back, the first time too. The focus lost is not
+        // leaving: the secret copied is taken to another window
+        LaunchedEffect(windowState) {
+            snapshotFlow { windowState.isMinimized }.collect { minimized ->
+                if (minimized) timer.wentAway() else timer.cameBack()
+            }
+        }
+        LaunchedEffect(timer) { SleepWatch(timer).watch() }
+
         Window(
             onCloseRequest = ::exitApplication,
             title = "KeyVault",
-            state = rememberWindowState(width = 420.dp, height = 860.dp),
+            state = windowState,
             // Every key the window takes - the person is here; the screens get it as before
             onPreviewKeyEvent = {
                 timer.touched()
