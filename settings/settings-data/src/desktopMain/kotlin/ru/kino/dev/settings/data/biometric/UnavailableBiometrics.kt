@@ -6,7 +6,7 @@ import ru.kino.dev.settings.biometric.BiometricRepository
 import ru.kino.dev.settings.biometric.BiometricSession
 
 /**
- * Biometrics of the desktop until Windows Hello / Touch ID come (pass-docs, Step 89): never available, so the
+ * Biometrics of the desktop until Windows Hello / Touch ID come (pass-docs, not planned yet): never available, so the
  * screens offer nothing and the sign-in is the password. Nothing is stored, so there is nothing to forget.
  */
 internal class UnavailableBiometrics : BiometricRepository, BiometricCleanup {

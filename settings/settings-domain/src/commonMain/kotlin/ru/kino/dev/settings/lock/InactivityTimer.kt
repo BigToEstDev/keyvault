@@ -47,4 +47,10 @@ interface InactivityTimer {
      * next [wentAway] is not leaving, until the app is back ([cameBack]). The count goes on meanwhile.
      */
     fun leavingForSystemScreen()
+
+    /**
+     * The system slept - the desktop sees it after waking (pass-docs, Step 89): the time ran out now, whatever
+     * `Lock on leaving the app` says and however long the timeout is.
+     */
+    fun wokeUp()
 }

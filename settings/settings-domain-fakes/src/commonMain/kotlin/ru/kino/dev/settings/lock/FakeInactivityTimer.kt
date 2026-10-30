@@ -16,6 +16,10 @@ class FakeInactivityTimer : InactivityTimer {
     var systemScreens: Int = 0
         private set
 
+    /** How many times the desktop said the system slept. */
+    var wakings: Int = 0
+        private set
+
     override fun setOnExpired(listener: (() -> Unit)?) {
         onExpired = listener
     }
@@ -38,6 +42,10 @@ class FakeInactivityTimer : InactivityTimer {
 
     override fun leavingForSystemScreen() {
         systemScreens++
+    }
+
+    override fun wokeUp() {
+        wakings++
     }
 
     /** The time ran out - told only while it is running, as the real one. */

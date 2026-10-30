@@ -9,7 +9,7 @@ import ru.kino.dev.settings.data.biometric.UnavailableBiometrics
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
 
-/** No biometrics on the desktop yet - Windows Hello / Touch ID come in Step 89 (pass-docs). */
+/** No biometrics on the desktop yet - Windows Hello / Touch ID are not planned yet (pass-docs). */
 internal actual val platformSettingsDataModule: Module = module {
     single { UnavailableBiometrics() } binds arrayOf(BiometricRepository::class, BiometricCleanup::class)
 }

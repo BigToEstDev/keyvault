@@ -165,6 +165,25 @@ class ClockInactivityTimerTest {
         assertEquals(1, expired)
     }
 
+    @Test
+    fun `waking up runs out at once, locking on leaving off`() = runTest {
+        val timer = timer()
+        timer.start()
+
+        timer.wokeUp()
+
+        assertEquals(1, expired)
+    }
+
+    @Test
+    fun `waking up with nothing to lock does nothing`() = runTest {
+        val timer = timer()
+
+        timer.wokeUp()
+
+        assertEquals(0, expired)
+    }
+
     private fun TestScope.timer() = ClockInactivityTimer(
         clock = { testScheduler.currentTime.milliseconds + slept },
         scope = backgroundScope,

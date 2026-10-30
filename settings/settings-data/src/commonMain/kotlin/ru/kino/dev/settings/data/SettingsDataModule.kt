@@ -59,7 +59,7 @@ val settingsDataModule = module {
     }
 }
 
-/** Biometrics of the platform: the Keystore on android, none on the desktop until Step 89 (pass-docs). */
+/** Biometrics of the platform: the Keystore on android, none on the desktop yet (pass-docs). */
 internal expect val platformSettingsDataModule: Module
 
 /**
