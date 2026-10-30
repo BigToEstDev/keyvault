@@ -14,13 +14,16 @@ import java.io.File
  */
 
 @Composable
-actual fun rememberOpenDocument(onPicked: (uri: String) -> Unit): () -> Unit {
+actual fun rememberOpenDocument(kind: DocumentKind, onPicked: (uri: String) -> Unit): () -> Unit {
     val picked by rememberUpdatedState(onPicked)
     return remember { { pick(FileDialog.LOAD, suggestedName = null)?.let(picked) } }
 }
 
 @Composable
-actual fun rememberCreateDocument(onPicked: (uri: String) -> Unit): (suggestedName: String) -> Unit {
+actual fun rememberCreateDocument(
+    kind: DocumentKind,
+    onPicked: (uri: String) -> Unit,
+): (suggestedName: String) -> Unit {
     val picked by rememberUpdatedState(onPicked)
     return remember { { name -> pick(FileDialog.SAVE, suggestedName = name)?.let(picked) } }
 }

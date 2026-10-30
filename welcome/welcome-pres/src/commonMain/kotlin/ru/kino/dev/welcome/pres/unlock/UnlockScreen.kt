@@ -8,6 +8,7 @@ import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.biometric.BiometricPurpose
+import ru.kino.dev.ui.files.DocumentKind
 import ru.kino.dev.ui.files.rememberOpenDocument
 import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.welcome.pres.common.PasswordEntryContent
@@ -20,8 +21,8 @@ internal fun UnlockScreen(
     processor: UnlockProcessor = koinViewModel { parametersOf(pickedUri) },
 ) {
     val state by processor.collectAsState()
-    val pickDatabase = rememberOpenDocument { processor.action(UnlockAction.DatabasePicked(it)) }
-    val pickKeyFile = rememberOpenDocument { processor.action(UnlockAction.KeyFilePicked(it)) }
+    val pickDatabase = rememberOpenDocument(DocumentKind.Database) { processor.action(UnlockAction.DatabasePicked(it)) }
+    val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.action(UnlockAction.KeyFilePicked(it)) }
     val showBiometricPrompt = rememberBiometricPrompt { processor.action(UnlockAction.BiometricFinished(it)) }
 
     processor.collectSideEffect { effect ->

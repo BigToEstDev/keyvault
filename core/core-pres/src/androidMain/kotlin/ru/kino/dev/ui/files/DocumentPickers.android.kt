@@ -4,7 +4,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 
-// The pickers of the storage access framework: the uri handed back is `content:`
+// The pickers of the storage access framework: the uri handed back is `content:`. The kind changes nothing here -
+// every file is shown, and the framework draws its own title
 
 /** Any file: a kdbx has no mime type providers agree on. */
 private const val ANY_FILE = "*/*"
@@ -14,7 +15,7 @@ private const val BINARY_FILE = "application/octet-stream"
 
 /** Picks an existing file - `ACTION_OPEN_DOCUMENT`. The returned function launches the picker. */
 @Composable
-actual fun rememberOpenDocument(onPicked: (uri: String) -> Unit): () -> Unit {
+actual fun rememberOpenDocument(kind: DocumentKind, onPicked: (uri: String) -> Unit): () -> Unit {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { onPicked(it.toString()) }
     }
@@ -26,7 +27,10 @@ actual fun rememberOpenDocument(onPicked: (uri: String) -> Unit): () -> Unit {
  * the name to suggest.
  */
 @Composable
-actual fun rememberCreateDocument(onPicked: (uri: String) -> Unit): (suggestedName: String) -> Unit {
+actual fun rememberCreateDocument(
+    kind: DocumentKind,
+    onPicked: (uri: String) -> Unit,
+): (suggestedName: String) -> Unit {
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BINARY_FILE)) { uri ->
         uri?.let { onPicked(it.toString()) }
     }
