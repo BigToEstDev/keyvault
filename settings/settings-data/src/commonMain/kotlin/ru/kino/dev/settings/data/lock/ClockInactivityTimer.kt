@@ -100,6 +100,10 @@ internal class ClockInactivityTimer(
         toSystemScreen = true
     }
 
+    override fun wokeUp() {
+        expire()
+    }
+
     // Under [state]
     private fun restart() {
         lastTouch = clock.now()

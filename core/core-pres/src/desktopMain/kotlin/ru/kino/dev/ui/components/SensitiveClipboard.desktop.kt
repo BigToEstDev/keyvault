@@ -5,7 +5,7 @@ import androidx.compose.runtime.remember
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 
-/** The clipboard of the desktop: no mark for a secret there - the clearing of Step 89 (pass-docs) stands for it. */
+/** The clipboard of the desktop: no mark for a secret there, and no clearing - as on android (pass-docs, Step 89). */
 private class DesktopSensitiveClipboard : SensitiveClipboard {
 
     override fun copy(label: String, value: String) {
