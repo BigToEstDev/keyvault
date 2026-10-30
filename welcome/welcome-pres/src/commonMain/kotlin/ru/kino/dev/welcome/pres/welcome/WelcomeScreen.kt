@@ -27,9 +27,9 @@ import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.SecondaryButton
+import ru.kino.dev.ui.components.ShieldImage
 import ru.kino.dev.ui.files.rememberOpenDocument
 import ru.kino.dev.ui.res.stringResource
-import ru.kino.dev.welcome.pres.common.ShieldImage
 
 @Composable
 internal fun WelcomeScreen(processor: WelcomeProcessor = koinViewModel()) {

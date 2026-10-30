@@ -72,7 +72,10 @@ enum class LockMessage {
 
 /** Why biometrics cannot be turned on for this database - the line under the switch says it. */
 enum class BiometricUnavailable {
-    /** No strong biometrics on the phone. */
+    /** No biometrics on the platform at all - the desktop for now. */
+    Unsupported,
+
+    /** No strong biometrics on the device. */
     NoHardware,
 
     /** The key of the database is a key file alone: there is no password to keep. */

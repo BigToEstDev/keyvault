@@ -3,7 +3,7 @@
     <!--
     The launcher icon: the shield of the app's screens in the light theme, on white. The icon is drawn by the
     launcher, outside the app's Compose theme, so these repeat the palette of core-pres (Color.kt) -
-    change them together.
+    change them together. The icon of the desktop (appIcon, core-pres) takes the same colors.
     -->
     <color name="icon_background">#FFFFFFFF</color>
     <!-- Teal119DA4 - primary of the light theme -->

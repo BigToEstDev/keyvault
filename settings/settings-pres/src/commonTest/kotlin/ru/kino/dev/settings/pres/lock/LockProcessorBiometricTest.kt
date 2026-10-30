@@ -47,6 +47,18 @@ class LockProcessorBiometricTest {
     }
 
     @Test
+    fun `on a platform without biometrics the row says so`() = runTest {
+        biometrics.supported = false
+        biometrics.available = false
+
+        processor().testWithInternalState(this) {
+            containerHost.action(LockAction.Load).join()
+
+            expectInternalState { loaded(BiometricRow(on = false, unavailable = BiometricUnavailable.Unsupported)) }
+        }
+    }
+
+    @Test
     fun `a database with a key file alone has no password to keep`() = runTest {
         processor(FakeDatabaseCredentials(hasPassword = false)).testWithInternalState(this) {
             containerHost.action(LockAction.Load).join()

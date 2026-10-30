@@ -11,6 +11,8 @@ import ru.kino.dev.settings.biometric.BiometricSession
  */
 internal class UnavailableBiometrics : BiometricRepository, BiometricCleanup {
 
+    override fun isSupported(): Boolean = false
+
     override fun isAvailable(): Boolean = false
 
     override suspend fun isEnabled(dbUri: String): Boolean = false

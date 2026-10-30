@@ -377,7 +377,8 @@
     <string name="settings_sign_in_group">Sign-in</string>
     <string name="settings_biometric">Biometrics</string>
     <string name="settings_biometric_hint">Sign in to this database with a fingerprint</string>
-    <string name="settings_biometric_no_hardware">No strong biometrics on this phone</string>
+    <string name="settings_biometric_no_hardware">No strong biometrics on this device</string>
+    <string name="settings_biometric_unsupported">Biometrics are not available</string>
     <string name="settings_biometric_no_password">The database has no password - only a key file</string>
     <string name="settings_biometric_password_title">Database password</string>
     <string name="settings_biometric_wrong_password">Wrong password</string>
