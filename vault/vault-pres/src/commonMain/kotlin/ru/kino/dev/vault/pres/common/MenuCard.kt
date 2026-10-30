@@ -1,8 +1,5 @@
 package ru.kino.dev.vault.pres.common
 
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,7 +17,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,11 +24,12 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.ui.components.ItemMenu
 import ru.kino.dev.ui.components.MenuItem
+import ru.kino.dev.ui.components.contextClickable
 
 /**
  * A card with an icon and a title - a group or an entry of a list, a version of a history. A tap opens it,
- * when there is [onOpen]; a long press opens the menu of [items] with its top corner where the finger is, when there is
- * one.
+ * when there is [onOpen]; the gesture of the context - a long press, the right button on the desktop - opens the menu
+ * of [items] with its top corner where it was, when there is one.
  *
  * Whether the menu is open is the card's own: it is a moment of the gesture, not of the screen.
  *
@@ -59,15 +56,18 @@ internal fun MenuCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    // Only watches where the finger went down - consumes nothing, so the click below works
-                    .pointerInput(Unit) {
-                        awaitEachGesture { pressedAt = awaitFirstDown(requireUnconsumed = false).position }
-                    }
                     .then(
                         if (onOpen != null || items.isNotEmpty()) {
-                            Modifier.combinedClickable(
+                            Modifier.contextClickable(
                                 onClick = onOpen ?: {},
-                                onLongClick = if (items.isNotEmpty()) ({ menu = true }) else null,
+                                onContextClick = if (items.isNotEmpty()) {
+                                    { at ->
+                                        pressedAt = at
+                                        menu = true
+                                    }
+                                } else {
+                                    null
+                                },
                             )
                         } else {
                             Modifier
@@ -107,7 +107,7 @@ internal fun MenuCard(
             }
         }
         // The menu is placed below its anchor, the card, and moved by the offset: up by the card's height and
-        // down to the finger, so its top corner is where the press was. Near an edge it is kept on screen
+        // down to the press, so its top corner is where the press was. Near an edge it is kept on screen
         ItemMenu(
             expanded = menu,
             onDismiss = { menu = false },

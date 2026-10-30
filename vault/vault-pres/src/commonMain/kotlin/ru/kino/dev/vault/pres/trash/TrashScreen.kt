@@ -216,7 +216,7 @@ private fun TrashContent(state: TrashState, padding: PaddingValues, action: (Tra
                     choosing = state.choosing,
                     picked = id in state.picked,
                     onTap = { action(TrashAction.Tap(id)) },
-                    onLongPress = { action(TrashAction.LongPress(id)) },
+                    onContextClick = { action(TrashAction.LongPress(id)) },
                 )
             }
         }

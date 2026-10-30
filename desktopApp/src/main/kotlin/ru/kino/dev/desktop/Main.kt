@@ -1,5 +1,6 @@
 package ru.kino.dev.desktop
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
@@ -29,6 +30,7 @@ import ru.kino.dev.ui.files.LocalPickerParent
  * opens made for the desktop ([WindowSizes], Step 90).
  */
 fun main() {
+    TitleBar.followSystemOnMac()
     val koin = startKoin { modules(appModules + coreDataModule) }.koin
     // Told what the app sees; `vault` listens to it (pass-docs, Step 59, Step 89)
     val timer = koin.get<InactivityTimer>()
@@ -60,6 +62,8 @@ fun main() {
             },
         ) {
             LaunchedEffect(window) { window.minimumSize = WindowSizes.minAwt }
+            val darkSystem = isSystemInDarkTheme()
+            LaunchedEffect(window, darkSystem) { TitleBar.applyDark(window, darkSystem) }
 
             // Every press, whatever takes it, seen before it does and left to it: a press counts once, as it starts
             Box(

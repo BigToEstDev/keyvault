@@ -153,9 +153,9 @@ internal fun LockScreen(
                         SwitchRow(
                             title = stringResource(Res.string.settings_auto_biometric_prompt),
                             text = stringResource(Res.string.settings_auto_biometric_prompt_hint),
-                            checked = state.autoBiometricPrompt ?: false,
+                            checked = state.autoBiometricPromptAllowed && state.autoBiometricPrompt == true,
                             onCheckedChange = { processor.action(LockAction.SetAutoBiometricPrompt(it)) },
-                            enabled = state.autoBiometricPrompt != null,
+                            enabled = state.autoBiometricPromptAllowed && state.autoBiometricPrompt != null,
                         )
                     }
                 }

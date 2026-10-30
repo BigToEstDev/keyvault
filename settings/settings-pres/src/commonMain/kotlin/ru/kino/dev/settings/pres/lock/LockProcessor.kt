@@ -45,7 +45,14 @@ data class LockState(
     val forgettingBiometric: Boolean = false,
     val choosingTimeout: Boolean = false,
     val message: LockMessage? = null,
-)
+) {
+    /**
+     * Asking for biometrics by themselves has something to ask only with biometrics of the database on: off and
+     * disabled otherwise, the choice kept as it is (pass-docs, Step 93).
+     */
+    val autoBiometricPromptAllowed: Boolean
+        get() = biometric?.on == true
+}
 
 /**
  * How the database locks (pass-docs, Step 59): the time of the auto-lock, locking on leaving the app, the lock
