@@ -5,13 +5,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import org.koin.core.context.startKoin
@@ -23,7 +24,7 @@ import ru.kino.dev.ui.components.appIcon
 
 /**
  * The desktop app: the window and the graph around the app common to the platforms (pass-docs, Step 88). The window
- * is of the size of a phone for now - the layout for a window is Step 90.
+ * opens made for the desktop ([WindowSizes], Step 90).
  */
 fun main() {
     val koin = startKoin { modules(appModules + coreDataModule) }.koin
@@ -31,7 +32,10 @@ fun main() {
     val timer = koin.get<InactivityTimer>()
 
     application {
-        val windowState = rememberWindowState(width = 420.dp, height = 860.dp)
+        val windowState = rememberWindowState(
+            position = WindowPosition(Alignment.Center),
+            size = WindowSizes.initial(WindowSizes.screen()),
+        )
 
         // Put away - leaving, as on android; shown again - coming back, the first time too. The focus lost is not
         // leaving: the secret copied is taken to another window
@@ -53,6 +57,8 @@ fun main() {
                 false
             },
         ) {
+            LaunchedEffect(window) { window.minimumSize = WindowSizes.minAwt }
+
             // Every press, whatever takes it, seen before it does and left to it: a press counts once, as it starts
             Box(
                 modifier = Modifier
