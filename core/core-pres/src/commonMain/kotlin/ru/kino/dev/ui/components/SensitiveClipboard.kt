@@ -11,8 +11,8 @@ import ru.kino.dev.ui.res.stringResource
 /**
  * Puts a value of an entry into the clipboard of the system - marked sensitive where the system knows the mark.
  *
- * The clipboard is not cleared afterwards - that comes with locking the database (pass-docs, Step 46); on the
- * desktop - Step 89.
+ * The clipboard is not cleared afterwards, on the desktop either - more trouble than use (pass-docs, Step 46,
+ * Step 89).
  */
 interface SensitiveClipboard {
 
