@@ -1,7 +1,6 @@
 package ru.kino.dev.settings.pres.recyclebin
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -12,21 +11,6 @@ import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.vault.trash.TrashEditor
 import ru.kino.dev.vault.trash.TrashFailure
 import ru.kino.dev.vault.trash.TrashRepository
-
-/**
- * @param enabled whether the database uses the bin; null until read - the screen is a skeleton meanwhile
- * @param count the entries in the bin
- * @param confirmingOff "switch the bin off?", while asked - the bin holds something
- * @param saving the switch is written into the file - it waits and shows progress
- * @param message for the snackbar, until it takes it
- */
-data class RecycleBinState(
-    val enabled: Boolean? = null,
-    val count: Int = 0,
-    val confirmingOff: Boolean = false,
-    val saving: Boolean = false,
-    val message: RecycleBinMessage? = null,
-)
 
 /**
  * The recycle bin of the database [dbKey] (pass-docs, Step 70): whether it is used, and how many entries it holds.
@@ -41,31 +25,45 @@ class RecycleBinProcessor(
     private val editor: TrashEditor,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<RecycleBinState, RecycleBinState, Nothing> {
+) : ViewModel(), OrbitContainerHost<RecycleBinState, RecycleBinState, Nothing>, RecycleBinActions {
 
     override val container = orbitContainer<RecycleBinState, Nothing>(RecycleBinState())
 
-    fun action(action: RecycleBinAction): Job = intent {
-        when (action) {
-            RecycleBinAction.Load -> load()
+    override fun onLoad() {
+        intent { load() }
+    }
 
-            RecycleBinAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
+    override fun onBack() {
+        intent { navigator.navigate(MviNavEvent.NavigateBack) }
+    }
 
-            is RecycleBinAction.SetEnabled -> setEnabled(action.enabled)
+    override fun onSetEnabled(enabled: Boolean) {
+        intent { setEnabled(enabled) }
+    }
 
-            RecycleBinAction.OffConfirm -> if (state.confirmingOff) {
+    override fun onOffConfirm() {
+        intent {
+            if (state.confirmingOff) {
                 reduce { state.copy(confirmingOff = false) }
                 write(false)
             }
+        }
+    }
 
-            RecycleBinAction.OffDismiss -> reduce { state.copy(confirmingOff = false) }
+    override fun onOffDismiss() {
+        intent { reduce { state.copy(confirmingOff = false) } }
+    }
 
-            RecycleBinAction.OpenTrash -> if (state.count > 0) {
+    override fun onOpenTrash() {
+        intent {
+            if (state.count > 0) {
                 navigator.navigate(MviNavEvent.NavigateTo(TrashRoute(dbKey)))
             }
-
-            RecycleBinAction.MessageShown -> reduce { state.copy(message = null) }
         }
+    }
+
+    override fun onMessageShown() {
+        intent { reduce { state.copy(message = null) } }
     }
 
     private suspend fun Syntax<RecycleBinState, Nothing>.load() {

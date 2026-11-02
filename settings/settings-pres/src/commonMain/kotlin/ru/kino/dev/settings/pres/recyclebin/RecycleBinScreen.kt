@@ -44,7 +44,7 @@ internal fun RecycleBinScreen(
     val snackbar = remember { SnackbarHostState() }
 
     // Every time the screen is shown: back from the bin, it may hold less
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.action(RecycleBinAction.Load) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onLoad() }
 
     val message = state.message?.let {
         stringResource(
@@ -54,7 +54,7 @@ internal fun RecycleBinScreen(
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(RecycleBinAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     GradientBackground {
         Scaffold(
@@ -63,7 +63,7 @@ internal fun RecycleBinScreen(
             topBar = {
                 BackTopBar(
                     title = stringResource(Res.string.settings_recycle_bin),
-                    onBack = { processor.action(RecycleBinAction.Back) },
+                    onBack = processor::onBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },
@@ -80,9 +80,9 @@ internal fun RecycleBinScreen(
                     // Until read there is nothing to show for real: the shapes of the screen
                     item(key = "skeleton") { RecycleBinSkeleton(skeletonBrush()) }
                 } else {
-                    item(key = "use") { UseCard(enabled, state.saving, processor::action) }
+                    item(key = "use") { processor.UseCard(enabled, state.saving) }
                     item(key = "deleted") {
-                        DeletedCard(state.count, state.saving) { processor.action(RecycleBinAction.OpenTrash) }
+                        DeletedCard(state.count, state.saving) { processor.onOpenTrash() }
                     }
                 }
             }
@@ -95,15 +95,15 @@ internal fun RecycleBinScreen(
             text = stringResource(Res.string.settings_recycle_bin_off_text),
             confirmText = stringResource(Res.string.settings_recycle_bin_off_confirm),
             dismissText = stringResource(Res.string.action_cancel),
-            onConfirm = { processor.action(RecycleBinAction.OffConfirm) },
-            onDismiss = { processor.action(RecycleBinAction.OffDismiss) },
+            onConfirm = processor::onOffConfirm,
+            onDismiss = processor::onOffDismiss,
             destructive = true,
         )
     }
 }
 
 @Composable
-private fun UseCard(enabled: Boolean, saving: Boolean, action: (RecycleBinAction) -> Unit) {
+private fun RecycleBinActions.UseCard(enabled: Boolean, saving: Boolean) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column {
             SwitchRow(
@@ -112,7 +112,7 @@ private fun UseCard(enabled: Boolean, saving: Boolean, action: (RecycleBinAction
                     if (enabled) Res.string.settings_recycle_bin_use_on else Res.string.settings_recycle_bin_use_off,
                 ),
                 checked = enabled,
-                onCheckedChange = { action(RecycleBinAction.SetEnabled(it)) },
+                onCheckedChange = { onSetEnabled(it) },
                 enabled = !saving,
             )
             // The key derivation takes seconds

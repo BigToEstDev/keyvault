@@ -13,6 +13,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
+import ru.kino.dev.settings.pres.testing.runEach
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entry.EntrySummary
 import ru.kino.dev.vault.group.EntryId
@@ -33,7 +34,7 @@ class RecycleBinProcessorTest {
 
     @Test
     fun `the screen shown reads the switch and what the bin holds`() = runTest {
-        val (state, _) = perform(RecycleBinAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(true, state.enabled)
         assertEquals(2, state.count)
@@ -43,7 +44,7 @@ class RecycleBinProcessorTest {
     fun `a bin that cannot be read says so and goes to the log`() = runTest {
         trash.failures["enabled"] = TrashFailure.Unexpected()
 
-        val (state, _) = perform(RecycleBinAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertNull(state.enabled)
         assertEquals(RecycleBinMessage.Failed, state.message)
@@ -52,7 +53,7 @@ class RecycleBinProcessorTest {
 
     @Test
     fun `switching off a bin that holds something asks first and writes nothing`() = runTest {
-        val (state, _) = perform(RecycleBinAction.Load, RecycleBinAction.SetEnabled(false))
+        val (state, _) = perform({ onLoad() }, { onSetEnabled(false) })
 
         assertTrue(state.confirmingOff)
         assertEquals(true, state.enabled)
@@ -61,7 +62,7 @@ class RecycleBinProcessorTest {
 
     @Test
     fun `switched off after asking, the bin goes and the file is written`() = runTest {
-        val (state, _) = perform(RecycleBinAction.Load, RecycleBinAction.SetEnabled(false), RecycleBinAction.OffConfirm)
+        val (state, _) = perform({ onLoad() }, { onSetEnabled(false) }, { onOffConfirm() })
 
         assertEquals(false, state.enabled)
         assertEquals(0, state.count)
@@ -73,7 +74,7 @@ class RecycleBinProcessorTest {
 
     @Test
     fun `cancelled, the bin stays as it was`() = runTest {
-        val (state, _) = perform(RecycleBinAction.Load, RecycleBinAction.SetEnabled(false), RecycleBinAction.OffDismiss)
+        val (state, _) = perform({ onLoad() }, { onSetEnabled(false) }, { onOffDismiss() })
 
         assertEquals(true, state.enabled)
         assertEquals(2, state.count)
@@ -84,7 +85,7 @@ class RecycleBinProcessorTest {
     fun `an empty bin is switched off without asking`() = runTest {
         trash.entries.clear()
 
-        val (state, _) = perform(RecycleBinAction.Load, RecycleBinAction.SetEnabled(false))
+        val (state, _) = perform({ onLoad() }, { onSetEnabled(false) })
 
         assertFalse(state.confirmingOff)
         assertEquals(false, state.enabled)
@@ -96,7 +97,7 @@ class RecycleBinProcessorTest {
         trash.enabled = false
         trash.entries.clear()
 
-        val (state, _) = perform(RecycleBinAction.Load, RecycleBinAction.SetEnabled(true))
+        val (state, _) = perform({ onLoad() }, { onSetEnabled(true) })
 
         assertEquals(true, state.enabled)
         assertTrue(trash.enabled)
@@ -108,7 +109,7 @@ class RecycleBinProcessorTest {
         trash.entries.clear()
         database.saveFailure = IOException("provider gone")
 
-        val (state, _) = perform(RecycleBinAction.Load, RecycleBinAction.SetEnabled(false))
+        val (state, _) = perform({ onLoad() }, { onSetEnabled(false) })
 
         assertEquals(false, state.enabled)
         assertEquals(RecycleBinMessage.NotSaved, state.message)
@@ -119,7 +120,7 @@ class RecycleBinProcessorTest {
         trash.entries.clear()
         trash.failures["setEnabled"] = TrashFailure.Unexpected()
 
-        val (state, _) = perform(RecycleBinAction.Load, RecycleBinAction.SetEnabled(false))
+        val (state, _) = perform({ onLoad() }, { onSetEnabled(false) })
 
         assertEquals(true, state.enabled)
         assertFalse(state.saving)
@@ -128,7 +129,7 @@ class RecycleBinProcessorTest {
 
     @Test
     fun `deleted opens the bin`() = runTest {
-        val (_, events) = perform(RecycleBinAction.Load, RecycleBinAction.OpenTrash)
+        val (_, events) = perform({ onLoad() }, { onOpenTrash() })
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(TrashRoute(DB))), events)
     }
@@ -137,24 +138,26 @@ class RecycleBinProcessorTest {
     fun `an empty bin opens nothing`() = runTest {
         trash.entries.clear()
 
-        val (_, events) = perform(RecycleBinAction.Load, RecycleBinAction.OpenTrash)
+        val (_, events) = perform({ onLoad() }, { onOpenTrash() })
 
         assertEquals(emptyList<MviNavEvent>(), events)
     }
 
     @Test
     fun `back leaves the screen`() = runTest {
-        val (_, events) = perform(RecycleBinAction.Back)
+        val (_, events) = perform({ onBack() })
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)
     }
 
-    private suspend fun TestScope.perform(vararg actions: RecycleBinAction): Pair<RecycleBinState, List<MviNavEvent>> {
+    private suspend fun TestScope.perform(
+        vararg actions: RecycleBinActions.() -> Unit,
+    ): Pair<RecycleBinState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val processor = RecycleBinProcessor(DB, trash, TrashEditor(trash, database), navigator, log)
 
         processor.testWithInternalState(this) {
-            actions.forEach { containerHost.action(it).join() }
+            containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events
