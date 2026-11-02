@@ -1,29 +1,28 @@
 package ru.kino.dev.welcome.pres.masterpassword
 
-sealed interface MasterPasswordAction {
+/**
+ * What the screen of setting the master password is asked to do - done by [MasterPasswordProcessor]: the layout's,
+ * and what comes back from the picker and the question before writing over a file (pass-docs `docs/app/mvi-arc.md`).
+ */
+interface MasterPasswordActions {
 
-    data class PasswordChanged(val password: String) : MasterPasswordAction
+    fun onPasswordChange(password: String)
 
-    data class ConfirmChanged(val confirm: String) : MasterPasswordAction
+    fun onConfirmChange(confirm: String)
 
     /** The confirmation field lost focus - from now on a mismatch is shown. */
-    data object ConfirmLeft : MasterPasswordAction
+    fun onConfirmLeft()
 
-    data object TogglePasswordVisible : MasterPasswordAction
+    /** One toggle for both fields. */
+    fun onTogglePasswordVisible()
 
-    data class KeyFileToggled(val enabled: Boolean) : MasterPasswordAction
+    fun onKeyFileToggle(enabled: Boolean)
 
-    data object Next : MasterPasswordAction
+    fun onNext()
 
-    data class DatabasePicked(val uri: String) : MasterPasswordAction
+    fun onDatabasePicked(uri: String)
 
-    data object OverwriteConfirmed : MasterPasswordAction
+    fun onOverwriteConfirmed()
 
-    data object OverwriteDismissed : MasterPasswordAction
-}
-
-sealed interface MasterPasswordSideEffect {
-
-    /** "Save as" for the database, with the name to suggest. */
-    data class PickDatabase(val suggestedName: String) : MasterPasswordSideEffect
+    fun onOverwriteDismissed()
 }

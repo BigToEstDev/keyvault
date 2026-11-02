@@ -81,10 +81,10 @@ class MasterPasswordProcessorTest {
         val atLimit = "x".repeat(CredentialLimits.PASSWORD_MAX_CHARS)
 
         processor.testWithInternalState(this) {
-            containerHost.action(MasterPasswordAction.PasswordChanged(atLimit))
+            containerHost.onPasswordChange(atLimit)
             expectInternalState { copy(password = atLimit) }
 
-            containerHost.action(MasterPasswordAction.PasswordChanged(atLimit + "x"))
+            containerHost.onPasswordChange(atLimit + "x")
             expectInternalState { copy(tooLong = true) }
         }
     }
@@ -94,8 +94,8 @@ class MasterPasswordProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this) {
-            containerHost.action(MasterPasswordAction.PasswordChanged("pw"))
-            containerHost.action(MasterPasswordAction.ConfirmChanged("p"))
+            containerHost.onPasswordChange("pw")
+            containerHost.onConfirmChange("p")
 
             // Read straight away, without waiting for anything
             assertEquals("pw", containerHost.container.stateFlow.value.password)
@@ -111,7 +111,7 @@ class MasterPasswordProcessorTest {
         val emojis = "🔑".repeat(CredentialLimits.PASSWORD_MAX_CHARS)
 
         processor.testWithInternalState(this) {
-            containerHost.action(MasterPasswordAction.PasswordChanged(emojis))
+            containerHost.onPasswordChange(emojis)
             expectInternalState { copy(password = emojis) }
         }
     }
@@ -121,7 +121,7 @@ class MasterPasswordProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this, ready()) {
-            containerHost.action(MasterPasswordAction.Next)
+            containerHost.onNext()
             expectSideEffect(MasterPasswordSideEffect.PickDatabase("kdbxvault.kdbx"))
         }
 
@@ -133,7 +133,7 @@ class MasterPasswordProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this, ready().copy(withKeyFile = true)) {
-            containerHost.action(MasterPasswordAction.Next).join()
+            containerHost.onNext()
         }
 
         assertTrue(draft.withKeyFile)
@@ -146,8 +146,8 @@ class MasterPasswordProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this, ready()) {
-            containerHost.action(MasterPasswordAction.DatabasePicked(DB)).join()
-            cancelAndIgnoreRemainingItems()
+            containerHost.onDatabasePicked(DB)
+            expectInternalState { copy(stage = CreateStage(busy = true)) }
         }
 
         assertEquals(listOf("wouldOverwrite $DB", "create $DB"), journal)
@@ -166,8 +166,8 @@ class MasterPasswordProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this, ready()) {
-            containerHost.action(MasterPasswordAction.DatabasePicked(DB)).join()
-            cancelAndIgnoreRemainingItems()
+            containerHost.onDatabasePicked(DB)
+            expectInternalState { copy(stage = CreateStage(busy = true)) }
         }
 
         assertEquals(
@@ -183,11 +183,11 @@ class MasterPasswordProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this, ready()) {
-            containerHost.action(MasterPasswordAction.DatabasePicked(DB))
+            containerHost.onDatabasePicked(DB)
             expectInternalState { copy(stage = CreateStage(busy = true)) }
             expectInternalState { copy(stage = CreateStage(overwrite = Overwrite(PickedFile.Database, DB))) }
 
-            containerHost.action(MasterPasswordAction.OverwriteDismissed)
+            containerHost.onOverwriteDismissed()
             expectInternalState { copy(stage = CreateStage()) }
         }
 
@@ -201,8 +201,9 @@ class MasterPasswordProcessorTest {
         val asking = ready().copy(stage = CreateStage(overwrite = Overwrite(PickedFile.Database, DB)))
 
         processor.testWithInternalState(this, asking) {
-            containerHost.action(MasterPasswordAction.OverwriteConfirmed).join()
-            cancelAndIgnoreRemainingItems()
+            containerHost.onOverwriteConfirmed()
+            expectInternalState { copy(stage = CreateStage()) }
+            expectInternalState { copy(stage = CreateStage(busy = true)) }
         }
 
         assertEquals(listOf("create $DB"), journal)
@@ -215,7 +216,7 @@ class MasterPasswordProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this, ready()) {
-            containerHost.action(MasterPasswordAction.DatabasePicked(DB))
+            containerHost.onDatabasePicked(DB)
             expectInternalState { copy(stage = CreateStage(busy = true)) }
             expectInternalState {
                 copy(stage = CreateStage(problem = EntryProblem.Unreachable(PickedFile.Database)))
@@ -230,7 +231,7 @@ class MasterPasswordProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this, ready()) {
-            containerHost.action(MasterPasswordAction.DatabasePicked(DB)).join()
+            containerHost.onDatabasePicked(DB)
         }
 
         assertTrue(journal.isEmpty())

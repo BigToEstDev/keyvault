@@ -1,16 +1,16 @@
 package ru.kino.dev.welcome.pres.welcome
 
-sealed interface WelcomeAction {
+/**
+ * What the welcome screen is asked to do - done by [WelcomeProcessor]: the layout's, and the file the picker hands
+ * back (pass-docs `docs/app/mvi-arc.md`).
+ */
+interface WelcomeActions {
 
-    data object OpenClicked : WelcomeAction
+    /** "Open a database": the picker of an existing file. */
+    fun onOpen()
 
-    data class DatabasePicked(val uri: String) : WelcomeAction
+    /** "Create database": the master password comes first. */
+    fun onCreate()
 
-    data object CreateClicked : WelcomeAction
-}
-
-sealed interface WelcomeSideEffect {
-
-    /** Launch the picker of an existing file. */
-    data object PickDatabase : WelcomeSideEffect
+    fun onDatabasePicked(uri: String)
 }

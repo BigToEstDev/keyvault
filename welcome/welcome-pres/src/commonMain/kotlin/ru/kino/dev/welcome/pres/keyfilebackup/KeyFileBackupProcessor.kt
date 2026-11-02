@@ -15,22 +15,6 @@ import ru.kino.dev.welcome.pres.create.CreateSteps
 import ru.kino.dev.welcome.pres.create.Overwrite
 import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
 
-/** Where the key file of the new database came from. */
-sealed interface KeyFileChoice {
-
-    /** Generated and written by us - a `.keyx`. */
-    data object Created : KeyFileChoice
-
-    /** A file already on the device; [name] to show, when the provider tells it. */
-    data class Picked(val name: String?) : KeyFileChoice
-}
-
-/** @param keyFile the key file is ready - created or picked; what is left is the database */
-data class KeyFileBackupState(
-    val keyFile: KeyFileChoice? = null,
-    val stage: CreateStage = CreateStage(),
-)
-
 /**
  * The key file of a new database - only when creating with one. Either a new one, generated and saved where
  * the user says, or a file already on the device, picked as it is.
@@ -42,12 +26,16 @@ data class KeyFileBackupState(
  * its own, two system dialogs in a row flicker (pass-docs, Step 34, item 9) - and `create` from here, with
  * the 2.5 s wait. An existing file is never
  * written over without asking: as a key file it may be the key of another database.
+ *
+ * The screen is laid out as pass-docs `docs/app/mvi-arc.md` says (Step 95): the actions are [KeyFileBackupActions],
+ * done here as methods.
  */
 class KeyFileBackupProcessor(
     private val draft: CreateDraft,
     private val steps: CreateSteps,
     private val navigator: Navigator,
-) : ViewModel(), OrbitContainerHost<KeyFileBackupState, KeyFileBackupState, KeyFileBackupSideEffect> {
+) : ViewModel(), OrbitContainerHost<KeyFileBackupState, KeyFileBackupState, KeyFileBackupSideEffect>,
+    KeyFileBackupActions {
 
     override val container =
         orbitContainer<KeyFileBackupState, KeyFileBackupSideEffect>(KeyFileBackupState()) {
@@ -55,34 +43,45 @@ class KeyFileBackupProcessor(
             if (draft.password == null) navigator.navigate(MviNavEvent.NavigateBackTo(MasterPasswordRoute))
         }
 
-    fun action(action: KeyFileBackupAction) = intent {
-        when (action) {
-            KeyFileBackupAction.Continue -> postSideEffect(
+    /** The main button: create a new key file, or - once there is one - "next", where the database goes. */
+    override fun onContinue() {
+        intent {
+            postSideEffect(
                 if (state.keyFile != null) {
                     KeyFileBackupSideEffect.PickDatabase(CreateFileNames.DATABASE)
                 } else {
                     KeyFileBackupSideEffect.PickKeyFile(CreateFileNames.KEY_FILE)
                 },
             )
-
-            KeyFileBackupAction.PickExisting -> postSideEffect(KeyFileBackupSideEffect.PickExistingKeyFile)
-
-            is KeyFileBackupAction.KeyFilePicked -> picked(Overwrite(PickedFile.KeyFile, action.uri))
-
-            is KeyFileBackupAction.ExistingPicked -> existingPicked(action.uri)
-
-            is KeyFileBackupAction.DatabasePicked -> picked(Overwrite(PickedFile.Database, action.uri))
-
-            KeyFileBackupAction.OverwriteConfirmed -> {
-                val overwrite = state.stage.overwrite ?: return@intent
-                reduce { state.copy(stage = state.stage.copy(overwrite = null)) }
-                write(overwrite)
-            }
-
-            KeyFileBackupAction.OverwriteDismissed -> reduce {
-                state.copy(stage = state.stage.copy(overwrite = null))
-            }
         }
+    }
+
+    override fun onPickExisting() {
+        intent { postSideEffect(KeyFileBackupSideEffect.PickExistingKeyFile) }
+    }
+
+    override fun onKeyFilePicked(uri: String) {
+        intent { picked(Overwrite(PickedFile.KeyFile, uri)) }
+    }
+
+    override fun onExistingPicked(uri: String) {
+        intent { existingPicked(uri) }
+    }
+
+    override fun onDatabasePicked(uri: String) {
+        intent { picked(Overwrite(PickedFile.Database, uri)) }
+    }
+
+    override fun onOverwriteConfirmed() {
+        intent {
+            val overwrite = state.stage.overwrite ?: return@intent
+            reduce { state.copy(stage = state.stage.copy(overwrite = null)) }
+            write(overwrite)
+        }
+    }
+
+    override fun onOverwriteDismissed() {
+        intent { reduce { state.copy(stage = state.stage.copy(overwrite = null)) } }
     }
 
     /** An existing file as the key file: checked, not written; then straight on to the database. */

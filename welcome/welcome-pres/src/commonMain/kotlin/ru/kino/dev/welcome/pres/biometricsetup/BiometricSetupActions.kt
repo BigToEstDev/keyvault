@@ -1,20 +1,18 @@
 package ru.kino.dev.welcome.pres.biometricsetup
 
-import ru.kino.dev.settings.biometric.BiometricSession
 import ru.kino.dev.welcome.pres.common.BiometricOutcome
 
-sealed interface BiometricSetupAction {
+/**
+ * What the screen offering biometrics is asked to do - done by [BiometricSetupProcessor]: the layout's, and what the
+ * prompt of the system hands back (pass-docs `docs/app/mvi-arc.md`).
+ */
+interface BiometricSetupActions {
 
     /** "Turn on": the prompt, then the password of the new database is encrypted and stored. */
-    data object Enable : BiometricSetupAction
+    fun onEnable()
 
-    data class PromptFinished(val outcome: BiometricOutcome) : BiometricSetupAction
+    fun onPromptFinished(outcome: BiometricOutcome)
 
     /** "Skip" - and "back" too: the database is created and open, there is nowhere to go back to. */
-    data object Skip : BiometricSetupAction
-}
-
-sealed interface BiometricSetupSideEffect {
-
-    data class ShowPrompt(val session: BiometricSession) : BiometricSetupSideEffect
+    fun onSkip()
 }

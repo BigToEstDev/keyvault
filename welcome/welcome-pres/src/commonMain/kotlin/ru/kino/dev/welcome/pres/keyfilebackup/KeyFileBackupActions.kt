@@ -1,34 +1,26 @@
 package ru.kino.dev.welcome.pres.keyfilebackup
 
-sealed interface KeyFileBackupAction {
+/**
+ * What the screen of the key file of a new database is asked to do - done by [KeyFileBackupProcessor]: the layout's,
+ * and what comes back from the pickers and the question before writing over a file (pass-docs `docs/app/mvi-arc.md`).
+ */
+interface KeyFileBackupActions {
 
     /** The main button: create a new key file, or - once there is one - "next", where the database goes. */
-    data object Continue : KeyFileBackupAction
+    fun onContinue()
 
     /** Use a file already on the device as the key file - one from the desktop, or shared by databases. */
-    data object PickExisting : KeyFileBackupAction
+    fun onPickExisting()
 
     /** "Save as" handed back where to write a new key file. */
-    data class KeyFilePicked(val uri: String) : KeyFileBackupAction
+    fun onKeyFilePicked(uri: String)
 
     /** An existing file was picked as the key file. */
-    data class ExistingPicked(val uri: String) : KeyFileBackupAction
+    fun onExistingPicked(uri: String)
 
-    data class DatabasePicked(val uri: String) : KeyFileBackupAction
+    fun onDatabasePicked(uri: String)
 
-    data object OverwriteConfirmed : KeyFileBackupAction
+    fun onOverwriteConfirmed()
 
-    data object OverwriteDismissed : KeyFileBackupAction
-}
-
-sealed interface KeyFileBackupSideEffect {
-
-    /** "Save as" for a new key file. */
-    data class PickKeyFile(val suggestedName: String) : KeyFileBackupSideEffect
-
-    /** The picker of an existing file, for the key file. */
-    data object PickExistingKeyFile : KeyFileBackupSideEffect
-
-    /** "Save as" for the database. */
-    data class PickDatabase(val suggestedName: String) : KeyFileBackupSideEffect
+    fun onOverwriteDismissed()
 }
