@@ -2,6 +2,7 @@ package ru.kino.dev.welcome.pres.locked
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
@@ -13,7 +14,8 @@ import ru.kino.dev.ui.components.rememberPutAppAway
 import ru.kino.dev.ui.files.DocumentKind
 import ru.kino.dev.ui.files.rememberOpenDocument
 import ru.kino.dev.ui.res.stringResource
-import ru.kino.dev.welcome.pres.common.PasswordEntryContent
+import ru.kino.dev.welcome.pres.common.passwordentry.PasswordEntryAbilities
+import ru.kino.dev.welcome.pres.common.passwordentry.PasswordEntryContent
 import ru.kino.dev.welcome.pres.common.rememberBiometricPrompt
 
 @Composable
@@ -36,22 +38,13 @@ internal fun LockedScreen(
         }
     }
 
-    PasswordEntryContent(
+    val actions = remember(processor) { LockedEntryActions(processor) }
+    actions.PasswordEntryContent(
         databaseName = state.databaseName ?: stringResource(Res.string.entry_database_fallback),
         subtitle = stringResource(Res.string.entry_locked_title),
         entry = state.entry,
         submitText = stringResource(Res.string.entry_unlock),
-        onPasswordChange = { processor.action(LockedAction.PasswordChanged(it)) },
-        onTogglePasswordVisible = { processor.action(LockedAction.TogglePasswordVisible) },
-        onSubmit = { processor.action(LockedAction.Submit) },
-        onAttachKeyFile = { processor.action(LockedAction.AttachKeyFile) },
-        onRemoveKeyFile = null,
-        onBiometric = { processor.action(LockedAction.Biometric) },
-        onRetry = { processor.action(LockedAction.Submit) },
-        onCreateDatabase = null,
-        onDatabaseClick = null,
-        onPickAnotherDatabase = null,
+        abilities = PasswordEntryAbilities.Locked,
         read = state.read,
-        locked = true,
     )
 }
