@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.settings.pres.testing.runToEnd
 import ru.kino.dev.settings.privacy.FakePrivacySettingsRepository
 
 class PrivacyProcessorTest {
@@ -18,7 +19,7 @@ class PrivacyProcessorTest {
         val repository = FakePrivacySettingsRepository(allowScreenshots = true)
 
         PrivacyProcessor(repository, Navigator()).testWithInternalState(this) {
-            containerHost.action(PrivacyAction.Load).join()
+            containerHost.runToEnd { onLoad() }
 
             expectInternalState { copy(allowScreenshots = true) }
         }
@@ -29,7 +30,7 @@ class PrivacyProcessorTest {
         val repository = FakePrivacySettingsRepository()
 
         PrivacyProcessor(repository, Navigator()).testWithInternalState(this, PrivacyState(allowScreenshots = false)) {
-            containerHost.action(PrivacyAction.SetAllowScreenshots(true)).join()
+            containerHost.runToEnd { onSetAllowScreenshots(true) }
 
             expectInternalState { copy(allowScreenshots = true) }
         }
@@ -42,7 +43,7 @@ class PrivacyProcessorTest {
         val repository = FakePrivacySettingsRepository(failSave = true)
 
         PrivacyProcessor(repository, Navigator()).testWithInternalState(this, PrivacyState(allowScreenshots = false)) {
-            containerHost.action(PrivacyAction.SetAllowScreenshots(true)).join()
+            containerHost.runToEnd { onSetAllowScreenshots(true) }
 
             expectInternalState { copy(allowScreenshots = true) }
             expectInternalState { copy(allowScreenshots = false, message = PrivacyMessage.NotSaved) }
@@ -54,7 +55,7 @@ class PrivacyProcessorTest {
         val repository = FakePrivacySettingsRepository()
 
         PrivacyProcessor(repository, Navigator()).testWithInternalState(this) {
-            containerHost.action(PrivacyAction.SetAllowScreenshots(true)).join()
+            containerHost.runToEnd { onSetAllowScreenshots(true) }
         }
 
         assertEquals(emptyList<Boolean>(), repository.savedAllowScreenshots)
@@ -68,7 +69,7 @@ class PrivacyProcessorTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
         PrivacyProcessor(FakePrivacySettingsRepository(), navigator).testWithInternalState(this) {
-            containerHost.action(PrivacyAction.Back).join()
+            containerHost.runToEnd { onBack() }
         }
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)
