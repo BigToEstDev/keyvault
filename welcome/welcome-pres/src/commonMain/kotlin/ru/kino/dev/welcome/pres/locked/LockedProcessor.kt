@@ -1,7 +1,6 @@
 package ru.kino.dev.welcome.pres.locked
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -24,17 +23,6 @@ import ru.kino.dev.welcome.pres.common.PasswordEntry
 import ru.kino.dev.welcome.pres.common.toProblem
 
 /**
- * @param databaseName the name of the database - and nothing else of it is shown while it is locked
- * @param read the remembered database is read - until then the screen is the shield alone, not these defaults
- * (pass-docs, Step 72, fix 4)
- */
-data class LockedState(
-    val databaseName: String? = null,
-    val entry: PasswordEntry = PasswordEntry(),
-    val read: Boolean = false,
-)
-
-/**
  * The database locked while open - its own screen, not a mode of unlocking (pass-docs, `decisions.md`):
  * the core still holds it, so unlocking checks the credentials against the key it kept and is quick. Under
  * this screen there is nothing: the lock popped `vault` whole, and success starts it again at the root
@@ -45,6 +33,8 @@ data class LockedState(
  *
  * There is no changing the database here: it is open and may have unsaved changes, and closing it is for
  * `vault`.
+ *
+ * The screen is laid out as pass-docs `docs/app/mvi-arc.md` says (Step 94): the actions are [LockedActions], done here as methods.
  */
 class LockedProcessor(
     private val dbKey: String,
@@ -55,7 +45,7 @@ class LockedProcessor(
     private val log: ErrorLog,
     private val biometric: BiometricSignIn,
     private val signIn: SignInSettingsRepository,
-) : ViewModel(), OrbitContainerHost<LockedState, LockedState, LockedSideEffect> {
+) : ViewModel(), OrbitContainerHost<LockedState, LockedState, LockedSideEffect>, LockedActions {
 
     override val container = orbitContainer<LockedState, LockedSideEffect>(LockedState()) {
         // The key file it was opened with, from the remembered database
@@ -76,40 +66,45 @@ class LockedProcessor(
         if (biometricOn && signIn.autoBiometricPrompt.first()) startBiometric()
     }
 
-    fun action(action: LockedAction): Job = when (action) {
-        // Typed text: the state is updated before the field draws again, or the cursor jumps
-        is LockedAction.PasswordChanged -> textIntent {
-            reduce { state.copy(entry = state.entry.typed(action.password)) }
-        }
-
-        else -> intent { handle(action) }
+    // Typed text: the state is updated before the field draws again, or the cursor jumps
+    override fun onPasswordChange(password: String) {
+        textIntent { reduce { state.copy(entry = state.entry.typed(password)) } }
     }
 
-    private suspend fun Syntax<LockedState, LockedSideEffect>.handle(action: LockedAction) {
-        when (action) {
-            is LockedAction.PasswordChanged -> Unit // in action()
+    override fun onTogglePasswordVisible() {
+        intent { reduce { state.copy(entry = state.entry.copy(passwordVisible = !state.entry.passwordVisible)) } }
+    }
 
-            LockedAction.TogglePasswordVisible -> reduce {
-                state.copy(entry = state.entry.copy(passwordVisible = !state.entry.passwordVisible))
+    override fun onSubmit() {
+        intent { submit() }
+    }
+
+    // The file is read again by the next try itself
+    override fun onRetry() {
+        intent { submit() }
+    }
+
+    override fun onAttachKeyFile() {
+        intent { postSideEffect(LockedSideEffect.PickKeyFile) }
+    }
+
+    override fun onKeyFilePicked(uri: String) {
+        intent {
+            val name = try {
+                files.displayName(uri)
+            } catch (failure: WelcomeFailure) {
+                null
             }
-
-            LockedAction.Submit -> submit()
-
-            LockedAction.AttachKeyFile -> postSideEffect(LockedSideEffect.PickKeyFile)
-
-            is LockedAction.KeyFilePicked -> {
-                val name = try {
-                    files.displayName(action.uri)
-                } catch (failure: WelcomeFailure) {
-                    null
-                }
-                reduce { state.copy(entry = state.entry.withKeyFile(action.uri, name)) }
-            }
-
-            LockedAction.Biometric -> startBiometric()
-
-            is LockedAction.BiometricFinished -> biometricFinished(action.outcome)
+            reduce { state.copy(entry = state.entry.withKeyFile(uri, name)) }
         }
+    }
+
+    override fun onBiometric() {
+        intent { startBiometric() }
+    }
+
+    override fun onBiometricFinished(outcome: BiometricOutcome) {
+        intent { biometricFinished(outcome) }
     }
 
     private suspend fun Syntax<LockedState, LockedSideEffect>.startBiometric() {

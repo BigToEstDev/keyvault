@@ -1,7 +1,6 @@
 package ru.kino.dev.welcome.pres.unlock
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -28,21 +27,6 @@ import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
 import ru.kino.dev.welcome.pres.navigation.WelcomeRoute
 
 /**
- * @param databaseUri the database to open; null until it is known, and when nothing is remembered
- * @param databaseName the name from inside the database, known once it was opened before
- * @param fileName the name of the file, shown when the database has not been opened yet
- * @param read the database to show is read - until then the screen is the shield alone, not these defaults
- * (pass-docs, Step 72, fix 4)
- */
-data class UnlockState(
-    val databaseUri: String? = null,
-    val databaseName: String? = null,
-    val fileName: String? = null,
-    val entry: PasswordEntry = PasswordEntry(),
-    val read: Boolean = false,
-)
-
-/**
  * Opening a database that is not open - on start, the remembered one; after a file was picked, that one.
  *
  * Opening reads the file and runs the kdf - the 2.5 s wait. Only a database that opened is remembered, so
@@ -52,6 +36,8 @@ data class UnlockState(
  * Biometrics, when on for the remembered database, give the password on a tap - and it opens the usual way,
  * with the key file of the database. A stored password that no longer opens it was changed elsewhere: it
  * is forgotten, and the user signs in with the password.
+ *
+ * The screen is laid out as pass-docs `docs/app/mvi-arc.md` says (Step 94): the actions are [UnlockActions], done here as methods.
  *
  * @param pickedUri a file just picked, or null for the remembered database
  */
@@ -64,7 +50,7 @@ class UnlockProcessor(
     private val log: ErrorLog,
     private val biometric: BiometricSignIn,
     private val signIn: SignInSettingsRepository,
-) : ViewModel(), OrbitContainerHost<UnlockState, UnlockState, UnlockSideEffect> {
+) : ViewModel(), OrbitContainerHost<UnlockState, UnlockState, UnlockSideEffect>, UnlockActions {
 
     override val container = orbitContainer<UnlockState, UnlockSideEffect>(UnlockState()) {
         if (pickedUri != null) {
@@ -84,46 +70,60 @@ class UnlockProcessor(
         if (entry.biometricOn && entry.problem == null && signIn.autoBiometricPrompt.first()) startBiometric()
     }
 
-    fun action(action: UnlockAction): Job = when (action) {
-        // Typed text: the state is updated before the field draws again, or the cursor jumps
-        is UnlockAction.PasswordChanged -> textIntent {
-            reduce { state.copy(entry = state.entry.typed(action.password)) }
-        }
-
-        else -> intent { handle(action) }
+    // Typed text: the state is updated before the field draws again, or the cursor jumps
+    override fun onPasswordChange(password: String) {
+        textIntent { reduce { state.copy(entry = state.entry.typed(password)) } }
     }
 
-    private suspend fun Syntax<UnlockState, UnlockSideEffect>.handle(action: UnlockAction) {
-        when (action) {
-            is UnlockAction.PasswordChanged -> Unit // in action()
+    override fun onTogglePasswordVisible() {
+        intent { reduce { state.copy(entry = state.entry.copy(passwordVisible = !state.entry.passwordVisible)) } }
+    }
 
-            UnlockAction.TogglePasswordVisible -> reduce {
-                state.copy(entry = state.entry.copy(passwordVisible = !state.entry.passwordVisible))
-            }
+    override fun onSubmit() {
+        intent { submit() }
+    }
 
-            UnlockAction.Submit -> submit()
+    /**
+     * The file is looked at again first - it may have been found by the provider - and opened only when something
+     * was typed for it.
+     */
+    override fun onRetry() {
+        intent { retry() }
+    }
 
-            UnlockAction.Retry -> retry()
+    override fun onCreateDatabase() {
+        intent { navigator.navigate(MviNavEvent.NavigateTo(MasterPasswordRoute)) }
+    }
 
-            UnlockAction.CreateDatabase -> navigator.navigate(MviNavEvent.NavigateTo(MasterPasswordRoute))
+    override fun onChangeDatabase() {
+        intent { postSideEffect(UnlockSideEffect.PickDatabase) }
+    }
 
-            UnlockAction.ChangeDatabase -> postSideEffect(UnlockSideEffect.PickDatabase)
+    override fun onDatabasePicked(uri: String) {
+        intent { showDatabase(uri) }
+    }
 
-            is UnlockAction.DatabasePicked -> showDatabase(action.uri)
+    override fun onAttachKeyFile() {
+        intent { postSideEffect(UnlockSideEffect.PickKeyFile) }
+    }
 
-            UnlockAction.AttachKeyFile -> postSideEffect(UnlockSideEffect.PickKeyFile)
-
-            is UnlockAction.KeyFilePicked -> {
-                val name = nameOf(action.uri)
-                reduce { state.copy(entry = state.entry.withKeyFile(action.uri, name)) }
-            }
-
-            UnlockAction.RemoveKeyFile -> reduce { state.copy(entry = state.entry.withKeyFile(null, null)) }
-
-            UnlockAction.Biometric -> startBiometric()
-
-            is UnlockAction.BiometricFinished -> biometricFinished(action.outcome)
+    override fun onKeyFilePicked(uri: String) {
+        intent {
+            val name = nameOf(uri)
+            reduce { state.copy(entry = state.entry.withKeyFile(uri, name)) }
         }
+    }
+
+    override fun onRemoveKeyFile() {
+        intent { reduce { state.copy(entry = state.entry.withKeyFile(null, null)) } }
+    }
+
+    override fun onBiometric() {
+        intent { startBiometric() }
+    }
+
+    override fun onBiometricFinished(outcome: BiometricOutcome) {
+        intent { biometricFinished(outcome) }
     }
 
     private suspend fun Syntax<UnlockState, UnlockSideEffect>.startBiometric() {
@@ -276,7 +276,3 @@ class UnlockProcessor(
         val DATABASE_GONE = EntryProblem.Unreachable(PickedFile.Database)
     }
 }
-
-/** The title of the screen: the name from inside the database, else the file name. */
-internal val UnlockState.title: String?
-    get() = databaseName ?: fileName

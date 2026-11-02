@@ -1,29 +1,16 @@
 package ru.kino.dev.welcome.pres.locked
 
-import ru.kino.dev.settings.biometric.BiometricSession
 import ru.kino.dev.welcome.pres.common.BiometricOutcome
+import ru.kino.dev.welcome.pres.common.passwordentry.PasswordEntryActions
 
-sealed interface LockedAction {
+/**
+ * What the locked screen is asked to do - done by [LockedProcessor]: the layout's, and what comes back from the
+ * pickers and the prompt of the system. Changing the database or its key file is not done here - the database is
+ * open, so those choices keep their nothing-by-default.
+ */
+interface LockedActions : PasswordEntryActions {
 
-    data class PasswordChanged(val password: String) : LockedAction
+    fun onKeyFilePicked(uri: String)
 
-    data object TogglePasswordVisible : LockedAction
-
-    data object Submit : LockedAction
-
-    data object AttachKeyFile : LockedAction
-
-    data class KeyFilePicked(val uri: String) : LockedAction
-
-    /** "Sign in with biometrics" tapped - the prompt is shown only on this. */
-    data object Biometric : LockedAction
-
-    data class BiometricFinished(val outcome: BiometricOutcome) : LockedAction
-}
-
-sealed interface LockedSideEffect {
-
-    data object PickKeyFile : LockedSideEffect
-
-    data class ShowBiometricPrompt(val session: BiometricSession) : LockedSideEffect
+    fun onBiometricFinished(outcome: BiometricOutcome)
 }

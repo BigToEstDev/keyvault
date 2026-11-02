@@ -18,6 +18,7 @@ import ru.kino.dev.ui.phone.LocalPhoneNumbers
 import ru.kino.dev.ui.theme.AppLocale
 import ru.kino.dev.ui.theme.KeyVaultTheme
 import ru.kino.dev.ui.theme.LocalAppDisplay
+import ru.kino.dev.ui.theme.ProvideLayoutType
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.welcome.pres.start.WelcomeStartResolver
 import java.util.Locale
@@ -53,8 +54,11 @@ fun App(onDarkTheme: (Boolean) -> Unit = {}) {
         CompositionLocalProvider(LocalAppDisplay provides shown, LocalPhoneNumbers provides koinInject<PhoneNumbers>()) {
             KeyVaultTheme(darkTheme = darkTheme) {
                 val start by startResolver.start.collectAsStateWithLifecycle()
-                start?.let {
-                    AppNavHost(navigator = koinInject<Navigator>(), autoLock = koinInject<AutoLock>(), start = it)
+                // The layout by the width of the window, for the screens with layouts of their own (pass-docs, Step 94)
+                ProvideLayoutType {
+                    start?.let {
+                        AppNavHost(navigator = koinInject<Navigator>(), autoLock = koinInject<AutoLock>(), start = it)
+                    }
                 }
             }
         }

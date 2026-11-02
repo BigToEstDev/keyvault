@@ -83,9 +83,10 @@ class UnlockProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this, rememberedState()) {
-            containerHost.action(UnlockAction.PasswordChanged("pw")).join()
-            containerHost.action(UnlockAction.Submit).join()
-            cancelAndIgnoreRemainingItems()
+            containerHost.onPasswordChange("pw")
+            expectInternalState { copy(entry = entry.copy(password = "pw")) }
+            containerHost.onSubmit()
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
         }
 
         assertEquals("pw", database.passwordReceived)
@@ -102,7 +103,7 @@ class UnlockProcessorTest {
         val typed = biometricState().let { it.copy(entry = it.entry.copy(password = "pw")) }
 
         processor.testWithInternalState(this, typed) {
-            containerHost.action(UnlockAction.Submit).join()
+            containerHost.onSubmit()
             expectInternalState { copy(entry = entry.copy(busy = true)) }
             cancelAndIgnoreRemainingItems()
         }
@@ -121,9 +122,9 @@ class UnlockProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this, rememberedState()) {
-            containerHost.action(UnlockAction.Submit)
+            containerHost.onSubmit()
             expectInternalState { copy(entry = entry.copy(busy = true)) }
-            containerHost.action(UnlockAction.Submit).join()
+            containerHost.onSubmit()
             gate.complete(Unit)
             cancelAndIgnoreRemainingItems()
         }
@@ -136,8 +137,8 @@ class UnlockProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this, rememberedState()) {
-            containerHost.action(UnlockAction.Submit).join()
-            cancelAndIgnoreRemainingItems()
+            containerHost.onSubmit()
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
         }
 
         assertNull(database.passwordReceived)
@@ -148,8 +149,8 @@ class UnlockProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this, UnlockState(databaseUri = DB)) {
-            containerHost.action(UnlockAction.Submit).join()
-            cancelAndIgnoreRemainingItems()
+            containerHost.onSubmit()
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
         }
 
         assertEquals("", database.passwordReceived)
@@ -196,7 +197,7 @@ class UnlockProcessorTest {
         val typed = rememberedState().let { it.copy(entry = it.entry.copy(password = "pw")) }
 
         processor.testWithInternalState(this, typed) {
-            containerHost.action(UnlockAction.Submit)
+            containerHost.onSubmit()
             expectInternalState { copy(entry = entry.copy(busy = true)) }
             expectInternalState {
                 copy(entry = entry.copy(busy = false, password = "", problem = EntryProblem.InvalidCredentials))
@@ -211,7 +212,7 @@ class UnlockProcessorTest {
         val typed = rememberedState().let { it.copy(entry = it.entry.copy(password = "pw")) }
 
         processor.testWithInternalState(this, typed) {
-            containerHost.action(UnlockAction.Submit)
+            containerHost.onSubmit()
             expectInternalState { copy(entry = entry.copy(busy = true)) }
             expectInternalState { copy(entry = entry.copy(busy = false, problem = EntryProblem.CorruptedFile)) }
         }
@@ -223,7 +224,7 @@ class UnlockProcessorTest {
         val wrong = rememberedState().let { it.copy(entry = it.entry.copy(problem = EntryProblem.InvalidCredentials)) }
 
         processor.testWithInternalState(this, wrong) {
-            containerHost.action(UnlockAction.PasswordChanged("pw2"))
+            containerHost.onPasswordChange("pw2")
 
             expectInternalState { copy(entry = entry.copy(password = "pw2", problem = null)) }
         }
@@ -235,10 +236,10 @@ class UnlockProcessorTest {
         val typed = rememberedState().let { it.copy(entry = it.entry.copy(password = "pw")) }
 
         processor.testWithInternalState(this, typed) {
-            containerHost.action(UnlockAction.ChangeDatabase)
+            containerHost.onChangeDatabase()
             expectSideEffect(UnlockSideEffect.PickDatabase)
 
-            containerHost.action(UnlockAction.DatabasePicked(OTHER))
+            containerHost.onDatabasePicked(OTHER)
             expectInternalState(UnlockState(databaseUri = OTHER, fileName = "other.kdbx", read = true))
         }
     }
@@ -253,13 +254,13 @@ class UnlockProcessorTest {
         )
 
         processor.testWithInternalState(this, tooLarge) {
-            containerHost.action(UnlockAction.AttachKeyFile)
+            containerHost.onAttachKeyFile()
             expectSideEffect(UnlockSideEffect.PickKeyFile)
 
-            containerHost.action(UnlockAction.KeyFilePicked(NEW_KEY))
+            containerHost.onKeyFilePicked(NEW_KEY)
             expectInternalState { copy(entry = PasswordEntry(keyFileUri = NEW_KEY, keyFileName = "new.keyx")) }
 
-            containerHost.action(UnlockAction.RemoveKeyFile)
+            containerHost.onRemoveKeyFile()
             expectInternalState { copy(entry = PasswordEntry()) }
         }
     }
@@ -286,12 +287,12 @@ class UnlockProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this, gone()) {
-            containerHost.action(UnlockAction.Retry)
+            containerHost.onRetry()
             expectInternalState { copy(entry = entry.copy(busy = true)) }
             expectInternalState { copy(entry = entry.copy(busy = false)) }
 
             files.missing -= DB
-            containerHost.action(UnlockAction.Retry)
+            containerHost.onRetry()
             expectInternalState { copy(entry = entry.copy(busy = true)) }
             expectInternalState { copy(entry = entry.copy(busy = false, problem = null)) }
         }
@@ -307,8 +308,9 @@ class UnlockProcessorTest {
         }
 
         processor.testWithInternalState(this, corrupted) {
-            containerHost.action(UnlockAction.Retry).join()
-            cancelAndIgnoreRemainingItems()
+            containerHost.onRetry()
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            expectInternalState { copy(entry = entry.copy(problem = null)) }
         }
 
         assertEquals(listOf("open $DB"), journal)
@@ -321,7 +323,7 @@ class UnlockProcessorTest {
             val (processor, events) = processor()
 
             processor.testWithInternalState(this, gone()) {
-                containerHost.action(UnlockAction.CreateDatabase).join()
+                containerHost.onCreateDatabase()
             }
 
             assertEquals(listOf(MviNavEvent.NavigateTo(MasterPasswordRoute)), events)
@@ -379,10 +381,10 @@ class UnlockProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this, biometricState()) {
-            containerHost.action(UnlockAction.Biometric).join()
+            containerHost.onBiometric()
             val prompt = awaitSideEffect() as UnlockSideEffect.ShowBiometricPrompt
-            containerHost.action(UnlockAction.BiometricFinished(BiometricOutcome.Succeeded(prompt.session))).join()
-            cancelAndIgnoreRemainingItems()
+            containerHost.onBiometricFinished(BiometricOutcome.Succeeded(prompt.session))
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
         }
 
         assertEquals("stored", database.passwordReceived)
@@ -400,10 +402,13 @@ class UnlockProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this, biometricState()) {
-            containerHost.action(UnlockAction.Biometric).join()
+            containerHost.onBiometric()
             val prompt = awaitSideEffect() as UnlockSideEffect.ShowBiometricPrompt
-            containerHost.action(UnlockAction.BiometricFinished(BiometricOutcome.Succeeded(prompt.session))).join()
-            cancelAndIgnoreRemainingItems()
+            containerHost.onBiometricFinished(BiometricOutcome.Succeeded(prompt.session))
+            expectInternalState { copy(entry = entry.copy(busy = true)) }
+            expectInternalState {
+                copy(entry = entry.copy(busy = false, biometricOn = false, biometricNotice = BiometricNotice.PasswordChanged))
+            }
         }
 
         assertTrue(journal.contains("forget $DB"))
@@ -421,7 +426,7 @@ class UnlockProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this, biometricState()) {
-            containerHost.action(UnlockAction.Biometric)
+            containerHost.onBiometric()
             expectInternalState {
                 copy(entry = entry.copy(biometricOn = false, biometricNotice = BiometricNotice.DeviceChanged))
             }
@@ -433,7 +438,7 @@ class UnlockProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this, biometricState()) {
-            containerHost.action(UnlockAction.BiometricFinished(BiometricOutcome.Cancelled)).join()
+            containerHost.onBiometricFinished(BiometricOutcome.Cancelled)
         }
 
         assertTrue(journal.isEmpty())
@@ -446,7 +451,7 @@ class UnlockProcessorTest {
         val typed = rememberedState().let { it.copy(entry = it.entry.copy(password = "pw")) }
 
         processor.testWithInternalState(this, typed) {
-            containerHost.action(UnlockAction.Submit)
+            containerHost.onSubmit()
             expectInternalState { copy(entry = entry.copy(busy = true)) }
             expectInternalState { copy(entry = entry.copy(busy = false, problem = problem)) }
         }

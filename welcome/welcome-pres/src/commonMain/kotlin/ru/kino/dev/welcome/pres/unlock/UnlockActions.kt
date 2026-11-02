@@ -1,48 +1,17 @@
 package ru.kino.dev.welcome.pres.unlock
 
-import ru.kino.dev.settings.biometric.BiometricSession
 import ru.kino.dev.welcome.pres.common.BiometricOutcome
+import ru.kino.dev.welcome.pres.common.passwordentry.PasswordEntryActions
 
-sealed interface UnlockAction {
+/**
+ * What the unlock screen is asked to do - done by [UnlockProcessor]: the layout's, the choices of what is opened,
+ * and what comes back from the pickers and the prompt of the system.
+ */
+interface UnlockActions : PasswordEntryActions {
 
-    data class PasswordChanged(val password: String) : UnlockAction
+    fun onDatabasePicked(uri: String)
 
-    data object TogglePasswordVisible : UnlockAction
+    fun onKeyFilePicked(uri: String)
 
-    /** Open the database. */
-    data object Submit : UnlockAction
-
-    /**
-     * "Retry" on a problem with the database file: the file is looked at again first - it may have been
-     * found by the provider - and opened only when something was typed for it.
-     */
-    data object Retry : UnlockAction
-
-    /** "Create a new database" - the way out when the remembered one is gone. */
-    data object CreateDatabase : UnlockAction
-
-    /** The name of the database tapped, or "pick another file" after a failure. */
-    data object ChangeDatabase : UnlockAction
-
-    data class DatabasePicked(val uri: String) : UnlockAction
-
-    data object AttachKeyFile : UnlockAction
-
-    data class KeyFilePicked(val uri: String) : UnlockAction
-
-    data object RemoveKeyFile : UnlockAction
-
-    /** "Sign in with biometrics" tapped - the prompt is shown only on this. */
-    data object Biometric : UnlockAction
-
-    data class BiometricFinished(val outcome: BiometricOutcome) : UnlockAction
-}
-
-sealed interface UnlockSideEffect {
-
-    data object PickDatabase : UnlockSideEffect
-
-    data object PickKeyFile : UnlockSideEffect
-
-    data class ShowBiometricPrompt(val session: BiometricSession) : UnlockSideEffect
+    fun onBiometricFinished(outcome: BiometricOutcome)
 }

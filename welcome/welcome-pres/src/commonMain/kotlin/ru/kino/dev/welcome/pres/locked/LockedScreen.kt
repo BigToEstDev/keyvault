@@ -13,7 +13,8 @@ import ru.kino.dev.ui.components.rememberPutAppAway
 import ru.kino.dev.ui.files.DocumentKind
 import ru.kino.dev.ui.files.rememberOpenDocument
 import ru.kino.dev.ui.res.stringResource
-import ru.kino.dev.welcome.pres.common.PasswordEntryContent
+import ru.kino.dev.welcome.pres.common.passwordentry.PasswordEntryAbilities
+import ru.kino.dev.welcome.pres.common.passwordentry.PasswordEntryContent
 import ru.kino.dev.welcome.pres.common.rememberBiometricPrompt
 
 @Composable
@@ -22,8 +23,8 @@ internal fun LockedScreen(
     processor: LockedProcessor = koinViewModel { parametersOf(dbKey) },
 ) {
     val state by processor.collectAsState()
-    val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.action(LockedAction.KeyFilePicked(it)) }
-    val showBiometricPrompt = rememberBiometricPrompt { processor.action(LockedAction.BiometricFinished(it)) }
+    val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.onKeyFilePicked(it) }
+    val showBiometricPrompt = rememberBiometricPrompt { processor.onBiometricFinished(it) }
     val putAppAway = rememberPutAppAway()
 
     // "Back" puts the app away: going back would show `vault` under the lock, and one button would undo it
@@ -36,22 +37,12 @@ internal fun LockedScreen(
         }
     }
 
-    PasswordEntryContent(
+    processor.PasswordEntryContent(
         databaseName = state.databaseName ?: stringResource(Res.string.entry_database_fallback),
         subtitle = stringResource(Res.string.entry_locked_title),
         entry = state.entry,
         submitText = stringResource(Res.string.entry_unlock),
-        onPasswordChange = { processor.action(LockedAction.PasswordChanged(it)) },
-        onTogglePasswordVisible = { processor.action(LockedAction.TogglePasswordVisible) },
-        onSubmit = { processor.action(LockedAction.Submit) },
-        onAttachKeyFile = { processor.action(LockedAction.AttachKeyFile) },
-        onRemoveKeyFile = null,
-        onBiometric = { processor.action(LockedAction.Biometric) },
-        onRetry = { processor.action(LockedAction.Submit) },
-        onCreateDatabase = null,
-        onDatabaseClick = null,
-        onPickAnotherDatabase = null,
+        abilities = PasswordEntryAbilities.Locked,
         read = state.read,
-        locked = true,
     )
 }
