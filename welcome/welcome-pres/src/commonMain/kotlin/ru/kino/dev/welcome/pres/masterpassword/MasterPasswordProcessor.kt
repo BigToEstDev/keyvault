@@ -1,7 +1,6 @@
 package ru.kino.dev.welcome.pres.masterpassword
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -19,36 +18,6 @@ import ru.kino.dev.welcome.pres.create.Overwrite
 import ru.kino.dev.welcome.pres.navigation.KeyFileBackupRoute
 
 /**
- * @param confirmLeft the confirmation field lost focus once - a mismatch is shown only after that, not
- * while it is being typed
- * @param tooLong the last thing typed was over the limit and was not taken
- */
-data class MasterPasswordState(
-    val password: String = "",
-    val confirm: String = "",
-    val passwordVisible: Boolean = false,
-    val confirmLeft: Boolean = false,
-    val tooLong: Boolean = false,
-    val withKeyFile: Boolean = false,
-    val stage: CreateStage = CreateStage(),
-) {
-
-    /** Shorter than the minimum - said under the field while it is, and "next" stays off. */
-    val tooShort: Boolean
-        get() = CredentialLimits.isPasswordTooShort(password)
-
-    /**
-     * The confirmation is required whether the password is shown or not: looking at a password and
-     * confirming it are different things.
-     */
-    val canGoOn: Boolean
-        get() = !tooShort && password == confirm && !stage.busy
-
-    val mismatch: Boolean
-        get() = confirmLeft && confirm.isNotEmpty() && confirm != password
-}
-
-/**
  * Setting the master password - the first step of creating a database.
  *
  * Without a key file the database is created from here: "save as" for the database, then `create` and the
@@ -58,60 +27,68 @@ data class MasterPasswordState(
  * The password is limited when it is set, as the core limits it - in code points, not chars - so that the
  * core never has to refuse it; and it has a minimum length of the app's own. Opening has neither: a
  * database made elsewhere may have any password.
+ *
+ * The screen is laid out as pass-docs `docs/app/mvi-arc.md` says (Step 95): the actions are [MasterPasswordActions],
+ * done here as methods.
  */
 class MasterPasswordProcessor(
     private val draft: CreateDraft,
     private val steps: CreateSteps,
     private val navigator: Navigator,
-) : ViewModel(), OrbitContainerHost<MasterPasswordState, MasterPasswordState, MasterPasswordSideEffect> {
+) : ViewModel(), OrbitContainerHost<MasterPasswordState, MasterPasswordState, MasterPasswordSideEffect>,
+    MasterPasswordActions {
 
     override val container = orbitContainer<MasterPasswordState, MasterPasswordSideEffect>(MasterPasswordState())
 
-    fun action(action: MasterPasswordAction): Job = when (action) {
-        // Typed text: the state is updated before the field draws again, or the cursor jumps
-        is MasterPasswordAction.PasswordChanged -> textIntent {
+    // Typed text: the state is updated before the field draws again, or the cursor jumps
+    override fun onPasswordChange(password: String) {
+        textIntent {
             reduce {
-                if (CredentialLimits.isPasswordTooLong(action.password)) {
+                if (CredentialLimits.isPasswordTooLong(password)) {
                     state.copy(tooLong = true)
                 } else {
-                    state.copy(password = action.password, tooLong = false)
+                    state.copy(password = password, tooLong = false)
                 }
             }
         }
-
-        is MasterPasswordAction.ConfirmChanged -> textIntent {
-            reduce {
-                if (CredentialLimits.isPasswordTooLong(action.confirm)) state else state.copy(confirm = action.confirm)
-            }
-        }
-
-        else -> intent { handle(action) }
     }
 
-    private suspend fun Syntax<MasterPasswordState, MasterPasswordSideEffect>.handle(action: MasterPasswordAction) {
-        when (action) {
-            is MasterPasswordAction.PasswordChanged, is MasterPasswordAction.ConfirmChanged -> Unit // in action()
-
-            MasterPasswordAction.ConfirmLeft -> reduce { state.copy(confirmLeft = true) }
-
-            MasterPasswordAction.TogglePasswordVisible -> reduce {
-                state.copy(passwordVisible = !state.passwordVisible)
-            }
-
-            is MasterPasswordAction.KeyFileToggled -> reduce { state.copy(withKeyFile = action.enabled) }
-
-            MasterPasswordAction.Next -> next()
-
-            is MasterPasswordAction.DatabasePicked -> databasePicked(action.uri)
-
-            MasterPasswordAction.OverwriteConfirmed -> {
-                val overwrite = state.stage.overwrite ?: return
-                reduce { state.copy(stage = state.stage.copy(overwrite = null)) }
-                create(overwrite.uri)
-            }
-
-            MasterPasswordAction.OverwriteDismissed -> reduce { state.copy(stage = state.stage.copy(overwrite = null)) }
+    override fun onConfirmChange(confirm: String) {
+        textIntent {
+            reduce { if (CredentialLimits.isPasswordTooLong(confirm)) state else state.copy(confirm = confirm) }
         }
+    }
+
+    override fun onConfirmLeft() {
+        intent { reduce { state.copy(confirmLeft = true) } }
+    }
+
+    override fun onTogglePasswordVisible() {
+        intent { reduce { state.copy(passwordVisible = !state.passwordVisible) } }
+    }
+
+    override fun onKeyFileToggle(enabled: Boolean) {
+        intent { reduce { state.copy(withKeyFile = enabled) } }
+    }
+
+    override fun onNext() {
+        intent { next() }
+    }
+
+    override fun onDatabasePicked(uri: String) {
+        intent { databasePicked(uri) }
+    }
+
+    override fun onOverwriteConfirmed() {
+        intent {
+            val overwrite = state.stage.overwrite ?: return@intent
+            reduce { state.copy(stage = state.stage.copy(overwrite = null)) }
+            create(overwrite.uri)
+        }
+    }
+
+    override fun onOverwriteDismissed() {
+        intent { reduce { state.copy(stage = state.stage.copy(overwrite = null)) } }
     }
 
     private suspend fun Syntax<MasterPasswordState, MasterPasswordSideEffect>.next() {
