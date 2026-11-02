@@ -11,6 +11,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.pres.navigation.AppearanceRoute
 import ru.kino.dev.settings.pres.navigation.RecycleBinRoute
+import ru.kino.dev.settings.pres.testing.runToEnd
 
 private const val DB = "content://docs/passwords.kdbx"
 
@@ -24,7 +25,7 @@ class SettingsProcessorTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
         SettingsProcessor(DB, navigator).testWithInternalState(this) {
-            containerHost.action(SettingsAction.Back).join()
+            containerHost.runToEnd { onBack() }
         }
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)
@@ -38,7 +39,7 @@ class SettingsProcessorTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
         SettingsProcessor(DB, navigator).testWithInternalState(this) {
-            containerHost.action(SettingsAction.Open(SettingsItem.Appearance)).join()
+            containerHost.runToEnd { onOpen(SettingsItem.Appearance) }
         }
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(AppearanceRoute(DB))), events)
@@ -52,7 +53,7 @@ class SettingsProcessorTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
         SettingsProcessor(DB, navigator).testWithInternalState(this) {
-            containerHost.action(SettingsAction.Open(SettingsItem.RecycleBin)).join()
+            containerHost.runToEnd { onOpen(SettingsItem.RecycleBin) }
         }
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(RecycleBinRoute(DB))), events)
