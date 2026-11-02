@@ -4,100 +4,54 @@ import ru.kino.dev.settings.biometric.BiometricSession
 import ru.kino.dev.settings.lock.AutoLockTimeout
 import ru.kino.dev.ui.biometric.BiometricPromptResult
 
-sealed interface LockAction {
+/** What the lock settings is asked to do - done by [LockProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
+interface LockActions {
 
     /** The screen is shown: what is chosen is read. */
-    data object Load : LockAction
+    fun onLoad()
 
-    data object Back : LockAction
+    fun onBack()
 
     /** "Auto-lock" tapped: the wheel of its times. */
-    data object ChooseTimeout : LockAction
+    fun onChooseTimeout()
 
     /** The wheel closed without a choice. */
-    data object DismissTimeout : LockAction
+    fun onDismissTimeout()
 
     /** A time chosen on the wheel: kept at once. */
-    data class SelectTimeout(val timeout: AutoLockTimeout) : LockAction
+    fun onSelectTimeout(timeout: AutoLockTimeout)
 
     /** "Lock on leaving the app" switched: kept at once. */
-    data class SetLockOnLeave(val on: Boolean) : LockAction
+    fun onSetLockOnLeave(on: Boolean)
 
     /** "Lock button" switched: kept at once. */
-    data class SetLockButton(val on: Boolean) : LockAction
+    fun onSetLockButton(on: Boolean)
 
     /** "Clear the password after an error" switched: kept at once. */
-    data class SetClearPasswordOnError(val on: Boolean) : LockAction
+    fun onSetClearPasswordOnError(on: Boolean)
 
     /** "Ask for biometrics by itself" switched: kept at once. */
-    data class SetAutoBiometricPrompt(val on: Boolean) : LockAction
+    fun onSetAutoBiometricPrompt(on: Boolean)
 
     /** "Biometrics" switched: on - asks for the password first; off - asks to forget them. */
-    data class SetBiometric(val on: Boolean) : LockAction
+    fun onSetBiometric(on: Boolean)
 
     /** Typed in the password asked before biometrics are turned on. */
-    data class BiometricPasswordChanged(val password: String) : LockAction
+    fun onBiometricPasswordChange(password: String)
 
     /** "Next" under the password: it is checked, then the prompt. */
-    data object BiometricPasswordConfirm : LockAction
+    fun onBiometricPasswordConfirm()
 
-    data object BiometricPasswordDismiss : LockAction
+    fun onBiometricPasswordDismiss()
 
     /** The prompt shown for [session] ended. */
-    data class BiometricPromptFinished(val session: BiometricSession, val result: BiometricPromptResult) : LockAction
+    fun onBiometricPromptFinished(session: BiometricSession, result: BiometricPromptResult)
 
     /** "Forget" in the dialog: the password kept for biometrics is gone. */
-    data object BiometricForgetConfirm : LockAction
+    fun onBiometricForgetConfirm()
 
-    data object BiometricForgetDismiss : LockAction
+    fun onBiometricForgetDismiss()
 
     /** The snackbar took the message. */
-    data object MessageShown : LockAction
+    fun onMessageShown()
 }
-
-sealed interface LockSideEffect {
-
-    /** The system prompt for [session]: its cipher encrypts the password once the biometrics match. */
-    data class ShowBiometricPrompt(val session: BiometricSession) : LockSideEffect
-}
-
-/** What the snackbar says. */
-enum class LockMessage {
-    /** The choice could not be written: it shows what is kept. */
-    NotSaved,
-
-    /** Biometrics could not be turned on or off - the Keystore refused, or the database is gone. */
-    BiometricFailed,
-}
-
-/** Why biometrics cannot be turned on for this database - the line under the switch says it. */
-enum class BiometricUnavailable {
-    /** No biometrics on the platform at all - the desktop for now. */
-    Unsupported,
-
-    /** No strong biometrics on the device. */
-    NoHardware,
-
-    /** The key of the database is a key file alone: there is no password to keep. */
-    NoPassword,
-}
-
-/**
- * The row of biometrics.
- *
- * @param on the password of this database is kept for biometrics
- * @param unavailable why they cannot be turned on; null - they can
- */
-data class BiometricRow(val on: Boolean, val unavailable: BiometricUnavailable? = null)
-
-/**
- * The password asked before biometrics are turned on.
- *
- * @param checking the core checks it: progress on the button, nothing takes taps
- * @param wrong it is not the password of the database - said in the field, the dialog stays
- */
-data class BiometricPasswordDialog(
-    val password: String = "",
-    val checking: Boolean = false,
-    val wrong: Boolean = false,
-)

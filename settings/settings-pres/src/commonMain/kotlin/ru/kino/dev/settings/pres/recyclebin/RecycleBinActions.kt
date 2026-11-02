@@ -1,32 +1,27 @@
 package ru.kino.dev.settings.pres.recyclebin
 
-sealed interface RecycleBinAction {
+/**
+ * What the setting of the recycle bin is asked to do - done by [RecycleBinProcessor]
+ * (pass-docs, `docs/app/mvi-arc.md`).
+ */
+interface RecycleBinActions {
 
     /** The screen is shown: the switch and what the bin holds are read. */
-    data object Load : RecycleBinAction
+    fun onLoad()
 
-    data object Back : RecycleBinAction
+    fun onBack()
 
     /** "Use the recycle bin" flipped: on - kept at once; off with something in the bin - asked first. */
-    data class SetEnabled(val enabled: Boolean) : RecycleBinAction
+    fun onSetEnabled(enabled: Boolean)
 
     /** "Switch off" in the dialog: the bin goes with all it holds, the file is written. */
-    data object OffConfirm : RecycleBinAction
+    fun onOffConfirm()
 
-    data object OffDismiss : RecycleBinAction
+    fun onOffDismiss()
 
     /** "Deleted" tapped: the screen of the bin, in `vault`. */
-    data object OpenTrash : RecycleBinAction
+    fun onOpenTrash()
 
     /** The snackbar took the message. */
-    data object MessageShown : RecycleBinAction
-}
-
-/** What the snackbar says. */
-enum class RecycleBinMessage {
-    /** The change is made, but the file was not written: it waits for the next save. */
-    NotSaved,
-
-    /** The core refused - the database closed meanwhile, or a bug. */
-    Failed,
+    fun onMessageShown()
 }

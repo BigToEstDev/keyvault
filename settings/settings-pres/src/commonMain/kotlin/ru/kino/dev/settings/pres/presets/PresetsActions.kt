@@ -3,38 +3,30 @@ package ru.kino.dev.settings.pres.presets
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetId
 
-sealed interface PresetsAction {
+/** What the list of presets is asked to do - done by [PresetsProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
+interface PresetsActions {
 
     /** The screen is shown - first or back from a preset: what is chosen and the presets are read. */
-    data object Load : PresetsAction
+    fun onLoad()
 
-    data object Back : PresetsAction
+    fun onBack()
 
     /** "Use presets" switched: kept at once. */
-    data class SetUsePresets(val on: Boolean) : PresetsAction
+    fun onSetUsePresets(on: Boolean)
 
     /** The fab "Create": a new preset, while there is room for one. */
-    data object Create : PresetsAction
+    fun onCreate()
 
     /** "Edit" in the menu of the preset of [id]. */
-    data class Edit(val id: PresetId) : PresetsAction
+    fun onEdit(id: PresetId)
 
     /** "Delete" in the menu of [preset]: asks first. */
-    data class Delete(val preset: EntryPreset) : PresetsAction
+    fun onDelete(preset: EntryPreset)
 
-    data object DeleteConfirm : PresetsAction
+    fun onDeleteConfirm()
 
-    data object DeleteDismiss : PresetsAction
+    fun onDeleteDismiss()
 
     /** The snackbar took the message. */
-    data object MessageShown : PresetsAction
-}
-
-/** What the snackbar says. */
-enum class PresetsMessage {
-    /** The choice could not be written: it shows what is kept. */
-    NotSaved,
-
-    /** The preset could not be deleted - the store could not be written; it stays. */
-    NotDeleted,
+    fun onMessageShown()
 }

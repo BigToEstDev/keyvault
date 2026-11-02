@@ -33,7 +33,7 @@ internal fun PrivacyScreen(processor: PrivacyProcessor = koinViewModel()) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) { processor.action(PrivacyAction.Load) }
+    LaunchedEffect(Unit) { processor.onLoad() }
 
     val message = state.message?.let {
         stringResource(
@@ -42,7 +42,7 @@ internal fun PrivacyScreen(processor: PrivacyProcessor = koinViewModel()) {
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(PrivacyAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     GradientBackground {
         Scaffold(
@@ -51,7 +51,7 @@ internal fun PrivacyScreen(processor: PrivacyProcessor = koinViewModel()) {
             topBar = {
                 BackTopBar(
                     title = stringResource(Res.string.settings_privacy),
-                    onBack = { processor.action(PrivacyAction.Back) },
+                    onBack = processor::onBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },
@@ -70,7 +70,7 @@ internal fun PrivacyScreen(processor: PrivacyProcessor = koinViewModel()) {
                             title = stringResource(Res.string.settings_allow_screenshots),
                             text = stringResource(Res.string.settings_allow_screenshots_hint),
                             checked = state.allowScreenshots ?: false,
-                            onCheckedChange = { processor.action(PrivacyAction.SetAllowScreenshots(it)) },
+                            onCheckedChange = processor::onSetAllowScreenshots,
                             // Until read nothing is chosen for real: the row is disabled meanwhile
                             enabled = state.allowScreenshots != null,
                         )

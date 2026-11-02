@@ -13,6 +13,7 @@ import ru.kino.dev.core.Compression
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
+import ru.kino.dev.settings.pres.testing.runEach
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.file.DatabaseFileEditor
 import ru.kino.dev.vault.file.DatabaseFileFailure
@@ -26,7 +27,7 @@ class FileProcessorTest {
 
     @Test
     fun `the screen shown reads the file`() = runTest {
-        val (state, _) = perform(FileAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(files.info, state.file)
     }
@@ -35,7 +36,7 @@ class FileProcessorTest {
     fun `a file that cannot be read says so and goes to the log`() = runTest {
         files.failure = DatabaseFileFailure.Unexpected()
 
-        val (state, _) = perform(FileAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertNull(state.file)
         assertEquals(FileMessage.Failed, state.message)
@@ -44,7 +45,7 @@ class FileProcessorTest {
 
     @Test
     fun `the dialog opens with the name as it is`() = runTest {
-        val (state, _) = perform(FileAction.Load, FileAction.Rename)
+        val (state, _) = perform({ onLoad() }, { onRename() })
 
         assertEquals(RenameDialog("Passwords"), state.renaming)
     }
@@ -52,10 +53,10 @@ class FileProcessorTest {
     @Test
     fun `a name saved closes the dialog and shows the name kept`() = runTest {
         val (state, _) = perform(
-            FileAction.Load,
-            FileAction.Rename,
-            FileAction.RenameChanged("  Home "),
-            FileAction.RenameConfirm,
+            { onLoad() },
+            { onRename() },
+            { onRenameChange("  Home ") },
+            { onRenameConfirm() },
         )
 
         assertNull(state.renaming)
@@ -66,10 +67,10 @@ class FileProcessorTest {
     @Test
     fun `an empty name stays in the dialog with the reason`() = runTest {
         val (state, _) = perform(
-            FileAction.Load,
-            FileAction.Rename,
-            FileAction.RenameChanged(" "),
-            FileAction.RenameConfirm,
+            { onLoad() },
+            { onRename() },
+            { onRenameChange(" ") },
+            { onRenameConfirm() },
         )
 
         assertEquals(RenameDialog(" ", saving = false, empty = true), state.renaming)
@@ -81,10 +82,10 @@ class FileProcessorTest {
         database.saveFailure = IOException("provider gone")
 
         val (state, _) = perform(
-            FileAction.Load,
-            FileAction.Rename,
-            FileAction.RenameChanged("Home"),
-            FileAction.RenameConfirm,
+            { onLoad() },
+            { onRename() },
+            { onRenameChange("Home") },
+            { onRenameConfirm() },
         )
 
         assertNull(state.renaming)
@@ -94,7 +95,7 @@ class FileProcessorTest {
 
     @Test
     fun `a compression chosen is written at once`() = runTest {
-        val (state, _) = perform(FileAction.Load, FileAction.SelectCompression(Compression.None))
+        val (state, _) = perform({ onLoad() }, { onSelectCompression(Compression.None) })
 
         assertEquals(Compression.None, state.file?.compression)
         assertFalse(state.savingCompression)
@@ -105,7 +106,7 @@ class FileProcessorTest {
     fun `a compression not written is shown all the same, with a message`() = runTest {
         database.saveFailure = IOException("provider gone")
 
-        val (state, _) = perform(FileAction.Load, FileAction.SelectCompression(Compression.None))
+        val (state, _) = perform({ onLoad() }, { onSelectCompression(Compression.None) })
 
         assertEquals(Compression.None, state.file?.compression)
         assertFalse(state.savingCompression)
@@ -114,7 +115,7 @@ class FileProcessorTest {
 
     @Test
     fun `nothing is chosen before the file is read`() = runTest {
-        val (state, _) = perform(FileAction.SelectCompression(Compression.None), FileAction.Rename)
+        val (state, _) = perform({ onSelectCompression(Compression.None) }, { onRename() })
 
         assertNull(state.renaming)
         assertEquals(emptyList<String>(), database.calls)
@@ -123,18 +124,18 @@ class FileProcessorTest {
 
     @Test
     fun `back leaves the screen`() = runTest {
-        val (_, events) = perform(FileAction.Back)
+        val (_, events) = perform({ onBack() })
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)
     }
 
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
-    private suspend fun TestScope.perform(vararg actions: FileAction): Pair<FileState, List<MviNavEvent>> {
+    private suspend fun TestScope.perform(vararg actions: FileActions.() -> Unit): Pair<FileState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val processor = FileProcessor(DB, files, DatabaseFileEditor(files, database), navigator, log)
 
         processor.testWithInternalState(this) {
-            actions.forEach { containerHost.action(it).join() }
+            containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events

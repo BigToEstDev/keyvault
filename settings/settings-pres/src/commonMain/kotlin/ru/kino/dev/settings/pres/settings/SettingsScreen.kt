@@ -40,7 +40,7 @@ internal fun SettingsScreen(
             topBar = {
                 BackTopBar(
                     title = stringResource(Res.string.settings_title),
-                    onBack = { processor.action(SettingsAction.Back) },
+                    onBack = processor::onBack,
                 )
             },
         ) { padding ->
@@ -65,7 +65,7 @@ internal fun SettingsScreen(
                             icon = item.icon,
                             title = stringResource(item.title),
                             text = stringResource(item.text),
-                            onClick = { processor.action(SettingsAction.Open(item)) },
+                            onClick = { processor.onOpen(item) },
                         )
                     }
                 }

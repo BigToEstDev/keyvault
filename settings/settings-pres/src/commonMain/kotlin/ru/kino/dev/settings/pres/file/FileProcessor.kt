@@ -1,7 +1,6 @@
 package ru.kino.dev.settings.pres.file
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -12,21 +11,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.vault.file.DatabaseFileEditor
 import ru.kino.dev.vault.file.DatabaseFileFailure
-import ru.kino.dev.vault.file.DatabaseFileInfo
 import ru.kino.dev.vault.file.DatabaseFileRepository
-
-/**
- * @param file the file of the database; null until read - the screen is a skeleton meanwhile
- * @param renaming the dialog of the name, while open
- * @param savingCompression the compression chosen is written into the file - the choice waits, with progress
- * @param message for the snackbar, until it takes it
- */
-data class FileState(
-    val file: DatabaseFileInfo? = null,
-    val renaming: RenameDialog? = null,
-    val savingCompression: Boolean = false,
-    val message: FileMessage? = null,
-)
 
 /**
  * The file of the database [dbKey] (pass-docs, Step 63): its name inside the file, the name of the file, the
@@ -40,48 +25,57 @@ class FileProcessor(
     private val editor: DatabaseFileEditor,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<FileState, FileState, Nothing> {
+) : ViewModel(), OrbitContainerHost<FileState, FileState, Nothing>, FileActions {
 
     override val container = orbitContainer<FileState, Nothing>(FileState())
 
-    fun action(action: FileAction): Job = when (action) {
+    override fun onRenameChange(name: String) {
         // Typed text: the state is updated before the field draws again, or the cursor jumps
-        is FileAction.RenameChanged -> textIntent {
+        textIntent {
             reduce {
                 val dialog = state.renaming
-                if (dialog == null || dialog.saving) state else state.copy(renaming = dialog.copy(name = action.name, empty = false))
+                if (dialog == null || dialog.saving) state else state.copy(renaming = dialog.copy(name = name, empty = false))
             }
         }
-
-        else -> intent { handle(action) }
     }
 
-    private suspend fun Syntax<FileState, Nothing>.handle(action: FileAction) {
-        when (action) {
-            FileAction.Load -> try {
+    override fun onLoad() {
+        intent {
+            try {
                 val file = files.read(dbKey)
                 reduce { state.copy(file = file) }
             } catch (failure: DatabaseFileFailure) {
                 failed(failure)
             }
+        }
+    }
 
-            FileAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
+    override fun onBack() {
+        intent { navigator.navigate(MviNavEvent.NavigateBack) }
+    }
 
-            FileAction.Rename -> state.file?.let { file ->
+    override fun onRename() {
+        intent {
+            state.file?.let { file ->
                 if (!state.savingCompression) reduce { state.copy(renaming = RenameDialog(file.name)) }
             }
-
-            FileAction.RenameConfirm -> rename()
-
-            FileAction.RenameDismiss -> if (state.renaming?.saving == false) reduce { state.copy(renaming = null) }
-
-            is FileAction.SelectCompression -> selectCompression(action.compression)
-
-            FileAction.MessageShown -> reduce { state.copy(message = null) }
-
-            // Typed text has its own intent above
-            is FileAction.RenameChanged -> Unit
         }
+    }
+
+    override fun onRenameConfirm() {
+        intent { rename() }
+    }
+
+    override fun onRenameDismiss() {
+        intent { if (state.renaming?.saving == false) reduce { state.copy(renaming = null) } }
+    }
+
+    override fun onSelectCompression(compression: Compression) {
+        intent { selectCompression(compression) }
+    }
+
+    override fun onMessageShown() {
+        intent { reduce { state.copy(message = null) } }
     }
 
     private suspend fun Syntax<FileState, Nothing>.rename() {

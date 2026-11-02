@@ -3,40 +3,35 @@ package ru.kino.dev.settings.pres.appearance
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
 
-sealed interface AppearanceAction {
+/** What the appearance settings is asked to do - done by [AppearanceProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
+interface AppearanceActions {
 
     /** The screen is shown: what is chosen is read. */
-    data object Load : AppearanceAction
+    fun onLoad()
 
-    data object Back : AppearanceAction
+    fun onBack()
 
     /** A mode tapped in "Mode": kept at once. */
-    data class SelectTheme(val mode: ThemeMode) : AppearanceAction
+    fun onSelectTheme(mode: ThemeMode)
 
     /** A language picked in "Language": kept at once. */
-    data class SelectLanguage(val language: AppLanguage) : AppearanceAction
+    fun onSelectLanguage(language: AppLanguage)
 
     /** "Password coloring" switched: kept at once. */
-    data class SetPasswordColoring(val on: Boolean) : AppearanceAction
+    fun onSetPasswordColoring(on: Boolean)
 
     /** "Password strength" switched: kept at once. */
-    data class SetPasswordStrength(val on: Boolean) : AppearanceAction
+    fun onSetPasswordStrength(on: Boolean)
 
     /** "User name in the list" switched: kept at once. */
-    data class SetUserNameInList(val on: Boolean) : AppearanceAction
+    fun onSetUserNameInList(on: Boolean)
 
     /** "Number of entries in a group" switched: kept at once. */
-    data class SetEntryCount(val on: Boolean) : AppearanceAction
+    fun onSetEntryCount(on: Boolean)
 
     /** "Count nested groups" switched: kept at once. */
-    data class SetEntryCountNested(val on: Boolean) : AppearanceAction
+    fun onSetEntryCountNested(on: Boolean)
 
     /** The snackbar took the message. */
-    data object MessageShown : AppearanceAction
-}
-
-/** What the snackbar says. */
-enum class AppearanceMessage {
-    /** The choice could not be written: it is back to what it was. */
-    NotSaved,
+    fun onMessageShown()
 }

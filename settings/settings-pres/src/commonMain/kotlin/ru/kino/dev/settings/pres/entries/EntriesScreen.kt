@@ -64,7 +64,7 @@ internal fun EntriesScreen(
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) { processor.action(EntriesAction.Load) }
+    LaunchedEffect(Unit) { processor.onLoad() }
 
     val message = state.message?.let {
         stringResource(
@@ -74,7 +74,7 @@ internal fun EntriesScreen(
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(EntriesAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     GradientBackground {
         Scaffold(
@@ -83,7 +83,7 @@ internal fun EntriesScreen(
             topBar = {
                 BackTopBar(
                     title = stringResource(Res.string.settings_entries),
-                    onBack = { processor.action(EntriesAction.Back) },
+                    onBack = processor::onBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },
@@ -100,21 +100,21 @@ internal fun EntriesScreen(
                     // Until read there is nothing to show for real: the shapes of the screen
                     item(key = "skeleton") { EntriesSkeleton(skeletonBrush()) }
                 } else {
-                    protectionRows(entries.protection, state.saving, processor::action)
-                    historyRows(entries, state.saving, processor::action)
-                    state.phone?.let { phoneRows(it, processor::action) }
+                    protectionRows(entries.protection, state.saving, processor)
+                    historyRows(entries, state.saving, processor)
+                    state.phone?.let { phoneRows(it, processor) }
                 }
             }
         }
     }
 
-    Dialogs(state, processor::action)
+    processor.Dialogs(state)
 }
 
 private fun LazyListScope.protectionRows(
     protection: FieldProtection,
     saving: EntriesPart?,
-    action: (EntriesAction) -> Unit,
+    actions: EntriesActions,
 ) {
     item(key = "hidden") {
         SettingsSectionHeader(
@@ -129,7 +129,7 @@ private fun LazyListScope.protectionRows(
                     SwitchRow(
                         title = fieldLabel(key),
                         checked = protection.protects(key),
-                        onCheckedChange = { action(EntriesAction.SetProtection(protection.with(key, it))) },
+                        onCheckedChange = { actions.onSetProtection(protection.with(key, it)) },
                         enabled = saving == null,
                     )
                 }
@@ -142,7 +142,7 @@ private fun LazyListScope.protectionRows(
 private fun LazyListScope.historyRows(
     entries: DatabaseEntries,
     saving: EntriesPart?,
-    action: (EntriesAction) -> Unit,
+    actions: EntriesActions,
 ) {
     val history = entries.history
     item(key = "history") {
@@ -156,8 +156,8 @@ private fun LazyListScope.historyRows(
             value = history.maxItems?.toString(),
             saving = saving,
             part = EntriesPart.Items,
-            onLimit = { action(EntriesAction.LimitItems(it)) },
-            onChoose = { action(EntriesAction.Choose(HistoryLimit.Items)) },
+            onLimit = { actions.onLimitItems(it) },
+            onChoose = { actions.onChoose(HistoryLimit.Items) },
         )
     }
     item(key = "size") {
@@ -167,8 +167,8 @@ private fun LazyListScope.historyRows(
             value = history.maxSize?.let { sizeLabel(it) },
             saving = saving,
             part = EntriesPart.Size,
-            onLimit = { action(EntriesAction.LimitSize(it)) },
-            onChoose = { action(EntriesAction.Choose(HistoryLimit.Size)) },
+            onLimit = { actions.onLimitSize(it) },
+            onChoose = { actions.onChoose(HistoryLimit.Size) },
         )
     }
 }
@@ -177,7 +177,7 @@ private fun LazyListScope.historyRows(
  * The prefix of a new phone field (pass-docs, Step 77, decision 6): the switch, and under it - only while the prefix
  * is remembered - the country, as the limits of the history show their values.
  */
-private fun LazyListScope.phoneRows(phone: PhonePrefix, action: (EntriesAction) -> Unit) {
+private fun LazyListScope.phoneRows(phone: PhonePrefix, actions: EntriesActions) {
     item(key = "phone") {
         SettingsSectionHeader(title = stringResource(Res.string.settings_phone_group), top = 8.dp)
     }
@@ -187,7 +187,7 @@ private fun LazyListScope.phoneRows(phone: PhonePrefix, action: (EntriesAction) 
                 SwitchRow(
                     title = stringResource(Res.string.settings_phone_remember),
                     checked = phone.remember,
-                    onCheckedChange = { action(EntriesAction.RememberPrefix(it)) },
+                    onCheckedChange = { actions.onRememberPrefix(it) },
                 )
                 AnimatedVisibility(
                     visible = phone.remember,
@@ -197,7 +197,7 @@ private fun LazyListScope.phoneRows(phone: PhonePrefix, action: (EntriesAction) 
                     PhonePrefixRow(
                         title = stringResource(Res.string.settings_phone_prefix),
                         value = "${phonePrefix(phone.region)} ${phoneCountryName(phone.region)}",
-                        onClick = { action(EntriesAction.ChoosePrefix) },
+                        onClick = { actions.onChoosePrefix() },
                     )
                 }
             }
@@ -258,7 +258,7 @@ private fun SavingProgress(visible: Boolean) {
 }
 
 @Composable
-private fun Dialogs(state: EntriesState, action: (EntriesAction) -> Unit) {
+private fun EntriesActions.Dialogs(state: EntriesState) {
     val history = state.entries?.history
     when (state.choosing) {
         HistoryLimit.Items -> history?.maxItems?.let { items ->
@@ -267,8 +267,8 @@ private fun Dialogs(state: EntriesState, action: (EntriesAction) -> Unit) {
                 options = HistoryChoices.items(items),
                 selected = items,
                 label = { it.toString() },
-                onConfirm = { action(EntriesAction.SelectItems(it)) },
-                onDismiss = { action(EntriesAction.DismissChoice) },
+                onConfirm = { onSelectItems(it) },
+                onDismiss = { onDismissChoice() },
             )
         }
 
@@ -278,8 +278,8 @@ private fun Dialogs(state: EntriesState, action: (EntriesAction) -> Unit) {
                 options = HistoryChoices.sizes(size),
                 selected = size,
                 label = { sizeLabel(it) },
-                onConfirm = { action(EntriesAction.SelectSize(it)) },
-                onDismiss = { action(EntriesAction.DismissChoice) },
+                onConfirm = { onSelectSize(it) },
+                onDismiss = { onDismissChoice() },
             )
         }
 
@@ -290,8 +290,8 @@ private fun Dialogs(state: EntriesState, action: (EntriesAction) -> Unit) {
         PhoneCountryDialog(
             countries = countries,
             selected = state.phone.region,
-            onChoose = { action(EntriesAction.PrefixChosen(it)) },
-            onClose = { action(EntriesAction.DismissPrefix) },
+            onChoose = { onPrefixChosen(it) },
+            onClose = { onDismissPrefix() },
         )
     }
 
@@ -301,8 +301,8 @@ private fun Dialogs(state: EntriesState, action: (EntriesAction) -> Unit) {
             text = stringResource(Res.string.settings_history_trim_text),
             confirmText = stringResource(Res.string.settings_history_trim_confirm),
             dismissText = stringResource(Res.string.action_cancel),
-            onConfirm = { action(EntriesAction.TrimConfirm) },
-            onDismiss = { action(EntriesAction.TrimDismiss) },
+            onConfirm = { onTrimConfirm() },
+            onDismiss = { onTrimDismiss() },
             destructive = true,
         )
     }

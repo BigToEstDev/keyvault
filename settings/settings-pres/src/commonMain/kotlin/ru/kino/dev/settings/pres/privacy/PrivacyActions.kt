@@ -1,21 +1,16 @@
 package ru.kino.dev.settings.pres.privacy
 
-sealed interface PrivacyAction {
+/** What the privacy settings is asked to do - done by [PrivacyProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
+interface PrivacyActions {
 
     /** The screen is shown: what is chosen is read. */
-    data object Load : PrivacyAction
+    fun onLoad()
 
-    data object Back : PrivacyAction
+    fun onBack()
 
     /** "Allow screenshots" switched: kept at once. */
-    data class SetAllowScreenshots(val on: Boolean) : PrivacyAction
+    fun onSetAllowScreenshots(on: Boolean)
 
     /** The snackbar took the message. */
-    data object MessageShown : PrivacyAction
-}
-
-/** What the snackbar says. */
-enum class PrivacyMessage {
-    /** The choice could not be written: it shows what is kept. */
-    NotSaved,
+    fun onMessageShown()
 }

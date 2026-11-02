@@ -18,6 +18,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.settings.biometric.FakeBiometrics
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
+import ru.kino.dev.settings.pres.testing.runEach
 import ru.kino.dev.settings.signin.FakeRememberedKeyFile
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.security.FakeSecurityRepository
@@ -37,7 +38,7 @@ class SecurityProcessorTest {
     fun `the screen shown reads the security and measures a pass`() = runTest {
         security.kdfPass = 900.milliseconds
 
-        val (state, _) = perform(SecurityAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(security.security, state.security)
         assertEquals(KdfPass.Measured(900.milliseconds), state.kdfPass)
@@ -47,7 +48,7 @@ class SecurityProcessorTest {
     fun `security that cannot be read says so and goes to the log`() = runTest {
         security.failure = SecurityFailure.Unexpected()
 
-        val (state, _) = perform(SecurityAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertNull(state.security)
         assertEquals(SecurityMessage.Failed, state.message)
@@ -58,7 +59,7 @@ class SecurityProcessorTest {
     fun `a pass that cannot be measured leaves the screen without the time`() = runTest {
         security.measureFailure = SecurityFailure.Unexpected()
 
-        val (state, _) = perform(SecurityAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(security.security, state.security)
         assertEquals(KdfPass.Unknown, state.kdfPass)
@@ -67,7 +68,7 @@ class SecurityProcessorTest {
 
     @Test
     fun `a cipher chosen is written at once`() = runTest {
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.SelectCipher(Cipher.ChaCha20))
+        val (state, _) = perform({ onLoad() }, { onSelectCipher(Cipher.ChaCha20) })
 
         assertEquals(Cipher.ChaCha20, state.security?.encryption?.cipher)
         assertEquals(Cipher.ChaCha20, security.security.encryption.cipher)
@@ -77,14 +78,14 @@ class SecurityProcessorTest {
 
     @Test
     fun `the cipher there is chosen again writes nothing`() = runTest {
-        perform(SecurityAction.Load, SecurityAction.SelectCipher(Cipher.Aes256))
+        perform({ onLoad() }, { onSelectCipher(Cipher.Aes256) })
 
         assertEquals(emptyList<String>(), database.calls)
     }
 
     @Test
     fun `a variant chosen is written at once`() = runTest {
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.SelectKdf(KdfVariant.Argon2d))
+        val (state, _) = perform({ onLoad() }, { onSelectKdf(KdfVariant.Argon2d) })
 
         assertEquals(KdfVariant.Argon2d, state.security?.encryption?.kdf)
         assertEquals(listOf("save"), database.calls)
@@ -94,7 +95,7 @@ class SecurityProcessorTest {
     fun `a choice not written stays and says so`() = runTest {
         database.saveFailure = IOException("provider gone")
 
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.SelectKdf(KdfVariant.Argon2d))
+        val (state, _) = perform({ onLoad() }, { onSelectKdf(KdfVariant.Argon2d) })
 
         assertEquals(KdfVariant.Argon2d, state.security?.encryption?.kdf)
         assertEquals(SecurityMessage.NotSaved, state.message)
@@ -102,7 +103,7 @@ class SecurityProcessorTest {
 
     @Test
     fun `a choice refused by the core goes back`() = runTest {
-        val (state, _) = perform(SecurityAction.Load, FailNext(security), SecurityAction.SelectCipher(Cipher.ChaCha20))
+        val (state, _) = perform({ onLoad() }, failNext(security), { onSelectCipher(Cipher.ChaCha20) })
 
         assertEquals(Cipher.Aes256, state.security?.encryption?.cipher)
         assertEquals(SecurityMessage.Failed, state.message)
@@ -110,14 +111,14 @@ class SecurityProcessorTest {
 
     @Test
     fun `the rounds tapped open the wheel`() = runTest {
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.ChooseRounds)
+        val (state, _) = perform({ onLoad() }, { onChooseRounds() })
 
         assertTrue(state.choosingRounds)
     }
 
     @Test
     fun `the rounds saved on the wheel are written and close it`() = runTest {
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.ChooseRounds, SecurityAction.SelectRounds(5))
+        val (state, _) = perform({ onLoad() }, { onChooseRounds() }, { onSelectRounds(5) })
 
         assertFalse(state.choosingRounds)
         assertEquals(5L, security.security.encryption.iterations)
@@ -129,7 +130,7 @@ class SecurityProcessorTest {
     fun `rounds outside the wheel stay in the file until a choice is saved`() = runTest {
         security.security = security.security.copy(encryption = security.security.encryption.copy(iterations = 20))
 
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.SelectCipher(Cipher.ChaCha20))
+        val (state, _) = perform({ onLoad() }, { onSelectCipher(Cipher.ChaCha20) })
 
         assertEquals(20L, security.security.encryption.iterations)
         assertEquals(20L, state.security?.encryption?.iterations)
@@ -140,7 +141,7 @@ class SecurityProcessorTest {
     fun `the shown rounds of a database from elsewhere saved on the wheel are a change`() = runTest {
         security.security = security.security.copy(encryption = security.security.encryption.copy(iterations = 20))
 
-        perform(SecurityAction.Load, SecurityAction.SelectRounds(RoundsChoices.MAX))
+        perform({ onLoad() }, { onSelectRounds(RoundsChoices.MAX) })
 
         assertEquals(RoundsChoices.MAX, security.security.encryption.iterations)
         assertEquals(listOf("save"), database.calls)
@@ -150,7 +151,7 @@ class SecurityProcessorTest {
 
     @Test
     fun `the password tapped asks the current one of a database with a password`() = runTest {
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.EditPassword)
+        val (state, _) = perform({ onLoad() }, { onEditPassword() })
 
         assertEquals(PasswordDialog(needsCurrent = true), state.passwordDialog)
     }
@@ -159,7 +160,7 @@ class SecurityProcessorTest {
     fun `a database with only a key file gets the first password without a current one`() = runTest {
         security.security = security.security.copy(credentials = CredentialsUsed(password = false, keyFile = true))
 
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.EditPassword)
+        val (state, _) = perform({ onLoad() }, { onEditPassword() })
 
         assertEquals(PasswordDialog(needsCurrent = false), state.passwordDialog)
     }
@@ -168,7 +169,7 @@ class SecurityProcessorTest {
     fun `a new password over the limit is not taken`() = runTest {
         val tooLong = "a".repeat(CredentialLimits.PASSWORD_MAX_CHARS + 1)
 
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.EditPassword, SecurityAction.NewPasswordChanged(tooLong))
+        val (state, _) = perform({ onLoad() }, { onEditPassword() }, { onNewPasswordChange(tooLong) })
 
         assertEquals("", state.passwordDialog?.password)
         assertEquals(true, state.passwordDialog?.tooLong)
@@ -177,12 +178,12 @@ class SecurityProcessorTest {
     @Test
     fun `a short password cannot be saved`() = runTest {
         val (state, _) = perform(
-            SecurityAction.Load,
-            SecurityAction.EditPassword,
-            SecurityAction.CurrentPasswordChanged(CURRENT),
-            SecurityAction.NewPasswordChanged("short"),
-            SecurityAction.ConfirmPasswordChanged("short"),
-            SecurityAction.SavePassword,
+            { onLoad() },
+            { onEditPassword() },
+            { onCurrentPasswordChange(CURRENT) },
+            { onNewPasswordChange("short") },
+            { onConfirmPasswordChange("short") },
+            { onSavePassword() },
         )
 
         assertEquals(false, state.passwordDialog?.canSave)
@@ -191,7 +192,7 @@ class SecurityProcessorTest {
 
     @Test
     fun `a new password is saved, the dialog closes and the row says set`() = runTest {
-        val (state, _) = perform(*typed(CURRENT), SecurityAction.SavePassword)
+        val (state, _) = perform(*typed(CURRENT), { onSavePassword() })
 
         assertNull(state.passwordDialog)
         assertEquals(SecurityMessage.PasswordSaved, state.message)
@@ -203,7 +204,7 @@ class SecurityProcessorTest {
     fun `a new password with biometrics on says they are off now`() = runTest {
         biometrics.passwords[DB] = CURRENT
 
-        val (state, _) = perform(*typed(CURRENT), SecurityAction.SavePassword)
+        val (state, _) = perform(*typed(CURRENT), { onSavePassword() })
 
         assertEquals(SecurityMessage.PasswordSavedBiometricsOff, state.message)
         assertEquals(listOf("forget $DB"), journal)
@@ -211,7 +212,7 @@ class SecurityProcessorTest {
 
     @Test
     fun `a wrong current password keeps the dialog and says so`() = runTest {
-        val (state, _) = perform(*typed("not it"), SecurityAction.SavePassword)
+        val (state, _) = perform(*typed("not it"), { onSavePassword() })
 
         assertEquals(true, state.passwordDialog?.wrongCurrent)
         assertEquals(false, state.passwordDialog?.saving)
@@ -220,7 +221,7 @@ class SecurityProcessorTest {
 
     @Test
     fun `the current password typed again takes the wrong one away`() = runTest {
-        val (state, _) = perform(*typed("not it"), SecurityAction.SavePassword, SecurityAction.CurrentPasswordChanged(CURRENT))
+        val (state, _) = perform(*typed("not it"), { onSavePassword() }, { onCurrentPasswordChange(CURRENT) })
 
         assertEquals(false, state.passwordDialog?.wrongCurrent)
     }
@@ -229,7 +230,7 @@ class SecurityProcessorTest {
     fun `a new password not written closes the dialog and says not saved`() = runTest {
         database.saveFailure = IOException("provider gone")
 
-        val (state, _) = perform(*typed(CURRENT), SecurityAction.SavePassword)
+        val (state, _) = perform(*typed(CURRENT), { onSavePassword() })
 
         assertNull(state.passwordDialog)
         assertEquals(SecurityMessage.NotSaved, state.message)
@@ -238,11 +239,11 @@ class SecurityProcessorTest {
     @Test
     fun `the eye of a field shows that one alone`() = runTest {
         val (state, _) = perform(
-            SecurityAction.Load,
-            SecurityAction.EditPassword,
-            SecurityAction.TogglePasswordVisible(PasswordInput.New),
-            SecurityAction.TogglePasswordVisible(PasswordInput.Confirm),
-            SecurityAction.TogglePasswordVisible(PasswordInput.Confirm),
+            { onLoad() },
+            { onEditPassword() },
+            { onTogglePasswordVisible(PasswordInput.New) },
+            { onTogglePasswordVisible(PasswordInput.Confirm) },
+            { onTogglePasswordVisible(PasswordInput.Confirm) },
         )
 
         assertEquals(setOf(PasswordInput.New), state.passwordDialog?.visible)
@@ -250,7 +251,7 @@ class SecurityProcessorTest {
 
     @Test
     fun `the dialog dismissed changes nothing`() = runTest {
-        val (state, _) = perform(*typed(CURRENT), SecurityAction.DismissPassword)
+        val (state, _) = perform(*typed(CURRENT), { onDismissPassword() })
 
         assertNull(state.passwordDialog)
         assertEquals(emptyList<String>(), database.calls)
@@ -260,7 +261,7 @@ class SecurityProcessorTest {
 
     @Test
     fun `a key file picked is set, written and its name shown`() = runTest {
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.KeyFilePicked(KEY))
+        val (state, _) = perform({ onLoad() }, { onKeyFilePicked(KEY) })
 
         assertEquals("home.keyx", state.security?.keyFileName)
         assertEquals(true, state.security?.credentials?.keyFile)
@@ -273,7 +274,7 @@ class SecurityProcessorTest {
     fun `a key file over the limit says so and changes nothing`() = runTest {
         security.keyFileFailure = SecurityFailure.KeyFileTooLarge()
 
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.KeyFilePicked(KEY))
+        val (state, _) = perform({ onLoad() }, { onKeyFilePicked(KEY) })
 
         assertNull(state.security?.keyFileName)
         assertEquals(SecurityMessage.KeyFileTooLarge, state.message)
@@ -284,7 +285,7 @@ class SecurityProcessorTest {
     fun `a key file that cannot be read says so`() = runTest {
         security.keyFileFailure = SecurityFailure.KeyFileUnreadable()
 
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.KeyFilePicked(KEY))
+        val (state, _) = perform({ onLoad() }, { onKeyFilePicked(KEY) })
 
         assertEquals(SecurityMessage.KeyFileUnreadable, state.message)
     }
@@ -293,7 +294,7 @@ class SecurityProcessorTest {
     fun `a key file saved but not remembered says to pick it at sign-in`() = runTest {
         remembered.failure = IOException("store gone")
 
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.KeyFilePicked(KEY))
+        val (state, _) = perform({ onLoad() }, { onKeyFilePicked(KEY) })
 
         assertEquals("home.keyx", state.security?.keyFileName)
         assertEquals(SecurityMessage.KeyFileNotRemembered, state.message)
@@ -303,7 +304,7 @@ class SecurityProcessorTest {
     fun `remove asks first`() = runTest {
         security.security = security.security.copy(credentials = CredentialsUsed(password = true, keyFile = true))
 
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.RemoveKeyFile)
+        val (state, _) = perform({ onLoad() }, { onRemoveKeyFile() })
 
         assertTrue(state.removingKeyFile)
         assertEquals(emptyList<String>(), database.calls)
@@ -316,7 +317,7 @@ class SecurityProcessorTest {
             keyFileName = "home.keyx",
         )
 
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.RemoveKeyFile, SecurityAction.RemoveKeyFileConfirm)
+        val (state, _) = perform({ onLoad() }, { onRemoveKeyFile() }, { onRemoveKeyFileConfirm() })
 
         assertFalse(state.removingKeyFile)
         assertNull(state.security?.keyFileName)
@@ -329,7 +330,7 @@ class SecurityProcessorTest {
     fun `the only key file is not offered to remove`() = runTest {
         security.security = security.security.copy(credentials = CredentialsUsed(password = false, keyFile = true))
 
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.RemoveKeyFile)
+        val (state, _) = perform({ onLoad() }, { onRemoveKeyFile() })
 
         assertFalse(state.removingKeyFile)
     }
@@ -338,47 +339,43 @@ class SecurityProcessorTest {
     fun `remove dismissed changes nothing`() = runTest {
         security.security = security.security.copy(credentials = CredentialsUsed(password = true, keyFile = true))
 
-        val (state, _) = perform(SecurityAction.Load, SecurityAction.RemoveKeyFile, SecurityAction.RemoveKeyFileDismiss)
+        val (state, _) = perform({ onLoad() }, { onRemoveKeyFile() }, { onRemoveKeyFileDismiss() })
 
         assertFalse(state.removingKeyFile)
         assertEquals(emptyList<String>(), database.calls)
     }
 
     /** The screen read, the dialog open, [current] and a new password typed twice. */
-    private fun typed(current: String): Array<Any> = arrayOf(
-        SecurityAction.Load,
-        SecurityAction.EditPassword,
-        SecurityAction.CurrentPasswordChanged(current),
-        SecurityAction.NewPasswordChanged(NEW),
-        SecurityAction.ConfirmPasswordChanged(NEW),
+    private fun typed(current: String): Array<SecurityActions.() -> Unit> = arrayOf(
+        { onLoad() },
+        { onEditPassword() },
+        { onCurrentPasswordChange(current) },
+        { onNewPasswordChange(NEW) },
+        { onConfirmPasswordChange(NEW) },
     )
 
     @Test
     fun `back goes back`() = runTest {
-        val (_, events) = perform(SecurityAction.Back)
+        val (_, events) = perform({ onBack() })
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)
     }
 
-    private suspend fun TestScope.perform(vararg steps: Any): Pair<SecurityState, List<MviNavEvent>> {
+    private suspend fun TestScope.perform(vararg actions: SecurityActions.() -> Unit): Pair<SecurityState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val editor = SecurityEditor(security, database, biometrics, remembered)
         val processor = SecurityProcessor(DB, security, editor, biometrics, navigator, log)
 
         processor.testWithInternalState(this) {
-            steps.forEach { step ->
-                when (step) {
-                    is SecurityAction -> containerHost.action(step).join()
-                    is FailNext -> step.security.failure = SecurityFailure.Unexpected()
-                }
-            }
+            containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events
     }
 
     /** From here on the core refuses - after the screen read what it shows. */
-    private class FailNext(val security: FakeSecurityRepository)
+    private fun failNext(security: FakeSecurityRepository): SecurityActions.() -> Unit =
+        { security.failure = SecurityFailure.Unexpected() }
 
     private companion object {
         const val DB = "content://docs/passwords.kdbx"

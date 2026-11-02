@@ -1,13 +1,13 @@
 package ru.kino.dev.settings.pres.security
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
-import ru.kino.dev.core.DatabaseSecurity
+import ru.kino.dev.core.Cipher
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.Encryption
+import ru.kino.dev.core.KdfVariant
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
@@ -17,25 +17,6 @@ import ru.kino.dev.settings.biometric.BiometricRepository
 import ru.kino.dev.vault.security.SecurityEditor
 import ru.kino.dev.vault.security.SecurityFailure
 import ru.kino.dev.vault.security.SecurityRepository
-
-/**
- * @param security the security of the database; null until read - the screen is a skeleton meanwhile
- * @param kdfPass one KDF pass on this phone, for the open time
- * @param choosingRounds the wheel of the rounds, while open
- * @param passwordDialog the dialog of the master password, while open
- * @param removingKeyFile "remove the key file?", while asked
- * @param saving the part written into the file - every row waits, that one shows progress
- * @param message for the snackbar, until it takes it
- */
-data class SecurityState(
-    val security: DatabaseSecurity? = null,
-    val kdfPass: KdfPass = KdfPass.Measuring,
-    val choosingRounds: Boolean = false,
-    val passwordDialog: PasswordDialog? = null,
-    val removingKeyFile: Boolean = false,
-    val saving: SecurityPart? = null,
-    val message: SecurityMessage? = null,
-)
 
 /**
  * The security of the database [dbKey] (pass-docs, Step 67): the credentials, the cipher and the key derivation.
@@ -55,103 +36,144 @@ class SecurityProcessor(
     private val biometrics: BiometricRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<SecurityState, SecurityState, Nothing> {
+) : ViewModel(), OrbitContainerHost<SecurityState, SecurityState, Nothing>, SecurityActions {
 
     override val container = orbitContainer<SecurityState, Nothing>(SecurityState())
 
-    fun action(action: SecurityAction): Job = when (action) {
-        is SecurityAction.CurrentPasswordChanged -> textIntent {
-            reduce { state.editPassword { it.copy(current = action.password, wrongCurrent = false) } }
+    override fun onCurrentPasswordChange(password: String) {
+        textIntent {
+            reduce { state.editPassword { it.copy(current = password, wrongCurrent = false) } }
         }
+    }
 
-        is SecurityAction.NewPasswordChanged -> textIntent {
+    override fun onNewPasswordChange(password: String) {
+        textIntent {
             reduce {
                 state.editPassword {
-                    if (CredentialLimits.isPasswordTooLong(action.password)) {
+                    if (CredentialLimits.isPasswordTooLong(password)) {
                         it.copy(tooLong = true)
                     } else {
-                        it.copy(password = action.password, tooLong = false)
+                        it.copy(password = password, tooLong = false)
                     }
                 }
             }
         }
+    }
 
-        is SecurityAction.ConfirmPasswordChanged -> textIntent {
+    override fun onConfirmPasswordChange(password: String) {
+        textIntent {
             reduce {
                 state.editPassword {
-                    if (CredentialLimits.isPasswordTooLong(action.password)) it else it.copy(confirm = action.password)
+                    if (CredentialLimits.isPasswordTooLong(password)) it else it.copy(confirm = password)
                 }
             }
         }
-
-        else -> intent { handle(action) }
     }
 
-    private suspend fun Syntax<SecurityState, Nothing>.handle(action: SecurityAction) {
-        when (action) {
-            is SecurityAction.CurrentPasswordChanged,
-            is SecurityAction.NewPasswordChanged,
-            is SecurityAction.ConfirmPasswordChanged,
-            -> Unit // in action()
+    override fun onLoad() {
+        intent { load() }
+    }
 
-            SecurityAction.Load -> load()
+    override fun onBack() {
+        intent { navigator.navigate(MviNavEvent.NavigateBack) }
+    }
 
-            SecurityAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
+    override fun onSelectCipher(cipher: Cipher) {
+        intent { changeEncryption(SecurityPart.Cipher) { it.copy(cipher = cipher) } }
+    }
 
-            is SecurityAction.SelectCipher -> changeEncryption(SecurityPart.Cipher) { it.copy(cipher = action.cipher) }
+    override fun onSelectKdf(kdf: KdfVariant) {
+        intent { changeEncryption(SecurityPart.Kdf) { it.copy(kdf = kdf) } }
+    }
 
-            is SecurityAction.SelectKdf -> changeEncryption(SecurityPart.Kdf) { it.copy(kdf = action.kdf) }
-
-            SecurityAction.ChooseRounds -> if (state.security != null && state.saving == null) {
+    override fun onChooseRounds() {
+        intent {
+            if (state.security != null && state.saving == null) {
                 reduce { state.copy(choosingRounds = true) }
             }
+        }
+    }
 
-            is SecurityAction.SelectRounds -> {
-                reduce { state.copy(choosingRounds = false) }
-                // The wheel opens on ours for rounds of a database from elsewhere: saving where it opened is a change
-                changeEncryption(SecurityPart.Rounds) { it.copy(iterations = action.rounds) }
-            }
+    override fun onSelectRounds(rounds: Long) {
+        intent {
+            reduce { state.copy(choosingRounds = false) }
+            // The wheel opens on ours for rounds of a database from elsewhere: saving where it opened is a change
+            changeEncryption(SecurityPart.Rounds) { it.copy(iterations = rounds) }
+        }
+    }
 
-            SecurityAction.DismissRounds -> reduce { state.copy(choosingRounds = false) }
+    override fun onDismissRounds() {
+        intent { reduce { state.copy(choosingRounds = false) } }
+    }
 
-            SecurityAction.EditPassword -> state.security?.let { security ->
+    override fun onEditPassword() {
+        intent {
+            state.security?.let { security ->
                 if (state.saving == null) {
                     reduce { state.copy(passwordDialog = PasswordDialog(needsCurrent = security.credentials.password)) }
                 }
             }
+        }
+    }
 
-            SecurityAction.ConfirmPasswordLeft -> reduce { state.editPassword { it.copy(confirmLeft = true) } }
+    override fun onConfirmPasswordLeft() {
+        intent { reduce { state.editPassword { it.copy(confirmLeft = true) } } }
+    }
 
-            is SecurityAction.TogglePasswordVisible -> reduce {
+    override fun onTogglePasswordVisible(field: PasswordInput) {
+        intent {
+            reduce {
                 state.editPassword {
-                    it.copy(visible = if (action.field in it.visible) it.visible - action.field else it.visible + action.field)
+                    it.copy(visible = if (field in it.visible) it.visible - field else it.visible + field)
                 }
             }
+        }
+    }
 
-            SecurityAction.SavePassword -> savePassword()
+    override fun onSavePassword() {
+        intent { savePassword() }
+    }
 
-            SecurityAction.DismissPassword -> if (state.passwordDialog?.saving == false) {
+    override fun onDismissPassword() {
+        intent {
+            if (state.passwordDialog?.saving == false) {
                 reduce { state.copy(passwordDialog = null) }
             }
+        }
+    }
 
-            is SecurityAction.KeyFilePicked -> changeKeyFile(SecurityMessage.KeyFileSaved) {
-                editor.setKeyFile(dbKey, action.uri)
+    override fun onKeyFilePicked(uri: String) {
+        intent {
+            changeKeyFile(SecurityMessage.KeyFileSaved) {
+                editor.setKeyFile(dbKey, uri)
             }
+        }
+    }
 
-            // Only from a database with a password: the screen offers it no other
-            SecurityAction.RemoveKeyFile -> if (state.security?.credentials?.password == true && state.saving == null) {
+    override fun onRemoveKeyFile() {
+        // Only from a database with a password: the screen offers it no other
+        intent {
+            if (state.security?.credentials?.password == true && state.saving == null) {
                 reduce { state.copy(removingKeyFile = true) }
             }
+        }
+    }
 
-            SecurityAction.RemoveKeyFileConfirm -> if (state.removingKeyFile) {
+    override fun onRemoveKeyFileConfirm() {
+        intent {
+            if (state.removingKeyFile) {
                 reduce { state.copy(removingKeyFile = false) }
                 changeKeyFile(SecurityMessage.KeyFileRemoved) { editor.removeKeyFile(dbKey) }
             }
-
-            SecurityAction.RemoveKeyFileDismiss -> reduce { state.copy(removingKeyFile = false) }
-
-            SecurityAction.MessageShown -> reduce { state.copy(message = null) }
         }
+    }
+
+    override fun onRemoveKeyFileDismiss() {
+        intent { reduce { state.copy(removingKeyFile = false) } }
+    }
+
+    override fun onMessageShown() {
+        intent { reduce { state.copy(message = null) } }
     }
 
     /**

@@ -23,6 +23,7 @@ import ru.kino.dev.core.preset.PresetProblem
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
+import ru.kino.dev.settings.pres.testing.runEach
 
 class PresetEditProcessorTest {
 
@@ -40,10 +41,10 @@ class PresetEditProcessorTest {
     @Test
     fun `a field added goes last in its card, without the spaces around its name`() = runTest {
         val (state, _) = perform(
-            PresetEditAction.AddCard,
-            PresetEditAction.AddField(card = 1),
-            PresetEditAction.DialogNameChanged(" CVC "),
-            PresetEditAction.DialogConfirm,
+            { onAddCard() },
+            { onAddField(card = 1) },
+            { onDialogNameChange(" CVC ") },
+            { onDialogConfirm() },
         )
 
         assertEquals(listOf(emptyList(), listOf("CVC")), state.cards)
@@ -54,9 +55,9 @@ class PresetEditProcessorTest {
     @Test
     fun `a field named as one every preset has stays in the dialog with the reason`() = runTest {
         val (state, _) = perform(
-            PresetEditAction.AddField(card = 0),
-            PresetEditAction.DialogNameChanged("password"),
-            PresetEditAction.DialogConfirm,
+            { onAddField(card = 0) },
+            { onDialogNameChange("password") },
+            { onDialogConfirm() },
         )
 
         assertEquals(PresetEditDialog.AddField(0, "password", problem = FieldNameProblem.TAKEN), state.dialog)
@@ -66,10 +67,10 @@ class PresetEditProcessorTest {
     fun `a field named as one of another card stays in the dialog`() = runTest {
         val (state, _) = perform(
             *addField(0, "PIN"),
-            PresetEditAction.AddCard,
-            PresetEditAction.AddField(card = 1),
-            PresetEditAction.DialogNameChanged("pin"),
-            PresetEditAction.DialogConfirm,
+            { onAddCard() },
+            { onAddField(card = 1) },
+            { onDialogNameChange("pin") },
+            { onDialogConfirm() },
         )
 
         assertEquals(FieldNameProblem.TAKEN, (state.dialog as PresetEditDialog.AddField).problem)
@@ -80,9 +81,9 @@ class PresetEditProcessorTest {
         val (state, _) = perform(
             *addField(0, "PIN"),
             *addField(0, "Bank"),
-            PresetEditAction.EditField(FieldPosition(0, 0)),
-            PresetEditAction.DialogNameChanged("pin code"),
-            PresetEditAction.DialogConfirm,
+            { onEditField(FieldPosition(0, 0)) },
+            { onDialogNameChange("pin code") },
+            { onDialogConfirm() },
         )
 
         assertEquals(listOf(listOf("pin code", "Bank")), state.cards)
@@ -105,7 +106,7 @@ class PresetEditProcessorTest {
 
     @Test
     fun `edit opens with the name and the protection of the field`() = runTest {
-        val (state, _) = perform(*addField(0, "PIN", protected = true), PresetEditAction.EditField(FieldPosition(0, 0)))
+        val (state, _) = perform(*addField(0, "PIN", protected = true), { onEditField(FieldPosition(0, 0)) })
 
         assertEquals(PresetEditDialog.EditField(FieldPosition(0, 0), "PIN", protected = true, type = null), state.dialog)
     }
@@ -114,9 +115,9 @@ class PresetEditProcessorTest {
     fun `a field renamed keeps its protection under the new name`() = runTest {
         val (state, _) = perform(
             *addField(0, "PIN", protected = true),
-            PresetEditAction.EditField(FieldPosition(0, 0)),
-            PresetEditAction.DialogNameChanged("Code"),
-            PresetEditAction.DialogConfirm,
+            { onEditField(FieldPosition(0, 0)) },
+            { onDialogNameChange("Code") },
+            { onDialogConfirm() },
         )
 
         assertEquals(setOf("Code"), state.protectedKeys)
@@ -126,9 +127,9 @@ class PresetEditProcessorTest {
     fun `a field edited takes the protection switched`() = runTest {
         val (state, _) = perform(
             *addField(0, "PIN", protected = true),
-            PresetEditAction.EditField(FieldPosition(0, 0)),
-            PresetEditAction.DialogProtectedChanged(false),
-            PresetEditAction.DialogConfirm,
+            { onEditField(FieldPosition(0, 0)) },
+            { onDialogProtectedChange(false) },
+            { onDialogConfirm() },
         )
 
         assertEquals(listOf(listOf("PIN")), state.cards)
@@ -139,8 +140,8 @@ class PresetEditProcessorTest {
     fun `a field deleted takes its protection with it`() = runTest {
         val (state, _) = perform(
             *addField(0, "PIN", protected = true),
-            PresetEditAction.DeleteField(FieldPosition(0, 0)),
-            PresetEditAction.DialogConfirm,
+            { onDeleteField(FieldPosition(0, 0)) },
+            { onDialogConfirm() },
         )
 
         assertTrue(state.protectedKeys.isEmpty())
@@ -149,10 +150,10 @@ class PresetEditProcessorTest {
     @Test
     fun `a card deleted takes the protection of its fields with it`() = runTest {
         val (state, _) = perform(
-            PresetEditAction.AddCard,
+            { onAddCard() },
             *addField(1, "CVC", protected = true),
-            PresetEditAction.DeleteCard(1),
-            PresetEditAction.DialogConfirm,
+            { onDeleteCard(1) },
+            { onDialogConfirm() },
         )
 
         assertTrue(state.protectedKeys.isEmpty())
@@ -160,7 +161,7 @@ class PresetEditProcessorTest {
 
     @Test
     fun `a field deleted asks first, naming it`() = runTest {
-        val (state, _) = perform(*addField(0, "PIN"), PresetEditAction.DeleteField(FieldPosition(0, 0)))
+        val (state, _) = perform(*addField(0, "PIN"), { onDeleteField(FieldPosition(0, 0)) })
 
         assertEquals(PresetEditDialog.DeleteField(FieldPosition(0, 0), "PIN"), state.dialog)
     }
@@ -170,8 +171,8 @@ class PresetEditProcessorTest {
         val (state, _) = perform(
             *addField(0, "PIN"),
             *addField(0, "Bank"),
-            PresetEditAction.DeleteField(FieldPosition(0, 0)),
-            PresetEditAction.DialogConfirm,
+            { onDeleteField(FieldPosition(0, 0)) },
+            { onDialogConfirm() },
         )
 
         assertEquals(listOf(listOf("Bank")), state.cards)
@@ -181,15 +182,15 @@ class PresetEditProcessorTest {
     fun `a full card takes no more fields, a field deleted makes room again`() = runTest {
         val full = (1..10).flatMap { addField(0, "F$it").toList() }.toTypedArray()
 
-        val (state, _) = perform(*full, PresetEditAction.AddField(card = 0))
+        val (state, _) = perform(*full, { onAddField(card = 0) })
 
         assertFalse(state.canAddField(0))
         assertNull(state.dialog)
 
         val (after, _) = perform(
             *full,
-            PresetEditAction.DeleteField(FieldPosition(0, 0)),
-            PresetEditAction.DialogConfirm,
+            { onDeleteField(FieldPosition(0, 0)) },
+            { onDialogConfirm() },
         )
 
         assertTrue(after.canAddField(0))
@@ -197,7 +198,7 @@ class PresetEditProcessorTest {
 
     @Test
     fun `a preset of 6 cards takes no more`() = runTest {
-        val (state, _) = perform(*Array(6) { PresetEditAction.AddCard })
+        val (state, _) = perform(*Array(6) { { onAddCard() } })
 
         assertEquals(6, state.cards.size)
         assertFalse(state.canAddCard)
@@ -206,9 +207,9 @@ class PresetEditProcessorTest {
     @Test
     fun `a card deleted from a full preset makes room again`() = runTest {
         val (state, _) = perform(
-            *Array(5) { PresetEditAction.AddCard },
-            PresetEditAction.DeleteCard(1),
-            PresetEditAction.DialogConfirm,
+            *Array(5) { { onAddCard() } },
+            { onDeleteCard(1) },
+            { onDialogConfirm() },
         )
 
         assertEquals(5, state.cards.size)
@@ -218,10 +219,10 @@ class PresetEditProcessorTest {
     @Test
     fun `a card added is deleted after asking, with its fields`() = runTest {
         val (state, _) = perform(
-            PresetEditAction.AddCard,
+            { onAddCard() },
             *addField(1, "CVC"),
-            PresetEditAction.DeleteCard(1),
-            PresetEditAction.DialogConfirm,
+            { onDeleteCard(1) },
+            { onDialogConfirm() },
         )
 
         assertEquals(listOf(emptyList<String>()), state.cards)
@@ -229,7 +230,7 @@ class PresetEditProcessorTest {
 
     @Test
     fun `the first card is not deleted`() = runTest {
-        val (state, _) = perform(PresetEditAction.DeleteCard(0))
+        val (state, _) = perform({ onDeleteCard(0) })
 
         assertNull(state.dialog)
     }
@@ -237,10 +238,10 @@ class PresetEditProcessorTest {
     @Test
     fun `a preset saved is made from the form and the screen goes back`() = runTest {
         val (_, events) = perform(
-            PresetEditAction.NameChanged("Card"),
-            PresetEditAction.AddCard,
+            { onNameChange("Card") },
+            { onAddCard() },
             *addField(1, "CVC"),
-            PresetEditAction.Save(STANDARD),
+            { onSave(STANDARD) },
         )
 
         val made = repository.presets.first().single()
@@ -251,7 +252,7 @@ class PresetEditProcessorTest {
 
     @Test
     fun `a preset without a name is refused, the name marked, and the screen stays`() = runTest {
-        val (state, events) = perform(PresetEditAction.Save(STANDARD))
+        val (state, events) = perform({ onSave(STANDARD) })
 
         assertEquals(PresetNameProblem.EMPTY, state.nameProblem)
         assertFalse(state.saving)
@@ -260,14 +261,14 @@ class PresetEditProcessorTest {
 
     @Test
     fun `the name of the standard preset is taken`() = runTest {
-        val (state, _) = perform(PresetEditAction.NameChanged("стандарт"), PresetEditAction.Save(STANDARD))
+        val (state, _) = perform({ onNameChange("стандарт") }, { onSave(STANDARD) })
 
         assertEquals(PresetNameProblem.TAKEN, state.nameProblem)
     }
 
     @Test
     fun `typing the name takes its mark off`() = runTest {
-        val (state, _) = perform(PresetEditAction.Save(STANDARD), PresetEditAction.NameChanged("C"))
+        val (state, _) = perform({ onSave(STANDARD) }, { onNameChange("C") })
 
         assertNull(state.nameProblem)
     }
@@ -276,7 +277,7 @@ class PresetEditProcessorTest {
     fun `no tenth preset of one's own - said in the snackbar`() = runTest {
         repeat(9) { repository.save(CustomPreset.of(PresetId("$it"), "P$it", listOf(emptyList()))) }
 
-        val (state, _) = perform(PresetEditAction.NameChanged("New"), PresetEditAction.Save(STANDARD))
+        val (state, _) = perform({ onNameChange("New") }, { onSave(STANDARD) })
 
         assertEquals(PresetEditMessage.TooMany, state.message)
         assertEquals(emptyList<PresetProblem>(), state.problems)
@@ -286,7 +287,7 @@ class PresetEditProcessorTest {
     fun `a store that fails says so, goes to the log and keeps the form`() = runTest {
         repository.failure = PresetFailure.NotSaved()
 
-        val (state, _) = perform(PresetEditAction.NameChanged("Card"), PresetEditAction.Save(STANDARD))
+        val (state, _) = perform({ onNameChange("Card") }, { onSave(STANDARD) })
 
         assertEquals(PresetEditMessage.NotSaved, state.message)
         assertEquals("Card", state.name)
@@ -295,7 +296,7 @@ class PresetEditProcessorTest {
 
     @Test
     fun `back from an untouched form leaves at once`() = runTest {
-        val (_, events) = perform(PresetEditAction.Back)
+        val (_, events) = perform({ onBack() })
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)
     }
@@ -303,9 +304,9 @@ class PresetEditProcessorTest {
     @Test
     fun `back from a changed form asks first, and leave goes without saving`() = runTest {
         val (_, events) = perform(
-            PresetEditAction.NameChanged("Card"),
-            PresetEditAction.Back,
-            PresetEditAction.DialogConfirm,
+            { onNameChange("Card") },
+            { onBack() },
+            { onDialogConfirm() },
         )
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)
@@ -316,7 +317,7 @@ class PresetEditProcessorTest {
     fun `a preset edited is read into the form, nothing changed`() = runTest {
         repository.save(CARD)
 
-        val (state, _) = perform(PresetEditAction.Load, presetId = CARD_ID)
+        val (state, _) = perform({ onLoad() }, presetId = CARD_ID)
 
         assertTrue(state.editing)
         assertFalse(state.loading)
@@ -327,7 +328,7 @@ class PresetEditProcessorTest {
 
     @Test
     fun `a preset gone before it is read leaves at once`() = runTest {
-        val (_, events) = perform(PresetEditAction.Load, presetId = CARD_ID)
+        val (_, events) = perform({ onLoad() }, presetId = CARD_ID)
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)
     }
@@ -336,7 +337,7 @@ class PresetEditProcessorTest {
     fun `an edit that adds a field saves under the same id and goes back`() = runTest {
         repository.save(CARD)
 
-        val (_, events) = perform(PresetEditAction.Load, *addField(1, "PIN"), PresetEditAction.Save(STANDARD), presetId = CARD_ID)
+        val (_, events) = perform({ onLoad() }, *addField(1, "PIN"), { onSave(STANDARD) }, presetId = CARD_ID)
 
         val saved = repository.presets.first().single()
         assertEquals(PresetId(CARD_ID), saved.id)
@@ -349,10 +350,10 @@ class PresetEditProcessorTest {
         repository.save(CARD)
 
         val (state, events) = perform(
-            PresetEditAction.Load,
-            PresetEditAction.DeleteCard(1),
-            PresetEditAction.DialogConfirm,
-            PresetEditAction.Save(STANDARD),
+            { onLoad() },
+            { onDeleteCard(1) },
+            { onDialogConfirm() },
+            { onSave(STANDARD) },
             presetId = CARD_ID,
         )
 
@@ -366,12 +367,12 @@ class PresetEditProcessorTest {
         repository.save(CARD)
 
         val (_, events) = perform(
-            PresetEditAction.Load,
-            PresetEditAction.EditField(FieldPosition(0, 0)),
-            PresetEditAction.DialogNameChanged("Issuer"),
-            PresetEditAction.DialogConfirm,
-            PresetEditAction.Save(STANDARD),
-            PresetEditAction.DialogConfirm,
+            { onLoad() },
+            { onEditField(FieldPosition(0, 0)) },
+            { onDialogNameChange("Issuer") },
+            { onDialogConfirm() },
+            { onSave(STANDARD) },
+            { onDialogConfirm() },
             presetId = CARD_ID,
         )
 
@@ -383,7 +384,7 @@ class PresetEditProcessorTest {
     fun `an edit reads the protection of the fields, nothing changed`() = runTest {
         repository.save(CARD_PROTECTED)
 
-        val (state, _) = perform(PresetEditAction.Load, presetId = CARD_ID)
+        val (state, _) = perform({ onLoad() }, presetId = CARD_ID)
 
         assertEquals(setOf("CVC"), state.protectedKeys)
         assertFalse(state.changed)
@@ -394,11 +395,11 @@ class PresetEditProcessorTest {
         repository.save(CARD)
 
         val (_, events) = perform(
-            PresetEditAction.Load,
-            PresetEditAction.EditField(FieldPosition(1, 0)),
-            PresetEditAction.DialogProtectedChanged(true),
-            PresetEditAction.DialogConfirm,
-            PresetEditAction.Save(STANDARD),
+            { onLoad() },
+            { onEditField(FieldPosition(1, 0)) },
+            { onDialogProtectedChange(true) },
+            { onDialogConfirm() },
+            { onSave(STANDARD) },
             presetId = CARD_ID,
         )
 
@@ -412,7 +413,7 @@ class PresetEditProcessorTest {
     fun `an edit reads the types of the fields, nothing changed`() = runTest {
         repository.save(CARD_TYPED)
 
-        val (state, _) = perform(PresetEditAction.Load, PresetEditAction.EditField(FieldPosition(1, 0)), presetId = CARD_ID)
+        val (state, _) = perform({ onLoad() }, { onEditField(FieldPosition(1, 0)) }, presetId = CARD_ID)
 
         assertEquals(mapOf("CVC" to "card"), state.fieldTypes)
         assertEquals(PresetEditDialog.EditField(FieldPosition(1, 0), "CVC", protected = false, type = "card"), state.dialog)
@@ -424,13 +425,13 @@ class PresetEditProcessorTest {
         repository.save(CARD_TYPED)
 
         perform(
-            PresetEditAction.Load,
-            PresetEditAction.EditField(FieldPosition(1, 0)),
-            PresetEditAction.DialogNameChanged("Code"),
-            PresetEditAction.DialogConfirm,
-            PresetEditAction.Save(STANDARD),
+            { onLoad() },
+            { onEditField(FieldPosition(1, 0)) },
+            { onDialogNameChange("Code") },
+            { onDialogConfirm() },
+            { onSave(STANDARD) },
             // The old name is dropped from the preset: it asks first
-            PresetEditAction.DialogConfirm,
+            { onDialogConfirm() },
             presetId = CARD_ID,
         )
 
@@ -442,10 +443,10 @@ class PresetEditProcessorTest {
         repository.save(CARD_TYPED)
 
         val (state, _) = perform(
-            PresetEditAction.Load,
-            PresetEditAction.EditField(FieldPosition(1, 0)),
-            PresetEditAction.DialogTypeChanged(FieldType.TEXT),
-            PresetEditAction.DialogConfirm,
+            { onLoad() },
+            { onEditField(FieldPosition(1, 0)) },
+            { onDialogTypeChange(FieldType.TEXT) },
+            { onDialogConfirm() },
             presetId = CARD_ID,
         )
 
@@ -458,9 +459,9 @@ class PresetEditProcessorTest {
         repository.save(CARD_TYPED)
 
         val (state, _) = perform(
-            PresetEditAction.Load,
-            PresetEditAction.DeleteCard(1),
-            PresetEditAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteCard(1) },
+            { onDialogConfirm() },
             presetId = CARD_ID,
         )
 
@@ -472,7 +473,7 @@ class PresetEditProcessorTest {
         repository.save(CARD)
         repository.failure = PresetFailure.NotFound()
 
-        val (state, events) = perform(PresetEditAction.Load, *addField(1, "PIN"), PresetEditAction.Save(STANDARD), presetId = CARD_ID)
+        val (state, events) = perform({ onLoad() }, *addField(1, "PIN"), { onSave(STANDARD) }, presetId = CARD_ID)
 
         assertEquals(PresetEditMessage.Gone, state.message)
         assertFalse(state.saving)
@@ -480,16 +481,16 @@ class PresetEditProcessorTest {
         assertEquals(0, log.logged.size)
     }
 
-    private fun addField(card: Int, name: String, protected: Boolean = false) = arrayOf(
-        PresetEditAction.AddField(card),
-        PresetEditAction.DialogNameChanged(name),
-        PresetEditAction.DialogProtectedChanged(protected),
-        PresetEditAction.DialogConfirm,
+    private fun addField(card: Int, name: String, protected: Boolean = false) = arrayOf<PresetEditActions.() -> Unit>(
+        { onAddField(card) },
+        { onDialogNameChange(name) },
+        { onDialogProtectedChange(protected) },
+        { onDialogConfirm() },
     )
 
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(
-        vararg actions: PresetEditAction,
+        vararg actions: PresetEditActions.() -> Unit,
         presetId: String? = null,
     ): Pair<PresetEditState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
@@ -498,7 +499,7 @@ class PresetEditProcessorTest {
         val processor = PresetEditProcessor(presetId, repository, editor, navigator, log)
 
         processor.testWithInternalState(this) {
-            actions.forEach { containerHost.action(it).join() }
+            containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events

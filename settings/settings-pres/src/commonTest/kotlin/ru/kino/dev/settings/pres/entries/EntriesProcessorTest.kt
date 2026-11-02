@@ -18,6 +18,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.settings.appearance.FakeAppearanceRepository
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
+import ru.kino.dev.settings.pres.testing.runEach
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entries.EntrySettingsEditor
 import ru.kino.dev.vault.entries.EntrySettingsFailure
@@ -34,7 +35,7 @@ class EntriesProcessorTest {
 
     @Test
     fun `the screen shown reads the settings`() = runTest {
-        val (state, _) = perform(EntriesAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(settings.entries, state.entries)
         assertEquals(10, state.keptItems)
@@ -45,7 +46,7 @@ class EntriesProcessorTest {
     fun `settings that cannot be read say so and go to the log`() = runTest {
         settings.failure = EntrySettingsFailure.Unexpected()
 
-        val (state, _) = perform(EntriesAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertNull(state.entries)
         assertEquals(EntriesMessage.Failed, state.message)
@@ -56,7 +57,7 @@ class EntriesProcessorTest {
     fun `a hidden field switched on is written at once`() = runTest {
         val protection = FieldProtection.DEFAULT.copy(title = true)
 
-        val (state, _) = perform(EntriesAction.Load, EntriesAction.SetProtection(protection))
+        val (state, _) = perform({ onLoad() }, { onSetProtection(protection) })
 
         assertEquals(protection, state.entries?.protection)
         assertEquals(protection, settings.entries.protection)
@@ -66,7 +67,7 @@ class EntriesProcessorTest {
 
     @Test
     fun `the user name made private takes it out of the list`() = runTest {
-        perform(EntriesAction.Load, EntriesAction.SetProtection(FieldProtection.DEFAULT.copy(userName = true)))
+        perform({ onLoad() }, { onSetProtection(FieldProtection.DEFAULT.copy(userName = true)) })
 
         assertEquals(listOf(false), appearance.savedUserNameInList)
     }
@@ -75,21 +76,21 @@ class EntriesProcessorTest {
     fun `the user name made private but not written takes it out of the list too`() = runTest {
         database.saveFailure = IOException("provider gone")
 
-        perform(EntriesAction.Load, EntriesAction.SetProtection(FieldProtection.DEFAULT.copy(userName = true)))
+        perform({ onLoad() }, { onSetProtection(FieldProtection.DEFAULT.copy(userName = true)) })
 
         assertEquals(listOf(false), appearance.savedUserNameInList)
     }
 
     @Test
     fun `the user name refused by the core leaves the list as it was`() = runTest {
-        perform(EntriesAction.Load, FailNext(settings), EntriesAction.SetProtection(FieldProtection.DEFAULT.copy(userName = true)))
+        perform({ onLoad() }, failNext(settings), { onSetProtection(FieldProtection.DEFAULT.copy(userName = true)) })
 
         assertEquals(emptyList<Boolean>(), appearance.savedUserNameInList)
     }
 
     @Test
     fun `another field made private leaves the list as it was`() = runTest {
-        perform(EntriesAction.Load, EntriesAction.SetProtection(FieldProtection.DEFAULT.copy(url = true)))
+        perform({ onLoad() }, { onSetProtection(FieldProtection.DEFAULT.copy(url = true)) })
 
         assertEquals(emptyList<Boolean>(), appearance.savedUserNameInList)
     }
@@ -98,14 +99,14 @@ class EntriesProcessorTest {
     fun `the list not showing user names is not written again`() = runTest {
         appearance = FakeAppearanceRepository(initialUserNameInList = false)
 
-        perform(EntriesAction.Load, EntriesAction.SetProtection(FieldProtection.DEFAULT.copy(userName = true)))
+        perform({ onLoad() }, { onSetProtection(FieldProtection.DEFAULT.copy(userName = true)) })
 
         assertEquals(emptyList<Boolean>(), appearance.savedUserNameInList)
     }
 
     @Test
     fun `a higher limit is written without asking`() = runTest {
-        val (state, _) = perform(EntriesAction.Load, EntriesAction.SelectItems(20))
+        val (state, _) = perform({ onLoad() }, { onSelectItems(20) })
 
         assertNull(state.trimming)
         assertEquals(HistoryLimits(20, SIX_MB), settings.entries.history)
@@ -113,7 +114,7 @@ class EntriesProcessorTest {
 
     @Test
     fun `a lower limit asks first, nothing changed meanwhile`() = runTest {
-        val (state, _) = perform(EntriesAction.Load, EntriesAction.SelectItems(5))
+        val (state, _) = perform({ onLoad() }, { onSelectItems(5) })
 
         assertEquals(TrimDialog(HistoryLimits(5, SIX_MB), EntriesPart.Items), state.trimming)
         assertEquals(HistoryLimits(10, SIX_MB), settings.entries.history)
@@ -122,7 +123,7 @@ class EntriesProcessorTest {
 
     @Test
     fun `trim confirmed keeps the lower limit and writes the file`() = runTest {
-        val (state, _) = perform(EntriesAction.Load, EntriesAction.SelectSize(2 * MEGABYTE), EntriesAction.TrimConfirm)
+        val (state, _) = perform({ onLoad() }, { onSelectSize(2 * MEGABYTE) }, { onTrimConfirm() })
 
         assertNull(state.trimming)
         assertEquals(HistoryLimits(10, 2 * MEGABYTE), state.entries?.history)
@@ -132,7 +133,7 @@ class EntriesProcessorTest {
 
     @Test
     fun `trim dismissed keeps the limit as it was`() = runTest {
-        val (state, _) = perform(EntriesAction.Load, EntriesAction.SelectItems(5), EntriesAction.TrimDismiss)
+        val (state, _) = perform({ onLoad() }, { onSelectItems(5) }, { onTrimDismiss() })
 
         assertNull(state.trimming)
         assertEquals(HistoryLimits(10, SIX_MB), state.entries?.history)
@@ -141,7 +142,7 @@ class EntriesProcessorTest {
 
     @Test
     fun `no limit is written without asking`() = runTest {
-        val (state, _) = perform(EntriesAction.Load, EntriesAction.LimitItems(false))
+        val (state, _) = perform({ onLoad() }, { onLimitItems(false) })
 
         assertEquals(HistoryLimits(null, SIX_MB), settings.entries.history)
         assertEquals(10, state.keptItems)
@@ -151,7 +152,7 @@ class EntriesProcessorTest {
     fun `a limit switched on where there was none takes the default and asks first`() = runTest {
         settings.entries = settings.entries.copy(history = HistoryLimits(null, null))
 
-        val (state, _) = perform(EntriesAction.Load, EntriesAction.LimitSize(true))
+        val (state, _) = perform({ onLoad() }, { onLimitSize(true) })
 
         assertEquals(TrimDialog(HistoryLimits(null, 10 * MEGABYTE), EntriesPart.Size), state.trimming)
     }
@@ -160,7 +161,7 @@ class EntriesProcessorTest {
     fun `the change made but not written stays shown and says so`() = runTest {
         database.saveFailure = IOException("provider gone")
 
-        val (state, _) = perform(EntriesAction.Load, EntriesAction.SelectItems(20))
+        val (state, _) = perform({ onLoad() }, { onSelectItems(20) })
 
         assertEquals(HistoryLimits(20, SIX_MB), state.entries?.history)
         assertEquals(EntriesMessage.NotSaved, state.message)
@@ -172,9 +173,9 @@ class EntriesProcessorTest {
         val protection = FieldProtection.DEFAULT.copy(notes = true)
 
         val (state, _) = perform(
-            EntriesAction.Load,
-            FailNext(settings),
-            EntriesAction.SetProtection(protection),
+            { onLoad() },
+            failNext(settings),
+            { onSetProtection(protection) },
         )
 
         assertEquals(FieldProtection.DEFAULT, state.entries?.protection)
@@ -184,7 +185,7 @@ class EntriesProcessorTest {
 
     @Test
     fun `the wheel opens on the value tapped`() = runTest {
-        val (state, _) = perform(EntriesAction.Load, EntriesAction.Choose(HistoryLimit.Size))
+        val (state, _) = perform({ onLoad() }, { onChoose(HistoryLimit.Size) })
 
         assertEquals(HistoryLimit.Size, state.choosing)
     }
@@ -202,7 +203,7 @@ class EntriesProcessorTest {
 
     @Test
     fun `the prefix is read - not remembered, of the device`() = runTest {
-        val (state, _) = perform(EntriesAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(PhonePrefix(remember = false, region = "NL"), state.phone)
         assertEquals(listOf("NL"), phones.prepared)
@@ -210,7 +211,7 @@ class EntriesProcessorTest {
 
     @Test
     fun `remembering the prefix is kept`() = runTest {
-        perform(EntriesAction.Load, EntriesAction.RememberPrefix(true))
+        perform({ onLoad() }, { onRememberPrefix(true) })
 
         assertTrue(phoneSettings.rememberPrefix.first())
     }
@@ -219,7 +220,7 @@ class EntriesProcessorTest {
     fun `the prefix asks for the country while it is remembered`() = runTest {
         phoneSettings.saveRememberPrefix(true)
 
-        val (state, _) = perform(EntriesAction.Load, EntriesAction.ChoosePrefix)
+        val (state, _) = perform({ onLoad() }, { onChoosePrefix() })
 
         assertEquals(phones.countries(), state.phone?.countries)
     }
@@ -228,14 +229,14 @@ class EntriesProcessorTest {
     fun `the country chosen is kept and shown, the choice closed`() = runTest {
         phoneSettings.saveRememberPrefix(true)
 
-        val (state, _) = perform(EntriesAction.Load, EntriesAction.ChoosePrefix, EntriesAction.PrefixChosen("KZ"))
+        val (state, _) = perform({ onLoad() }, { onChoosePrefix() }, { onPrefixChosen("KZ") })
 
         assertEquals(PhonePrefix(remember = true, region = "KZ"), state.phone)
         assertEquals("KZ", phoneSettings.prefixRegion.first())
     }
 
-    /** Runs [steps] one after another on a new processor; the state they end in, and the navigation. */
-    private suspend fun TestScope.perform(vararg steps: Any): Pair<EntriesState, List<MviNavEvent>> {
+    /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
+    private suspend fun TestScope.perform(vararg actions: EntriesActions.() -> Unit): Pair<EntriesState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val processor = EntriesProcessor(
             DB,
@@ -250,19 +251,15 @@ class EntriesProcessorTest {
         )
 
         processor.testWithInternalState(this) {
-            steps.forEach { step ->
-                when (step) {
-                    is EntriesAction -> containerHost.action(step).join()
-                    is FailNext -> step.settings.failure = EntrySettingsFailure.Unexpected()
-                }
-            }
+            containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events
     }
 
     /** From here on the core refuses - after the screen read what it shows. */
-    private class FailNext(val settings: FakeEntrySettingsRepository)
+    private fun failNext(settings: FakeEntrySettingsRepository): EntriesActions.() -> Unit =
+        { settings.failure = EntrySettingsFailure.Unexpected() }
 
     private companion object {
         const val DB = "content://docs/passwords.kdbx"

@@ -1,10 +1,11 @@
 package ru.kino.dev.settings.pres.settings
 
-sealed interface SettingsAction {
+/** What the main settings screen is asked to do - done by [SettingsProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
+interface SettingsActions {
 
     /** "Back" in the top bar. */
-    data object Back : SettingsAction
+    fun onBack()
 
     /** A tap on a card: the screen behind it, when it is made (pass-docs, Step 55). */
-    data class Open(val item: SettingsItem) : SettingsAction
+    fun onOpen(item: SettingsItem)
 }

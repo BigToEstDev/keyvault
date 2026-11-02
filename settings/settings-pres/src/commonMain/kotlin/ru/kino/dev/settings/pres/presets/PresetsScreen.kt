@@ -52,7 +52,7 @@ internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
     val snackbar = remember { SnackbarHostState() }
 
     // Back from a preset made or edited, the list is read again
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.action(PresetsAction.Load) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onLoad() }
 
     val message = state.message?.let {
         stringResource(
@@ -62,7 +62,7 @@ internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(PresetsAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     val shown = state.usePresets == true
     GradientBackground {
@@ -72,13 +72,13 @@ internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
             topBar = {
                 BackTopBar(
                     title = stringResource(Res.string.settings_presets),
-                    onBack = { processor.action(PresetsAction.Back) },
+                    onBack = processor::onBack,
                 )
             },
             floatingActionButton = {
                 // Past the most presets a person has there is none; a preset deleted brings it back
                 if (shown && state.canCreate) {
-                    FloatingActionButton(onClick = { processor.action(PresetsAction.Create) }) {
+                    FloatingActionButton(onClick = processor::onCreate) {
                         Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.action_create))
                     }
                 }
@@ -111,7 +111,7 @@ internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
                             title = stringResource(Res.string.settings_use_presets),
                             text = stringResource(Res.string.settings_use_presets_hint),
                             checked = usePresets,
-                            onCheckedChange = { processor.action(PresetsAction.SetUsePresets(it)) },
+                            onCheckedChange = processor::onSetUsePresets,
                         )
                     }
                 }
@@ -123,8 +123,8 @@ internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
                         PresetCard(
                             name = presetName(preset),
                             menu = listOf(
-                                editMenuItem { preset.id?.let { processor.action(PresetsAction.Edit(it)) } },
-                                deleteMenuItem { processor.action(PresetsAction.Delete(preset)) },
+                                editMenuItem { preset.id?.let { processor.onEdit(it) } },
+                                deleteMenuItem { processor.onDelete(preset) },
                             ),
                         )
                     }
@@ -139,8 +139,8 @@ internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
             text = stringResource(Res.string.preset_delete_text),
             confirmText = stringResource(Res.string.action_delete),
             dismissText = stringResource(Res.string.action_cancel),
-            onConfirm = { processor.action(PresetsAction.DeleteConfirm) },
-            onDismiss = { processor.action(PresetsAction.DeleteDismiss) },
+            onConfirm = processor::onDeleteConfirm,
+            onDismiss = processor::onDeleteDismiss,
             destructive = true,
         )
     }

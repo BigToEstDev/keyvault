@@ -18,6 +18,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
+import ru.kino.dev.settings.pres.testing.runEach
 import ru.kino.dev.settings.presets.FakePresetSettingsRepository
 
 class PresetsProcessorTest {
@@ -27,7 +28,7 @@ class PresetsProcessorTest {
 
     @Test
     fun `the screen shown reads the switch and the presets`() = runTest {
-        val (state, _) = perform(FakePresetSettingsRepository(usePresets = false), PresetsAction.Load)
+        val (state, _) = perform(FakePresetSettingsRepository(usePresets = false), { onLoad() })
 
         assertEquals(false, state.usePresets)
         assertEquals(listOf(CARD), state.presets)
@@ -37,7 +38,7 @@ class PresetsProcessorTest {
     fun `presets switched off are kept at once`() = runTest {
         val settings = FakePresetSettingsRepository()
 
-        val (state, _) = perform(settings, PresetsAction.Load, PresetsAction.SetUsePresets(false))
+        val (state, _) = perform(settings, { onLoad() }, { onSetUsePresets(false) })
 
         assertEquals(false, state.usePresets)
         assertEquals(listOf(false), settings.savedUsePresets)
@@ -47,8 +48,8 @@ class PresetsProcessorTest {
     fun `presets switch not written shows what is kept, with a message`() = runTest {
         val (state, _) = perform(
             FakePresetSettingsRepository(failSave = true),
-            PresetsAction.Load,
-            PresetsAction.SetUsePresets(false),
+            { onLoad() },
+            { onSetUsePresets(false) },
         )
 
         assertEquals(true, state.usePresets)
@@ -57,7 +58,7 @@ class PresetsProcessorTest {
 
     @Test
     fun `create opens a new preset`() = runTest {
-        val (_, events) = perform(FakePresetSettingsRepository(), PresetsAction.Load, PresetsAction.Create)
+        val (_, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onCreate() })
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(PresetEditRoute())), events)
     }
@@ -66,7 +67,7 @@ class PresetsProcessorTest {
     fun `no create past the most presets a person has`() = runTest {
         repeat(8) { repository.save(CustomPreset.of(PresetId("$it"), "P$it", listOf(emptyList()))) }
 
-        val (state, events) = perform(FakePresetSettingsRepository(), PresetsAction.Load, PresetsAction.Create)
+        val (state, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onCreate() })
 
         assertFalse(state.canCreate)
         assertEquals(emptyList<MviNavEvent>(), events)
@@ -74,14 +75,14 @@ class PresetsProcessorTest {
 
     @Test
     fun `edit opens the preset`() = runTest {
-        val (_, events) = perform(FakePresetSettingsRepository(), PresetsAction.Load, PresetsAction.Edit(CARD.id!!))
+        val (_, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onEdit(CARD.id!!) })
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(PresetEditRoute(CARD_ID))), events)
     }
 
     @Test
     fun `delete asks first`() = runTest {
-        val (state, _) = perform(FakePresetSettingsRepository(), PresetsAction.Load, PresetsAction.Delete(CARD))
+        val (state, _) = perform(FakePresetSettingsRepository(), { onLoad() }, { onDelete(CARD) })
 
         assertEquals(CARD, state.deleting)
         assertEquals(listOf(CARD), repository.presets.first())
@@ -91,8 +92,8 @@ class PresetsProcessorTest {
     fun `the standard preset is not deleted`() = runTest {
         val (state, _) = perform(
             FakePresetSettingsRepository(),
-            PresetsAction.Load,
-            PresetsAction.Delete(StandardPreset.preset),
+            { onLoad() },
+            { onDelete(StandardPreset.preset) },
         )
 
         assertNull(state.deleting)
@@ -102,9 +103,9 @@ class PresetsProcessorTest {
     fun `delete confirmed removes the preset from the list`() = runTest {
         val (state, _) = perform(
             FakePresetSettingsRepository(),
-            PresetsAction.Load,
-            PresetsAction.Delete(CARD),
-            PresetsAction.DeleteConfirm,
+            { onLoad() },
+            { onDelete(CARD) },
+            { onDeleteConfirm() },
         )
 
         assertNull(state.deleting)
@@ -119,9 +120,9 @@ class PresetsProcessorTest {
 
         val (state, _) = perform(
             FakePresetSettingsRepository(),
-            PresetsAction.Load,
-            PresetsAction.Delete(CARD),
-            PresetsAction.DeleteConfirm,
+            { onLoad() },
+            { onDelete(CARD) },
+            { onDeleteConfirm() },
         )
 
         assertEquals(PresetsMessage.NotDeleted, state.message)
@@ -131,7 +132,7 @@ class PresetsProcessorTest {
 
     @Test
     fun `back leaves the screen`() = runTest {
-        val (_, events) = perform(FakePresetSettingsRepository(), PresetsAction.Back)
+        val (_, events) = perform(FakePresetSettingsRepository(), { onBack() })
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)
     }
@@ -139,13 +140,13 @@ class PresetsProcessorTest {
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(
         settings: FakePresetSettingsRepository,
-        vararg actions: PresetsAction,
+        vararg actions: PresetsActions.() -> Unit,
     ): Pair<PresetsState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val processor = PresetsProcessor(settings, repository, PresetEditor(repository), navigator, log)
 
         processor.testWithInternalState(this) {
-            actions.forEach { containerHost.action(it).join() }
+            containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events

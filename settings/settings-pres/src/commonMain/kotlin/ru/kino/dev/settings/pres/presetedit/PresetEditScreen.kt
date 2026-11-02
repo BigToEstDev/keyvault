@@ -61,10 +61,10 @@ internal fun PresetEditScreen(
     val snackbar = remember { SnackbarHostState() }
     val standardName = stringResource(Res.string.entry_preset_standard)
 
-    LaunchedEffect(Unit) { processor.action(PresetEditAction.Load) }
+    LaunchedEffect(Unit) { processor.onLoad() }
 
     // The system "back" asks as the one in the top bar does
-    BackHandler { processor.action(PresetEditAction.Back) }
+    BackHandler { processor.onBack() }
 
     val message = state.message?.let {
         when (it) {
@@ -77,7 +77,7 @@ internal fun PresetEditScreen(
             PresetEditMessage.Gone -> stringResource(Res.string.preset_gone)
         }
     }
-    SnackbarMessage(message, snackbar) { processor.action(PresetEditAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     GradientBackground {
         Scaffold(
@@ -86,12 +86,12 @@ internal fun PresetEditScreen(
             topBar = {
                 BackTopBar(
                     title = stringResource(if (state.editing) Res.string.preset_edit_title else Res.string.preset_create_title),
-                    onBack = { processor.action(PresetEditAction.Back) },
+                    onBack = processor::onBack,
                 )
             },
             floatingActionButton = {
                 // While the preset to edit is read the fab waits as while it is saved
-                SaveFab(saving = state.saving || state.loading, onSave = { processor.action(PresetEditAction.Save(standardName)) })
+                SaveFab(saving = state.saving || state.loading, onSave = { processor.onSave(standardName) })
             },
             snackbarHost = { SnackbarHost(snackbar) },
         ) { padding ->
@@ -103,30 +103,30 @@ internal fun PresetEditScreen(
                     .padding(CONTENT_PADDING),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                PresetForm(state = state, action = processor::action)
+                processor.PresetForm(state = state)
             }
         }
 
         PresetEditDialogs(
             dialog = state.dialog,
-            onNameChange = { processor.action(PresetEditAction.DialogNameChanged(it)) },
-            onProtectedChange = { processor.action(PresetEditAction.DialogProtectedChanged(it)) },
-            onTypeChange = { processor.action(PresetEditAction.DialogTypeChanged(it)) },
-            onConfirm = { processor.action(PresetEditAction.DialogConfirm) },
-            onDismiss = { processor.action(PresetEditAction.DialogDismiss) },
+            onNameChange = processor::onDialogNameChange,
+            onProtectedChange = processor::onDialogProtectedChange,
+            onTypeChange = processor::onDialogTypeChange,
+            onConfirm = processor::onDialogConfirm,
+            onDismiss = processor::onDialogDismiss,
         )
     }
 }
 
 @Composable
-private fun PresetForm(state: PresetEditState, action: (PresetEditAction) -> Unit) {
+private fun PresetEditActions.PresetForm(state: PresetEditState) {
     val enabled = !state.saving && !state.loading
 
     // The name of the preset - the first card, required
     FieldSection {
         TextField(
             value = state.name,
-            onValueChange = { action(PresetEditAction.NameChanged(it)) },
+            onValueChange = { onNameChange(it) },
             label = stringResource(Res.string.preset_name),
             modifier = Modifier.fillMaxWidth(),
             required = true,
@@ -138,13 +138,13 @@ private fun PresetForm(state: PresetEditState, action: (PresetEditAction) -> Uni
 
     state.cards.forEachIndexed { card, keys ->
         Box {
-            PresetCard(card = card, keys = keys, state = state, enabled = enabled, action = action)
+            PresetCard(card = card, keys = keys, state = state, enabled = enabled)
             if (card > 0) {
                 // A card the person added: the red badge on its corner deletes it, asking first
                 CardDeleteBadge(
                     contentDescription = stringResource(Res.string.preset_delete_card),
                     enabled = enabled,
-                    onClick = { action(PresetEditAction.DeleteCard(card)) },
+                    onClick = { onDeleteCard(card) },
                     modifier = Modifier.align(Alignment.TopEnd),
                 )
             }
@@ -155,7 +155,7 @@ private fun PresetForm(state: PresetEditState, action: (PresetEditAction) -> Uni
     if (state.canAddCard) {
         SecondaryButton(
             text = stringResource(Res.string.preset_add_card),
-            onClick = { action(PresetEditAction.AddCard) },
+            onClick = { onAddCard() },
             // As wide as "+ add field" in the cards above: inside the room of a card
             modifier = Modifier
                 .fillMaxWidth()
@@ -172,12 +172,11 @@ private fun PresetForm(state: PresetEditState, action: (PresetEditAction) -> Uni
 
 /** A card of the preset: its fields and "+ add field" under them. */
 @Composable
-private fun PresetCard(
+private fun PresetEditActions.PresetCard(
     card: Int,
     keys: List<String>,
     state: PresetEditState,
     enabled: Boolean,
-    action: (PresetEditAction) -> Unit,
 ) {
     FieldSection {
         if (card == 0) {
@@ -193,8 +192,8 @@ private fun PresetCard(
                 enabled = enabled,
                 protected = key in state.protectedKeys,
                 error = state.fieldProblem(at)?.let { fieldNameProblemText(it) },
-                onEdit = { action(PresetEditAction.EditField(at)) },
-                onDelete = { action(PresetEditAction.DeleteField(at)) },
+                onEdit = { onEditField(at) },
+                onDelete = { onDeleteField(at) },
             )
         }
 
@@ -202,7 +201,7 @@ private fun PresetCard(
         if (state.canAddField(card)) {
             SecondaryButton(
                 text = stringResource(Res.string.entry_add_field),
-                onClick = { action(PresetEditAction.AddField(card)) },
+                onClick = { onAddField(card) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = enabled,
             )
