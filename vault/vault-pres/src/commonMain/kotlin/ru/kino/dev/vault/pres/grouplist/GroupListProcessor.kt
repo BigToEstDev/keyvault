@@ -20,11 +20,12 @@ import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryRepository
 import ru.kino.dev.vault.entry.EntrySummary
+import ru.kino.dev.vault.filter.CreationOrder
 import ru.kino.dev.vault.filter.VaultFilter
 import ru.kino.dev.vault.filter.VaultFilterRepository
 import ru.kino.dev.vault.filter.Visibility
-import ru.kino.dev.vault.filter.applyTo
 import ru.kino.dev.vault.group.EntryCount
+import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
@@ -40,98 +41,6 @@ import ru.kino.dev.vault.pres.navigation.GroupRoute
 import ru.kino.dev.vault.search.VaultSearch
 import ru.kino.dev.vault.trash.TrashRepository
 import ru.kino.dev.vault.trash.deletesToBin
-
-/**
- * @param isRoot the screen is the root of the database - known from the route, before the tree is read, so
- * the top bar of a group below it never shows the root's while it loads (pass-docs, Step 40, fix 13)
- * @param loading the tree and the entries are not read yet - the skeleton is shown
- * @param path from the root down to this group; empty until the tree is read
- * @param entryCount entries of this group - its own, and with those below; at the root - the whole database
- * @param listed what is directly in this group, before the filter
- * @param query typed into the search field; not blank - the list is what it finds
- * @param searching a search waits for the typing to stop, or for its answer - the skeleton is shown
- * @param found what [query] finds in this group and below it, before the filter; null with no search
- * @param filter the filter in effect - as kept on the device
- * @param filterDraft the filter dialog is shown, with what is chosen in it so far
- * @param savingFilter the filter chosen is being kept - the dialog waits
- * @param userNameHidden the database hides user names (pass-docs, Step 65): none in the list, whatever the
- * appearance says (pass-docs, Step 56, item 5)
- * @param message for the snackbar, until it takes it
- */
-data class GroupListState(
-    val isRoot: Boolean = true,
-    val loading: Boolean = true,
-    val path: List<Crumb> = emptyList(),
-    val entryCount: EntryCount = EntryCount.None,
-    val listed: ListSource = ListSource(),
-    val query: String = "",
-    val searching: Boolean = false,
-    val found: ListSource? = null,
-    val filter: VaultFilter = VaultFilter.DEFAULT,
-    val filterDraft: VaultFilter? = null,
-    val savingFilter: Boolean = false,
-    val fabExpanded: Boolean = false,
-    val dialog: GroupDialog? = null,
-    val locking: Boolean = false,
-    val userNameHidden: Boolean = false,
-    val message: GroupListMessage? = null,
-) {
-    // Worked out once for every state, not on every read
-    private val shown = (found ?: listed).let { filter.applyTo(it.groups, it.entries) }
-
-    /** The groups the list shows - of this group, or found by the search - in the order of the database. */
-    val groups: List<GroupItem> = shown.groups
-
-    /** The entries the list shows, after the groups: by when they were created, as the filter says. */
-    val entries: List<EntryItem> = shown.entries.map {
-        EntryItem(it.id, it.title, if (userNameHidden) "" else it.userName, found?.locations?.get(it.groupId))
-    }
-
-    val isSearch: Boolean get() = query.isNotBlank()
-
-    /** The group shown here, once the tree is read; null at the root - the database, not a group. */
-    val current: Crumb? get() = if (isRoot) null else path.lastOrNull()
-
-    val filtersOpen: Boolean get() = filterDraft != null
-
-    /** Nothing in the list. */
-    val isEmpty: Boolean get() = groups.isEmpty() && entries.isEmpty()
-
-    /** Why the list is empty, which says what to show in its place; null when it is not. */
-    val emptyReason: EmptyReason?
-        get() = when {
-            !isEmpty -> null
-            isSearch -> EmptyReason.NothingFound
-            listed.groups.isEmpty() && listed.entries.isEmpty() -> EmptyReason.EmptyGroup
-            filter.visibility == Visibility.GroupsOnly -> EmptyReason.NoGroups
-            else -> EmptyReason.NoEntries
-        }
-}
-
-/**
- * What a list is made of, before the filter: groups as their cards show them, entries as the core gives them.
- *
- * @param locations of a search: where the entries lie, by the group they are in
- */
-data class ListSource(
-    val groups: List<GroupItem> = emptyList(),
-    val entries: List<EntrySummary> = emptyList(),
-    val locations: Map<GroupId, List<String>> = emptyMap(),
-)
-
-enum class EmptyReason {
-    /** The group holds nothing */
-    EmptyGroup,
-
-    /** The search finds nothing - or nothing the filter lets through */
-    NothingFound,
-
-    /** The group holds entries only, and the filter shows groups only */
-    NoGroups,
-
-    /** The group holds groups only, and the filter shows entries only */
-    NoEntries,
-}
 
 /**
  * One group of the open database, the groups inside it and then its entries - the root, or any group below
@@ -166,7 +75,7 @@ class GroupListProcessor(
     private val trash: TrashRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<GroupListState, GroupListState, Nothing> {
+) : ViewModel(), OrbitContainerHost<GroupListState, GroupListState, Nothing>, GroupListActions {
 
     override val container = orbitContainer<GroupListState, Nothing>(GroupListState(isRoot = groupId == null))
 
@@ -178,110 +87,169 @@ class GroupListProcessor(
         if (groupId == null) autoLock.watch(dbKey)
     }
 
-    fun action(action: GroupListAction): Job = when (action) {
-        is GroupListAction.QueryChanged -> queryChanged(action.query)
-
-        is GroupListAction.DialogNameChanged -> textIntent {
-            reduce { state.copy(dialog = state.dialog?.typed(action.name)) }
-        }
-
-        else -> intent { handle(action) }
+    override fun onLoad() {
+        intent { load() }
     }
 
-    private suspend fun Syntax<GroupListState, Nothing>.handle(action: GroupListAction) {
-        when (action) {
-            is GroupListAction.QueryChanged, is GroupListAction.DialogNameChanged -> Unit // in action()
-
-            GroupListAction.Load -> load()
-
-            is GroupListAction.OpenGroup -> {
-                clearSearch()
-                navigator.navigate(MviNavEvent.NavigateTo(GroupRoute(dbKey, action.id.value)))
+    override fun onQueryChange(query: String) {
+        // Typed text: the state is updated before the field draws again, or the cursor jumps
+        textIntent {
+            reduce {
+                if (query.isBlank()) {
+                    state.copy(query = query, searching = false, found = null)
+                } else {
+                    state.copy(query = query, searching = true)
+                }
             }
+        }
+        searchJob?.cancel()
+        if (query.isBlank()) return
 
-            is GroupListAction.OpenCrumb -> openCrumb(action.index)
+        searchJob = intent {
+            delay(SEARCH_DELAY)
+            search(query)
+        }
+    }
 
-            GroupListAction.Back -> {
-                clearSearch()
-                navigator.navigate(MviNavEvent.NavigateBack)
-            }
+    override fun onOpenGroup(id: GroupId) {
+        intent {
+            clearSearch()
+            navigator.navigate(MviNavEvent.NavigateTo(GroupRoute(dbKey, id.value)))
+        }
+    }
 
-            GroupListAction.ToggleFab -> reduce { state.copy(fabExpanded = !state.fabExpanded) }
+    override fun onOpenCrumb(index: Int) {
+        intent { openCrumb(index) }
+    }
 
-            GroupListAction.CloseFab -> reduce { state.copy(fabExpanded = false) }
+    override fun onBack() {
+        intent {
+            clearSearch()
+            navigator.navigate(MviNavEvent.NavigateBack)
+        }
+    }
 
-            GroupListAction.OpenFilters -> reduce { state.copy(filterDraft = state.filter, fabExpanded = false) }
+    override fun onToggleFab() {
+        intent { reduce { state.copy(fabExpanded = !state.fabExpanded) } }
+    }
 
-            GroupListAction.CloseFilters -> if (!state.savingFilter) reduce { state.copy(filterDraft = null) }
+    override fun onCloseFab() {
+        intent { reduce { state.copy(fabExpanded = false) } }
+    }
 
-            is GroupListAction.FilterVisibilityChanged -> reduce {
-                state.copy(filterDraft = state.filterDraft?.copy(visibility = action.visibility))
-            }
+    override fun onOpenFilters() {
+        intent { reduce { state.copy(filterDraft = state.filter, fabExpanded = false) } }
+    }
 
-            is GroupListAction.FilterOrderChanged -> reduce {
-                state.copy(filterDraft = state.filterDraft?.copy(order = action.order))
-            }
+    override fun onCloseFilters() {
+        intent { if (!state.savingFilter) reduce { state.copy(filterDraft = null) } }
+    }
 
-            GroupListAction.ApplyFilters -> state.filterDraft?.let { applyFilter(it) }
+    override fun onFilterVisibilityChange(visibility: Visibility) {
+        intent { reduce { state.copy(filterDraft = state.filterDraft?.copy(visibility = visibility)) } }
+    }
 
-            GroupListAction.ResetFilters -> if (state.filtersOpen) applyFilter(VaultFilter.DEFAULT)
+    override fun onFilterOrderChange(order: CreationOrder) {
+        intent { reduce { state.copy(filterDraft = state.filterDraft?.copy(order = order)) } }
+    }
 
-            GroupListAction.CreateGroup -> if (!state.loading) {
-                reduce { state.copy(fabExpanded = false, dialog = GroupDialog.Create()) }
-            }
+    override fun onApplyFilters() {
+        intent { state.filterDraft?.let { applyFilter(it) } }
+    }
 
-            GroupListAction.CreateEntry -> createEntry()
+    override fun onResetFilters() {
+        intent { if (state.filtersOpen) applyFilter(VaultFilter.DEFAULT) }
+    }
 
-            GroupListAction.OpenSettings -> navigator.navigate(MviNavEvent.NavigateTo(SettingsRoute(dbKey)))
+    override fun onCreateGroup() {
+        intent {
+            if (!state.loading) reduce { state.copy(fabExpanded = false, dialog = GroupDialog.Create()) }
+        }
+    }
 
-            GroupListAction.OpenTrash -> {
-                clearSearch()
-                navigator.navigate(MviNavEvent.NavigateTo(TrashRoute(dbKey)))
-            }
+    override fun onCreateEntry() {
+        intent { createEntry() }
+    }
 
-            is GroupListAction.OpenEntry -> {
-                clearSearch()
-                navigator.navigate(MviNavEvent.NavigateTo(EntryReadRoute(dbKey, action.id.value)))
-            }
+    override fun onOpenSettings() {
+        intent { navigator.navigate(MviNavEvent.NavigateTo(SettingsRoute(dbKey))) }
+    }
 
-            is GroupListAction.EditEntry -> {
-                clearSearch()
-                navigator.navigate(MviNavEvent.NavigateTo(EntryEditRoute(dbKey, action.id.value)))
-            }
+    override fun onOpenTrash() {
+        intent {
+            clearSearch()
+            navigator.navigate(MviNavEvent.NavigateTo(TrashRoute(dbKey)))
+        }
+    }
 
-            is GroupListAction.DeleteEntry -> state.entries.find { it.id == action.id }?.let { entry ->
+    override fun onOpenEntry(id: EntryId) {
+        intent {
+            clearSearch()
+            navigator.navigate(MviNavEvent.NavigateTo(EntryReadRoute(dbKey, id.value)))
+        }
+    }
+
+    override fun onEditEntry(id: EntryId) {
+        intent {
+            clearSearch()
+            navigator.navigate(MviNavEvent.NavigateTo(EntryEditRoute(dbKey, id.value)))
+        }
+    }
+
+    override fun onDeleteEntry(id: EntryId) {
+        intent {
+            state.entries.find { it.id == id }?.let { entry ->
                 val toBin = trash.deletesToBin(dbKey)
                 reduce { state.copy(dialog = GroupDialog.DeleteEntry(entry.id, entry.title, toBin)) }
             }
-
-            is GroupListAction.RenameGroup -> state.groups.find { it.id == action.id }?.let { group ->
-                reduce { state.copy(dialog = GroupDialog.Rename(group.id, group.name)) }
-            }
-
-            is GroupListAction.DeleteGroup -> state.groups.find { it.id == action.id }?.let { group ->
-                val toBin = trash.deletesToBin(dbKey)
-                reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name, toBin)) }
-            }
-
-            GroupListAction.RenameCurrent -> state.current?.let { group ->
-                reduce { state.copy(dialog = GroupDialog.Rename(group.id, group.name)) }
-            }
-
-            GroupListAction.DeleteCurrent -> state.current?.let { group ->
-                val toBin = trash.deletesToBin(dbKey)
-                reduce { state.copy(dialog = GroupDialog.Delete(group.id, group.name, toBin)) }
-            }
-
-            GroupListAction.DialogConfirm -> confirm()
-
-            GroupListAction.DialogDismiss -> if (state.dialog?.saving == false) {
-                reduce { state.copy(dialog = null) }
-            }
-
-            GroupListAction.MessageShown -> reduce { state.copy(message = null) }
-
-            GroupListAction.Lock -> lock()
         }
+    }
+
+    override fun onRenameGroup(id: GroupId) {
+        intent {
+            state.groups.find { it.id == id }?.let { group ->
+                reduce { state.copy(dialog = GroupDialog.Rename(group.id, group.name)) }
+            }
+        }
+    }
+
+    override fun onDeleteGroup(id: GroupId) {
+        intent { state.groups.find { it.id == id }?.let { askDelete(it.id, it.name) } }
+    }
+
+    override fun onRenameCurrent() {
+        intent {
+            state.current?.let { group -> reduce { state.copy(dialog = GroupDialog.Rename(group.id, group.name)) } }
+        }
+    }
+
+    override fun onDeleteCurrent() {
+        intent { state.current?.let { askDelete(it.id, it.name) } }
+    }
+
+    override fun onDialogNameChange(name: String) {
+        textIntent { reduce { state.copy(dialog = state.dialog?.typed(name)) } }
+    }
+
+    override fun onDialogConfirm() {
+        intent { confirm() }
+    }
+
+    override fun onDialogDismiss() {
+        intent { if (state.dialog?.saving == false) reduce { state.copy(dialog = null) } }
+    }
+
+    override fun onMessageShown() {
+        intent { reduce { state.copy(message = null) } }
+    }
+
+    override fun onLock() {
+        intent { lock() }
+    }
+
+    private suspend fun Syntax<GroupListState, Nothing>.askDelete(id: GroupId, name: String) {
+        val toBin = trash.deletesToBin(dbKey)
+        reduce { state.copy(dialog = GroupDialog.Delete(id, name, toBin)) }
     }
 
     private suspend fun Syntax<GroupListState, Nothing>.load() {
@@ -325,26 +293,6 @@ class GroupListProcessor(
             entries = entries,
         ),
     )
-
-    private fun queryChanged(query: String): Job {
-        // Typed text: the state is updated before the field draws again, or the cursor jumps
-        val typed = textIntent {
-            reduce {
-                if (query.isBlank()) {
-                    state.copy(query = query, searching = false, found = null)
-                } else {
-                    state.copy(query = query, searching = true)
-                }
-            }
-        }
-        searchJob?.cancel()
-        if (query.isBlank()) return typed
-
-        return intent {
-            delay(SEARCH_DELAY)
-            search(query)
-        }.also { searchJob = it }
-    }
 
     private suspend fun Syntax<GroupListState, Nothing>.search(term: String) {
         // The tree is not read yet: load() runs the search when it is

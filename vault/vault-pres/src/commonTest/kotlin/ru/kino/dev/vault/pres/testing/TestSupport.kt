@@ -4,6 +4,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.orbitmvi.orbit.OrbitContainerHost
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
@@ -22,6 +23,18 @@ fun TestScope.recordNavigation(): Pair<Navigator, List<MviNavEvent>> {
     val events = mutableListOf<MviNavEvent>()
     backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
     return navigator to events
+}
+
+/**
+ * Runs [actions] on the processor one after another, each to its end: what it starts is waited for - a search
+ * waits its delay out, in virtual time. The methods of a processor give nothing to wait on (pass-docs,
+ * `docs/app/mvi-arc.md`); the container knows what runs.
+ */
+suspend fun <H : OrbitContainerHost<*, *, *>> H.runEach(actions: Array<out H.() -> Unit>) {
+    actions.forEach { action ->
+        action()
+        container.joinIntents()
+    }
 }
 
 class RecordingLog : ErrorLog {

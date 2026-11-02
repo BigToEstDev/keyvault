@@ -61,12 +61,12 @@ internal fun GroupListScreen(
     val snackbar = remember { SnackbarHostState() }
 
     // Every time the screen is shown: after "back" from a group below, or after unlocking, the tree may differ
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.action(GroupListAction.Load) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onLoad() }
 
-    BackHandler(enabled = state.fabExpanded) { processor.action(GroupListAction.CloseFab) }
+    BackHandler(enabled = state.fabExpanded, onBack = processor::onCloseFab)
 
     SnackbarMessage(state.message?.let { stringResource(it.text) }, snackbar) {
-        processor.action(GroupListAction.MessageShown)
+        processor.onMessageShown()
     }
 
     GradientBackground {
@@ -80,45 +80,41 @@ internal fun GroupListScreen(
                     entryCount = state.entryCount.shown(),
                     query = state.query,
                     filterOn = !state.filter.isDefault,
-                    onQueryChange = { processor.action(GroupListAction.QueryChanged(it)) },
-                    onFilters = { processor.action(GroupListAction.OpenFilters) },
-                    onSettings = { processor.action(GroupListAction.OpenSettings) },
-                    onTrash = { processor.action(GroupListAction.OpenTrash) },
-                    onBack = { processor.action(GroupListAction.Back) },
-                    onCrumb = { processor.action(GroupListAction.OpenCrumb(it)) },
-                    onEditGroup = { processor.action(GroupListAction.RenameCurrent) },
-                    onDeleteGroup = { processor.action(GroupListAction.DeleteCurrent) },
+                    onQueryChange = processor::onQueryChange,
+                    onFilters = processor::onOpenFilters,
+                    onSettings = processor::onOpenSettings,
+                    onTrash = processor::onOpenTrash,
+                    onBack = processor::onBack,
+                    onCrumb = processor::onOpenCrumb,
+                    onEditGroup = processor::onRenameCurrent,
+                    onDeleteGroup = processor::onDeleteCurrent,
                 )
             },
             // The fab is not in the scaffold (see below), so the snackbar is lifted over it here
             snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = FAB_CLEARANCE)) },
         ) { padding ->
-            GroupListContent(state = state, padding = padding, action = processor::action)
+            processor.GroupListContent(state = state, padding = padding)
         }
 
         // In the opposite corner from "add" (pass-docs, Step 59)
         LockFab(
             locking = state.locking,
-            onLock = { processor.action(GroupListAction.Lock) },
+            onLock = processor::onLock,
             modifier = Modifier.align(Alignment.BottomStart),
         )
 
         // Over everything but the fab: a tap past the open menu closes it and goes no further
         if (state.fabExpanded) {
-            FabDismissLayer(onDismiss = { processor.action(GroupListAction.CloseFab) })
+            FabDismissLayer(onDismiss = processor::onCloseFab)
         }
 
         // Out of the scaffold's slot to be above the layer that closes it
         ExpandableFab(
             expanded = state.fabExpanded,
-            onToggle = { processor.action(GroupListAction.ToggleFab) },
+            onToggle = processor::onToggleFab,
             items = listOf(
-                FabItem(Icons.Filled.Key, stringResource(Res.string.vault_create_entry)) {
-                    processor.action(GroupListAction.CreateEntry)
-                },
-                FabItem(Icons.Filled.CreateNewFolder, stringResource(Res.string.vault_create_group)) {
-                    processor.action(GroupListAction.CreateGroup)
-                },
+                FabItem(Icons.Filled.Key, stringResource(Res.string.vault_create_entry), processor::onCreateEntry),
+                FabItem(Icons.Filled.CreateNewFolder, stringResource(Res.string.vault_create_group), processor::onCreateGroup),
             ),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -130,19 +126,19 @@ internal fun GroupListScreen(
             FilterDialog(
                 draft = draft,
                 saving = state.savingFilter,
-                onVisibility = { processor.action(GroupListAction.FilterVisibilityChanged(it)) },
-                onOrder = { processor.action(GroupListAction.FilterOrderChanged(it)) },
-                onApply = { processor.action(GroupListAction.ApplyFilters) },
-                onReset = { processor.action(GroupListAction.ResetFilters) },
-                onClose = { processor.action(GroupListAction.CloseFilters) },
+                onVisibility = processor::onFilterVisibilityChange,
+                onOrder = processor::onFilterOrderChange,
+                onApply = processor::onApplyFilters,
+                onReset = processor::onResetFilters,
+                onClose = processor::onCloseFilters,
             )
         }
 
         GroupDialogs(
             dialog = state.dialog,
-            onNameChange = { processor.action(GroupListAction.DialogNameChanged(it)) },
-            onConfirm = { processor.action(GroupListAction.DialogConfirm) },
-            onDismiss = { processor.action(GroupListAction.DialogDismiss) },
+            onNameChange = processor::onDialogNameChange,
+            onConfirm = processor::onDialogConfirm,
+            onDismiss = processor::onDialogDismiss,
         )
     }
 }
@@ -163,7 +159,7 @@ private fun FabDismissLayer(onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun GroupListContent(state: GroupListState, padding: PaddingValues, action: (GroupListAction) -> Unit) {
+private fun GroupListActions.GroupListContent(state: GroupListState, padding: PaddingValues) {
     val empty = state.emptyReason
     when {
         // The search shows the skeleton too: while the typing goes on, and while the core looks
@@ -195,18 +191,18 @@ private fun GroupListContent(state: GroupListState, padding: PaddingValues, acti
                 GroupCard(
                     group = group,
                     location = locationText(group.location, fromRoot = state.isRoot),
-                    onOpen = { action(GroupListAction.OpenGroup(group.id)) },
-                    onEdit = { action(GroupListAction.RenameGroup(group.id)) },
-                    onDelete = { action(GroupListAction.DeleteGroup(group.id)) },
+                    onOpen = { onOpenGroup(group.id) },
+                    onEdit = { onRenameGroup(group.id) },
+                    onDelete = { onDeleteGroup(group.id) },
                 )
             }
             items(state.entries, key = { it.id.value }) { entry ->
                 EntryCard(
                     entry = entry,
                     location = locationText(entry.location, fromRoot = state.isRoot),
-                    onOpen = { action(GroupListAction.OpenEntry(entry.id)) },
-                    onEdit = { action(GroupListAction.EditEntry(entry.id)) },
-                    onDelete = { action(GroupListAction.DeleteEntry(entry.id)) },
+                    onOpen = { onOpenEntry(entry.id) },
+                    onEdit = { onEditEntry(entry.id) },
+                    onDelete = { onDeleteEntry(entry.id) },
                 )
             }
         }
