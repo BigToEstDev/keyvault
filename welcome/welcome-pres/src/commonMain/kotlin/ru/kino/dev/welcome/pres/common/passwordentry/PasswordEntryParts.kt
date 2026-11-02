@@ -42,7 +42,7 @@ import ru.kino.dev.welcome.pres.common.isAboutKeyFile
 
 // The pieces of the layouts of entering a password (pass-docs, Step 94): the layouts place them, these draw them
 
-/** The shield alone while the state is read, and by the card of a wide window - as large as on the welcome screen. */
+/** The shield alone while the state is read - as large as on the welcome screen. */
 internal val SHIELD_SIZE_LARGE = 140.dp
 
 /** What was read coming into view - one length for all of it, so it goes as one. */

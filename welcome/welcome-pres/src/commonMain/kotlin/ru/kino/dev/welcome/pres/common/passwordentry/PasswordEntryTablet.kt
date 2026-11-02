@@ -1,14 +1,13 @@
 package ru.kino.dev.welcome.pres.common.passwordentry
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.ShieldImage
@@ -30,9 +28,9 @@ import ru.kino.dev.welcome.pres.common.PasswordEntry
 import ru.kino.dev.welcome.pres.common.WelcomeCard
 
 /**
- * Entering a password in a wide window (pass-docs, Step 94): the window in halves - on the left the shield, large,
- * and the name of the database: what is opened; on the right a card with what is asked to get in. The shield is in
- * its place from the start; once the state is read the name and the card come into view by it, nothing moves.
+ * Entering a password in a wide window (pass-docs, Step 94): the column of a phone, all of it on a card in the
+ * middle of the window. Until the state is read the shield alone on the card; once read it shrinks and the rest
+ * opens out under it, as on a phone.
  */
 @Composable
 internal fun PasswordEntryActions.PasswordEntryTablet(
@@ -43,55 +41,41 @@ internal fun PasswordEntryActions.PasswordEntryTablet(
     read: Boolean,
     subtitle: String?,
 ) {
-    // The name keeps its room while unread - the shield over it does not move as it comes
-    val headerAlpha by animateFloatAsState(
-        targetValue = if (read) 1f else 0f,
+    val shieldSize by animateDpAsState(
+        targetValue = if (read) SHIELD_SIZE else SHIELD_SIZE_LARGE,
         animationSpec = tween(READ_MILLIS),
-        label = "header",
+        label = "shield",
     )
 
     GradientBackground {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .safeDrawingPadding(),
+                .safeDrawingPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
-            Column(
+            WelcomeCard(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .verticalScroll(rememberScrollState())
-                    .padding(HALF_PADDING),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+                    .widthIn(max = CARD_MAX_WIDTH)
+                    .fillMaxWidth(),
             ) {
-                ShieldImage(modifier = Modifier.size(SHIELD_SIZE_LARGE))
-                Spacer(Modifier.height(24.dp))
-                Column(modifier = Modifier.alpha(headerAlpha)) {
-                    // Not to be tapped before it is seen
-                    DatabaseHeader(
-                        databaseName = databaseName,
-                        subtitle = subtitle,
-                        abilities = abilities,
-                        enabled = read && !entry.busy,
-                    )
-                }
-            }
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .verticalScroll(rememberScrollState())
-                    .padding(HALF_PADDING),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                AnimatedVisibility(visible = read, enter = fadeIn(tween(READ_MILLIS))) {
-                    WelcomeCard(
-                        modifier = Modifier
-                            .widthIn(max = CARD_MAX_WIDTH)
-                            .fillMaxWidth(),
-                    ) {
+                ShieldImage(modifier = Modifier.size(shieldSize))
+                AnimatedVisibility(
+                    visible = read,
+                    enter = expandVertically(tween(READ_MILLIS)) + fadeIn(tween(READ_MILLIS)),
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Spacer(Modifier.height(24.dp))
+                        DatabaseHeader(
+                            databaseName = databaseName,
+                            subtitle = subtitle,
+                            abilities = abilities,
+                            enabled = !entry.busy,
+                        )
+                        Spacer(Modifier.height(32.dp))
                         EntryForm(entry = entry, submitText = submitText, abilities = abilities)
                     }
                 }
@@ -100,8 +84,8 @@ internal fun PasswordEntryActions.PasswordEntryTablet(
     }
 }
 
-/** Round what each half holds - off the edges of the window and off the other half. */
-private val HALF_PADDING = 32.dp
+/** The shield over the password on the card. */
+private val SHIELD_SIZE = 96.dp
 
 /** The card holds a field and its buttons - wider than this they stretch to no use. */
-private val CARD_MAX_WIDTH = 400.dp
+private val CARD_MAX_WIDTH = 440.dp
