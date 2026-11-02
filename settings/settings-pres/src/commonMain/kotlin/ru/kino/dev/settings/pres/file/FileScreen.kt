@@ -51,7 +51,7 @@ internal fun FileScreen(
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) { processor.action(FileAction.Load) }
+    LaunchedEffect(Unit) { processor.onLoad() }
 
     val message = state.message?.let {
         stringResource(
@@ -61,7 +61,7 @@ internal fun FileScreen(
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(FileAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     GradientBackground {
         Scaffold(
@@ -70,7 +70,7 @@ internal fun FileScreen(
             topBar = {
                 BackTopBar(
                     title = stringResource(Res.string.settings_file),
-                    onBack = { processor.action(FileAction.Back) },
+                    onBack = processor::onBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },
@@ -87,7 +87,7 @@ internal fun FileScreen(
                     // Until read there is nothing to show for real: the shapes of the screen
                     item(key = "skeleton") { FileSkeleton(skeletonBrush()) }
                 } else {
-                    fileRows(file, state.savingCompression, processor::action)
+                    fileRows(file, state.savingCompression, processor)
                 }
             }
         }
@@ -97,12 +97,12 @@ internal fun FileScreen(
         TextInputDialog(
             title = stringResource(Res.string.settings_file_name),
             value = dialog.name,
-            onValueChange = { processor.action(FileAction.RenameChanged(it)) },
+            onValueChange = processor::onRenameChange,
             label = stringResource(Res.string.settings_file_name),
             confirmText = stringResource(Res.string.action_save),
             dismissText = stringResource(Res.string.action_cancel),
-            onConfirm = { processor.action(FileAction.RenameConfirm) },
-            onDismiss = { processor.action(FileAction.RenameDismiss) },
+            onConfirm = processor::onRenameConfirm,
+            onDismiss = processor::onRenameDismiss,
             error = if (dialog.empty) stringResource(Res.string.error_name_empty) else null,
             loading = dialog.saving,
         )
@@ -112,7 +112,7 @@ internal fun FileScreen(
 private fun LazyListScope.fileRows(
     file: DatabaseFileInfo,
     savingCompression: Boolean,
-    action: (FileAction) -> Unit,
+    actions: FileActions,
 ) {
     item(key = "name") {
         Card(modifier = Modifier.fillMaxWidth()) {
@@ -121,7 +121,7 @@ private fun LazyListScope.fileRows(
                 title = stringResource(Res.string.settings_file_name),
                 text = file.name,
                 value = "",
-                onClick = { action(FileAction.Rename) },
+                onClick = { actions.onRename() },
                 enabled = !savingCompression,
                 // Without it the row reads as a value to look at, not one to change
                 icon = Icons.Filled.Edit,
@@ -160,7 +160,7 @@ private fun LazyListScope.fileRows(
                     options = listOf(Compression.GZip, Compression.None),
                     selected = file.compression,
                     label = { compressionLabel(it) },
-                    onSelect = { action(FileAction.SelectCompression(it)) },
+                    onSelect = { actions.onSelectCompression(it) },
                     // While the file is written with the one chosen, the choice waits
                     enabled = !savingCompression,
                     text = stringResource(Res.string.settings_file_compression_hint),

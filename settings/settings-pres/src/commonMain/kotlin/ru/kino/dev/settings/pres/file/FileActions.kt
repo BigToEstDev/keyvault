@@ -2,44 +2,28 @@ package ru.kino.dev.settings.pres.file
 
 import ru.kino.dev.core.Compression
 
-sealed interface FileAction {
+/** What the settings of the file is asked to do - done by [FileProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
+interface FileActions {
 
     /** The screen is shown: the file of the database is read. */
-    data object Load : FileAction
+    fun onLoad()
 
-    data object Back : FileAction
+    fun onBack()
 
     /** "Database name" tapped: the dialog with the name as it is. */
-    data object Rename : FileAction
+    fun onRename()
 
     /** Typed in the dialog of the name. */
-    data class RenameChanged(val name: String) : FileAction
+    fun onRenameChange(name: String)
 
     /** "Save" in the dialog: the name is kept and the file written. */
-    data object RenameConfirm : FileAction
+    fun onRenameConfirm()
 
-    data object RenameDismiss : FileAction
+    fun onRenameDismiss()
 
     /** A compression chosen: kept and the file written at once. */
-    data class SelectCompression(val compression: Compression) : FileAction
+    fun onSelectCompression(compression: Compression)
 
     /** The snackbar took the message. */
-    data object MessageShown : FileAction
+    fun onMessageShown()
 }
-
-/** What the snackbar says. */
-enum class FileMessage {
-    /** The change is made, but the file was not written: it waits for the next save. */
-    NotSaved,
-
-    /** The core refused - the database closed meanwhile, or a bug. */
-    Failed,
-}
-
-/**
- * The dialog of the name of the database.
- *
- * @param saving the name is kept and the file written: progress on the button, nothing takes taps
- * @param empty the name was refused as empty - said in the field, the dialog stays
- */
-data class RenameDialog(val name: String, val saving: Boolean = false, val empty: Boolean = false)
