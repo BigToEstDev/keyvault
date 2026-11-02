@@ -19,6 +19,7 @@
     <string name="action_edit">Edit</string>
     <string name="action_add">Add</string>
     <string name="action_change">Change</string>
+    <string name="action_create_database">Create database</string>
     <string name="action_remove">Remove</string>
     <string name="action_create">Create</string>
     <string name="action_apply">Apply</string>
@@ -34,7 +35,6 @@
     <string name="welcome_title">Your passwords, in one file</string>
     <string name="welcome_subtitle">A KeePass database that lives where you put it</string>
     <string name="welcome_open">Open database</string>
-    <string name="welcome_create">Create database</string>
 
     <!-- unlock and locked -->
     <string name="entry_password">Master password</string>

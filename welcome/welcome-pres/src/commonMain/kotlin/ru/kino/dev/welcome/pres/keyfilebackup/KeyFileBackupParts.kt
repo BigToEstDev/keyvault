@@ -74,7 +74,7 @@ internal fun KeyFileBackupActions.KeyFileBackupForm(state: KeyFileBackupState) {
             )
         } else {
             PrimaryButton(
-                text = stringResource(Res.string.action_next),
+                text = stringResource(Res.string.action_create_database),
                 onClick = ::onContinue,
                 loading = state.stage.busy,
             )

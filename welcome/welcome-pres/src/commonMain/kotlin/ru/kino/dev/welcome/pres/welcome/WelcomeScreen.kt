@@ -84,7 +84,7 @@ private fun WelcomeContent(onOpen: () -> Unit, onCreate: () -> Unit) {
                 Spacer(Modifier.height(48.dp))
                 PrimaryButton(text = stringResource(Res.string.welcome_open), onClick = onOpen)
                 Spacer(Modifier.height(12.dp))
-                SecondaryButton(text = stringResource(Res.string.welcome_create), onClick = onCreate)
+                SecondaryButton(text = stringResource(Res.string.action_create_database), onClick = onCreate)
             }
         }
     }

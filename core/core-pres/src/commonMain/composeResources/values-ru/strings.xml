@@ -18,6 +18,7 @@
     <string name="action_edit">Редактировать</string>
     <string name="action_add">Добавить</string>
     <string name="action_change">Сменить</string>
+    <string name="action_create_database">Создать базу</string>
     <string name="action_remove">Убрать</string>
     <string name="action_create">Создать</string>
     <string name="action_apply">Применить</string>
@@ -33,7 +34,6 @@
     <string name="welcome_title">Ваши пароли — в одном файле</string>
     <string name="welcome_subtitle">База KeePass, которая лежит там, где вы её положили</string>
     <string name="welcome_open">Открыть базу</string>
-    <string name="welcome_create">Создать базу</string>
 
     <!-- unlock and locked -->
     <string name="entry_password">Мастер-пароль</string>
