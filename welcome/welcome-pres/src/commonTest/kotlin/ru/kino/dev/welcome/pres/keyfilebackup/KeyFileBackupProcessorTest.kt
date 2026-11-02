@@ -41,19 +41,19 @@ class KeyFileBackupProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this) {
-            containerHost.action(KeyFileBackupAction.Continue)
+            containerHost.onContinue()
             expectSideEffect(KeyFileBackupSideEffect.PickKeyFile("kdbxvault.keyx"))
 
-            containerHost.action(KeyFileBackupAction.KeyFilePicked(KEY))
+            containerHost.onKeyFilePicked(KEY)
             expectInternalState { copy(stage = CreateStage(busy = true)) }
             expectInternalState { copy(keyFile = KeyFileChoice.Created, stage = CreateStage()) }
 
             // No second dialog on its own - only on "next"
-            containerHost.action(KeyFileBackupAction.Continue)
+            containerHost.onContinue()
             expectSideEffect(KeyFileBackupSideEffect.PickDatabase("kdbxvault.kdbx"))
 
-            containerHost.action(KeyFileBackupAction.DatabasePicked(DB)).join()
-            cancelAndIgnoreRemainingItems()
+            containerHost.onDatabasePicked(DB)
+            expectInternalState { copy(stage = CreateStage(busy = true)) }
         }
 
         assertEquals(
@@ -74,11 +74,11 @@ class KeyFileBackupProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this) {
-            containerHost.action(KeyFileBackupAction.KeyFilePicked(KEY))
+            containerHost.onKeyFilePicked(KEY)
             expectInternalState { copy(stage = CreateStage(busy = true)) }
             expectInternalState { copy(stage = CreateStage(overwrite = Overwrite(PickedFile.KeyFile, KEY))) }
 
-            containerHost.action(KeyFileBackupAction.OverwriteDismissed)
+            containerHost.onOverwriteDismissed()
             expectInternalState { copy(stage = CreateStage()) }
         }
 
@@ -91,7 +91,7 @@ class KeyFileBackupProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this, KeyFileBackupState(keyFile = KeyFileChoice.Created)) {
-            containerHost.action(KeyFileBackupAction.Continue)
+            containerHost.onContinue()
             expectSideEffect(KeyFileBackupSideEffect.PickDatabase("kdbxvault.kdbx"))
         }
     }
@@ -103,18 +103,18 @@ class KeyFileBackupProcessorTest {
             val (processor, _) = processor()
 
             processor.testWithInternalState(this) {
-                containerHost.action(KeyFileBackupAction.PickExisting)
+                containerHost.onPickExisting()
                 expectSideEffect(KeyFileBackupSideEffect.PickExistingKeyFile)
 
-                containerHost.action(KeyFileBackupAction.ExistingPicked(EXISTING))
+                containerHost.onExistingPicked(EXISTING)
                 expectInternalState { copy(stage = CreateStage(busy = true)) }
                 expectInternalState { copy(keyFile = KeyFileChoice.Picked("photo.jpg"), stage = CreateStage()) }
 
-                containerHost.action(KeyFileBackupAction.Continue)
+                containerHost.onContinue()
                 expectSideEffect(KeyFileBackupSideEffect.PickDatabase("kdbxvault.kdbx"))
 
-                containerHost.action(KeyFileBackupAction.DatabasePicked(DB)).join()
-                cancelAndIgnoreRemainingItems()
+                containerHost.onDatabasePicked(DB)
+                expectInternalState { copy(stage = CreateStage(busy = true)) }
             }
 
             assertEquals(listOf("checkKeyFile $EXISTING", "wouldOverwrite $DB", "create $DB"), journal)
@@ -128,7 +128,7 @@ class KeyFileBackupProcessorTest {
             val (processor, _) = processor()
 
             processor.testWithInternalState(this) {
-                containerHost.action(KeyFileBackupAction.ExistingPicked(EXISTING))
+                containerHost.onExistingPicked(EXISTING)
                 expectInternalState { copy(stage = CreateStage(busy = true)) }
                 expectInternalState { copy(stage = CreateStage(problem = EntryProblem.KeyFileTooLarge(10))) }
             }
@@ -143,7 +143,7 @@ class KeyFileBackupProcessorTest {
         val (processor, _) = processor()
 
         processor.testWithInternalState(this) {
-            containerHost.action(KeyFileBackupAction.KeyFilePicked(KEY))
+            containerHost.onKeyFilePicked(KEY)
             expectInternalState { copy(stage = CreateStage(busy = true)) }
             expectInternalState {
                 copy(stage = CreateStage(problem = EntryProblem.Unreachable(PickedFile.KeyFile)))
