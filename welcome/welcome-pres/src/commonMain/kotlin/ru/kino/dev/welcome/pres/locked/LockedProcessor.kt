@@ -24,17 +24,6 @@ import ru.kino.dev.welcome.pres.common.PasswordEntry
 import ru.kino.dev.welcome.pres.common.toProblem
 
 /**
- * @param databaseName the name of the database - and nothing else of it is shown while it is locked
- * @param read the remembered database is read - until then the screen is the shield alone, not these defaults
- * (pass-docs, Step 72, fix 4)
- */
-data class LockedState(
-    val databaseName: String? = null,
-    val entry: PasswordEntry = PasswordEntry(),
-    val read: Boolean = false,
-)
-
-/**
  * The database locked while open - its own screen, not a mode of unlocking (pass-docs, `decisions.md`):
  * the core still holds it, so unlocking checks the credentials against the key it kept and is quick. Under
  * this screen there is nothing: the lock popped `vault` whole, and success starts it again at the root
