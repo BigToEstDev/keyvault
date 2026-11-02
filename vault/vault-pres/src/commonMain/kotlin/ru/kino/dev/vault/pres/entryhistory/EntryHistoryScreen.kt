@@ -47,7 +47,7 @@ internal fun EntryHistoryScreen(
     val snackbar = remember { SnackbarHostState() }
 
     // Every time the screen is shown: a version may have been restored or deleted since
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.action(EntryHistoryAction.Load) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onLoad() }
 
     val message = state.message?.let {
         stringResource(
@@ -58,7 +58,7 @@ internal fun EntryHistoryScreen(
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(EntryHistoryAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     val history = state.history
     GradientBackground {
@@ -70,11 +70,11 @@ internal fun EntryHistoryScreen(
                 val title = history?.title?.ifEmpty { stringResource(Res.string.entry_untitled) }
                 EntryTopBar(
                     title = title?.let { stringResource(Res.string.entry_history_title, it) }.orEmpty(),
-                    onBack = { processor.action(EntryHistoryAction.Back) },
+                    onBack = processor::onBack,
                     skeleton = if (history == null && state.loading) skeletonBrush() else null,
                     // Only with versions to delete: "Created" is the entry's own and stays
                     menu = if (history?.versions?.isNotEmpty() == true) {
-                        listOf(deleteHistoryMenuItem { processor.action(EntryHistoryAction.DeleteHistory) })
+                        listOf(deleteHistoryMenuItem(processor::onDeleteHistory))
                     } else {
                         emptyList()
                     },
@@ -89,7 +89,7 @@ internal fun EntryHistoryScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 when {
-                    history != null -> historyCards(history, processor::action)
+                    history != null -> historyCards(history, processor)
                     state.loading -> items(SKELETON_ROWS) { SkeletonCard() }
                 }
             }
@@ -97,8 +97,8 @@ internal fun EntryHistoryScreen(
 
         EntryHistoryDialogs(
             dialog = state.dialog,
-            onConfirm = { processor.action(EntryHistoryAction.DialogConfirm) },
-            onDismiss = { processor.action(EntryHistoryAction.DialogDismiss) },
+            onConfirm = processor::onDialogConfirm,
+            onDismiss = processor::onDialogDismiss,
         )
     }
 }
@@ -107,17 +107,17 @@ internal fun EntryHistoryScreen(
  * "Modified" for every old version, newest first - with its menu on a long press - and "Created" last, when
  * it could be read.
  */
-private fun LazyListScope.historyCards(history: EntryHistory, action: (EntryHistoryAction) -> Unit) {
+private fun LazyListScope.historyCards(history: EntryHistory, actions: EntryHistoryActions) {
     items(history.versions, key = { it.index }) { version ->
         // The reader leaves out a version whose time cannot be read
         version.modified?.let { modified ->
             HistoryCard(
                 text = stringResource(Res.string.entry_modified_at, entryTimeText(modified)),
                 items = listOf(
-                    restoreMenuItem { action(EntryHistoryAction.Restore(version.index)) },
-                    deleteVersionMenuItem { action(EntryHistoryAction.DeleteVersion(version.index)) },
+                    restoreMenuItem { actions.onRestore(version.index) },
+                    deleteVersionMenuItem { actions.onDeleteVersion(version.index) },
                 ),
-                onOpen = { action(EntryHistoryAction.OpenVersion(version.index)) },
+                onOpen = { actions.onOpenVersion(version.index) },
             )
         }
     }

@@ -23,6 +23,7 @@ import ru.kino.dev.vault.pres.navigation.EntryVersionRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
+import ru.kino.dev.vault.pres.testing.runEach
 
 class EntryHistoryProcessorTest {
 
@@ -41,7 +42,7 @@ class EntryHistoryProcessorTest {
     fun `the history is read when the screen is shown, newest first, with when the entry was made`() = runTest {
         entries.putHistory(mail, 1_000L, 2_000L)
 
-        val (state, _) = perform(EntryHistoryAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertFalse(state.loading)
         assertEquals("Mail", state.history?.title)
@@ -61,7 +62,7 @@ class EntryHistoryProcessorTest {
     fun `an entry that is gone sends the screen back`() = runTest {
         entries.stored.remove(mail)
 
-        val (_, events) = perform(EntryHistoryAction.Load)
+        val (_, events) = perform({ onLoad() })
 
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
     }
@@ -70,7 +71,7 @@ class EntryHistoryProcessorTest {
     fun `a history that cannot be read says so and goes to the log`() = runTest {
         history.failures["versions"] = EntryFailure.Unexpected(IllegalStateException("broken"))
 
-        val (state, events) = perform(EntryHistoryAction.Load)
+        val (state, events) = perform({ onLoad() })
 
         assertFalse(state.loading)
         assertEquals(EntryHistoryMessage.LoadFailed, state.message)
@@ -80,7 +81,7 @@ class EntryHistoryProcessorTest {
 
     @Test
     fun `back goes back`() = runTest {
-        val (_, events) = perform(EntryHistoryAction.Back)
+        val (_, events) = perform({ onBack() })
 
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
     }
@@ -91,7 +92,7 @@ class EntryHistoryProcessorTest {
     fun `a tap on a version opens it`() = runTest {
         entries.putHistory(mail, 1_000L, 2_000L)
 
-        val (_, events) = perform(EntryHistoryAction.Load, EntryHistoryAction.OpenVersion(1))
+        val (_, events) = perform({ onLoad() }, { onOpenVersion(1) })
 
         assertEquals(listOf(MviNavEvent.NavigateTo(EntryVersionRoute(DB, mail.value, 1))), events)
     }
@@ -100,7 +101,7 @@ class EntryHistoryProcessorTest {
     fun `restore asks first, naming when the version was saved`() = runTest {
         entries.putHistory(mail, 1_000L, 2_000L)
 
-        val (state, _) = perform(EntryHistoryAction.Load, EntryHistoryAction.Restore(0))
+        val (state, _) = perform({ onLoad() }, { onRestore(0) })
 
         assertEquals(EntryHistoryDialog.Restore(0, 1_000L), state.dialog)
     }
@@ -110,9 +111,9 @@ class EntryHistoryProcessorTest {
         entries.update(DB, mail, listOf(EntryField(StandardPreset.TITLE, "Post", protected = false)))
 
         val (_, events) = perform(
-            EntryHistoryAction.Load,
-            EntryHistoryAction.Restore(0),
-            EntryHistoryAction.DialogConfirm,
+            { onLoad() },
+            { onRestore(0) },
+            { onDialogConfirm() },
         )
 
         assertEquals("Mail", entries.stored.getValue(mail).fields.single().value)
@@ -124,7 +125,7 @@ class EntryHistoryProcessorTest {
     fun `delete asks first, naming when the version was saved`() = runTest {
         entries.putHistory(mail, 1_000L, 2_000L)
 
-        val (state, _) = perform(EntryHistoryAction.Load, EntryHistoryAction.DeleteVersion(1))
+        val (state, _) = perform({ onLoad() }, { onDeleteVersion(1) })
 
         assertEquals(EntryHistoryDialog.Delete(1, 2_000L), state.dialog)
     }
@@ -134,9 +135,9 @@ class EntryHistoryProcessorTest {
         entries.putHistory(mail, 1_000L, 2_000L)
 
         val (state, events) = perform(
-            EntryHistoryAction.Load,
-            EntryHistoryAction.DeleteVersion(1),
-            EntryHistoryAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteVersion(1) },
+            { onDialogConfirm() },
         )
 
         assertNull(state.dialog)
@@ -150,9 +151,9 @@ class EntryHistoryProcessorTest {
         database.saveFailure = CoreException("Io", "disk full")
 
         val (state, events) = perform(
-            EntryHistoryAction.Load,
-            EntryHistoryAction.DeleteVersion(1),
-            EntryHistoryAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteVersion(1) },
+            { onDialogConfirm() },
         )
 
         assertNull(state.dialog)
@@ -166,9 +167,9 @@ class EntryHistoryProcessorTest {
         entries.putHistory(mail, 1_000L)
 
         val (state, _) = perform(
-            EntryHistoryAction.Load,
-            EntryHistoryAction.DeleteVersion(0),
-            EntryHistoryAction.DialogDismiss,
+            { onLoad() },
+            { onDeleteVersion(0) },
+            { onDialogDismiss() },
         )
 
         assertNull(state.dialog)
@@ -178,7 +179,7 @@ class EntryHistoryProcessorTest {
     @Test
     fun `a change under way does not close`() = runTest {
         val (state, _) = perform(
-            EntryHistoryAction.DialogDismiss,
+            { onDialogDismiss() },
             initial = EntryHistoryState(dialog = EntryHistoryDialog.Delete(0, 1_000L, saving = true)),
         )
 
@@ -191,14 +192,14 @@ class EntryHistoryProcessorTest {
     fun `delete history asks first`() = runTest {
         entries.putHistory(mail, 1_000L)
 
-        val (state, _) = perform(EntryHistoryAction.Load, EntryHistoryAction.DeleteHistory)
+        val (state, _) = perform({ onLoad() }, { onDeleteHistory() })
 
         assertEquals(EntryHistoryDialog.DeleteAll(), state.dialog)
     }
 
     @Test
     fun `no history to delete - no dialog`() = runTest {
-        val (state, _) = perform(EntryHistoryAction.Load, EntryHistoryAction.DeleteHistory)
+        val (state, _) = perform({ onLoad() }, { onDeleteHistory() })
 
         assertNull(state.dialog)
     }
@@ -208,9 +209,9 @@ class EntryHistoryProcessorTest {
         entries.putHistory(mail, 1_000L, 2_000L)
 
         val (_, events) = perform(
-            EntryHistoryAction.Load,
-            EntryHistoryAction.DeleteHistory,
-            EntryHistoryAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteHistory() },
+            { onDialogConfirm() },
         )
 
         assertTrue(entries.stored.getValue(mail).history.isEmpty())
@@ -224,9 +225,9 @@ class EntryHistoryProcessorTest {
         database.saveFailure = CoreException("Io", "disk full")
 
         val (state, events) = perform(
-            EntryHistoryAction.Load,
-            EntryHistoryAction.DeleteHistory,
-            EntryHistoryAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteHistory() },
+            { onDialogConfirm() },
         )
 
         assertEquals(EntryHistoryMessage.NotSaved, state.message)
@@ -236,14 +237,14 @@ class EntryHistoryProcessorTest {
 
     @Test
     fun `no dialog for a version the history shown does not have`() = runTest {
-        val (state, _) = perform(EntryHistoryAction.Load, EntryHistoryAction.Restore(7))
+        val (state, _) = perform({ onLoad() }, { onRestore(7) })
 
         assertNull(state.dialog)
     }
 
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(
-        vararg actions: EntryHistoryAction,
+        vararg actions: EntryHistoryActions.() -> Unit,
         initial: EntryHistoryState = EntryHistoryState(),
     ): Pair<EntryHistoryState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
@@ -257,7 +258,7 @@ class EntryHistoryProcessorTest {
         )
 
         processor.testWithInternalState(this, initial) {
-            actions.forEach { containerHost.action(it).join() }
+            containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events
