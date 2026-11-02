@@ -16,7 +16,7 @@ class WelcomeProcessorTest {
         val (navigator, _) = recordNavigation()
 
         WelcomeProcessor(navigator).testWithInternalState(this) {
-            containerHost.action(WelcomeAction.OpenClicked)
+            containerHost.onOpen()
 
             expectSideEffect(WelcomeSideEffect.PickDatabase)
         }
@@ -27,7 +27,7 @@ class WelcomeProcessorTest {
         val (navigator, events) = recordNavigation()
 
         WelcomeProcessor(navigator).testWithInternalState(this) {
-            containerHost.action(WelcomeAction.DatabasePicked(DB)).join()
+            containerHost.onDatabasePicked(DB)
         }
 
         assertEquals(listOf(MviNavEvent.NavigateTo(UnlockRoute(pickedUri = DB))), events)
@@ -38,7 +38,7 @@ class WelcomeProcessorTest {
         val (navigator, events) = recordNavigation()
 
         WelcomeProcessor(navigator).testWithInternalState(this) {
-            containerHost.action(WelcomeAction.CreateClicked).join()
+            containerHost.onCreate()
         }
 
         assertEquals(listOf(MviNavEvent.NavigateTo(MasterPasswordRoute)), events)
