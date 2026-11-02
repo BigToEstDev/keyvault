@@ -1,7 +1,6 @@
 package ru.kino.dev.settings.pres.entries
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -23,27 +22,6 @@ import ru.kino.dev.vault.entries.trims
 import java.io.IOException
 
 /**
- * @param entries the settings of the entries; null until read - the screen is a skeleton meanwhile
- * @param keptItems the number of versions a limit switched on takes: the one it had on this screen, or the default
- * @param keptSize the same of the size, in bytes
- * @param choosing the wheel of a limit, while open
- * @param trimming "trim the history?", while asked
- * @param saving the part written into the file - every row waits, that one shows progress
- * @param phone the prefix of a new phone field; null until read (pass-docs, Step 77)
- * @param message for the snackbar, until it takes it
- */
-data class EntriesState(
-    val entries: DatabaseEntries? = null,
-    val keptItems: Int = HistoryChoices.DEFAULT_ITEMS,
-    val keptSize: Long = HistoryChoices.DEFAULT_SIZE,
-    val choosing: HistoryLimit? = null,
-    val trimming: TrimDialog? = null,
-    val saving: EntriesPart? = null,
-    val phone: PhonePrefix? = null,
-    val message: EntriesMessage? = null,
-)
-
-/**
  * The entries of the database [dbKey] (pass-docs, Step 65): the fields hidden on every entry and how much history
  * an entry keeps. Kept in the file, as `Файл базы`: a change is made in the database and the file written at
  * once, with progress; not written - the change is made all the same and waits for the next save.
@@ -63,77 +41,123 @@ class EntriesProcessor(
     private val phones: PhoneNumbers,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<EntriesState, EntriesState, Nothing> {
+) : ViewModel(), OrbitContainerHost<EntriesState, EntriesState, Nothing>, EntriesActions {
 
     override val container = orbitContainer<EntriesState, Nothing>(EntriesState())
 
-    fun action(action: EntriesAction): Job = intent {
-        when (action) {
-            EntriesAction.Load -> load()
+    override fun onLoad() {
+        intent { load() }
+    }
 
-            EntriesAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
+    override fun onBack() {
+        intent { navigator.navigate(MviNavEvent.NavigateBack) }
+    }
 
-            is EntriesAction.SetProtection -> setProtection(action.protection)
+    override fun onSetProtection(protection: FieldProtection) {
+        intent { setProtection(protection) }
+    }
 
-            is EntriesAction.LimitItems -> state.entries?.history?.let { history ->
-                if (!action.limited) history.maxItems?.let { reduce { state.copy(keptItems = it) } }
-                changeHistory(history.copy(maxItems = if (action.limited) state.keptItems else null), EntriesPart.Items)
+    override fun onLimitItems(limited: Boolean) {
+        intent {
+            state.entries?.history?.let { history ->
+                if (!limited) history.maxItems?.let { reduce { state.copy(keptItems = it) } }
+                changeHistory(history.copy(maxItems = if (limited) state.keptItems else null), EntriesPart.Items)
             }
+        }
+    }
 
-            is EntriesAction.LimitSize -> state.entries?.history?.let { history ->
-                if (!action.limited) history.maxSize?.let { reduce { state.copy(keptSize = it) } }
-                changeHistory(history.copy(maxSize = if (action.limited) state.keptSize else null), EntriesPart.Size)
+    override fun onLimitSize(limited: Boolean) {
+        intent {
+            state.entries?.history?.let { history ->
+                if (!limited) history.maxSize?.let { reduce { state.copy(keptSize = it) } }
+                changeHistory(history.copy(maxSize = if (limited) state.keptSize else null), EntriesPart.Size)
             }
+        }
+    }
 
-            is EntriesAction.Choose -> if (state.entries != null && state.saving == null) {
-                reduce { state.copy(choosing = action.limit) }
+    override fun onChoose(limit: HistoryLimit) {
+        intent {
+            if (state.entries != null && state.saving == null) {
+                reduce { state.copy(choosing = limit) }
             }
+        }
+    }
 
-            is EntriesAction.SelectItems -> state.entries?.history?.let { history ->
+    override fun onSelectItems(items: Int) {
+        intent {
+            state.entries?.history?.let { history ->
                 reduce { state.copy(choosing = null) }
-                changeHistory(history.copy(maxItems = action.items), EntriesPart.Items)
+                changeHistory(history.copy(maxItems = items), EntriesPart.Items)
             }
+        }
+    }
 
-            is EntriesAction.SelectSize -> state.entries?.history?.let { history ->
+    override fun onSelectSize(bytes: Long) {
+        intent {
+            state.entries?.history?.let { history ->
                 reduce { state.copy(choosing = null) }
-                changeHistory(history.copy(maxSize = action.bytes), EntriesPart.Size)
+                changeHistory(history.copy(maxSize = bytes), EntriesPart.Size)
             }
+        }
+    }
 
-            EntriesAction.DismissChoice -> reduce { state.copy(choosing = null) }
+    override fun onDismissChoice() {
+        intent { reduce { state.copy(choosing = null) } }
+    }
 
-            EntriesAction.TrimConfirm -> state.trimming?.let { dialog ->
+    override fun onTrimConfirm() {
+        intent {
+            state.trimming?.let { dialog ->
                 reduce { state.copy(trimming = null) }
                 writeHistory(dialog.history, dialog.part)
             }
+        }
+    }
 
-            EntriesAction.TrimDismiss -> reduce { state.copy(trimming = null) }
+    override fun onTrimDismiss() {
+        intent { reduce { state.copy(trimming = null) } }
+    }
 
-            is EntriesAction.RememberPrefix -> state.phone?.let { phone ->
-                if (saved { phoneSettings.saveRememberPrefix(action.on) }) {
+    override fun onRememberPrefix(on: Boolean) {
+        intent {
+            state.phone?.let { phone ->
+                if (saved { phoneSettings.saveRememberPrefix(on) }) {
                     val region = phoneDefaults.region()
                     phones.prepare(listOf(region))
-                    reduce { state.copy(phone = phone.copy(remember = action.on, region = region)) }
+                    reduce { state.copy(phone = phone.copy(remember = on, region = region)) }
                 }
             }
+        }
+    }
 
-            EntriesAction.ChoosePrefix -> state.phone?.let { phone ->
+    override fun onChoosePrefix() {
+        intent {
+            state.phone?.let { phone ->
                 if (phone.remember) {
                     val countries = phones.countries()
                     reduce { state.copy(phone = phone.copy(countries = countries)) }
                 }
             }
+        }
+    }
 
-            is EntriesAction.PrefixChosen -> state.phone?.let { phone ->
-                phones.prepare(listOf(action.region))
-                if (saved { phoneSettings.savePrefixRegion(action.region) }) {
-                    reduce { state.copy(phone = phone.copy(region = action.region, countries = null)) }
+    override fun onPrefixChosen(region: String) {
+        intent {
+            state.phone?.let { phone ->
+                phones.prepare(listOf(region))
+                if (saved { phoneSettings.savePrefixRegion(region) }) {
+                    reduce { state.copy(phone = phone.copy(region = region, countries = null)) }
                 }
             }
-
-            EntriesAction.DismissPrefix -> state.phone?.let { reduce { state.copy(phone = it.copy(countries = null)) } }
-
-            EntriesAction.MessageShown -> reduce { state.copy(message = null) }
         }
+    }
+
+    override fun onDismissPrefix() {
+        intent { state.phone?.let { reduce { state.copy(phone = it.copy(countries = null)) } } }
+    }
+
+    override fun onMessageShown() {
+        intent { reduce { state.copy(message = null) } }
     }
 
     private suspend fun Syntax<EntriesState, Nothing>.load() {
