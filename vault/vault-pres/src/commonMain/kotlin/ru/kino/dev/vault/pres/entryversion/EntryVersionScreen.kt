@@ -48,7 +48,7 @@ internal fun EntryVersionScreen(
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.action(EntryVersionAction.Load) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onLoad() }
 
     val message = state.message?.let {
         stringResource(
@@ -59,7 +59,7 @@ internal fun EntryVersionScreen(
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(EntryVersionAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     val version = state.version
     val modified = version?.times?.modified
@@ -74,13 +74,13 @@ internal fun EntryVersionScreen(
                 // When the version was saved - the name of this screen
                 EntryTopBar(
                     title = modified?.let(::entryTimeText).orEmpty(),
-                    onBack = { processor.action(EntryVersionAction.Back) },
+                    onBack = processor::onBack,
                     skeleton = skeleton,
                 )
             },
             floatingActionButton = {
                 if (modified != null) {
-                    FloatingActionButton(onClick = { processor.action(EntryVersionAction.Restore) }) {
+                    FloatingActionButton(onClick = processor::onRestore) {
                         Icon(Icons.Filled.History, contentDescription = stringResource(Res.string.history_restore))
                     }
                 }
@@ -97,15 +97,12 @@ internal fun EntryVersionScreen(
             ) {
                 when {
                     // No group - a version does not keep one; no "copy" - restore it to copy (owner, 17.10.26)
-                    version != null -> EntryReadFields(
+                    version != null -> processor.EntryReadFields(
                         content = version.content,
                         passwordVisible = state.passwordVisible,
                         shownOwn = state.shownOwn,
-                        onTogglePassword = { processor.action(EntryVersionAction.TogglePassword) },
-                        onToggleOwn = { processor.action(EntryVersionAction.ToggleOwn(it)) },
                         protection = state.protection,
                         shownKeys = state.shownKeys,
-                        onToggleKey = { processor.action(EntryVersionAction.ToggleKey(it)) },
                         copyable = false,
                     )
                     skeleton != null -> EntryReadSkeleton(brush = skeleton)
@@ -118,8 +115,8 @@ internal fun EntryVersionScreen(
             RestoreVersionDialog(
                 modified = modified,
                 restoring = restoring,
-                onConfirm = { processor.action(EntryVersionAction.DialogConfirm) },
-                onDismiss = { processor.action(EntryVersionAction.DialogDismiss) },
+                onConfirm = processor::onDialogConfirm,
+                onDismiss = processor::onDialogDismiss,
             )
         }
     }

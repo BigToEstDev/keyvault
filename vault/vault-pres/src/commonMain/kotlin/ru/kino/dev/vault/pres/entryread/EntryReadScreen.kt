@@ -53,7 +53,7 @@ internal fun EntryReadScreen(
     val snackbar = remember { SnackbarHostState() }
 
     // Every time the screen is shown: back from the form, the entry may differ
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.action(EntryReadAction.Load) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onLoad() }
 
     val message = state.message?.let {
         stringResource(
@@ -64,7 +64,7 @@ internal fun EntryReadScreen(
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(EntryReadAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     // While the entry is read, one brush for the title and the fields - their skeletons run together
     val skeleton = if (state.content == null && state.loading) skeletonBrush() else null
@@ -78,13 +78,13 @@ internal fun EntryReadScreen(
                 val title = state.content?.value(StandardPreset.TITLE)
                 EntryTopBar(
                     title = title?.ifEmpty { stringResource(Res.string.entry_untitled) }.orEmpty(),
-                    onBack = { processor.action(EntryReadAction.Back) },
+                    onBack = processor::onBack,
                     skeleton = skeleton,
                     // Once the entry is read: there is nothing to delete before
                     menu = if (state.content != null) {
                         listOf(
-                            historyMenuItem { processor.action(EntryReadAction.History) },
-                            deleteMenuItem { processor.action(EntryReadAction.Delete) },
+                            historyMenuItem(processor::onHistory),
+                            deleteMenuItem(processor::onDelete),
                         )
                     } else {
                         emptyList()
@@ -93,7 +93,7 @@ internal fun EntryReadScreen(
             },
             floatingActionButton = {
                 if (state.content != null) {
-                    FloatingActionButton(onClick = { processor.action(EntryReadAction.Edit) }) {
+                    FloatingActionButton(onClick = processor::onEdit) {
                         Icon(Icons.Filled.Edit, contentDescription = stringResource(Res.string.entry_edit))
                     }
                 }
@@ -111,15 +111,12 @@ internal fun EntryReadScreen(
                 val content = state.content
                 when {
                     content != null -> {
-                        EntryReadFields(
+                        processor.EntryReadFields(
                             content = content,
                             passwordVisible = state.passwordVisible,
                             shownOwn = state.shownOwn,
-                            onTogglePassword = { processor.action(EntryReadAction.TogglePassword) },
-                            onToggleOwn = { processor.action(EntryReadAction.ToggleOwn(it)) },
                             protection = state.protection,
                             shownKeys = state.shownKeys,
-                            onToggleKey = { processor.action(EntryReadAction.ToggleKey(it)) },
                             group = state.group,
                         )
                         EntryTimesText(state.times)
@@ -132,7 +129,7 @@ internal fun EntryReadScreen(
         // Out of the scaffold's slot, which "edit" holds - in the other corner (pass-docs, Step 59)
         LockFab(
             locking = state.locking,
-            onLock = { processor.action(EntryReadAction.Lock) },
+            onLock = processor::onLock,
             modifier = Modifier.align(Alignment.BottomStart),
         )
 
@@ -141,8 +138,8 @@ internal fun EntryReadScreen(
                 title = dialog.title,
                 toBin = dialog.toBin,
                 deleting = dialog.deleting,
-                onConfirm = { processor.action(EntryReadAction.DeleteConfirm) },
-                onDismiss = { processor.action(EntryReadAction.DeleteDismiss) },
+                onConfirm = processor::onDeleteConfirm,
+                onDismiss = processor::onDeleteDismiss,
             )
         }
     }

@@ -27,6 +27,7 @@ import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
+import ru.kino.dev.vault.pres.testing.runEach
 
 class EntryVersionProcessorTest {
 
@@ -48,7 +49,7 @@ class EntryVersionProcessorTest {
 
     @Test
     fun `the version is read when the screen is shown, as it was, everything hidden`() = runTest {
-        val (state, _) = perform(EntryVersionAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertFalse(state.loading)
         assertEquals("Mail", state.version?.content?.value(StandardPreset.TITLE))
@@ -59,7 +60,7 @@ class EntryVersionProcessorTest {
 
     @Test
     fun `the eye shows a protected field of the version`() = runTest {
-        val (state, _) = perform(EntryVersionAction.Load, EntryVersionAction.ToggleOwn(0))
+        val (state, _) = perform({ onLoad() }, { onToggleOwn(0) })
 
         assertEquals(setOf(0), state.shownOwn)
     }
@@ -68,7 +69,7 @@ class EntryVersionProcessorTest {
     fun `the fields private by the database come with the version, and the eye shows one`() = runTest {
         settings.entries = settings.entries.copy(protection = FieldProtection.DEFAULT.copy(title = true, url = true))
 
-        val (state, _) = perform(EntryVersionAction.Load, EntryVersionAction.ToggleKey(StandardPreset.URL))
+        val (state, _) = perform({ onLoad() }, { onToggleKey(StandardPreset.URL) })
 
         assertEquals(FieldProtection.DEFAULT.copy(title = true, url = true), state.protection)
         assertEquals(setOf(StandardPreset.URL), state.shownKeys)
@@ -76,7 +77,7 @@ class EntryVersionProcessorTest {
 
     @Test
     fun `restore asks first`() = runTest {
-        val (state, _) = perform(EntryVersionAction.Load, EntryVersionAction.Restore)
+        val (state, _) = perform({ onLoad() }, { onRestore() })
 
         assertEquals(false, state.restoring)
     }
@@ -84,9 +85,9 @@ class EntryVersionProcessorTest {
     @Test
     fun `a version restored is the entry again, and the screen goes to its reading, past the history`() = runTest {
         val (_, events) = perform(
-            EntryVersionAction.Load,
-            EntryVersionAction.Restore,
-            EntryVersionAction.DialogConfirm,
+            { onLoad() },
+            { onRestore() },
+            { onDialogConfirm() },
         )
 
         assertEquals("Mail", entries.stored.getValue(mail).fields.first().value)
@@ -99,9 +100,9 @@ class EntryVersionProcessorTest {
         database.saveFailure = CoreException("Io", "disk full")
 
         val (state, events) = perform(
-            EntryVersionAction.Load,
-            EntryVersionAction.Restore,
-            EntryVersionAction.DialogConfirm,
+            { onLoad() },
+            { onRestore() },
+            { onDialogConfirm() },
         )
 
         assertNull(state.restoring)
@@ -111,7 +112,7 @@ class EntryVersionProcessorTest {
 
     @Test
     fun `cancel closes the dialog, nothing restored`() = runTest {
-        val (state, _) = perform(EntryVersionAction.Load, EntryVersionAction.Restore, EntryVersionAction.DialogDismiss)
+        val (state, _) = perform({ onLoad() }, { onRestore() }, { onDialogDismiss() })
 
         assertNull(state.restoring)
         assertEquals("Post", entries.stored.getValue(mail).fields.first().value)
@@ -121,14 +122,14 @@ class EntryVersionProcessorTest {
     fun `a version that is gone sends the screen back to the history`() = runTest {
         entries.stored[mail] = entries.stored.getValue(mail).copy(history = emptyList())
 
-        val (_, events) = perform(EntryVersionAction.Load)
+        val (_, events) = perform({ onLoad() })
 
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
     }
 
     @Test
     fun `nothing to restore before the version is read`() = runTest {
-        val (state, _) = perform(EntryVersionAction.Restore)
+        val (state, _) = perform({ onRestore() })
 
         assertNull(state.restoring)
     }
@@ -137,7 +138,7 @@ class EntryVersionProcessorTest {
 
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(
-        vararg actions: EntryVersionAction,
+        vararg actions: EntryVersionActions.() -> Unit,
     ): Pair<EntryVersionState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val processor = EntryVersionProcessor(
@@ -153,7 +154,7 @@ class EntryVersionProcessorTest {
         )
 
         processor.testWithInternalState(this, EntryVersionState()) {
-            actions.forEach { containerHost.action(it).join() }
+            containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events

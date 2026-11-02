@@ -1,42 +1,36 @@
 package ru.kino.dev.vault.pres.trashentry
 
 import ru.kino.dev.vault.group.GroupId
+import ru.kino.dev.vault.pres.common.EntryReadFieldsActions
 
-sealed interface TrashEntryAction {
+/**
+ * What an entry of the recycle bin is asked to do - done by [TrashEntryProcessor]
+ * (pass-docs, `docs/app/mvi-arc.md`).
+ */
+interface TrashEntryActions : EntryReadFieldsActions {
 
     /** The screen is shown: the deleted entry is read. */
-    data object Load : TrashEntryAction
+    fun onLoad()
 
-    data object Back : TrashEntryAction
-
-    data object TogglePassword : TrashEntryAction
-
-    /** Shows or hides the value of the protected own field at [index]. */
-    data class ToggleOwn(val index: Int) : TrashEntryAction
-
-    /** Shows or hides the value of the field of the preset under [key], private by the database. */
-    data class ToggleKey(val key: String) : TrashEntryAction
+    fun onBack()
 
     /** The fab: the group to restore to is asked. */
-    data object Restore : TrashEntryAction
+    fun onRestore()
 
     /** A group chosen in "restore". */
-    data class GroupChosen(val id: GroupId) : TrashEntryAction
+    fun onGroupChosen(id: GroupId)
 
     /** The bin in the top bar: asked first - for good. */
-    data object Remove : TrashEntryAction
+    fun onRemove()
 
     /** The answer of the dialog shown. */
-    data object DialogConfirm : TrashEntryAction
+    fun onDialogConfirm()
 
-    data object DialogDismiss : TrashEntryAction
+    fun onDialogDismiss()
 
     /** "OK" under "the file is not written": the change is made - back to the bin. */
-    data object NotSavedSeen : TrashEntryAction
+    fun onNotSavedSeen()
 
     /** The snackbar took the message. */
-    data object MessageShown : TrashEntryAction
+    fun onMessageShown()
 }
-
-/** What the snackbar says. */
-enum class TrashEntryMessage { LoadFailed, Unexpected }

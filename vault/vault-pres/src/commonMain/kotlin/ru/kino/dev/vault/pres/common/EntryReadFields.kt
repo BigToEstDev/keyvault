@@ -56,21 +56,18 @@ import ru.kino.dev.vault.entry.EntryField
  * @param shownKeys keys of the fields of the preset private by the database shown in clear
  */
 @Composable
-internal fun EntryReadFields(
+internal fun EntryReadFieldsActions.EntryReadFields(
     content: EntryContent,
     passwordVisible: Boolean,
     shownOwn: Set<Int>,
-    onTogglePassword: () -> Unit,
-    onToggleOwn: (Int) -> Unit,
     protection: FieldProtection,
     shownKeys: Set<String>,
-    onToggleKey: (String) -> Unit,
     group: GroupChoice? = null,
     deletedAt: Long? = null,
     copyable: Boolean = true,
 ) {
     val clipboard = rememberSensitiveClipboard().takeIf { copyable }
-    val privacy = Privacy(protection, shownKeys, onToggleKey)
+    val privacy = Privacy(protection, shownKeys, ::onToggleKey)
 
     TitleSection(content.value(StandardPreset.TITLE), clipboard, privacy)
 
@@ -99,7 +96,7 @@ internal fun EntryReadFields(
         if (shown.isNotEmpty()) {
             FieldRowsSection(
                 rows = shown.map { key ->
-                    { PresetRow(content, key, clipboard, passwordVisible, onTogglePassword, privacy) }
+                    { PresetRow(content, key, clipboard, passwordVisible, ::onTogglePassword, privacy) }
                 },
             )
         }
@@ -111,7 +108,7 @@ internal fun EntryReadFields(
     if (own.isNotEmpty()) {
         FieldRowsSection(
             rows = own.map { (index, field) ->
-                { OwnRow(index, field, clipboard, shownOwn, onToggleOwn, protection) }
+                { OwnRow(index, field, clipboard, shownOwn, ::onToggleOwn, protection) }
             },
         )
     }

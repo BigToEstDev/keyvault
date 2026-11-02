@@ -1,27 +1,22 @@
 package ru.kino.dev.vault.pres.entryread
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
-import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.phone.PhoneNumbers
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.vault.entries.EntrySettingsRepository
-import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryOpener
-import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.lock.AutoLock
-import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.common.groupChoice
 import ru.kino.dev.vault.pres.common.prepareFor
 import ru.kino.dev.vault.pres.common.protectionOrDefault
@@ -30,32 +25,6 @@ import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 import ru.kino.dev.vault.trash.TrashRepository
 import ru.kino.dev.vault.trash.deletesToBin
-
-/**
- * @param loading the entry is not read yet - the skeleton is shown
- * @param content the entry; null until it is read
- * @param group the group the entry is in, with the path down to it; null until it is read
- * @param times when the entry was made and last changed; empty until it is read
- * @param shownOwn indexes of protected own fields shown in clear
- * @param protection the fields private by the database (pass-docs, Step 65); only the password until read
- * @param shownKeys keys of the fields of the preset private by the database shown in clear
- * @param delete the dialog asking to delete the entry
- * @param locking the lock asked by the lock button is under way
- * @param message for the snackbar, until it takes it
- */
-data class EntryReadState(
-    val loading: Boolean = true,
-    val content: EntryContent? = null,
-    val group: GroupChoice? = null,
-    val times: EntryTimes = EntryTimes(),
-    val passwordVisible: Boolean = false,
-    val shownOwn: Set<Int> = emptySet(),
-    val protection: FieldProtection = FieldProtection.DEFAULT,
-    val shownKeys: Set<String> = emptySet(),
-    val delete: DeleteDialog? = null,
-    val locking: Boolean = false,
-    val message: EntryReadMessage? = null,
-)
 
 /**
  * Reading an entry: its fields as the form lays them out, none of them taking input (pass-docs,
@@ -81,45 +50,71 @@ class EntryReadProcessor(
     private val phones: PhoneNumbers,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<EntryReadState, EntryReadState, Nothing> {
+) : ViewModel(), OrbitContainerHost<EntryReadState, EntryReadState, Nothing>, EntryReadActions {
 
     override val container = orbitContainer<EntryReadState, Nothing>(EntryReadState())
 
-    fun action(action: EntryReadAction): Job = intent {
-        when (action) {
-            EntryReadAction.Load -> load()
+    override fun onLoad() {
+        intent { load() }
+    }
 
-            EntryReadAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
+    override fun onBack() {
+        intent { navigator.navigate(MviNavEvent.NavigateBack) }
+    }
 
-            EntryReadAction.Edit -> if (state.content != null) {
+    override fun onEdit() {
+        intent {
+            if (state.content != null) {
                 navigator.navigate(MviNavEvent.NavigateTo(EntryEditRoute(dbKey, entryId)))
             }
+        }
+    }
 
-            EntryReadAction.TogglePassword -> reduce { state.copy(passwordVisible = !state.passwordVisible) }
+    override fun onTogglePassword() {
+        intent { reduce { state.copy(passwordVisible = !state.passwordVisible) } }
+    }
 
-            is EntryReadAction.ToggleOwn -> reduce { state.copy(shownOwn = state.shownOwn.toggled(action.index)) }
+    override fun onToggleOwn(index: Int) {
+        intent { reduce { state.copy(shownOwn = state.shownOwn.toggled(index)) } }
+    }
 
-            is EntryReadAction.ToggleKey -> reduce { state.copy(shownKeys = state.shownKeys.toggled(action.key)) }
+    override fun onToggleKey(key: String) {
+        intent { reduce { state.copy(shownKeys = state.shownKeys.toggled(key)) } }
+    }
 
-            EntryReadAction.History -> if (state.content != null) {
+    override fun onHistory() {
+        intent {
+            if (state.content != null) {
                 navigator.navigate(MviNavEvent.NavigateTo(EntryHistoryRoute(dbKey, entryId)))
             }
+        }
+    }
 
-            EntryReadAction.Delete -> state.content?.let { content ->
+    override fun onDelete() {
+        intent {
+            state.content?.let { content ->
                 if (state.delete == null) {
                     val toBin = trash.deletesToBin(dbKey)
                     reduce { state.copy(delete = DeleteDialog(content.value(StandardPreset.TITLE), toBin)) }
                 }
             }
-
-            EntryReadAction.DeleteConfirm -> delete()
-
-            EntryReadAction.DeleteDismiss -> if (state.delete?.deleting == false) reduce { state.copy(delete = null) }
-
-            EntryReadAction.Lock -> lock()
-
-            EntryReadAction.MessageShown -> reduce { state.copy(message = null) }
         }
+    }
+
+    override fun onDeleteConfirm() {
+        intent { delete() }
+    }
+
+    override fun onDeleteDismiss() {
+        intent { if (state.delete?.deleting == false) reduce { state.copy(delete = null) } }
+    }
+
+    override fun onLock() {
+        intent { lock() }
+    }
+
+    override fun onMessageShown() {
+        intent { reduce { state.copy(message = null) } }
     }
 
     private suspend fun Syntax<EntryReadState, Nothing>.lock() {

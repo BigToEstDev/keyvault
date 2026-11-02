@@ -57,7 +57,7 @@ internal fun TrashEntryScreen(
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) { processor.action(TrashEntryAction.Load) }
+    LaunchedEffect(Unit) { processor.onLoad() }
 
     val message = state.message?.let {
         stringResource(
@@ -67,7 +67,7 @@ internal fun TrashEntryScreen(
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(TrashEntryAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     val entry = state.entry
     val trashed = state.trashed
@@ -82,11 +82,11 @@ internal fun TrashEntryScreen(
                 BackTopBar(
                     title = entry?.content?.value(StandardPreset.TITLE)?.ifEmpty { stringResource(Res.string.entry_untitled) }
                         .orEmpty(),
-                    onBack = { processor.action(TrashEntryAction.Back) },
+                    onBack = processor::onBack,
                     skeleton = skeleton,
                 ) {
                     if (trashed != null) {
-                        IconButton(onClick = { processor.action(TrashEntryAction.Remove) }) {
+                        IconButton(onClick = processor::onRemove) {
                             Icon(Icons.Filled.Delete, contentDescription = stringResource(Res.string.trash_remove_title))
                         }
                     }
@@ -94,7 +94,7 @@ internal fun TrashEntryScreen(
             },
             floatingActionButton = {
                 if (trashed != null) {
-                    FloatingActionButton(onClick = { processor.action(TrashEntryAction.Restore) }) {
+                    FloatingActionButton(onClick = processor::onRestore) {
                         Icon(Icons.Filled.RestoreFromTrash, contentDescription = stringResource(Res.string.action_restore))
                     }
                 }
@@ -112,15 +112,12 @@ internal fun TrashEntryScreen(
                 when {
                     // No group - restoring asks for one anyway (owner, 23.10.26)
                     entry != null -> {
-                        EntryReadFields(
+                        processor.EntryReadFields(
                             content = entry.content,
                             passwordVisible = state.passwordVisible,
                             shownOwn = state.shownOwn,
-                            onTogglePassword = { processor.action(TrashEntryAction.TogglePassword) },
-                            onToggleOwn = { processor.action(TrashEntryAction.ToggleOwn(it)) },
                             protection = state.protection,
                             shownKeys = state.shownKeys,
-                            onToggleKey = { processor.action(TrashEntryAction.ToggleKey(it)) },
                             deletedAt = trashed?.deletedAt,
                         )
                         EntryTimesText(entry.times)
@@ -132,18 +129,18 @@ internal fun TrashEntryScreen(
 
         TrashDialogs(
             dialog = state.dialog,
-            onGroup = { processor.action(TrashEntryAction.GroupChosen(it)) },
-            onConfirm = { processor.action(TrashEntryAction.DialogConfirm) },
-            onDismiss = { processor.action(TrashEntryAction.DialogDismiss) },
+            onGroup = processor::onGroupChosen,
+            onConfirm = processor::onDialogConfirm,
+            onDismiss = processor::onDialogDismiss,
         )
 
         if (state.notSaved) {
             AlertDialog(
-                onDismissRequest = { processor.action(TrashEntryAction.NotSavedSeen) },
+                onDismissRequest = processor::onNotSavedSeen,
                 title = { Text(stringResource(Res.string.entry_not_saved_title)) },
                 text = { Text(stringResource(Res.string.entry_not_saved_text)) },
                 confirmButton = {
-                    TextButton(onClick = { processor.action(TrashEntryAction.NotSavedSeen) }) {
+                    TextButton(onClick = processor::onNotSavedSeen) {
                         Text(stringResource(Res.string.action_ok))
                     }
                 },
