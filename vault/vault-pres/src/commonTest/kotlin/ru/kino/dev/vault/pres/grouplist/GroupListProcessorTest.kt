@@ -46,6 +46,7 @@ import ru.kino.dev.vault.pres.navigation.GroupRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
+import ru.kino.dev.vault.pres.testing.runEach
 import ru.kino.dev.vault.search.VaultSearch
 import ru.kino.dev.vault.trash.FakeTrashRepository
 import ru.kino.dev.vault.trash.TrashFailure
@@ -82,7 +83,7 @@ class GroupListProcessorTest {
     fun `the list reads whether the database hides user names`() = runTest {
         entrySettings.entries = entrySettings.entries.copy(protection = FieldProtection.DEFAULT.copy(userName = true))
 
-        val (state, _) = perform(null, GroupListAction.Load)
+        val (state, _) = perform(null, { onLoad() })
 
         assertTrue(state.userNameHidden)
     }
@@ -111,7 +112,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `the root shows its groups with the entries below each, and the whole database`() = runTest {
-        val (state, _) = perform(groupId = null, GroupListAction.Load)
+        val (state, _) = perform(groupId = null, { onLoad() })
 
         assertFalse(state.loading)
         assertEquals(listOf("Passwords"), state.path.map { it.name })
@@ -122,7 +123,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `a group shows the path down to it and its own groups`() = runTest {
-        val (state, _) = perform(groupId = work.value, GroupListAction.Load)
+        val (state, _) = perform(groupId = work.value, { onLoad() })
 
         assertEquals(listOf("Passwords", "Work"), state.path.map { it.name })
         assertFalse(state.isRoot)
@@ -149,7 +150,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `a group that is gone sends the screen back to the root`() = runTest {
-        val (_, events) = perform(groupId = "gone", GroupListAction.Load)
+        val (_, events) = perform(groupId = "gone", { onLoad() })
 
         assertEquals(listOf(MviNavEvent.NavigateBackTo(VaultRootRoute(DB))), events)
     }
@@ -158,7 +159,7 @@ class GroupListProcessorTest {
     fun `a tree that cannot be read says so and goes to the log`() = runTest {
         groups.failures["tree"] = GroupFailure.Unexpected(IllegalStateException("broken"))
 
-        val (state, _) = perform(groupId = null, GroupListAction.Load)
+        val (state, _) = perform(groupId = null, { onLoad() })
 
         assertFalse(state.loading)
         assertEquals(GroupListMessage.LoadFailed, state.message)
@@ -167,7 +168,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `a tapped group opens below this one`() = runTest {
-        val (_, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenGroup(work))
+        val (_, events) = perform(groupId = null, { onLoad() }, { onOpenGroup(work) })
 
         assertEquals(listOf(MviNavEvent.NavigateTo(GroupRoute(DB, work.value))), events)
     }
@@ -176,9 +177,9 @@ class GroupListProcessorTest {
     fun `the database in the path goes back to the root, a group in it back to that group`() = runTest {
         val (_, events) = perform(
             groupId = mail.value,
-            GroupListAction.Load,
-            GroupListAction.OpenCrumb(0),
-            GroupListAction.OpenCrumb(1),
+            { onLoad() },
+            { onOpenCrumb(0) },
+            { onOpenCrumb(1) },
         )
 
         assertEquals(
@@ -192,7 +193,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `the last part of the path is where the user is, and goes nowhere`() = runTest {
-        val (_, events) = perform(groupId = mail.value, GroupListAction.Load, GroupListAction.OpenCrumb(2))
+        val (_, events) = perform(groupId = mail.value, { onLoad() }, { onOpenCrumb(2) })
 
         assertTrue(events.isEmpty())
     }
@@ -201,10 +202,10 @@ class GroupListProcessorTest {
     fun `a created group is in the list, and the file is written`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.CreateGroup,
-            GroupListAction.DialogNameChanged(" Bank "),
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onCreateGroup() },
+            { onDialogNameChange(" Bank ") },
+            { onDialogConfirm() },
         )
 
         assertNull(state.dialog)
@@ -216,10 +217,10 @@ class GroupListProcessorTest {
     fun `a name a neighbour has stays in the dialog with the reason, and nothing is written`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.CreateGroup,
-            GroupListAction.DialogNameChanged("work"),
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onCreateGroup() },
+            { onDialogNameChange("work") },
+            { onDialogConfirm() },
         )
 
         assertEquals(GroupDialog.Create(name = "work", problem = NameProblem.Taken), state.dialog)
@@ -230,10 +231,10 @@ class GroupListProcessorTest {
     fun `typing again clears the reason`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.CreateGroup,
-            GroupListAction.DialogConfirm,
-            GroupListAction.DialogNameChanged("B"),
+            { onLoad() },
+            { onCreateGroup() },
+            { onDialogConfirm() },
+            { onDialogNameChange("B") },
         )
 
         assertEquals(GroupDialog.Create(name = "B"), state.dialog)
@@ -243,10 +244,10 @@ class GroupListProcessorTest {
     fun `a renamed group shows its new name`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.RenameGroup(home),
-            GroupListAction.DialogNameChanged("House"),
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onRenameGroup(home) },
+            { onDialogNameChange("House") },
+            { onDialogConfirm() },
         )
 
         assertEquals("House", state.groups.single { it.id == home }.name)
@@ -255,7 +256,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `rename starts from the current name`() = runTest {
-        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.RenameGroup(work))
+        val (state, _) = perform(groupId = null, { onLoad() }, { onRenameGroup(work) })
 
         assertEquals(GroupDialog.Rename(work, "Work"), state.dialog)
     }
@@ -264,9 +265,9 @@ class GroupListProcessorTest {
     fun `a deleted group leaves the list and its entries leave the count`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.DeleteGroup(work),
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteGroup(work) },
+            { onDialogConfirm() },
         )
 
         assertFalse(state.groups.any { it.id == work })
@@ -280,9 +281,9 @@ class GroupListProcessorTest {
 
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.DeleteGroup(home),
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteGroup(home) },
+            { onDialogConfirm() },
         )
 
         assertNull(state.dialog)
@@ -294,14 +295,14 @@ class GroupListProcessorTest {
 
     @Test
     fun `edit in the menu of the top bar renames the group shown, from its name`() = runTest {
-        val (state, _) = perform(groupId = mail.value, GroupListAction.Load, GroupListAction.RenameCurrent)
+        val (state, _) = perform(groupId = mail.value, { onLoad() }, { onRenameCurrent() })
 
         assertEquals(GroupDialog.Rename(mail, "Mail"), state.dialog)
     }
 
     @Test
     fun `delete in the menu of the top bar asks first, naming the group shown`() = runTest {
-        val (state, _) = perform(groupId = mail.value, GroupListAction.Load, GroupListAction.DeleteCurrent)
+        val (state, _) = perform(groupId = mail.value, { onLoad() }, { onDeleteCurrent() })
 
         assertEquals(GroupDialog.Delete(mail, "Mail", toBin = true), state.dialog)
     }
@@ -310,21 +311,21 @@ class GroupListProcessorTest {
     fun `without a recycle bin deleting a group says everything goes for good`() = runTest {
         trash.enabled = false
 
-        val (state, _) = perform(groupId = mail.value, GroupListAction.Load, GroupListAction.DeleteCurrent)
+        val (state, _) = perform(groupId = mail.value, { onLoad() }, { onDeleteCurrent() })
 
         assertEquals(GroupDialog.Delete(mail, "Mail", toBin = false), state.dialog)
     }
 
     @Test
     fun `the root is the database - the menu of the top bar does nothing there`() = runTest {
-        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.RenameCurrent, GroupListAction.DeleteCurrent)
+        val (state, _) = perform(groupId = null, { onLoad() }, { onRenameCurrent() }, { onDeleteCurrent() })
 
         assertNull(state.dialog)
     }
 
     @Test
     fun `nothing to edit before the tree is read`() = runTest {
-        val (state, _) = perform(groupId = mail.value, GroupListAction.DeleteCurrent)
+        val (state, _) = perform(groupId = mail.value, { onDeleteCurrent() })
 
         assertNull(state.dialog)
     }
@@ -333,10 +334,10 @@ class GroupListProcessorTest {
     fun `the group shown renamed - the path shows the new name`() = runTest {
         val (state, events) = perform(
             groupId = mail.value,
-            GroupListAction.Load,
-            GroupListAction.RenameCurrent,
-            GroupListAction.DialogNameChanged("Post"),
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onRenameCurrent() },
+            { onDialogNameChange("Post") },
+            { onDialogConfirm() },
         )
 
         assertEquals("Post", state.path.last().name)
@@ -348,9 +349,9 @@ class GroupListProcessorTest {
     fun `the group shown deleted - the screen goes to its parent`() = runTest {
         val (_, events) = perform(
             groupId = mail.value,
-            GroupListAction.Load,
-            GroupListAction.DeleteCurrent,
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteCurrent() },
+            { onDialogConfirm() },
         )
 
         assertEquals(listOf(MviNavEvent.NavigateBackTo(GroupRoute(DB, work.value))), events)
@@ -361,9 +362,9 @@ class GroupListProcessorTest {
     fun `a group of the root deleted from inside goes to the root`() = runTest {
         val (_, events) = perform(
             groupId = work.value,
-            GroupListAction.Load,
-            GroupListAction.DeleteCurrent,
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteCurrent() },
+            { onDialogConfirm() },
         )
 
         assertEquals(listOf(MviNavEvent.NavigateBackTo(VaultRootRoute(DB))), events)
@@ -375,9 +376,9 @@ class GroupListProcessorTest {
 
         val (state, events) = perform(
             groupId = mail.value,
-            GroupListAction.Load,
-            GroupListAction.DeleteCurrent,
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteCurrent() },
+            { onDialogConfirm() },
         )
 
         assertNull(state.dialog)
@@ -389,7 +390,7 @@ class GroupListProcessorTest {
     fun `the snackbar taking the message clears it`() = runTest {
         groups.failures["tree"] = GroupFailure.Unexpected()
 
-        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.MessageShown)
+        val (state, _) = perform(groupId = null, { onLoad() }, { onMessageShown() })
 
         assertNull(state.message)
     }
@@ -398,7 +399,7 @@ class GroupListProcessorTest {
     fun `a dialog waiting for its change does not close`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.DialogDismiss,
+            { onDialogDismiss() },
             initial = GroupListState(dialog = GroupDialog.Delete(home, "Home", toBin = true, saving = true)),
         )
 
@@ -411,7 +412,7 @@ class GroupListProcessorTest {
         filters.save(kept)
         filters.saved.clear()
 
-        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenFilters)
+        val (state, _) = perform(groupId = null, { onLoad() }, { onOpenFilters() })
 
         assertTrue(state.filtersOpen)
         assertEquals(kept, state.filterDraft)
@@ -421,10 +422,10 @@ class GroupListProcessorTest {
     fun `the cross drops what was chosen in the dialog`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.OpenFilters,
-            GroupListAction.FilterVisibilityChanged(Visibility.GroupsOnly),
-            GroupListAction.CloseFilters,
+            { onLoad() },
+            { onOpenFilters() },
+            { onFilterVisibilityChange(Visibility.GroupsOnly) },
+            { onCloseFilters() },
         )
 
         assertFalse(state.filtersOpen)
@@ -436,11 +437,11 @@ class GroupListProcessorTest {
     fun `an applied filter takes effect and is kept on the device`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.OpenFilters,
-            GroupListAction.FilterVisibilityChanged(Visibility.EntriesOnly),
-            GroupListAction.FilterOrderChanged(CreationOrder.OldestFirst),
-            GroupListAction.ApplyFilters,
+            { onLoad() },
+            { onOpenFilters() },
+            { onFilterVisibilityChange(Visibility.EntriesOnly) },
+            { onFilterOrderChange(CreationOrder.OldestFirst) },
+            { onApplyFilters() },
         )
 
         val chosen = VaultFilter(Visibility.EntriesOnly, CreationOrder.OldestFirst)
@@ -458,10 +459,10 @@ class GroupListProcessorTest {
 
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.OpenFilters,
-            GroupListAction.FilterOrderChanged(CreationOrder.OldestFirst),
-            GroupListAction.ResetFilters,
+            { onLoad() },
+            { onOpenFilters() },
+            { onFilterOrderChange(CreationOrder.OldestFirst) },
+            { onResetFilters() },
         )
 
         assertFalse(state.filtersOpen)
@@ -475,10 +476,10 @@ class GroupListProcessorTest {
 
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.OpenFilters,
-            GroupListAction.FilterVisibilityChanged(Visibility.GroupsOnly),
-            GroupListAction.ApplyFilters,
+            { onLoad() },
+            { onOpenFilters() },
+            { onFilterVisibilityChange(Visibility.GroupsOnly) },
+            { onApplyFilters() },
         )
 
         assertEquals(Visibility.GroupsOnly, state.filter.visibility)
@@ -492,7 +493,7 @@ class GroupListProcessorTest {
     fun `the filter kept on the device is read when the screen is shown`() = runTest {
         filters.save(VaultFilter(order = CreationOrder.OldestFirst))
 
-        val (state, _) = perform(groupId = null, GroupListAction.Load)
+        val (state, _) = perform(groupId = null, { onLoad() })
 
         assertEquals(CreationOrder.OldestFirst, state.filter.order)
         assertEquals(listOf("Mailbox", "Bank"), state.entries.map { it.title })
@@ -500,7 +501,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `typing searches the whole database from the root - groups by name, entries by title`() = runTest {
-        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.QueryChanged("ma"))
+        val (state, _) = perform(groupId = null, { onLoad() }, { onQueryChange("ma") })
 
         assertTrue(state.isSearch)
         assertFalse(state.searching)
@@ -512,7 +513,7 @@ class GroupListProcessorTest {
     fun `what a search finds shows where it lies, from the group searched in`() = runTest {
         entries.add("work-mail", mail, titled("Mail of work"))
 
-        val (state, _) = perform(groupId = work.value, GroupListAction.Load, GroupListAction.QueryChanged("mail"))
+        val (state, _) = perform(groupId = work.value, { onLoad() }, { onQueryChange("mail") })
 
         assertEquals(listOf(listOf("Work")), state.groups.map { it.location })
         assertEquals(listOf(listOf("Work", "Mail")), state.entries.map { it.location })
@@ -520,7 +521,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `the list of a group shows no location`() = runTest {
-        val (state, _) = perform(groupId = null, GroupListAction.Load)
+        val (state, _) = perform(groupId = null, { onLoad() })
 
         assertTrue(state.groups.all { it.location == null })
         assertTrue(state.entries.all { it.location == null })
@@ -530,7 +531,7 @@ class GroupListProcessorTest {
     fun `in a group only what lies under it is searched`() = runTest {
         entries.add("work-mail", mail, titled("Mail of work"))
 
-        val (state, _) = perform(groupId = work.value, GroupListAction.Load, GroupListAction.QueryChanged("MAIL"))
+        val (state, _) = perform(groupId = work.value, { onLoad() }, { onQueryChange("MAIL") })
 
         assertEquals(listOf(mail), state.groups.map { it.id })
         assertEquals(listOf("Mail of work"), state.entries.map { it.title })
@@ -542,10 +543,10 @@ class GroupListProcessorTest {
         val processor = processor(groupId = null, navigator = navigator)
 
         processor.testWithInternalState(this, GroupListState()) {
-            containerHost.action(GroupListAction.Load).join()
-            containerHost.action(GroupListAction.QueryChanged("b"))
-            containerHost.action(GroupListAction.QueryChanged("ba"))
-            containerHost.action(GroupListAction.QueryChanged("ban")).join()
+            containerHost.runEach(arrayOf({ onLoad() }))
+            containerHost.onQueryChange("b")
+            containerHost.onQueryChange("ba")
+            containerHost.runEach(arrayOf({ onQueryChange("ban") }))
             cancelAndIgnoreRemainingItems()
         }
 
@@ -557,7 +558,7 @@ class GroupListProcessorTest {
     fun `a search waits for the typing to stop and shows the skeleton meanwhile`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.QueryChanged("ba"),
+            { onQueryChange("ba") },
             initial = GroupListState(loading = false, path = listOf(Crumb(groups.rootId, "Passwords"))),
             join = false,
         )
@@ -570,9 +571,9 @@ class GroupListProcessorTest {
     fun `an empty field is the group again`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.QueryChanged("ma"),
-            GroupListAction.QueryChanged(""),
+            { onLoad() },
+            { onQueryChange("ma") },
+            { onQueryChange("") },
         )
 
         assertFalse(state.isSearch)
@@ -583,7 +584,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `a search that finds nothing says so`() = runTest {
-        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.QueryChanged("zzz"))
+        val (state, _) = perform(groupId = null, { onLoad() }, { onQueryChange("zzz") })
 
         assertEquals(EmptyReason.NothingFound, state.emptyReason)
     }
@@ -592,7 +593,7 @@ class GroupListProcessorTest {
     fun `the filter applies to what the search finds`() = runTest {
         filters.save(VaultFilter(visibility = Visibility.EntriesOnly))
 
-        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.QueryChanged("ma"))
+        val (state, _) = perform(groupId = null, { onLoad() }, { onQueryChange("ma") })
 
         assertTrue(state.groups.isEmpty())
         assertEquals(listOf("Mailbox"), state.entries.map { it.title })
@@ -602,7 +603,7 @@ class GroupListProcessorTest {
     fun `a search that fails says so and goes to the log`() = runTest {
         entries.failures["search"] = EntryFailure.Unexpected(IllegalStateException("broken"))
 
-        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.QueryChanged("ma"))
+        val (state, _) = perform(groupId = null, { onLoad() }, { onQueryChange("ma") })
 
         assertFalse(state.searching)
         assertEquals(GroupListMessage.SearchFailed, state.message)
@@ -613,9 +614,9 @@ class GroupListProcessorTest {
     fun `going into a group clears the search`() = runTest {
         val (state, events) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.QueryChanged("ma"),
-            GroupListAction.OpenGroup(mail),
+            { onLoad() },
+            { onQueryChange("ma") },
+            { onOpenGroup(mail) },
         )
 
         assertEquals("", state.query)
@@ -627,9 +628,9 @@ class GroupListProcessorTest {
     fun `going into an entry clears the search`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.QueryChanged("ma"),
-            GroupListAction.OpenEntry(mailbox),
+            { onLoad() },
+            { onQueryChange("ma") },
+            { onOpenEntry(mailbox) },
         )
 
         assertEquals("", state.query)
@@ -641,7 +642,7 @@ class GroupListProcessorTest {
         entries.add("letter", home, titled("Letter"))
         filters.save(VaultFilter(visibility = Visibility.GroupsOnly))
 
-        val (state, _) = perform(groupId = home.value, GroupListAction.Load)
+        val (state, _) = perform(groupId = home.value, { onLoad() })
 
         assertEquals(EmptyReason.NoGroups, state.emptyReason)
     }
@@ -650,7 +651,7 @@ class GroupListProcessorTest {
     fun `entries only in a group of groups only says there are no entries`() = runTest {
         filters.save(VaultFilter(visibility = Visibility.EntriesOnly))
 
-        val (state, _) = perform(groupId = work.value, GroupListAction.Load)
+        val (state, _) = perform(groupId = work.value, { onLoad() })
 
         assertEquals(EmptyReason.NoEntries, state.emptyReason)
     }
@@ -659,9 +660,9 @@ class GroupListProcessorTest {
     fun `close fab closes the open menu`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.ToggleFab,
-            GroupListAction.CloseFab,
+            { onLoad() },
+            { onToggleFab() },
+            { onCloseFab() },
         )
 
         assertFalse(state.fabExpanded)
@@ -671,9 +672,9 @@ class GroupListProcessorTest {
     fun `close fab never opens the menu, a repeated one included`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.CloseFab,
-            GroupListAction.CloseFab,
+            { onLoad() },
+            { onCloseFab() },
+            { onCloseFab() },
         )
 
         assertFalse(state.fabExpanded)
@@ -681,14 +682,14 @@ class GroupListProcessorTest {
 
     @Test
     fun `the gear opens the settings`() = runTest {
-        val (_, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenSettings)
+        val (_, events) = perform(groupId = null, { onLoad() }, { onOpenSettings() })
 
         assertEquals(listOf(MviNavEvent.NavigateTo(SettingsRoute(DB))), events)
     }
 
     @Test
     fun `the bin beside the gear opens the recycle bin`() = runTest {
-        val (_, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.OpenTrash)
+        val (_, events) = perform(groupId = null, { onLoad() }, { onOpenTrash() })
 
         assertEquals(listOf(MviNavEvent.NavigateTo(TrashRoute(DB))), events)
     }
@@ -697,9 +698,9 @@ class GroupListProcessorTest {
     fun `create entry opens the form inside this group and closes the menu`() = runTest {
         val (state, events) = perform(
             groupId = work.value,
-            GroupListAction.Load,
-            GroupListAction.ToggleFab,
-            GroupListAction.CreateEntry,
+            { onLoad() },
+            { onToggleFab() },
+            { onCreateEntry() },
         )
 
         assertFalse(state.fabExpanded)
@@ -708,7 +709,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `locking locks the database for real and leaves the locked screen to the app`() = runTest {
-        val (_, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.Lock)
+        val (_, events) = perform(groupId = null, { onLoad() }, { onLock() })
 
         assertEquals(listOf("lock"), database.calls)
         assertEquals(DB, autoLock.locked.first())
@@ -717,7 +718,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `a group below the root does not hand the database to the lock`() = runTest {
-        perform(groupId = work.value, GroupListAction.Load, GroupListAction.Lock)
+        perform(groupId = work.value, { onLoad() }, { onLock() })
 
         assertTrue(database.calls.isEmpty())
     }
@@ -726,7 +727,7 @@ class GroupListProcessorTest {
     fun `a lock that fails stays here, says so and goes to the log`() = runTest {
         database.lockFailure = CoreException("DbKeyNotFound", "not open")
 
-        val (state, events) = perform(groupId = null, GroupListAction.Load, GroupListAction.Lock)
+        val (state, events) = perform(groupId = null, { onLoad() }, { onLock() })
 
         assertEquals(GroupListMessage.Unexpected, state.message)
         assertTrue(events.isEmpty())
@@ -737,7 +738,7 @@ class GroupListProcessorTest {
     fun `the entries of the group come after its groups, the newest first, untitled ones too`() = runTest {
         entries.add("blank", groups.rootId, titled(""))
 
-        val (state, _) = perform(groupId = null, GroupListAction.Load)
+        val (state, _) = perform(groupId = null, { onLoad() })
 
         assertEquals(listOf("", "Bank", "Mailbox"), state.entries.map { it.title })
         assertFalse(state.isEmpty)
@@ -747,7 +748,7 @@ class GroupListProcessorTest {
     fun `a group with entries and no groups is not empty`() = runTest {
         entries.add("letter", home, titled("Letter"))
 
-        val (state, _) = perform(groupId = home.value, GroupListAction.Load)
+        val (state, _) = perform(groupId = home.value, { onLoad() })
 
         assertTrue(state.groups.isEmpty())
         assertFalse(state.isEmpty)
@@ -755,7 +756,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `a group with neither groups nor entries is empty`() = runTest {
-        val (state, _) = perform(groupId = mail.value, GroupListAction.Load)
+        val (state, _) = perform(groupId = mail.value, { onLoad() })
 
         assertTrue(state.isEmpty)
         assertEquals(EmptyReason.EmptyGroup, state.emptyReason)
@@ -765,7 +766,7 @@ class GroupListProcessorTest {
     fun `entries that cannot be read say so and go to the log`() = runTest {
         entries.failures["entries"] = EntryFailure.Unexpected(IllegalStateException("broken"))
 
-        val (state, _) = perform(groupId = null, GroupListAction.Load)
+        val (state, _) = perform(groupId = null, { onLoad() })
 
         assertFalse(state.loading)
         assertEquals(GroupListMessage.LoadFailed, state.message)
@@ -776,9 +777,9 @@ class GroupListProcessorTest {
     fun `a tapped entry opens for reading, edit from its menu opens the form`() = runTest {
         val (_, events) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.OpenEntry(bank),
-            GroupListAction.EditEntry(bank),
+            { onLoad() },
+            { onOpenEntry(bank) },
+            { onEditEntry(bank) },
         )
 
         assertEquals(
@@ -792,7 +793,7 @@ class GroupListProcessorTest {
 
     @Test
     fun `delete asks first, naming the entry`() = runTest {
-        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.DeleteEntry(bank))
+        val (state, _) = perform(groupId = null, { onLoad() }, { onDeleteEntry(bank) })
 
         assertEquals(GroupDialog.DeleteEntry(bank, "Bank", toBin = true), state.dialog)
     }
@@ -801,7 +802,7 @@ class GroupListProcessorTest {
     fun `without a recycle bin deleting an entry says it goes for good`() = runTest {
         trash.enabled = false
 
-        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.DeleteEntry(bank))
+        val (state, _) = perform(groupId = null, { onLoad() }, { onDeleteEntry(bank) })
 
         assertEquals(GroupDialog.DeleteEntry(bank, "Bank", toBin = false), state.dialog)
     }
@@ -810,7 +811,7 @@ class GroupListProcessorTest {
     fun `an unread recycle bin warns of a delete for good - the safe side`() = runTest {
         trash.failures["enabled"] = TrashFailure.Unexpected()
 
-        val (state, _) = perform(groupId = null, GroupListAction.Load, GroupListAction.DeleteEntry(bank))
+        val (state, _) = perform(groupId = null, { onLoad() }, { onDeleteEntry(bank) })
 
         assertEquals(GroupDialog.DeleteEntry(bank, "Bank", toBin = false), state.dialog)
     }
@@ -819,9 +820,9 @@ class GroupListProcessorTest {
     fun `a deleted entry goes to the recycle bin, leaves the list, and the file is written`() = runTest {
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.DeleteEntry(bank),
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteEntry(bank) },
+            { onDialogConfirm() },
         )
 
         assertNull(state.dialog)
@@ -836,9 +837,9 @@ class GroupListProcessorTest {
 
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.DeleteEntry(bank),
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteEntry(bank) },
+            { onDialogConfirm() },
         )
 
         assertNull(state.dialog)
@@ -852,9 +853,9 @@ class GroupListProcessorTest {
 
         val (state, _) = perform(
             groupId = null,
-            GroupListAction.Load,
-            GroupListAction.DeleteEntry(bank),
-            GroupListAction.DialogConfirm,
+            { onLoad() },
+            { onDeleteEntry(bank) },
+            { onDialogConfirm() },
         )
 
         assertNull(state.dialog)
@@ -862,14 +863,13 @@ class GroupListProcessorTest {
         assertEquals(2, entries.calls.count { it == "entries" })
     }
 
-    /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     /**
-     * Runs [actions] one after another, each to its end - a search waits its delay out, in virtual time.
-     * Without [join] they are only started.
+     * Runs [actions] one after another on a new processor, each to its end - [runEach]; without [join] they are
+     * only started. The state they end in, and the navigation.
      */
     private suspend fun TestScope.perform(
         groupId: String?,
-        vararg actions: GroupListAction,
+        vararg actions: GroupListActions.() -> Unit,
         initial: GroupListState = GroupListState(isRoot = groupId == null),
         join: Boolean = true,
     ): Pair<GroupListState, List<MviNavEvent>> {
@@ -877,7 +877,7 @@ class GroupListProcessorTest {
         val processor = processor(groupId, navigator)
 
         processor.testWithInternalState(this, initial) {
-            actions.forEach { containerHost.action(it).also { job -> if (join) job.join() } }
+            if (join) containerHost.runEach(actions) else actions.forEach { containerHost.it() }
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events

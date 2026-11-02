@@ -1,48 +1,32 @@
 package ru.kino.dev.vault.pres.entryread
 
-sealed interface EntryReadAction {
+import ru.kino.dev.vault.pres.common.EntryReadFieldsActions
+
+/** What the reading of an entry is asked to do - done by [EntryReadProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
+interface EntryReadActions : EntryReadFieldsActions {
 
     /** The screen is shown - the first time, or again after editing: the entry is read anew. */
-    data object Load : EntryReadAction
+    fun onLoad()
 
-    data object Back : EntryReadAction
+    fun onBack()
 
     /** The fab with the pen: the form of this entry. */
-    data object Edit : EntryReadAction
-
-    data object TogglePassword : EntryReadAction
-
-    /** Shows or hides the value of the protected own field at [index]. */
-    data class ToggleOwn(val index: Int) : EntryReadAction
-
-    /** Shows or hides the value of the field of the preset under [key], private by the database. */
-    data class ToggleKey(val key: String) : EntryReadAction
+    fun onEdit()
 
     /** "History" in the menu of the top bar: the old versions of this entry. */
-    data object History : EntryReadAction
+    fun onHistory()
 
     /** "Delete" in the menu of the top bar: asks first. */
-    data object Delete : EntryReadAction
+    fun onDelete()
 
     /** "Delete" in the dialog: the entry goes into the recycle bin, or for good; the screen goes back. */
-    data object DeleteConfirm : EntryReadAction
+    fun onDeleteConfirm()
 
-    data object DeleteDismiss : EntryReadAction
+    fun onDeleteDismiss()
 
     /** Lock the database now, not waiting for the timer - the lock button (pass-docs, Step 59). */
-    data object Lock : EntryReadAction
+    fun onLock()
 
     /** The snackbar took the message. */
-    data object MessageShown : EntryReadAction
+    fun onMessageShown()
 }
-
-/**
- * "Delete the entry?" - the entry called [title] as the file holds it.
- *
- * @param toBin the delete goes to the recycle bin; false - for good (pass-docs, Step 70)
- * @param deleting the delete is under way: the dialog shows progress and takes nothing
- */
-data class DeleteDialog(val title: String, val toBin: Boolean, val deleting: Boolean = false)
-
-/** What the snackbar says. */
-enum class EntryReadMessage { LoadFailed, NotSaved, Unexpected }

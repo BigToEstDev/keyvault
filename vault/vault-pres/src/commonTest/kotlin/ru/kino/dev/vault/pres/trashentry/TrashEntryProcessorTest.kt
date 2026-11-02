@@ -24,6 +24,7 @@ import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
+import ru.kino.dev.vault.pres.testing.runEach
 import ru.kino.dev.vault.pres.trash.TrashDialog
 import ru.kino.dev.vault.trash.FakeTrashRepository
 import ru.kino.dev.vault.trash.TrashEditor
@@ -51,7 +52,7 @@ class TrashEntryProcessorTest {
 
     @Test
     fun `the deleted entry is read with when it was deleted`() = runTest {
-        val (state, _) = perform(TrashEntryAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals("Mail", state.entry?.content?.value(StandardPreset.TITLE))
         assertEquals(500L, state.trashed?.deletedAt)
@@ -62,7 +63,7 @@ class TrashEntryProcessorTest {
     fun `an entry no longer in the bin sends the screen back`() = runTest {
         trash.entries.clear()
 
-        val (state, events) = perform(TrashEntryAction.Load)
+        val (state, events) = perform({ onLoad() })
 
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
         assertNull(state.entry)
@@ -72,7 +73,7 @@ class TrashEntryProcessorTest {
     fun `a bin that cannot be read says so and goes to the log`() = runTest {
         trash.failures["entries"] = TrashFailure.Unexpected()
 
-        val (state, _) = perform(TrashEntryAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(TrashEntryMessage.LoadFailed, state.message)
         assertEquals(1, log.logged.size)
@@ -80,14 +81,14 @@ class TrashEntryProcessorTest {
 
     @Test
     fun `restore offers the group the entry came from`() = runTest {
-        val (state, _) = perform(TrashEntryAction.Load, TrashEntryAction.Restore)
+        val (state, _) = perform({ onLoad() }, { onRestore() })
 
         assertEquals(work, (state.dialog as TrashDialog.Restore).group)
     }
 
     @Test
     fun `restored, the file is written and the screen goes back to the bin`() = runTest {
-        val (_, events) = perform(TrashEntryAction.Load, TrashEntryAction.Restore, TrashEntryAction.DialogConfirm)
+        val (_, events) = perform({ onLoad() }, { onRestore() }, { onDialogConfirm() })
 
         assertEquals(mapOf(mail to work), trash.restored)
         assertEquals(listOf("save"), database.calls)
@@ -96,7 +97,7 @@ class TrashEntryProcessorTest {
 
     @Test
     fun `removed for good after asking, back to the bin`() = runTest {
-        val (state, events) = perform(TrashEntryAction.Load, TrashEntryAction.Remove, TrashEntryAction.DialogConfirm)
+        val (state, events) = perform({ onLoad() }, { onRemove() }, { onDialogConfirm() })
 
         assertTrue(trash.entries.isEmpty())
         assertEquals(TrashDialog.Remove(1, saving = true), state.dialog)
@@ -105,7 +106,7 @@ class TrashEntryProcessorTest {
 
     @Test
     fun `cancelled, nothing changes`() = runTest {
-        val (state, events) = perform(TrashEntryAction.Load, TrashEntryAction.Remove, TrashEntryAction.DialogDismiss)
+        val (state, events) = perform({ onLoad() }, { onRemove() }, { onDialogDismiss() })
 
         assertNull(state.dialog)
         assertEquals(1, trash.entries.size)
@@ -117,10 +118,10 @@ class TrashEntryProcessorTest {
         database.saveFailure = IOException("provider gone")
 
         val (state, events) = perform(
-            TrashEntryAction.Load,
-            TrashEntryAction.Remove,
-            TrashEntryAction.DialogConfirm,
-            TrashEntryAction.NotSavedSeen,
+            { onLoad() },
+            { onRemove() },
+            { onDialogConfirm() },
+            { onNotSavedSeen() },
         )
 
         assertTrue(state.notSaved)
@@ -132,19 +133,19 @@ class TrashEntryProcessorTest {
     fun `an entry gone from the bin meanwhile sends the screen back`() = runTest {
         trash.failures["remove"] = TrashFailure.Stale()
 
-        val (_, events) = perform(TrashEntryAction.Load, TrashEntryAction.Remove, TrashEntryAction.DialogConfirm)
+        val (_, events) = perform({ onLoad() }, { onRemove() }, { onDialogConfirm() })
 
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
     }
 
     @Test
     fun `the eye shows the password`() = runTest {
-        val (state, _) = perform(TrashEntryAction.Load, TrashEntryAction.TogglePassword)
+        val (state, _) = perform({ onLoad() }, { onTogglePassword() })
 
         assertTrue(state.passwordVisible)
     }
 
-    private suspend fun TestScope.perform(vararg actions: TrashEntryAction): Pair<TrashEntryState, List<MviNavEvent>> {
+    private suspend fun TestScope.perform(vararg actions: TrashEntryActions.() -> Unit): Pair<TrashEntryState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val processor = TrashEntryProcessor(
             DB,
@@ -160,7 +161,7 @@ class TrashEntryProcessorTest {
         )
 
         processor.testWithInternalState(this) {
-            actions.forEach { containerHost.action(it).join() }
+            containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events

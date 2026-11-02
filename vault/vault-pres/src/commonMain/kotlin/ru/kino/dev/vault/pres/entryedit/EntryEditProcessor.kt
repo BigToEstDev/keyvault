@@ -1,7 +1,6 @@
 package ru.kino.dev.vault.pres.entryedit
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -45,62 +44,6 @@ import ru.kino.dev.vault.trash.TrashRepository
 import ru.kino.dev.vault.trash.deletesToBin
 
 /**
- * @param creating a new entry, not one of the database
- * @param loading the entry is being read - the skeleton is shown; never for a new one
- * @param content what the form holds now; null until the entry is read
- * @param initial what the form opened with - the blank or the entry as read: "back" asks before leaving
- * anything else
- * @param groups every group the entry can go into, in the order of the tree; empty until the tree is read
- * @param group the group chosen - where a new entry goes, where an edited one is moved on saving
- * @param initialGroup the group the form opened with: another one is a change, as other fields are
- * @param hidden filled fields of a preset chosen before that the preset now chosen lacks (see [EntryDraft]);
- * memory only, as the whole state - never the saved state of the screen
- * @param presetsBeforeCreate the presets of one's own when "+ create preset" was tapped: one not among them,
- * once the screen is back, is the one made there - it is picked (pass-docs, Step 49); null otherwise
- * @param shownOwn indexes of protected own fields shown in clear
- * @param protection the fields private by the database (pass-docs, Step 65); only the password until read
- * @param shownKeys keys of the fields of the preset private by the database shown in clear
- * @param phoneRegion the country a phone field of none yet is shown with - a field of a preset; null until read
- *   (pass-docs, Step 77)
- * @param problems what the last save was refused for, until the field is edited
- * @param saving the change is being made and written - the fab waits, the fields take nothing
- * @param message for the snackbar, until it takes it
- */
-data class EntryEditState(
-    val creating: Boolean,
-    val loading: Boolean = false,
-    val content: EntryContent? = null,
-    val initial: EntryContent? = null,
-    val groups: List<GroupChoice> = emptyList(),
-    val group: GroupId? = null,
-    val initialGroup: GroupId? = null,
-    val hidden: List<EntryField> = emptyList(),
-    val presetsBeforeCreate: Set<PresetId>? = null,
-    val passwordVisible: Boolean = false,
-    val shownOwn: Set<Int> = emptySet(),
-    val protection: FieldProtection = FieldProtection.DEFAULT,
-    val shownKeys: Set<String> = emptySet(),
-    val phoneRegion: String? = null,
-    val problems: List<FieldProblem> = emptyList(),
-    val saving: Boolean = false,
-    val dialog: EntryEditDialog? = null,
-    val message: EntryEditMessage? = null,
-) {
-    /** The form differs from what it opened with - the fields, or the group. */
-    val changed: Boolean get() = content != initial || group != initialGroup
-
-    /** One more own field can be added - the card of own fields has room (pass-docs, Step 40, fix 19.1). */
-    val canAddField: Boolean get() = content?.let(EntryValidator::canAddField) == true
-
-    /** The required field of the preset under [key] was refused for being empty. */
-    fun isMissing(key: String): Boolean = problems.any { it is FieldProblem.Required && it.key == key }
-
-    /** Why the name of the own field at [index] was refused, if it was. */
-    fun nameProblem(index: Int): NameProblem? =
-        problems.firstNotNullOfOrNull { (it as? FieldProblem.BadName)?.takeIf { bad -> bad.index == index }?.problem }
-}
-
-/**
  * Creating an entry, or editing one - one form, two ways in (pass-docs, vault-our.md "Экран редактирования
  * записи", decisions.md "Экраны записи").
  *
@@ -128,7 +71,7 @@ class EntryEditProcessor(
     private val phoneDefaults: PhoneDefaults,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<EntryEditState, EntryEditState, Nothing> {
+) : ViewModel(), OrbitContainerHost<EntryEditState, EntryEditState, Nothing>, EntryEditActions {
 
     init {
         require((groupId == null) != (entryId == null)) { "either a group to create in or an entry to edit" }
@@ -146,148 +89,194 @@ class EntryEditProcessor(
         if (entryId != null) load(EntryId(entryId)) else loadGroups()
     }
 
-    fun action(action: EntryEditAction): Job = when (action) {
-        // Typed text: the state is updated before the field draws again, or the cursor jumps
-        is EntryEditAction.ValueChanged -> textIntent {
+    // Typed text: the state is updated before the field draws again, or the cursor jumps
+    override fun onValueChange(key: String, value: String) {
+        textIntent {
             reduce {
-                state.edited { withValue(action.key, action.value) }
-                    .copy(problems = state.problems.filterNot { it is FieldProblem.Required && it.key == action.key })
+                state.edited { withValue(key, value) }
+                    .copy(problems = state.problems.filterNot { it is FieldProblem.Required && it.key == key })
             }
         }
+    }
 
-        is EntryEditAction.OwnValueChanged -> textIntent {
+    override fun onOwnValueChange(index: Int, value: String) {
+        textIntent {
             reduce {
                 state.edited {
-                    copy(ownFields = ownFields.mapIndexed { i, field -> if (i == action.index) field.copy(value = action.value) else field })
+                    copy(ownFields = ownFields.mapIndexed { i, field -> if (i == index) field.copy(value = value) else field })
                 }
             }
         }
-
-        is EntryEditAction.DialogNameChanged -> textIntent {
-            reduce { state.copy(dialog = state.dialog?.typed(action.name)) }
-        }
-
-        is EntryEditAction.PhoneDigitsChanged -> textIntent {
-            reduce { state.withPhoneDigits(action.target, action.digits) }
-        }
-
-        else -> intent { handle(action) }
     }
 
-    private suspend fun Syntax<EntryEditState, Nothing>.handle(action: EntryEditAction) {
-        when (action) {
-            is EntryEditAction.ValueChanged,
-            is EntryEditAction.OwnValueChanged,
-            is EntryEditAction.DialogNameChanged,
-            is EntryEditAction.PhoneDigitsChanged,
-            -> Unit // in action()
+    override fun onDialogNameChange(name: String) {
+        textIntent { reduce { state.copy(dialog = state.dialog?.typed(name)) } }
+    }
 
-            is EntryEditAction.ChoosePhoneCountry -> state.phoneField(action.target)?.let { field ->
+    override fun onPhoneDigitsChange(target: PhoneTarget, digits: String) {
+        textIntent { reduce { state.withPhoneDigits(target, digits) } }
+    }
+
+    override fun onChoosePhoneCountry(target: PhoneTarget) {
+        intent {
+            state.phoneField(target)?.let { field ->
                 val selected = state.regionOf(field) ?: return@let
                 if (state.editable) {
                     val countries = phones.countries()
-                    reduce { state.copy(dialog = EntryEditDialog.PhoneCountries(action.target, selected, countries)) }
+                    reduce { state.copy(dialog = EntryEditDialog.PhoneCountries(target, selected, countries)) }
                 }
             }
+        }
+    }
 
-            is EntryEditAction.PhoneCountryChosen -> (state.dialog as? EntryEditDialog.PhoneCountries)?.let { dialog ->
-                phones.prepare(listOf(action.region))
-                reduce { state.withPhoneCountry(dialog.target, action.region).copy(dialog = null) }
+    override fun onPhoneCountryChosen(region: String) {
+        intent {
+            (state.dialog as? EntryEditDialog.PhoneCountries)?.let { dialog ->
+                phones.prepare(listOf(region))
+                reduce { state.withPhoneCountry(dialog.target, region).copy(dialog = null) }
             }
+        }
+    }
 
-            EntryEditAction.TogglePassword -> reduce { state.copy(passwordVisible = !state.passwordVisible) }
+    override fun onTogglePassword() {
+        intent { reduce { state.copy(passwordVisible = !state.passwordVisible) } }
+    }
 
-            is EntryEditAction.ToggleOwn -> reduce { state.copy(shownOwn = state.shownOwn.toggled(action.index)) }
+    override fun onToggleOwn(index: Int) {
+        intent { reduce { state.copy(shownOwn = state.shownOwn.toggled(index)) } }
+    }
 
-            is EntryEditAction.ToggleKey -> reduce { state.copy(shownKeys = state.shownKeys.toggled(action.key)) }
+    override fun onToggleKey(key: String) {
+        intent { reduce { state.copy(shownKeys = state.shownKeys.toggled(key)) } }
+    }
 
-            is EntryEditAction.GroupChosen -> if (state.editable) {
-                reduce { state.copy(group = action.id) }
-            }
+    override fun onGroupChosen(id: GroupId) {
+        intent { if (state.editable) reduce { state.copy(group = id) } }
+    }
 
-            EntryEditAction.ChoosePreset -> state.content?.takeIf { state.editable }?.let { content ->
+    override fun onChoosePreset() {
+        intent {
+            state.content?.takeIf { state.editable }?.let { content ->
                 val own = presets.presets.first()
                 reduce { state.copy(dialog = EntryEditDialog.Preset(own, content.preset.id)) }
             }
+        }
+    }
 
-            is EntryEditAction.PresetChosen -> {
-                val preset = (state.dialog as? EntryEditDialog.Preset)?.presets?.firstOrNull { it.id == action.id }
-                    ?: StandardPreset.preset.takeIf { action.id == null }
-                preset?.let { switchPreset(it) }
-            }
+    override fun onPresetChosen(id: PresetId?) {
+        intent {
+            val preset = (state.dialog as? EntryEditDialog.Preset)?.presets?.firstOrNull { it.id == id }
+                ?: StandardPreset.preset.takeIf { id == null }
+            preset?.let { switchPreset(it) }
+        }
+    }
 
-            EntryEditAction.CreatePreset -> (state.dialog as? EntryEditDialog.Preset)?.let { dialog ->
+    override fun onCreatePreset() {
+        intent {
+            (state.dialog as? EntryEditDialog.Preset)?.let { dialog ->
                 if (PresetValidator.canAdd(dialog.presets)) {
                     reduce { state.copy(dialog = null, presetsBeforeCreate = dialog.presets.mapNotNull { it.id }.toSet()) }
                     navigator.navigate(MviNavEvent.NavigateTo(PresetEditRoute()))
                 }
             }
+        }
+    }
 
-            EntryEditAction.Resumed -> state.presetsBeforeCreate?.let { before ->
+    override fun onResumed() {
+        intent {
+            state.presetsBeforeCreate?.let { before ->
                 reduce { state.copy(presetsBeforeCreate = null) }
                 // None new - the person went back without making one
                 presets.presets.first().firstOrNull { it.id !in before }?.let { switchPreset(it) }
             }
+        }
+    }
 
-            EntryEditAction.AddField -> if (state.editable && state.canAddField) {
-                reduce { state.copy(dialog = EntryEditDialog.AddField()) }
-            }
+    override fun onAddField() {
+        intent { if (state.editable && state.canAddField) reduce { state.copy(dialog = EntryEditDialog.AddField()) } }
+    }
 
-            is EntryEditAction.EditField -> state.ownField(action.index)?.let { field ->
+    override fun onEditField(index: Int) {
+        intent {
+            state.ownField(index)?.let { field ->
                 if (state.editable) {
-                    reduce {
-                        state.copy(dialog = EntryEditDialog.EditField(action.index, field.key, field.protected, field.type))
-                    }
+                    reduce { state.copy(dialog = EntryEditDialog.EditField(index, field.key, field.protected, field.type)) }
                 }
             }
+        }
+    }
 
-            is EntryEditAction.DialogProtectedChanged -> reduce {
-                state.copy(dialog = state.dialog?.switched(action.protected))
+    override fun onDialogProtectedChange(protected: Boolean) {
+        intent { reduce { state.copy(dialog = state.dialog?.switched(protected)) } }
+    }
+
+    override fun onDialogTypeChange(type: FieldType) {
+        intent { reduce { state.copy(dialog = state.dialog?.typedAs(type)) } }
+    }
+
+    override fun onDeleteField(index: Int) {
+        intent {
+            state.ownField(index)?.let { field ->
+                if (state.editable) reduce { state.copy(dialog = EntryEditDialog.DeleteField(index, field.key)) }
             }
+        }
+    }
 
-            is EntryEditAction.DialogTypeChanged -> reduce {
-                state.copy(dialog = state.dialog?.typedAs(action.type))
-            }
+    override fun onDialogConfirm() {
+        intent { confirm() }
+    }
 
-            is EntryEditAction.DeleteField -> state.ownField(action.index)?.let { field ->
-                if (state.editable) reduce { state.copy(dialog = EntryEditDialog.DeleteField(action.index, field.key)) }
-            }
-
-            EntryEditAction.DialogConfirm -> confirm()
-
-            EntryEditAction.DialogDismiss -> when (val dialog = state.dialog) {
+    override fun onDialogDismiss() {
+        intent {
+            when (val dialog = state.dialog) {
                 // Nothing to stay for: the change is made, the screen goes as after a save
                 EntryEditDialog.NotSaved -> leave()
                 is EntryEditDialog.Delete -> if (!dialog.deleting) reduce { state.copy(dialog = null) }
                 else -> reduce { state.copy(dialog = null) }
             }
+        }
+    }
 
-            EntryEditAction.Save -> save(dropHidden = false)
+    override fun onSave() {
+        intent { save(dropHidden = false) }
+    }
 
-            EntryEditAction.KeepHidden -> if (state.dialog is EntryEditDialog.HiddenFields) {
+    override fun onKeepHidden() {
+        intent {
+            if (state.dialog is EntryEditDialog.HiddenFields) {
                 state.content?.let { content ->
                     val kept = EntryDraft(content, state.hidden).withHiddenAsOwn()
                     reduce { state.copy(content = kept.content, hidden = kept.hidden, dialog = null) }
                     save(dropHidden = false)
                 }
             }
+        }
+    }
 
-            EntryEditAction.Back -> when {
+    override fun onBack() {
+        intent {
+            when {
                 state.saving -> Unit
                 state.content != null && state.changed -> reduce { state.copy(dialog = EntryEditDialog.Leave) }
                 else -> leave()
             }
+        }
+    }
 
-            EntryEditAction.Delete -> state.initial?.let { read ->
+    override fun onDelete() {
+        intent {
+            state.initial?.let { read ->
                 // A new entry has nothing to delete; nor is a dialog put over another one
                 if (entryId != null && state.editable && state.dialog == null) {
                     val toBin = trash.deletesToBin(dbKey)
                     reduce { state.copy(dialog = EntryEditDialog.Delete(read.value(StandardPreset.TITLE), toBin)) }
                 }
             }
-
-            EntryEditAction.MessageShown -> reduce { state.copy(message = null) }
         }
+    }
+
+    override fun onMessageShown() {
+        intent { reduce { state.copy(message = null) } }
     }
 
     /** Into the recycle bin and the file; done, the screen goes back - what was typed goes with the entry. */
@@ -536,9 +525,6 @@ class EntryEditProcessor(
         const val TAG = "EntryEditProcessor"
     }
 }
-
-/** The form takes changes: it is read and nothing is under way. */
-private val EntryEditState.editable: Boolean get() = content != null && !saving
 
 private fun EntryEditState.ownField(index: Int): EntryField? = content?.ownFields?.getOrNull(index)
 

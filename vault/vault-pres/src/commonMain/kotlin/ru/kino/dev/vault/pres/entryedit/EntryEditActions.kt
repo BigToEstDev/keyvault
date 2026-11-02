@@ -1,157 +1,82 @@
 package ru.kino.dev.vault.pres.entryedit
 
 import ru.kino.dev.core.FieldType
-import ru.kino.dev.core.phone.PhoneCountry
-import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetId
-import ru.kino.dev.vault.entry.NameProblem
 import ru.kino.dev.vault.group.GroupId
 
-sealed interface EntryEditAction {
+/** What the form of an entry is asked to do - done by [EntryEditProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
+interface EntryEditActions {
 
     /** A value of a field of the preset, under its [key]. */
-    data class ValueChanged(val key: String, val value: String) : EntryEditAction
+    fun onValueChange(key: String, value: String)
 
     /** A value of the own field at [index]. */
-    data class OwnValueChanged(val index: Int, val value: String) : EntryEditAction
+    fun onOwnValueChange(index: Int, value: String)
 
-    data object TogglePassword : EntryEditAction
+    fun onTogglePassword()
 
     /** Shows or hides the value of the protected own field at [index]. */
-    data class ToggleOwn(val index: Int) : EntryEditAction
+    fun onToggleOwn(index: Int)
 
     /** Shows or hides the value of the field of the preset under [key], private by the database. */
-    data class ToggleKey(val key: String) : EntryEditAction
+    fun onToggleKey(key: String)
 
     /** Another group picked for the entry - it goes there on saving. */
-    data class GroupChosen(val id: GroupId) : EntryEditAction
+    fun onGroupChosen(id: GroupId)
 
     /** The preset button: the choice of presets, read anew. */
-    data object ChoosePreset : EntryEditAction
+    fun onChoosePreset()
 
     /** A preset picked in the choice: the one of [id], or the standard one for null. */
-    data class PresetChosen(val id: PresetId?) : EntryEditAction
+    fun onPresetChosen(id: PresetId?)
 
     /** "+ Create preset" in the choice: the screen of a new preset. */
-    data object CreatePreset : EntryEditAction
+    fun onCreatePreset()
 
     /** The screen is shown - again, maybe, after a preset was made: that one is picked. */
-    data object Resumed : EntryEditAction
+    fun onResumed()
 
     /** "+ Add field": asks for the name of a new own field, whether it is protected and its type. */
-    data object AddField : EntryEditAction
+    fun onAddField()
 
     /** "Edit" in the menu of the own field at [index]: its name, whether it is protected and its type. */
-    data class EditField(val index: Int) : EntryEditAction
+    fun onEditField(index: Int)
 
-    data class DeleteField(val index: Int) : EntryEditAction
+    fun onDeleteField(index: Int)
 
-    data class DialogNameChanged(val name: String) : EntryEditAction
+    fun onDialogNameChange(name: String)
 
     /** The switch "protected field" of the dialog of a field. */
-    data class DialogProtectedChanged(val protected: Boolean) : EntryEditAction
+    fun onDialogProtectedChange(protected: Boolean)
 
     /** The type picked in the dialog of a field. */
-    data class DialogTypeChanged(val type: FieldType) : EntryEditAction
+    fun onDialogTypeChange(type: FieldType)
 
     /** The digits of the phone field [target] typed - after the calling code (pass-docs, Step 77). */
-    data class PhoneDigitsChanged(val target: PhoneTarget, val digits: String) : EntryEditAction
+    fun onPhoneDigitsChange(target: PhoneTarget, digits: String)
 
     /** The prefix of the phone field [target] tapped: asks for the country. */
-    data class ChoosePhoneCountry(val target: PhoneTarget) : EntryEditAction
+    fun onChoosePhoneCountry(target: PhoneTarget)
 
     /** The country picked in [EntryEditDialog.PhoneCountries] - its code. */
-    data class PhoneCountryChosen(val region: String) : EntryEditAction
+    fun onPhoneCountryChosen(region: String)
 
-    data object DialogConfirm : EntryEditAction
+    fun onDialogConfirm()
 
-    data object DialogDismiss : EntryEditAction
+    fun onDialogDismiss()
 
     /** "Add outside the preset" in [EntryEditDialog.HiddenFields]: the hidden fields as own ones, then the save. */
-    data object KeepHidden : EntryEditAction
+    fun onKeepHidden()
 
     /** The fab: checks, makes the change and writes the file. */
-    data object Save : EntryEditAction
+    fun onSave()
 
     /** "Back" - in the top bar or the system one. */
-    data object Back : EntryEditAction
+    fun onBack()
 
     /** "Delete" in the menu of the top bar - an entry that is there, not a new one: asks first. */
-    data object Delete : EntryEditAction
+    fun onDelete()
 
     /** The snackbar took the message. */
-    data object MessageShown : EntryEditAction
-}
-
-/** The dialog over the form, if any. */
-sealed interface EntryEditDialog {
-
-    /**
-     * A new own field: its name, whether it is protected - not, until switched - and its [type], as the file keeps
-     * it - text, until picked (pass-docs, Step 75).
-     */
-    data class AddField(
-        val name: String = "",
-        val protected: Boolean = false,
-        val type: String? = null,
-        val problem: NameProblem? = null,
-    ) : EntryEditDialog
-
-    /**
-     * The own field at [index] changed: its name, whether it is protected and its [type], opened as they are - a
-     * type this app does not know stays, until another is picked. Another type clears the value (Step 75, item 3).
-     */
-    data class EditField(
-        val index: Int,
-        val name: String,
-        val protected: Boolean,
-        val type: String?,
-        val problem: NameProblem? = null,
-    ) : EntryEditDialog
-
-    /** "Delete the field?" - the own field at [index], called [name]. */
-    data class DeleteField(val index: Int, val name: String) : EntryEditDialog
-
-    /** The country of the phone field [target]: [countries] to choose from, [selected] - the one it has. */
-    data class PhoneCountries(
-        val target: PhoneTarget,
-        val selected: String,
-        val countries: List<PhoneCountry>,
-    ) : EntryEditDialog
-
-    /**
-     * The choice of presets: the standard one, then [presets] - those of one's own, in the order they were
-     * made; [selected] is the one of the form, null for the standard one.
-     */
-    data class Preset(val presets: List<EntryPreset>, val selected: PresetId?) : EntryEditDialog
-
-    /**
-     * "Save" with fields hidden by the preset chosen - their [keys]: "save as is" (confirm) drops them, "add
-     * outside the preset" ([EntryEditAction.KeepHidden]) keeps them as own fields, "cancel" stays.
-     */
-    data class HiddenFields(val keys: List<String>) : EntryEditDialog
-
-    /** "Leave without saving?" - "back" with changes. */
-    data object Leave : EntryEditDialog
-
-    /**
-     * "Delete the entry?" - called [title] as the file holds it; what is typed goes with it, unasked
-     * (pass-docs, Step 50, item 2).
-     *
-     * @param toBin the delete goes to the recycle bin; false - for good (pass-docs, Step 70)
-     * @param deleting the delete is under way: the dialog shows progress and takes nothing
-     */
-    data class Delete(val title: String, val toBin: Boolean, val deleting: Boolean = false) : EntryEditDialog
-
-    /** The change is made but the file is not written; the screen closes after it. */
-    data object NotSaved : EntryEditDialog
-}
-
-/** What the snackbar says. */
-enum class EntryEditMessage { LoadFailed, NotSaved, Unexpected }
-
-/** A phone field of the form: of the preset - by its key, or own - by its index. */
-sealed interface PhoneTarget {
-    data class Preset(val key: String) : PhoneTarget
-    data class Own(val index: Int) : PhoneTarget
+    fun onMessageShown()
 }

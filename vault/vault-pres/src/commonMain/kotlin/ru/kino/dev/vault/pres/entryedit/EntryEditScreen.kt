@@ -78,10 +78,10 @@ internal fun EntryEditScreen(
     val snackbar = remember { SnackbarHostState() }
 
     // The system "back" asks as the one in the top bar does
-    BackHandler { processor.action(EntryEditAction.Back) }
+    BackHandler(onBack = processor::onBack)
 
     // Back from the screen of a new preset: the form picks it
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.action(EntryEditAction.Resumed) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onResumed() }
 
     val message = state.message?.let {
         stringResource(
@@ -92,7 +92,7 @@ internal fun EntryEditScreen(
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(EntryEditAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     GradientBackground {
         Scaffold(
@@ -101,10 +101,10 @@ internal fun EntryEditScreen(
             topBar = {
                 EntryTopBar(
                     title = stringResource(if (state.creating) Res.string.entry_title_new else Res.string.entry_title_edit),
-                    onBack = { processor.action(EntryEditAction.Back) },
+                    onBack = processor::onBack,
                     // An entry that is there, once read; a new one has nothing to delete
                     menu = if (!state.creating && state.content != null) {
-                        listOf(deleteMenuItem { processor.action(EntryEditAction.Delete) })
+                        listOf(deleteMenuItem(processor::onDelete))
                     } else {
                         emptyList()
                     },
@@ -113,7 +113,7 @@ internal fun EntryEditScreen(
             },
             floatingActionButton = {
                 if (state.content != null) {
-                    SaveFab(saving = state.saving, onSave = { processor.action(EntryEditAction.Save) })
+                    SaveFab(saving = state.saving, onSave = processor::onSave)
                 }
             },
             snackbarHost = { SnackbarHost(snackbar) },
@@ -129,28 +129,28 @@ internal fun EntryEditScreen(
                 val content = state.content
                 when {
                     state.loading -> EntrySkeleton(brush = skeletonBrush())
-                    content != null -> EntryForm(state = state, content = content, action = processor::action)
+                    content != null -> processor.EntryForm(state = state, content = content)
                 }
             }
         }
 
         EntryEditDialogs(
             dialog = state.dialog,
-            onNameChange = { processor.action(EntryEditAction.DialogNameChanged(it)) },
-            onProtectedChange = { processor.action(EntryEditAction.DialogProtectedChanged(it)) },
-            onTypeChange = { processor.action(EntryEditAction.DialogTypeChanged(it)) },
-            onConfirm = { processor.action(EntryEditAction.DialogConfirm) },
-            onDismiss = { processor.action(EntryEditAction.DialogDismiss) },
-            onPresetChosen = { processor.action(EntryEditAction.PresetChosen(it)) },
-            onCreatePreset = { processor.action(EntryEditAction.CreatePreset) },
-            onKeepHidden = { processor.action(EntryEditAction.KeepHidden) },
-            onPhoneCountryChosen = { processor.action(EntryEditAction.PhoneCountryChosen(it)) },
+            onNameChange = processor::onDialogNameChange,
+            onProtectedChange = processor::onDialogProtectedChange,
+            onTypeChange = processor::onDialogTypeChange,
+            onConfirm = processor::onDialogConfirm,
+            onDismiss = processor::onDialogDismiss,
+            onPresetChosen = processor::onPresetChosen,
+            onCreatePreset = processor::onCreatePreset,
+            onKeepHidden = processor::onKeepHidden,
+            onPhoneCountryChosen = processor::onPhoneCountryChosen,
         )
     }
 }
 
 @Composable
-private fun EntryForm(state: EntryEditState, content: EntryContent, action: (EntryEditAction) -> Unit) {
+private fun EntryEditActions.EntryForm(state: EntryEditState, content: EntryContent) {
     val enabled = !state.saving
     val missing = stringResource(Res.string.entry_field_required)
 
@@ -164,7 +164,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         val hidden = private && !shown
         TextField(
             value = content.value(key),
-            onValueChange = { action(EntryEditAction.ValueChanged(key, it)) },
+            onValueChange = { onValueChange(key, it) },
             label = fieldLabel(key),
             modifier = modifier,
             required = field.required,
@@ -178,7 +178,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             hidden = hidden,
             secret = private,
             actions = if (private) {
-                { VisibilityToggle(visible = shown, onToggle = { action(EntryEditAction.ToggleKey(key)) }, enabled = enabled) }
+                { VisibilityToggle(visible = shown, onToggle = { onToggleKey(key) }, enabled = enabled) }
             } else {
                 null
             },
@@ -194,9 +194,9 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         PhoneField(
             prefix = phonePrefix(region),
             digits = digits,
-            onDigitsChange = { action(EntryEditAction.PhoneDigitsChanged(PhoneTarget.Preset(key), it)) },
+            onDigitsChange = { onPhoneDigitsChange(PhoneTarget.Preset(key), it) },
             format = rememberPhoneFormat(region),
-            onPrefixClick = { action(EntryEditAction.ChoosePhoneCountry(PhoneTarget.Preset(key))) },
+            onPrefixClick = { onChoosePhoneCountry(PhoneTarget.Preset(key)) },
             label = fieldLabel(key),
             modifier = Modifier.fillMaxWidth(),
             hint = phoneHint(region, digits),
@@ -204,7 +204,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             hidden = private && !shown,
             secret = private,
             actions = if (private) {
-                { VisibilityToggle(visible = shown, onToggle = { action(EntryEditAction.ToggleKey(key)) }, enabled = enabled) }
+                { VisibilityToggle(visible = shown, onToggle = { onToggleKey(key) }, enabled = enabled) }
             } else {
                 null
             },
@@ -220,10 +220,10 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         } else if (field.key == StandardPreset.PASSWORD) {
             PasswordField(
                 value = content.value(field.key),
-                onValueChange = { action(EntryEditAction.ValueChanged(field.key, it)) },
+                onValueChange = { onValueChange(field.key, it) },
                 label = fieldLabel(field.key),
                 visible = state.passwordVisible,
-                onToggleVisible = { action(EntryEditAction.TogglePassword) },
+                onToggleVisible = { onTogglePassword() },
                 modifier = Modifier.fillMaxWidth(),
                 required = field.required,
                 error = if (state.isMissing(field.key)) missing else null,
@@ -244,7 +244,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         Dropdown(
             selected = state.group,
             options = state.groups.map { it.option() },
-            onSelect = { action(EntryEditAction.GroupChosen(it)) },
+            onSelect = { onGroupChosen(it) },
             label = stringResource(Res.string.entry_field_group),
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
@@ -256,7 +256,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
             PickerField(
                 value = presetName(content.preset),
                 label = stringResource(Res.string.entry_preset),
-                onClick = { action(EntryEditAction.ChoosePreset) },
+                onClick = { onChoosePreset() },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = enabled,
             )
@@ -279,13 +279,13 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
                 shown = index in state.shownOwn,
                 error = state.nameProblem(index)?.let { nameProblemText(it) },
                 enabled = enabled,
-                onValueChange = { action(EntryEditAction.OwnValueChanged(index, it)) },
-                onToggleShown = { action(EntryEditAction.ToggleOwn(index)) },
-                onEdit = { action(EntryEditAction.EditField(index)) },
-                onDelete = { action(EntryEditAction.DeleteField(index)) },
+                onValueChange = { onOwnValueChange(index, it) },
+                onToggleShown = { onToggleOwn(index) },
+                onEdit = { onEditField(index) },
+                onDelete = { onDeleteField(index) },
                 phoneRegion = state.regionOf(field),
-                onPhoneDigitsChange = { action(EntryEditAction.PhoneDigitsChanged(PhoneTarget.Own(index), it)) },
-                onPhonePrefixClick = { action(EntryEditAction.ChoosePhoneCountry(PhoneTarget.Own(index))) },
+                onPhoneDigitsChange = { onPhoneDigitsChange(PhoneTarget.Own(index), it) },
+                onPhonePrefixClick = { onChoosePhoneCountry(PhoneTarget.Own(index)) },
             )
         }
 
@@ -293,7 +293,7 @@ private fun EntryForm(state: EntryEditState, content: EntryContent, action: (Ent
         if (state.canAddField) {
             SecondaryButton(
                 text = stringResource(Res.string.entry_add_field),
-                onClick = { action(EntryEditAction.AddField) },
+                onClick = { onAddField() },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = enabled,
             )

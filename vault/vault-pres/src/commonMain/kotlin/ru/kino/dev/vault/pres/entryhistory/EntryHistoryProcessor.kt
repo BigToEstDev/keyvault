@@ -1,7 +1,6 @@
 package ru.kino.dev.vault.pres.entryhistory
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -10,23 +9,9 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.group.EntryId
-import ru.kino.dev.vault.history.EntryHistory
 import ru.kino.dev.vault.history.EntryHistoryEditor
 import ru.kino.dev.vault.history.EntryHistoryReader
 import ru.kino.dev.vault.pres.navigation.EntryVersionRoute
-
-/**
- * @param loading the history is not read yet - the skeleton is shown
- * @param history the name of the entry, its old versions newest first and when it was made; null until read
- * @param dialog asking about a version, if any
- * @param message for the snackbar, until it takes it
- */
-data class EntryHistoryState(
-    val loading: Boolean = true,
-    val history: EntryHistory? = null,
-    val dialog: EntryHistoryDialog? = null,
-    val message: EntryHistoryMessage? = null,
-)
 
 /**
  * The history of an entry (pass-docs, Step 51, item 3): "Modified" for every old version, newest first, and
@@ -46,43 +31,63 @@ class EntryHistoryProcessor(
     private val editor: EntryHistoryEditor,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<EntryHistoryState, EntryHistoryState, Nothing> {
+) : ViewModel(), OrbitContainerHost<EntryHistoryState, EntryHistoryState, Nothing>, EntryHistoryActions {
 
     override val container = orbitContainer<EntryHistoryState, Nothing>(EntryHistoryState())
 
-    fun action(action: EntryHistoryAction): Job = intent {
-        when (action) {
-            EntryHistoryAction.Load -> load()
+    override fun onLoad() {
+        intent { load() }
+    }
 
-            EntryHistoryAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
+    override fun onBack() {
+        intent { navigator.navigate(MviNavEvent.NavigateBack) }
+    }
 
-            is EntryHistoryAction.OpenVersion -> if (version(action.index) != null) {
-                navigator.navigate(MviNavEvent.NavigateTo(EntryVersionRoute(dbKey, entryId, action.index)))
+    override fun onOpenVersion(index: Int) {
+        intent {
+            if (version(index) != null) {
+                navigator.navigate(MviNavEvent.NavigateTo(EntryVersionRoute(dbKey, entryId, index)))
             }
-
-            is EntryHistoryAction.Restore -> version(action.index)?.let { modified ->
-                if (state.dialog == null) {
-                    reduce { state.copy(dialog = EntryHistoryDialog.Restore(action.index, modified)) }
-                }
-            }
-
-            is EntryHistoryAction.DeleteVersion -> version(action.index)?.let { modified ->
-                if (state.dialog == null) {
-                    reduce { state.copy(dialog = EntryHistoryDialog.Delete(action.index, modified)) }
-                }
-            }
-
-            EntryHistoryAction.DeleteHistory -> {
-                val anyVersion = state.history?.versions?.isNotEmpty() == true
-                if (state.dialog == null && anyVersion) reduce { state.copy(dialog = EntryHistoryDialog.DeleteAll()) }
-            }
-
-            EntryHistoryAction.DialogConfirm -> confirm()
-
-            EntryHistoryAction.DialogDismiss -> if (state.dialog?.saving == false) reduce { state.copy(dialog = null) }
-
-            EntryHistoryAction.MessageShown -> reduce { state.copy(message = null) }
         }
+    }
+
+    override fun onRestore(index: Int) {
+        intent {
+            version(index)?.let { modified ->
+                if (state.dialog == null) {
+                    reduce { state.copy(dialog = EntryHistoryDialog.Restore(index, modified)) }
+                }
+            }
+        }
+    }
+
+    override fun onDeleteVersion(index: Int) {
+        intent {
+            version(index)?.let { modified ->
+                if (state.dialog == null) {
+                    reduce { state.copy(dialog = EntryHistoryDialog.Delete(index, modified)) }
+                }
+            }
+        }
+    }
+
+    override fun onDeleteHistory() {
+        intent {
+            val anyVersion = state.history?.versions?.isNotEmpty() == true
+            if (state.dialog == null && anyVersion) reduce { state.copy(dialog = EntryHistoryDialog.DeleteAll()) }
+        }
+    }
+
+    override fun onDialogConfirm() {
+        intent { confirm() }
+    }
+
+    override fun onDialogDismiss() {
+        intent { if (state.dialog?.saving == false) reduce { state.copy(dialog = null) } }
+    }
+
+    override fun onMessageShown() {
+        intent { reduce { state.copy(message = null) } }
     }
 
     private suspend fun Syntax<EntryHistoryState, Nothing>.load() {

@@ -18,6 +18,7 @@ import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.navigation.TrashEntryRoute
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
+import ru.kino.dev.vault.pres.testing.runEach
 import ru.kino.dev.vault.trash.FakeTrashRepository
 import ru.kino.dev.vault.trash.TrashEditor
 import ru.kino.dev.vault.trash.TrashEntry
@@ -39,7 +40,7 @@ class TrashProcessorTest {
 
     @Test
     fun `the bin comes the last deleted first, one second by title`() = runTest {
-        val (state, _) = perform(TrashAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(listOf("new", "same-a", "same-b", "old"), state.shown.map { it.entry.id.value })
         assertNull(state.empty)
@@ -49,7 +50,7 @@ class TrashProcessorTest {
     fun `an empty bin says so`() = runTest {
         trash.entries.clear()
 
-        val (state, _) = perform(TrashAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(TrashEmpty.Bin, state.empty)
     }
@@ -58,7 +59,7 @@ class TrashProcessorTest {
     fun `a bin that cannot be read says so and goes to the log`() = runTest {
         trash.failures["entries"] = TrashFailure.Unexpected()
 
-        val (state, _) = perform(TrashAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(TrashMessage.LoadFailed, state.message)
         assertFalse(state.loading)
@@ -67,7 +68,7 @@ class TrashProcessorTest {
 
     @Test
     fun `typing searches the bin by title`() = runTest {
-        val (state, _) = perform(TrashAction.Load, TrashAction.QueryChanged("MAIL"))
+        val (state, _) = perform({ onLoad() }, { onQueryChange("MAIL") })
 
         assertFalse(state.searching)
         assertEquals(listOf("old"), state.shown.map { it.entry.id.value })
@@ -75,14 +76,14 @@ class TrashProcessorTest {
 
     @Test
     fun `a search that finds nothing says so`() = runTest {
-        val (state, _) = perform(TrashAction.Load, TrashAction.QueryChanged("nothing"))
+        val (state, _) = perform({ onLoad() }, { onQueryChange("nothing") })
 
         assertEquals(TrashEmpty.NothingFound, state.empty)
     }
 
     @Test
     fun `a blank field is the whole bin again`() = runTest {
-        val (state, _) = perform(TrashAction.Load, TrashAction.QueryChanged("mail"), TrashAction.QueryChanged(" "))
+        val (state, _) = perform({ onLoad() }, { onQueryChange("mail") }, { onQueryChange(" ") })
 
         assertNull(state.found)
         assertEquals(4, state.shown.size)
@@ -92,7 +93,7 @@ class TrashProcessorTest {
     fun `a failed search says so`() = runTest {
         trash.failures["search"] = TrashFailure.Unexpected()
 
-        val (state, _) = perform(TrashAction.Load, TrashAction.QueryChanged("mail"))
+        val (state, _) = perform({ onLoad() }, { onQueryChange("mail") })
 
         assertFalse(state.searching)
         assertEquals(TrashMessage.SearchFailed, state.message)
@@ -102,7 +103,7 @@ class TrashProcessorTest {
 
     @Test
     fun `a tap with nothing picked reads the entry`() = runTest {
-        val (state, events) = perform(TrashAction.Load, TrashAction.Tap(OLD))
+        val (state, events) = perform({ onLoad() }, { onTap(OLD) })
 
         assertFalse(state.choosing)
         assertEquals(listOf(MviNavEvent.NavigateTo(TrashEntryRoute(DB, OLD.value))), events)
@@ -110,21 +111,21 @@ class TrashProcessorTest {
 
     @Test
     fun `a long press starts the choice, a tap then picks and lets go`() = runTest {
-        val (state, _) = perform(TrashAction.Load, TrashAction.LongPress(OLD), TrashAction.Tap(NEW), TrashAction.Tap(OLD))
+        val (state, _) = perform({ onLoad() }, { onLongPress(OLD) }, { onTap(NEW) }, { onTap(OLD) })
 
         assertEquals(setOf(NEW), state.picked)
     }
 
     @Test
     fun `pick all takes every card shown`() = runTest {
-        val (state, _) = perform(TrashAction.Load, TrashAction.LongPress(OLD), TrashAction.PickAll)
+        val (state, _) = perform({ onLoad() }, { onLongPress(OLD) }, { onPickAll() })
 
         assertEquals(4, state.picked.size)
     }
 
     @Test
     fun `back lets go of the choice and stays`() = runTest {
-        val (state, events) = perform(TrashAction.Load, TrashAction.LongPress(OLD), TrashAction.Back)
+        val (state, events) = perform({ onLoad() }, { onLongPress(OLD) }, { onBack() })
 
         assertFalse(state.choosing)
         assertTrue(events.isEmpty())
@@ -138,7 +139,7 @@ class TrashProcessorTest {
         trash.entries += binned("a", "A", 1, previous = work)
         trash.entries += binned("b", "B", 2, previous = work)
 
-        val (state, _) = perform(TrashAction.Load, TrashAction.LongPress(EntryId("a")), TrashAction.Tap(EntryId("b")), TrashAction.Restore)
+        val (state, _) = perform({ onLoad() }, { onLongPress(EntryId("a")) }, { onTap(EntryId("b")) }, { onRestore() })
 
         val dialog = state.dialog as TrashDialog.Restore
         assertEquals(work, dialog.group)
@@ -151,14 +152,14 @@ class TrashProcessorTest {
         trash.entries += binned("a", "A", 1, previous = work)
         trash.entries += binned("b", "B", 2, previous = home)
 
-        val (state, _) = perform(TrashAction.Load, TrashAction.LongPress(EntryId("a")), TrashAction.Tap(EntryId("b")), TrashAction.Restore)
+        val (state, _) = perform({ onLoad() }, { onLongPress(EntryId("a")) }, { onTap(EntryId("b")) }, { onRestore() })
 
         assertNull((state.dialog as TrashDialog.Restore).group)
     }
 
     @Test
     fun `restore without a group chosen does nothing`() = runTest {
-        val (state, _) = perform(TrashAction.Load, TrashAction.LongPress(OLD), TrashAction.Restore, TrashAction.DialogConfirm)
+        val (state, _) = perform({ onLoad() }, { onLongPress(OLD) }, { onRestore() }, { onDialogConfirm() })
 
         assertTrue(state.dialog is TrashDialog.Restore)
         assertTrue(trash.restored.isEmpty())
@@ -168,11 +169,11 @@ class TrashProcessorTest {
     @Test
     fun `restored to the group chosen, the bin is read again and the choice ends`() = runTest {
         val (state, _) = perform(
-            TrashAction.Load,
-            TrashAction.LongPress(OLD),
-            TrashAction.Restore,
-            TrashAction.GroupChosen(home),
-            TrashAction.DialogConfirm,
+            { onLoad() },
+            { onLongPress(OLD) },
+            { onRestore() },
+            { onGroupChosen(home) },
+            { onDialogConfirm() },
         )
 
         assertEquals(mapOf(OLD to home), trash.restored)
@@ -186,7 +187,7 @@ class TrashProcessorTest {
 
     @Test
     fun `the picked removed for good after asking`() = runTest {
-        val (state, _) = perform(TrashAction.Load, TrashAction.LongPress(OLD), TrashAction.Tap(NEW), TrashAction.Remove, TrashAction.DialogConfirm)
+        val (state, _) = perform({ onLoad() }, { onLongPress(OLD) }, { onTap(NEW) }, { onRemove() }, { onDialogConfirm() })
 
         assertEquals(listOf("same-b", "same-a"), trash.entries.map { it.entry.id.value }.sortedDescending())
         assertEquals(listOf("save"), database.calls)
@@ -195,14 +196,14 @@ class TrashProcessorTest {
 
     @Test
     fun `remove asks with the number picked`() = runTest {
-        val (state, _) = perform(TrashAction.Load, TrashAction.LongPress(OLD), TrashAction.Tap(NEW), TrashAction.Remove)
+        val (state, _) = perform({ onLoad() }, { onLongPress(OLD) }, { onTap(NEW) }, { onRemove() })
 
         assertEquals(TrashDialog.Remove(2), state.dialog)
     }
 
     @Test
     fun `emptying after asking takes the whole bin`() = runTest {
-        val (state, _) = perform(TrashAction.Load, TrashAction.Empty, TrashAction.DialogConfirm)
+        val (state, _) = perform({ onLoad() }, { onEmpty() }, { onDialogConfirm() })
 
         assertEquals(TrashEmpty.Bin, state.empty)
         assertEquals(listOf("save"), database.calls)
@@ -210,7 +211,7 @@ class TrashProcessorTest {
 
     @Test
     fun `cancelled, nothing changes`() = runTest {
-        val (state, _) = perform(TrashAction.Load, TrashAction.Empty, TrashAction.DialogDismiss)
+        val (state, _) = perform({ onLoad() }, { onEmpty() }, { onDialogDismiss() })
 
         assertNull(state.dialog)
         assertEquals(4, state.shown.size)
@@ -220,7 +221,7 @@ class TrashProcessorTest {
     fun `a change not written says so, and it is made`() = runTest {
         database.saveFailure = IOException("provider gone")
 
-        val (state, _) = perform(TrashAction.Load, TrashAction.Empty, TrashAction.DialogConfirm)
+        val (state, _) = perform({ onLoad() }, { onEmpty() }, { onDialogConfirm() })
 
         assertEquals(TrashMessage.NotSaved, state.message)
         assertEquals(TrashEmpty.Bin, state.empty)
@@ -230,7 +231,7 @@ class TrashProcessorTest {
     fun `a stale list says the bin changed, and it is read again`() = runTest {
         trash.failures["remove"] = TrashFailure.Stale()
 
-        val (state, _) = perform(TrashAction.Load, TrashAction.LongPress(OLD), TrashAction.Remove, TrashAction.DialogConfirm)
+        val (state, _) = perform({ onLoad() }, { onLongPress(OLD) }, { onRemove() }, { onDialogConfirm() })
 
         assertEquals(TrashMessage.Changed, state.message)
         assertFalse(state.choosing)
@@ -239,17 +240,17 @@ class TrashProcessorTest {
 
     @Test
     fun `back leaves the screen`() = runTest {
-        val (_, events) = perform(TrashAction.Back)
+        val (_, events) = perform({ onBack() })
 
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
     }
 
-    private suspend fun TestScope.perform(vararg actions: TrashAction): Pair<TrashState, List<MviNavEvent>> {
+    private suspend fun TestScope.perform(vararg actions: TrashActions.() -> Unit): Pair<TrashState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val processor = TrashProcessor(DB, trash, TrashEditor(trash, database), groups, navigator, log)
 
         processor.testWithInternalState(this) {
-            actions.forEach { containerHost.action(it).join() }
+            containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events

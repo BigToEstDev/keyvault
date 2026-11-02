@@ -1,11 +1,9 @@
 package ru.kino.dev.vault.pres.trashentry
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
-import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.phone.PhoneNumbers
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
@@ -13,8 +11,8 @@ import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryOpener
-import ru.kino.dev.vault.entry.OpenedEntry
 import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.pres.common.prepareFor
@@ -24,33 +22,8 @@ import ru.kino.dev.vault.pres.trash.TrashDialog
 import ru.kino.dev.vault.pres.trash.restoreDialog
 import ru.kino.dev.vault.pres.trash.saving
 import ru.kino.dev.vault.trash.TrashEditor
-import ru.kino.dev.vault.trash.TrashEntry
 import ru.kino.dev.vault.trash.TrashFailure
 import ru.kino.dev.vault.trash.TrashRepository
-
-/**
- * @param entry the entry laid over its preset, with when it was made and changed; null until read - a skeleton
- * @param trashed when it went to the bin and where from; null until read
- * @param shownOwn indexes of protected own fields shown in clear
- * @param protection the fields private by the database (pass-docs, Step 65); only the password until read
- * @param shownKeys keys of the fields of the preset private by the database shown in clear
- * @param dialog "restore" or "delete for good?", if asked
- * @param notSaved the change is made, but the file was not written - said in a dialog, then back to the bin
- * @param message for the snackbar, until it takes it
- */
-data class TrashEntryState(
-    val entry: OpenedEntry? = null,
-    val trashed: TrashEntry? = null,
-    val passwordVisible: Boolean = false,
-    val shownOwn: Set<Int> = emptySet(),
-    val protection: FieldProtection = FieldProtection.DEFAULT,
-    val shownKeys: Set<String> = emptySet(),
-    val dialog: TrashDialog? = null,
-    val notSaved: Boolean = false,
-    val message: TrashEntryMessage? = null,
-) {
-    val loading: Boolean get() = entry == null
-}
 
 /**
  * An entry of the recycle bin, read (pass-docs, Step 71): its fields as reading lays them out, the eye on the hidden
@@ -71,42 +44,66 @@ class TrashEntryProcessor(
     private val phones: PhoneNumbers,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<TrashEntryState, TrashEntryState, Nothing> {
+) : ViewModel(), OrbitContainerHost<TrashEntryState, TrashEntryState, Nothing>, TrashEntryActions {
 
     override val container = orbitContainer<TrashEntryState, Nothing>(TrashEntryState())
 
     private val id = EntryId(entryId)
 
-    fun action(action: TrashEntryAction): Job = intent {
-        when (action) {
-            TrashEntryAction.Load -> load()
+    override fun onLoad() {
+        intent { load() }
+    }
 
-            TrashEntryAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
+    override fun onBack() {
+        intent { navigator.navigate(MviNavEvent.NavigateBack) }
+    }
 
-            TrashEntryAction.TogglePassword -> reduce { state.copy(passwordVisible = !state.passwordVisible) }
+    override fun onTogglePassword() {
+        intent { reduce { state.copy(passwordVisible = !state.passwordVisible) } }
+    }
 
-            is TrashEntryAction.ToggleOwn -> reduce { state.copy(shownOwn = state.shownOwn.toggled(action.index)) }
+    override fun onToggleOwn(index: Int) {
+        intent { reduce { state.copy(shownOwn = state.shownOwn.toggled(index)) } }
+    }
 
-            is TrashEntryAction.ToggleKey -> reduce { state.copy(shownKeys = state.shownKeys.toggled(action.key)) }
+    override fun onToggleKey(key: String) {
+        intent { reduce { state.copy(shownKeys = state.shownKeys.toggled(key)) } }
+    }
 
-            TrashEntryAction.Restore -> if (state.trashed != null && state.dialog == null) askRestore()
+    override fun onRestore() {
+        intent { if (state.trashed != null && state.dialog == null) askRestore() }
+    }
 
-            is TrashEntryAction.GroupChosen -> (state.dialog as? TrashDialog.Restore)?.let { dialog ->
-                if (!dialog.saving) reduce { state.copy(dialog = dialog.copy(group = action.id)) }
+    override fun onGroupChosen(id: GroupId) {
+        intent {
+            (state.dialog as? TrashDialog.Restore)?.let { dialog ->
+                if (!dialog.saving) reduce { state.copy(dialog = dialog.copy(group = id)) }
             }
+        }
+    }
 
-            TrashEntryAction.Remove -> if (state.trashed != null && state.dialog == null) {
+    override fun onRemove() {
+        intent {
+            if (state.trashed != null && state.dialog == null) {
                 reduce { state.copy(dialog = TrashDialog.Remove(count = 1)) }
             }
-
-            TrashEntryAction.DialogConfirm -> confirm()
-
-            TrashEntryAction.DialogDismiss -> if (state.dialog?.saving == false) reduce { state.copy(dialog = null) }
-
-            TrashEntryAction.NotSavedSeen -> navigator.navigate(MviNavEvent.NavigateBack)
-
-            TrashEntryAction.MessageShown -> reduce { state.copy(message = null) }
         }
+    }
+
+    override fun onDialogConfirm() {
+        intent { confirm() }
+    }
+
+    override fun onDialogDismiss() {
+        intent { if (state.dialog?.saving == false) reduce { state.copy(dialog = null) } }
+    }
+
+    override fun onNotSavedSeen() {
+        intent { navigator.navigate(MviNavEvent.NavigateBack) }
+    }
+
+    override fun onMessageShown() {
+        intent { reduce { state.copy(message = null) } }
     }
 
     private suspend fun Syntax<TrashEntryState, Nothing>.load() {

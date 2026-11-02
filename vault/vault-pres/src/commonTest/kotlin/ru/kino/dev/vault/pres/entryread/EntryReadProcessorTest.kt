@@ -34,6 +34,7 @@ import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
+import ru.kino.dev.vault.pres.testing.runEach
 import ru.kino.dev.vault.trash.FakeTrashRepository
 
 class EntryReadProcessorTest {
@@ -57,7 +58,7 @@ class EntryReadProcessorTest {
 
     @Test
     fun `the group of the entry is shown with the path down to it`() = runTest {
-        val (state, _) = perform(EntryReadAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(GroupChoice(groups.rootId, listOf("Passwords")), state.group)
     }
@@ -72,14 +73,14 @@ class EntryReadProcessorTest {
         val work = groups.add("work", groups.rootId, "Work")
         entries.stored[mail] = entries.stored.getValue(mail).copy(groupId = work)
 
-        val (state, _) = perform(EntryReadAction.Load, initial = shown)
+        val (state, _) = perform({ onLoad() }, initial = shown)
 
         assertEquals(GroupChoice(work, listOf("Passwords", "Work")), state.group)
     }
 
     @Test
     fun `the entry is read when the screen is shown, laid over the preset, everything hidden`() = runTest {
-        val (state, _) = perform(EntryReadAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertFalse(state.loading)
         assertEquals("Mail", state.content?.value(StandardPreset.TITLE))
@@ -92,7 +93,7 @@ class EntryReadProcessorTest {
     fun `the fields private by the database come with the entry, and the eye shows one`() = runTest {
         settings.entries = settings.entries.copy(protection = FieldProtection.DEFAULT.copy(title = true, url = true))
 
-        val (state, _) = perform(EntryReadAction.Load, EntryReadAction.ToggleKey(StandardPreset.TITLE))
+        val (state, _) = perform({ onLoad() }, { onToggleKey(StandardPreset.TITLE) })
 
         assertEquals(FieldProtection.DEFAULT.copy(title = true, url = true), state.protection)
         assertEquals(setOf(StandardPreset.TITLE), state.shownKeys)
@@ -107,7 +108,7 @@ class EntryReadProcessorTest {
         )
         settings.entries = settings.entries.copy(protection = FieldProtection.DEFAULT.copy(title = true, url = true))
 
-        val (state, _) = perform(EntryReadAction.Load, initial = shown)
+        val (state, _) = perform({ onLoad() }, initial = shown)
 
         assertEquals(FieldProtection.DEFAULT.copy(title = true, url = true), state.protection)
         assertTrue(state.shownKeys.isEmpty())
@@ -116,10 +117,10 @@ class EntryReadProcessorTest {
     @Test
     fun `what is shown stays shown when the entry comes back the same`() = runTest {
         val (state, _) = perform(
-            EntryReadAction.Load,
-            EntryReadAction.TogglePassword,
-            EntryReadAction.ToggleOwn(0),
-            EntryReadAction.Load,
+            { onLoad() },
+            { onTogglePassword() },
+            { onToggleOwn(0) },
+            { onLoad() },
         )
 
         assertTrue(state.passwordVisible)
@@ -138,7 +139,7 @@ class EntryReadProcessorTest {
             entry.copy(fields = entry.fields.map { if (it.key == StandardPreset.TITLE) it.copy(value = "Post") else it })
         }
 
-        val (state, _) = perform(EntryReadAction.Load, initial = shown)
+        val (state, _) = perform({ onLoad() }, initial = shown)
 
         assertEquals("Post", state.content?.value(StandardPreset.TITLE))
         assertFalse(state.passwordVisible)
@@ -149,7 +150,7 @@ class EntryReadProcessorTest {
     fun `an entry gone closes the screen`() = runTest {
         entries.stored.remove(mail)
 
-        val (_, events) = perform(EntryReadAction.Load)
+        val (_, events) = perform({ onLoad() })
 
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
     }
@@ -158,7 +159,7 @@ class EntryReadProcessorTest {
     fun `an entry that cannot be read says so and goes to the log`() = runTest {
         entries.failures["read"] = EntryFailure.Unexpected(IllegalStateException("broken"))
 
-        val (state, _) = perform(EntryReadAction.Load, EntryReadAction.Edit)
+        val (state, _) = perform({ onLoad() }, { onEdit() })
 
         assertFalse(state.loading)
         assertNull(state.content)
@@ -168,7 +169,7 @@ class EntryReadProcessorTest {
 
     @Test
     fun `the pen opens the form of this entry, back goes back`() = runTest {
-        val (_, events) = perform(EntryReadAction.Load, EntryReadAction.Edit, EntryReadAction.Back)
+        val (_, events) = perform({ onLoad() }, { onEdit() }, { onBack() })
 
         assertEquals(
             listOf(MviNavEvent.NavigateTo(EntryEditRoute(DB, mail.value)), MviNavEvent.NavigateBack),
@@ -180,7 +181,7 @@ class EntryReadProcessorTest {
     fun `the entry is read with when it was made and last changed`() = runTest {
         entries.stored[mail] = entries.stored.getValue(mail).copy(createdAt = 1_000L, modifiedAt = 2_000L)
 
-        val (state, _) = perform(EntryReadAction.Load)
+        val (state, _) = perform({ onLoad() })
 
         assertEquals(EntryTimes(created = 1_000L, modified = 2_000L), state.times)
     }
@@ -196,21 +197,21 @@ class EntryReadProcessorTest {
         )
         entries.stored[mail] = entries.stored.getValue(mail).copy(modifiedAt = 9_000L)
 
-        val (state, _) = perform(EntryReadAction.Load, initial = shown)
+        val (state, _) = perform({ onLoad() }, initial = shown)
 
         assertEquals(9_000L, state.times.modified)
     }
 
     @Test
     fun `history in the menu opens the history of this entry`() = runTest {
-        val (_, events) = perform(EntryReadAction.Load, EntryReadAction.History)
+        val (_, events) = perform({ onLoad() }, { onHistory() })
 
         assertEquals(listOf(MviNavEvent.NavigateTo(EntryHistoryRoute(DB, mail.value))), events)
     }
 
     @Test
     fun `no history before the entry is read`() = runTest {
-        val (_, events) = perform(EntryReadAction.History)
+        val (_, events) = perform({ onHistory() })
 
         assertTrue(events.isEmpty())
     }
@@ -219,7 +220,7 @@ class EntryReadProcessorTest {
 
     @Test
     fun `delete asks first, naming the entry`() = runTest {
-        val (state, _) = perform(EntryReadAction.Load, EntryReadAction.Delete)
+        val (state, _) = perform({ onLoad() }, { onDelete() })
 
         assertEquals(DeleteDialog("Mail", toBin = true), state.delete)
     }
@@ -228,21 +229,21 @@ class EntryReadProcessorTest {
     fun `without a recycle bin the dialog says the delete is for good`() = runTest {
         trash.enabled = false
 
-        val (state, _) = perform(EntryReadAction.Load, EntryReadAction.Delete)
+        val (state, _) = perform({ onLoad() }, { onDelete() })
 
         assertEquals(DeleteDialog("Mail", toBin = false), state.delete)
     }
 
     @Test
     fun `nothing to delete before the entry is read`() = runTest {
-        val (state, _) = perform(EntryReadAction.Delete)
+        val (state, _) = perform({ onDelete() })
 
         assertNull(state.delete)
     }
 
     @Test
     fun `a deleted entry goes to the recycle bin, the file is written and the screen goes back`() = runTest {
-        val (_, events) = perform(EntryReadAction.Load, EntryReadAction.Delete, EntryReadAction.DeleteConfirm)
+        val (_, events) = perform({ onLoad() }, { onDelete() }, { onDeleteConfirm() })
 
         assertEquals(listOf(mail), entries.recycled)
         assertEquals(listOf("save"), database.calls)
@@ -253,7 +254,7 @@ class EntryReadProcessorTest {
     fun `a deleted entry that is not written stays here, and the snackbar says so`() = runTest {
         database.saveFailure = CoreException("Io", "disk full")
 
-        val (state, events) = perform(EntryReadAction.Load, EntryReadAction.Delete, EntryReadAction.DeleteConfirm)
+        val (state, events) = perform({ onLoad() }, { onDelete() }, { onDeleteConfirm() })
 
         assertNull(state.delete)
         assertEquals(EntryReadMessage.NotSaved, state.message)
@@ -262,7 +263,7 @@ class EntryReadProcessorTest {
 
     @Test
     fun `cancel closes the dialog, the entry stays`() = runTest {
-        val (state, _) = perform(EntryReadAction.Load, EntryReadAction.Delete, EntryReadAction.DeleteDismiss)
+        val (state, _) = perform({ onLoad() }, { onDelete() }, { onDeleteDismiss() })
 
         assertNull(state.delete)
         assertTrue(entries.recycled.isEmpty())
@@ -275,7 +276,7 @@ class EntryReadProcessorTest {
         groups.delete(DB, old)
         entries.stored[mail] = entries.stored.getValue(mail).copy(groupId = old)
 
-        val (_, events) = perform(EntryReadAction.Load)
+        val (_, events) = perform({ onLoad() })
 
         assertEquals(listOf(MviNavEvent.NavigateBack), events)
     }
@@ -285,7 +286,7 @@ class EntryReadProcessorTest {
         val lock = lock()
         lock.watch(DB)
 
-        val (state, events) = perform(EntryReadAction.Lock, autoLock = lock)
+        val (state, events) = perform({ onLock() }, autoLock = lock)
 
         assertEquals(listOf("lock"), database.calls)
         assertEquals(DB, lock.locked.first())
@@ -299,7 +300,7 @@ class EntryReadProcessorTest {
         val lock = lock()
         lock.watch(DB)
 
-        val (state, _) = perform(EntryReadAction.Lock, autoLock = lock)
+        val (state, _) = perform({ onLock() }, autoLock = lock)
 
         assertFalse(state.locking)
         assertEquals(EntryReadMessage.Unexpected, state.message)
@@ -316,7 +317,7 @@ class EntryReadProcessorTest {
 
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(
-        vararg actions: EntryReadAction,
+        vararg actions: EntryReadActions.() -> Unit,
         initial: EntryReadState = EntryReadState(),
         autoLock: AutoLock = lock(),
     ): Pair<EntryReadState, List<MviNavEvent>> {
@@ -325,7 +326,7 @@ class EntryReadProcessorTest {
         val processor = EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, trash, autoLock, FakePhoneNumbers(), navigator, log)
 
         processor.testWithInternalState(this, initial) {
-            actions.forEach { containerHost.action(it).join() }
+            containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events

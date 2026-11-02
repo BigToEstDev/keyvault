@@ -1,30 +1,25 @@
 package ru.kino.dev.vault.pres.entryversion
 
-sealed interface EntryVersionAction {
+import ru.kino.dev.vault.pres.common.EntryReadFieldsActions
+
+/**
+ * What an old version of an entry is asked to do - done by [EntryVersionProcessor]
+ * (pass-docs, `docs/app/mvi-arc.md`).
+ */
+interface EntryVersionActions : EntryReadFieldsActions {
 
     /** The screen is shown: the version is read. */
-    data object Load : EntryVersionAction
+    fun onLoad()
 
-    data object Back : EntryVersionAction
-
-    data object TogglePassword : EntryVersionAction
-
-    /** Shows or hides the value of the protected own field at [index]. */
-    data class ToggleOwn(val index: Int) : EntryVersionAction
-
-    /** Shows or hides the value of the field of the preset under [key], private by the database. */
-    data class ToggleKey(val key: String) : EntryVersionAction
+    fun onBack()
 
     /** The fab with the clock: asks first. */
-    data object Restore : EntryVersionAction
+    fun onRestore()
 
-    data object DialogConfirm : EntryVersionAction
+    fun onDialogConfirm()
 
-    data object DialogDismiss : EntryVersionAction
+    fun onDialogDismiss()
 
     /** The snackbar took the message. */
-    data object MessageShown : EntryVersionAction
+    fun onMessageShown()
 }
-
-/** What the snackbar says. */
-enum class EntryVersionMessage { LoadFailed, NotSaved, Unexpected }

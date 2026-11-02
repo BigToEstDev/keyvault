@@ -1,50 +1,29 @@
 package ru.kino.dev.vault.pres.entryhistory
 
-sealed interface EntryHistoryAction {
+/** What the history of an entry is asked to do - done by [EntryHistoryProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
+interface EntryHistoryActions {
 
     /** The screen is shown - the first time, or again: the history is read anew. */
-    data object Load : EntryHistoryAction
+    fun onLoad()
 
-    data object Back : EntryHistoryAction
+    fun onBack()
 
     /** A tap on a card of a version: the entry as it was then (pass-docs, Step 51, item 6). */
-    data class OpenVersion(val index: Int) : EntryHistoryAction
+    fun onOpenVersion(index: Int)
 
     /** "Restore this version" in the menu of a card: asks first. */
-    data class Restore(val index: Int) : EntryHistoryAction
+    fun onRestore(index: Int)
 
     /** "Delete version" in the menu of a card: asks first. */
-    data class DeleteVersion(val index: Int) : EntryHistoryAction
+    fun onDeleteVersion(index: Int)
 
     /** "Delete history" in the menu of the top bar: asks first. */
-    data object DeleteHistory : EntryHistoryAction
+    fun onDeleteHistory()
 
-    data object DialogConfirm : EntryHistoryAction
+    fun onDialogConfirm()
 
-    data object DialogDismiss : EntryHistoryAction
+    fun onDialogDismiss()
 
     /** The snackbar took the message. */
-    data object MessageShown : EntryHistoryAction
+    fun onMessageShown()
 }
-
-/** The dialog over the history, if any. */
-sealed interface EntryHistoryDialog {
-
-    /** The change is under way: the dialog shows progress and takes nothing. */
-    val saving: Boolean
-
-    /**
-     * "Restore the version?" - the version at [index], saved at [modified], becomes the entry; the current
-     * state stays in the history.
-     */
-    data class Restore(val index: Int, val modified: Long, override val saving: Boolean = false) : EntryHistoryDialog
-
-    /** "Delete the version?" - the version at [index], saved at [modified]. */
-    data class Delete(val index: Int, val modified: Long, override val saving: Boolean = false) : EntryHistoryDialog
-
-    /** "Delete the history?" - every version; when the entry was made stays. */
-    data class DeleteAll(override val saving: Boolean = false) : EntryHistoryDialog
-}
-
-/** What the snackbar says. */
-enum class EntryHistoryMessage { LoadFailed, NotSaved, Unexpected }
