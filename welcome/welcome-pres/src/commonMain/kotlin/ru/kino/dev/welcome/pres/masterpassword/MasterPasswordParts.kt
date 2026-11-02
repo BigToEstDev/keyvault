@@ -113,7 +113,8 @@ internal fun MasterPasswordActions.MasterPasswordForm(state: MasterPasswordState
             Spacer(Modifier.height(8.dp))
         }
         PrimaryButton(
-            text = stringResource(Res.string.action_next),
+            // With a key file the next screen saves it; without one the database is created from here
+            text = stringResource(if (state.withKeyFile) Res.string.action_next else Res.string.action_create_database),
             onClick = ::onNext,
             enabled = state.canGoOn,
             loading = state.stage.busy,
