@@ -17,6 +17,7 @@ import ru.kino.dev.settings.lock.AutoLockTimeout
 import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.settings.lock.LockSettingsRepository
 import ru.kino.dev.settings.pres.testing.RecordingLog
+import ru.kino.dev.settings.pres.testing.runToEnd
 import ru.kino.dev.settings.signin.FakeSignInSettingsRepository
 
 class LockProcessorTest {
@@ -26,7 +27,7 @@ class LockProcessorTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes10)
 
         lockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this) {
-            containerHost.action(LockAction.Load).join()
+            containerHost.runToEnd { onLoad() }
 
             expectInternalState { copy(
                     timeout = AutoLockTimeout.Minutes10,
@@ -44,7 +45,7 @@ class LockProcessorTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
 
         lockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this, LockState(AutoLockTimeout.Minutes5)) {
-            containerHost.action(LockAction.ChooseTimeout).join()
+            containerHost.runToEnd { onChooseTimeout() }
 
             expectInternalState { copy(choosingTimeout = true) }
         }
@@ -55,7 +56,7 @@ class LockProcessorTest {
         val repository = FakeLockSettingsRepository(AutoLockTimeout.Minutes5)
 
         lockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this) {
-            containerHost.action(LockAction.ChooseTimeout).join()
+            containerHost.runToEnd { onChooseTimeout() }
         }
     }
 
@@ -65,7 +66,7 @@ class LockProcessorTest {
         val initial = LockState(AutoLockTimeout.Minutes5, choosingTimeout = true)
 
         lockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this, initial) {
-            containerHost.action(LockAction.SelectTimeout(AutoLockTimeout.Seconds30)).join()
+            containerHost.runToEnd { onSelectTimeout(AutoLockTimeout.Seconds30) }
 
             expectInternalState { copy(choosingTimeout = false) }
             expectInternalState { copy(timeout = AutoLockTimeout.Seconds30) }
@@ -80,7 +81,7 @@ class LockProcessorTest {
         val initial = LockState(AutoLockTimeout.Minutes5, choosingTimeout = true)
 
         lockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this, initial) {
-            containerHost.action(LockAction.SelectTimeout(AutoLockTimeout.Minute1)).join()
+            containerHost.runToEnd { onSelectTimeout(AutoLockTimeout.Minute1) }
 
             expectInternalState { copy(choosingTimeout = false) }
             expectInternalState { copy(timeout = AutoLockTimeout.Minute1) }
@@ -94,7 +95,7 @@ class LockProcessorTest {
         val initial = LockState(AutoLockTimeout.Minutes5, choosingTimeout = true)
 
         lockProcessor(repository, FakeSignInSettingsRepository(), Navigator()).testWithInternalState(this, initial) {
-            containerHost.action(LockAction.SelectTimeout(AutoLockTimeout.Minutes5)).join()
+            containerHost.runToEnd { onSelectTimeout(AutoLockTimeout.Minutes5) }
 
             expectInternalState { copy(choosingTimeout = false) }
         }
@@ -108,7 +109,7 @@ class LockProcessorTest {
 
         lockProcessor(repository, FakeSignInSettingsRepository(), Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockOnLeave = false)) {
-                containerHost.action(LockAction.SetLockOnLeave(true)).join()
+                containerHost.runToEnd { onSetLockOnLeave(true) }
 
                 expectInternalState { copy(lockOnLeave = true) }
             }
@@ -122,7 +123,7 @@ class LockProcessorTest {
 
         lockProcessor(repository, FakeSignInSettingsRepository(), Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockOnLeave = false)) {
-                containerHost.action(LockAction.SetLockOnLeave(true)).join()
+                containerHost.runToEnd { onSetLockOnLeave(true) }
 
                 expectInternalState { copy(lockOnLeave = true) }
                 expectInternalState { copy(lockOnLeave = false, message = LockMessage.NotSaved) }
@@ -135,7 +136,7 @@ class LockProcessorTest {
 
         lockProcessor(repository, FakeSignInSettingsRepository(), Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockButton = false)) {
-                containerHost.action(LockAction.SetLockButton(true)).join()
+                containerHost.runToEnd { onSetLockButton(true) }
 
                 expectInternalState { copy(lockButton = true) }
             }
@@ -149,7 +150,7 @@ class LockProcessorTest {
 
         lockProcessor(repository, FakeSignInSettingsRepository(), Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, lockButton = false)) {
-                containerHost.action(LockAction.SetLockButton(true)).join()
+                containerHost.runToEnd { onSetLockButton(true) }
 
                 expectInternalState { copy(lockButton = true) }
                 expectInternalState { copy(lockButton = false, message = LockMessage.NotSaved) }
@@ -162,7 +163,7 @@ class LockProcessorTest {
 
         lockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), signIn, Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, clearPasswordOnError = false)) {
-                containerHost.action(LockAction.SetClearPasswordOnError(true)).join()
+                containerHost.runToEnd { onSetClearPasswordOnError(true) }
 
                 expectInternalState { copy(clearPasswordOnError = true) }
             }
@@ -176,7 +177,7 @@ class LockProcessorTest {
 
         lockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), signIn, Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, clearPasswordOnError = false)) {
-                containerHost.action(LockAction.SetClearPasswordOnError(true)).join()
+                containerHost.runToEnd { onSetClearPasswordOnError(true) }
 
                 expectInternalState { copy(clearPasswordOnError = true) }
                 expectInternalState { copy(clearPasswordOnError = false, message = LockMessage.NotSaved) }
@@ -189,7 +190,7 @@ class LockProcessorTest {
 
         lockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), signIn, Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, autoBiometricPrompt = false)) {
-                containerHost.action(LockAction.SetAutoBiometricPrompt(true)).join()
+                containerHost.runToEnd { onSetAutoBiometricPrompt(true) }
 
                 expectInternalState { copy(autoBiometricPrompt = true) }
             }
@@ -203,7 +204,7 @@ class LockProcessorTest {
 
         lockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), signIn, Navigator())
             .testWithInternalState(this, LockState(AutoLockTimeout.Minutes5, autoBiometricPrompt = false)) {
-                containerHost.action(LockAction.SetAutoBiometricPrompt(true)).join()
+                containerHost.runToEnd { onSetAutoBiometricPrompt(true) }
 
                 expectInternalState { copy(autoBiometricPrompt = true) }
                 expectInternalState { copy(autoBiometricPrompt = false, message = LockMessage.NotSaved) }
@@ -218,7 +219,7 @@ class LockProcessorTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
         lockProcessor(FakeLockSettingsRepository(AutoLockTimeout.Minutes5), FakeSignInSettingsRepository(), navigator).testWithInternalState(this) {
-            containerHost.action(LockAction.Back).join()
+            containerHost.runToEnd { onBack() }
         }
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)

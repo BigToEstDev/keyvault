@@ -14,6 +14,7 @@ import ru.kino.dev.settings.lock.AutoLockTimeout
 import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.settings.lock.LockSettingsRepository
 import ru.kino.dev.settings.pres.testing.RecordingLog
+import ru.kino.dev.settings.pres.testing.runToEnd
 import ru.kino.dev.settings.signin.FakeSignInSettingsRepository
 import ru.kino.dev.ui.biometric.BiometricPromptResult
 
@@ -29,7 +30,7 @@ class LockProcessorBiometricTest {
         biometrics.passwords[DB] = "pw"
 
         processor().testWithInternalState(this) {
-            containerHost.action(LockAction.Load).join()
+            containerHost.runToEnd { onLoad() }
 
             expectInternalState { loaded(BiometricRow(on = true)) }
         }
@@ -40,7 +41,7 @@ class LockProcessorBiometricTest {
         biometrics.available = false
 
         processor().testWithInternalState(this) {
-            containerHost.action(LockAction.Load).join()
+            containerHost.runToEnd { onLoad() }
 
             expectInternalState { loaded(BiometricRow(on = false, unavailable = BiometricUnavailable.NoHardware)) }
         }
@@ -52,7 +53,7 @@ class LockProcessorBiometricTest {
         biometrics.available = false
 
         processor().testWithInternalState(this) {
-            containerHost.action(LockAction.Load).join()
+            containerHost.runToEnd { onLoad() }
 
             expectInternalState { loaded(BiometricRow(on = false, unavailable = BiometricUnavailable.Unsupported)) }
         }
@@ -61,7 +62,7 @@ class LockProcessorBiometricTest {
     @Test
     fun `a database with a key file alone has no password to keep`() = runTest {
         processor(FakeDatabaseCredentials(hasPassword = false)).testWithInternalState(this) {
-            containerHost.action(LockAction.Load).join()
+            containerHost.runToEnd { onLoad() }
 
             expectInternalState { loaded(BiometricRow(on = false, unavailable = BiometricUnavailable.NoPassword)) }
         }
@@ -70,7 +71,7 @@ class LockProcessorBiometricTest {
     @Test
     fun `turning on asks for the password first`() = runTest {
         processor().testWithInternalState(this, LockState(biometric = BiometricRow(on = false))) {
-            containerHost.action(LockAction.SetBiometric(true)).join()
+            containerHost.runToEnd { onSetBiometric(true) }
 
             expectInternalState { copy(biometricPassword = BiometricPasswordDialog()) }
         }
@@ -79,7 +80,7 @@ class LockProcessorBiometricTest {
     @Test
     fun `a wrong password stays in its dialog and says so`() = runTest {
         processor().testWithInternalState(this, typed("other")) {
-            containerHost.action(LockAction.BiometricPasswordConfirm).join()
+            containerHost.runToEnd { onBiometricPasswordConfirm() }
 
             expectInternalState { copy(biometricPassword = biometricPassword?.copy(checking = true)) }
             expectInternalState { copy(biometricPassword = biometricPassword?.copy(checking = false, wrong = true)) }
@@ -91,12 +92,12 @@ class LockProcessorBiometricTest {
     @Test
     fun `the right password goes to the prompt, and a match keeps it`() = runTest {
         processor().testWithInternalState(this, typed("pw")) {
-            containerHost.action(LockAction.BiometricPasswordConfirm).join()
+            containerHost.runToEnd { onBiometricPasswordConfirm() }
             expectInternalState { copy(biometricPassword = biometricPassword?.copy(checking = true)) }
             expectInternalState { copy(biometricPassword = null) }
             val prompt = awaitSideEffect() as LockSideEffect.ShowBiometricPrompt
 
-            containerHost.action(LockAction.BiometricPromptFinished(prompt.session, BiometricPromptResult.Succeeded)).join()
+            containerHost.runToEnd { onBiometricPromptFinished(prompt.session, BiometricPromptResult.Succeeded) }
             expectInternalState { copy(biometric = BiometricRow(on = true)) }
         }
 
@@ -109,12 +110,12 @@ class LockProcessorBiometricTest {
     @Test
     fun `a cancelled prompt keeps nothing`() = runTest {
         processor().testWithInternalState(this, typed("pw")) {
-            containerHost.action(LockAction.BiometricPasswordConfirm).join()
+            containerHost.runToEnd { onBiometricPasswordConfirm() }
             expectInternalState { copy(biometricPassword = biometricPassword?.copy(checking = true)) }
             expectInternalState { copy(biometricPassword = null) }
             val prompt = awaitSideEffect() as LockSideEffect.ShowBiometricPrompt
 
-            containerHost.action(LockAction.BiometricPromptFinished(prompt.session, BiometricPromptResult.Cancelled)).join()
+            containerHost.runToEnd { onBiometricPromptFinished(prompt.session, BiometricPromptResult.Cancelled) }
         }
 
         assertEquals(listOf("startSaving"), journal)
@@ -126,10 +127,10 @@ class LockProcessorBiometricTest {
         biometrics.passwords[DB] = "pw"
 
         processor().testWithInternalState(this, LockState(biometric = BiometricRow(on = true))) {
-            containerHost.action(LockAction.SetBiometric(false)).join()
+            containerHost.runToEnd { onSetBiometric(false) }
             expectInternalState { copy(forgettingBiometric = true) }
 
-            containerHost.action(LockAction.BiometricForgetConfirm).join()
+            containerHost.runToEnd { onBiometricForgetConfirm() }
             expectInternalState { copy(forgettingBiometric = false, biometric = BiometricRow(on = false)) }
         }
 
@@ -141,7 +142,7 @@ class LockProcessorBiometricTest {
         val noPassword = LockState(biometric = BiometricRow(on = false, unavailable = BiometricUnavailable.NoPassword))
 
         processor().testWithInternalState(this, noPassword) {
-            containerHost.action(LockAction.SetBiometric(true)).join()
+            containerHost.runToEnd { onSetBiometric(true) }
         }
     }
 

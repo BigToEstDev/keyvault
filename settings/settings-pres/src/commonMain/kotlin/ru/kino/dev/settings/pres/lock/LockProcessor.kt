@@ -1,7 +1,6 @@
 package ru.kino.dev.settings.pres.lock
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
@@ -23,38 +22,6 @@ import ru.kino.dev.ui.biometric.BiometricPromptResult
 import ru.kino.dev.vault.credentials.DatabaseCredentials
 
 /**
- * @param timeout the chosen time of the auto-lock; null until read - its choice is disabled
- * @param lockOnLeave whether leaving the app locks at once; null until read - its choice is disabled
- * @param lockButton whether the screens have the lock button; null until read - its choice is disabled
- * @param clearPasswordOnError whether a wrong password is wiped; null until read - its choice is disabled
- * @param autoBiometricPrompt whether biometrics are asked by themselves; null until read - its choice is disabled
- * @param biometric the row of biometrics of this database; null until read - disabled
- * @param biometricPassword the password asked before biometrics are turned on
- * @param forgettingBiometric "Forget biometrics for this database?" is open
- * @param choosingTimeout the wheel of the times is open
- * @param message for the snackbar, until it takes it
- */
-data class LockState(
-    val timeout: AutoLockTimeout? = null,
-    val lockOnLeave: Boolean? = null,
-    val lockButton: Boolean? = null,
-    val clearPasswordOnError: Boolean? = null,
-    val autoBiometricPrompt: Boolean? = null,
-    val biometric: BiometricRow? = null,
-    val biometricPassword: BiometricPasswordDialog? = null,
-    val forgettingBiometric: Boolean = false,
-    val choosingTimeout: Boolean = false,
-    val message: LockMessage? = null,
-) {
-    /**
-     * Asking for biometrics by themselves has something to ask only with biometrics of the database on: off and
-     * disabled otherwise, the choice kept as it is (pass-docs, Step 93).
-     */
-    val autoBiometricPromptAllowed: Boolean
-        get() = biometric?.on == true
-}
-
-/**
  * How the database locks (pass-docs, Step 59): the time of the auto-lock, locking on leaving the app, the lock
  * button; and how one gets in - asking for biometrics by
  * themselves, wiping a wrong password; biometrics of [dbKey]. A choice
@@ -73,111 +40,144 @@ class LockProcessor(
     private val timer: InactivityTimer,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<LockState, LockState, LockSideEffect> {
+) : ViewModel(), OrbitContainerHost<LockState, LockState, LockSideEffect>, LockActions {
 
     override val container = orbitContainer<LockState, LockSideEffect>(LockState())
 
     // The checked password, from the dialog until the prompt ends - not in the state, nothing shows it
     private var checkedPassword: String? = null
 
-    fun action(action: LockAction): Job = when (action) {
+    override fun onBiometricPasswordChange(password: String) {
         // Typed text: the state is updated before the field draws again, or the cursor jumps
-        is LockAction.BiometricPasswordChanged -> textIntent {
-            reduce { state.copy(biometricPassword = state.biometricPassword?.copy(password = action.password, wrong = false)) }
+        textIntent {
+            reduce { state.copy(biometricPassword = state.biometricPassword?.copy(password = password, wrong = false)) }
         }
-
-        else -> intent { handle(action) }
     }
 
-    private suspend fun Syntax<LockState, LockSideEffect>.handle(action: LockAction) {
-        when (action) {
-            LockAction.Load -> {
-                val timeout = repository.autoLockTimeout.first()
-                val lockOnLeave = repository.lockOnLeave.first()
-                val lockButton = repository.lockButton.first()
-                val clearPasswordOnError = signIn.clearPasswordOnError.first()
-                val autoBiometricPrompt = signIn.autoBiometricPrompt.first()
-                val row = biometricRow()
-                reduce {
-                    state.copy(
-                        timeout = timeout,
-                        lockOnLeave = lockOnLeave,
-                        lockButton = lockButton,
-                        clearPasswordOnError = clearPasswordOnError,
-                        autoBiometricPrompt = autoBiometricPrompt,
-                        biometric = row,
-                    )
-                }
+    override fun onLoad() {
+        intent {
+            val timeout = repository.autoLockTimeout.first()
+            val lockOnLeave = repository.lockOnLeave.first()
+            val lockButton = repository.lockButton.first()
+            val clearPasswordOnError = signIn.clearPasswordOnError.first()
+            val autoBiometricPrompt = signIn.autoBiometricPrompt.first()
+            val row = biometricRow()
+            reduce {
+                state.copy(
+                    timeout = timeout,
+                    lockOnLeave = lockOnLeave,
+                    lockButton = lockButton,
+                    clearPasswordOnError = clearPasswordOnError,
+                    autoBiometricPrompt = autoBiometricPrompt,
+                    biometric = row,
+                )
             }
+        }
+    }
 
-            LockAction.Back -> navigator.navigate(MviNavEvent.NavigateBack)
+    override fun onBack() {
+        intent { navigator.navigate(MviNavEvent.NavigateBack) }
+    }
 
-            LockAction.ChooseTimeout -> if (state.timeout != null) reduce { state.copy(choosingTimeout = true) }
+    override fun onChooseTimeout() {
+        intent { if (state.timeout != null) reduce { state.copy(choosingTimeout = true) } }
+    }
 
-            LockAction.DismissTimeout -> reduce { state.copy(choosingTimeout = false) }
+    override fun onDismissTimeout() {
+        intent { reduce { state.copy(choosingTimeout = false) } }
+    }
 
-            is LockAction.SelectTimeout -> {
-                reduce { state.copy(choosingTimeout = false) }
-                keepSetting(
-                    chosen = action.timeout,
-                    current = state.timeout,
-                    kept = repository.autoLockTimeout,
-                    show = { copy(timeout = it) },
-                    notSaved = { copy(message = LockMessage.NotSaved) },
-                ) { repository.save(it) }
-            }
+    override fun onSelectTimeout(timeout: AutoLockTimeout) {
+        intent {
+            reduce { state.copy(choosingTimeout = false) }
+            keepSetting(
+                chosen = timeout,
+                current = state.timeout,
+                kept = repository.autoLockTimeout,
+                show = { copy(timeout = it) },
+                notSaved = { copy(message = LockMessage.NotSaved) },
+            ) { repository.save(it) }
+        }
+    }
 
-            is LockAction.SetLockOnLeave -> keepSetting(
-                chosen = action.on,
+    override fun onSetLockOnLeave(on: Boolean) {
+        intent {
+            keepSetting(
+                chosen = on,
                 current = state.lockOnLeave,
                 kept = repository.lockOnLeave,
                 show = { copy(lockOnLeave = it) },
                 notSaved = { copy(message = LockMessage.NotSaved) },
             ) { repository.saveLockOnLeave(it) }
+        }
+    }
 
-            is LockAction.SetLockButton -> keepSetting(
-                chosen = action.on,
+    override fun onSetLockButton(on: Boolean) {
+        intent {
+            keepSetting(
+                chosen = on,
                 current = state.lockButton,
                 kept = repository.lockButton,
                 show = { copy(lockButton = it) },
                 notSaved = { copy(message = LockMessage.NotSaved) },
             ) { repository.saveLockButton(it) }
+        }
+    }
 
-            is LockAction.SetClearPasswordOnError -> keepSetting(
-                chosen = action.on,
+    override fun onSetClearPasswordOnError(on: Boolean) {
+        intent {
+            keepSetting(
+                chosen = on,
                 current = state.clearPasswordOnError,
                 kept = signIn.clearPasswordOnError,
                 show = { copy(clearPasswordOnError = it) },
                 notSaved = { copy(message = LockMessage.NotSaved) },
             ) { signIn.saveClearPasswordOnError(it) }
+        }
+    }
 
-            is LockAction.SetAutoBiometricPrompt -> keepSetting(
-                chosen = action.on,
+    override fun onSetAutoBiometricPrompt(on: Boolean) {
+        intent {
+            keepSetting(
+                chosen = on,
                 current = state.autoBiometricPrompt,
                 kept = signIn.autoBiometricPrompt,
                 show = { copy(autoBiometricPrompt = it) },
                 notSaved = { copy(message = LockMessage.NotSaved) },
             ) { signIn.saveAutoBiometricPrompt(it) }
+        }
+    }
 
-            is LockAction.SetBiometric -> setBiometric(action.on)
+    override fun onSetBiometric(on: Boolean) {
+        intent { setBiometric(on) }
+    }
 
-            LockAction.BiometricPasswordConfirm -> confirmPassword()
+    override fun onBiometricPasswordConfirm() {
+        intent { confirmPassword() }
+    }
 
-            LockAction.BiometricPasswordDismiss -> if (state.biometricPassword?.checking == false) {
+    override fun onBiometricPasswordDismiss() {
+        intent {
+            if (state.biometricPassword?.checking == false) {
                 reduce { state.copy(biometricPassword = null) }
             }
-
-            is LockAction.BiometricPromptFinished -> promptFinished(action.session, action.result)
-
-            LockAction.BiometricForgetConfirm -> forget()
-
-            LockAction.BiometricForgetDismiss -> reduce { state.copy(forgettingBiometric = false) }
-
-            LockAction.MessageShown -> reduce { state.copy(message = null) }
-
-            // Typed text has its own intent above
-            is LockAction.BiometricPasswordChanged -> Unit
         }
+    }
+
+    override fun onBiometricPromptFinished(session: BiometricSession, result: BiometricPromptResult) {
+        intent { promptFinished(session, result) }
+    }
+
+    override fun onBiometricForgetConfirm() {
+        intent { forget() }
+    }
+
+    override fun onBiometricForgetDismiss() {
+        intent { reduce { state.copy(forgettingBiometric = false) } }
+    }
+
+    override fun onMessageShown() {
+        intent { reduce { state.copy(message = null) } }
     }
 
     // A database gone meanwhile reads as one without a password: there is nothing to turn on, and the lock

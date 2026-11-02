@@ -53,12 +53,12 @@ internal fun LockScreen(
     processor.collectSideEffect { effect ->
         when (effect) {
             is LockSideEffect.ShowBiometricPrompt -> showPrompt(effect.session.cipher, BiometricPurpose.Enable) {
-                processor.action(LockAction.BiometricPromptFinished(effect.session, it))
+                processor.onBiometricPromptFinished(effect.session, it)
             }
         }
     }
 
-    LaunchedEffect(Unit) { processor.action(LockAction.Load) }
+    LaunchedEffect(Unit) { processor.onLoad() }
 
     val message = state.message?.let {
         stringResource(
@@ -68,7 +68,7 @@ internal fun LockScreen(
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(LockAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     GradientBackground {
         Scaffold(
@@ -77,7 +77,7 @@ internal fun LockScreen(
             topBar = {
                 BackTopBar(
                     title = stringResource(Res.string.settings_lock),
-                    onBack = { processor.action(LockAction.Back) },
+                    onBack = processor::onBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },
@@ -97,7 +97,7 @@ internal fun LockScreen(
                             text = stringResource(Res.string.settings_auto_lock_hint),
                             // Until read nothing is chosen for real: the row is disabled meanwhile
                             value = state.timeout?.let { timeoutLabel(it) }.orEmpty(),
-                            onClick = { processor.action(LockAction.ChooseTimeout) },
+                            onClick = processor::onChooseTimeout,
                             enabled = state.timeout != null,
                         )
                     }
@@ -108,7 +108,7 @@ internal fun LockScreen(
                             title = stringResource(Res.string.settings_lock_on_leave),
                             text = stringResource(Res.string.settings_lock_on_leave_hint),
                             checked = state.lockOnLeave ?: false,
-                            onCheckedChange = { processor.action(LockAction.SetLockOnLeave(it)) },
+                            onCheckedChange = processor::onSetLockOnLeave,
                             enabled = state.lockOnLeave != null,
                         )
                     }
@@ -119,7 +119,7 @@ internal fun LockScreen(
                             title = stringResource(Res.string.settings_lock_button),
                             text = stringResource(Res.string.settings_lock_button_hint),
                             checked = state.lockButton ?: false,
-                            onCheckedChange = { processor.action(LockAction.SetLockButton(it)) },
+                            onCheckedChange = processor::onSetLockButton,
                             enabled = state.lockButton != null,
                         )
                     }
@@ -142,7 +142,7 @@ internal fun LockScreen(
                                 },
                             ),
                             checked = row?.on ?: false,
-                            onCheckedChange = { processor.action(LockAction.SetBiometric(it)) },
+                            onCheckedChange = processor::onSetBiometric,
                             // On, it can always be turned off - forgetting needs neither the sensor nor a password
                             enabled = row != null && (row.unavailable == null || row.on),
                         )
@@ -154,7 +154,7 @@ internal fun LockScreen(
                             title = stringResource(Res.string.settings_auto_biometric_prompt),
                             text = stringResource(Res.string.settings_auto_biometric_prompt_hint),
                             checked = state.autoBiometricPromptAllowed && state.autoBiometricPrompt == true,
-                            onCheckedChange = { processor.action(LockAction.SetAutoBiometricPrompt(it)) },
+                            onCheckedChange = processor::onSetAutoBiometricPrompt,
                             enabled = state.autoBiometricPromptAllowed && state.autoBiometricPrompt != null,
                         )
                     }
@@ -165,7 +165,7 @@ internal fun LockScreen(
                             title = stringResource(Res.string.settings_clear_password),
                             text = stringResource(Res.string.settings_clear_password_hint),
                             checked = state.clearPasswordOnError ?: false,
-                            onCheckedChange = { processor.action(LockAction.SetClearPasswordOnError(it)) },
+                            onCheckedChange = processor::onSetClearPasswordOnError,
                             enabled = state.clearPasswordOnError != null,
                         )
                     }
@@ -178,12 +178,12 @@ internal fun LockScreen(
         TextInputDialog(
             title = stringResource(Res.string.settings_biometric_password_title),
             value = dialog.password,
-            onValueChange = { processor.action(LockAction.BiometricPasswordChanged(it)) },
+            onValueChange = processor::onBiometricPasswordChange,
             label = stringResource(Res.string.entry_field_password),
             confirmText = stringResource(Res.string.action_next),
             dismissText = stringResource(Res.string.action_cancel),
-            onConfirm = { processor.action(LockAction.BiometricPasswordConfirm) },
-            onDismiss = { processor.action(LockAction.BiometricPasswordDismiss) },
+            onConfirm = processor::onBiometricPasswordConfirm,
+            onDismiss = processor::onBiometricPasswordDismiss,
             error = if (dialog.wrong) stringResource(Res.string.settings_biometric_wrong_password) else null,
             loading = dialog.checking,
             secret = true,
@@ -196,8 +196,8 @@ internal fun LockScreen(
             text = stringResource(Res.string.settings_biometric_forget_text),
             confirmText = stringResource(Res.string.settings_biometric_forget),
             dismissText = stringResource(Res.string.action_cancel),
-            onConfirm = { processor.action(LockAction.BiometricForgetConfirm) },
-            onDismiss = { processor.action(LockAction.BiometricForgetDismiss) },
+            onConfirm = processor::onBiometricForgetConfirm,
+            onDismiss = processor::onBiometricForgetDismiss,
         )
     }
 
@@ -208,8 +208,8 @@ internal fun LockScreen(
             options = AutoLockTimeout.entries,
             selected = timeout,
             label = { timeoutLabel(it) },
-            onConfirm = { processor.action(LockAction.SelectTimeout(it)) },
-            onDismiss = { processor.action(LockAction.DismissTimeout) },
+            onConfirm = processor::onSelectTimeout,
+            onDismiss = processor::onDismissTimeout,
         )
     }
 }
