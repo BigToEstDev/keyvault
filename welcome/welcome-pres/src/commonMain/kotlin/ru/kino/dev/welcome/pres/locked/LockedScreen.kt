@@ -2,7 +2,6 @@ package ru.kino.dev.welcome.pres.locked
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
@@ -24,8 +23,8 @@ internal fun LockedScreen(
     processor: LockedProcessor = koinViewModel { parametersOf(dbKey) },
 ) {
     val state by processor.collectAsState()
-    val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.action(LockedAction.KeyFilePicked(it)) }
-    val showBiometricPrompt = rememberBiometricPrompt { processor.action(LockedAction.BiometricFinished(it)) }
+    val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.onKeyFilePicked(it) }
+    val showBiometricPrompt = rememberBiometricPrompt { processor.onBiometricFinished(it) }
     val putAppAway = rememberPutAppAway()
 
     // "Back" puts the app away: going back would show `vault` under the lock, and one button would undo it
@@ -38,8 +37,7 @@ internal fun LockedScreen(
         }
     }
 
-    val actions = remember(processor) { LockedEntryActions(processor) }
-    actions.PasswordEntryContent(
+    processor.PasswordEntryContent(
         databaseName = state.databaseName ?: stringResource(Res.string.entry_database_fallback),
         subtitle = stringResource(Res.string.entry_locked_title),
         entry = state.entry,

@@ -1,11 +1,11 @@
 package ru.kino.dev.welcome.pres.common.passwordentry
 
 /**
- * What the layout of entering a password is asked to do (pass-docs, Step 94): the unlock and the locked screens
- * each have their own, over their processor. What a screen has not got is said by [PasswordEntryAbilities], not by
- * a missing action.
+ * What the layout of entering a password is asked to do (pass-docs, Step 94) - done by the processor of the screen
+ * itself. What a screen has not got is said by [PasswordEntryAbilities]; the choices only some screens have are
+ * [PasswordEntryChoiceActions]. The way of it - pass-docs `docs/app/mvi-arc.md`.
  */
-internal interface PasswordEntryActions {
+interface PasswordEntryActions : PasswordEntryChoiceActions {
 
     fun onPasswordChange(password: String)
 
@@ -20,17 +20,24 @@ internal interface PasswordEntryActions {
     /** Pick a key file: attach one, or pick it again when it cannot be read. */
     fun onAttachKeyFile()
 
-    /** Only with [PasswordEntryAbilities.changeKeyFile]. */
-    fun onRemoveKeyFile()
-
-    /** "Sign in with biometrics" tapped. */
+    /** "Sign in with biometrics" tapped - the prompt is shown only on this. */
     fun onBiometric()
+}
+
+/**
+ * Choosing what is opened - another database, a new one, no key file: asked only with the matching
+ * [PasswordEntryAbilities], so nothing by default; the processor of a screen that has them overrides them.
+ */
+interface PasswordEntryChoiceActions {
+
+    /** Only with [PasswordEntryAbilities.changeKeyFile]. */
+    fun onRemoveKeyFile() = Unit
 
     /** The name of the database tapped, or "pick another file" after a failure; only with [PasswordEntryAbilities.changeDatabase]. */
-    fun onChangeDatabase()
+    fun onChangeDatabase() = Unit
 
-    /** Only with [PasswordEntryAbilities.createDatabase]. */
-    fun onCreateDatabase()
+    /** "Create a new database" - the way out when the remembered one is gone; only with [PasswordEntryAbilities.createDatabase]. */
+    fun onCreateDatabase() = Unit
 }
 
 /**

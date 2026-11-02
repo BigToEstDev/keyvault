@@ -2,7 +2,6 @@ package ru.kino.dev.welcome.pres.unlock
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
@@ -23,9 +22,9 @@ internal fun UnlockScreen(
     processor: UnlockProcessor = koinViewModel { parametersOf(pickedUri) },
 ) {
     val state by processor.collectAsState()
-    val pickDatabase = rememberOpenDocument(DocumentKind.Database) { processor.action(UnlockAction.DatabasePicked(it)) }
-    val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.action(UnlockAction.KeyFilePicked(it)) }
-    val showBiometricPrompt = rememberBiometricPrompt { processor.action(UnlockAction.BiometricFinished(it)) }
+    val pickDatabase = rememberOpenDocument(DocumentKind.Database) { processor.onDatabasePicked(it) }
+    val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.onKeyFilePicked(it) }
+    val showBiometricPrompt = rememberBiometricPrompt { processor.onBiometricFinished(it) }
 
     processor.collectSideEffect { effect ->
         when (effect) {
@@ -35,8 +34,7 @@ internal fun UnlockScreen(
         }
     }
 
-    val actions = remember(processor) { UnlockEntryActions(processor) }
-    actions.PasswordEntryContent(
+    processor.PasswordEntryContent(
         databaseName = state.title ?: stringResource(Res.string.entry_database_fallback),
         entry = state.entry,
         submitText = stringResource(Res.string.entry_open),
