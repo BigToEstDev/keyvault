@@ -69,11 +69,11 @@ internal fun SecurityScreen(
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) { processor.action(SecurityAction.Load) }
+    LaunchedEffect(Unit) { processor.onLoad() }
 
     val message = state.message?.let { messageText(it) }
-    SnackbarMessage(message, snackbar) { processor.action(SecurityAction.MessageShown) }
-    val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.action(SecurityAction.KeyFilePicked(it)) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
+    val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.onKeyFilePicked(it) }
 
     GradientBackground {
         Scaffold(
@@ -82,7 +82,7 @@ internal fun SecurityScreen(
             topBar = {
                 BackTopBar(
                     title = stringResource(Res.string.settings_security),
-                    onBack = { processor.action(SecurityAction.Back) },
+                    onBack = processor::onBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },
@@ -99,25 +99,25 @@ internal fun SecurityScreen(
                     // Until read there is nothing to show for real: the shapes of the screen
                     item(key = "skeleton") { SecuritySkeleton(skeletonBrush()) }
                 } else {
-                    credentialRows(security, state.saving, pickKeyFile, processor::action)
-                    encryptionRows(security, state.kdfPass, state.saving, processor::action)
+                    credentialRows(security, state.saving, pickKeyFile, processor)
+                    encryptionRows(security, state.kdfPass, state.saving, processor)
                 }
             }
         }
     }
 
     if (state.choosingRounds) {
-        state.security?.let { RoundsDialog(it, state.kdfPass, processor::action) }
+        state.security?.let { processor.RoundsDialog(it, state.kdfPass) }
     }
-    state.passwordDialog?.let { PasswordDialog(it, processor::action) }
+    state.passwordDialog?.let { processor.PasswordDialog(it) }
     if (state.removingKeyFile) {
         ConfirmDialog(
             title = stringResource(Res.string.settings_security_key_file_remove_title),
             text = stringResource(Res.string.settings_security_key_file_remove_text),
             confirmText = stringResource(Res.string.action_remove),
             dismissText = stringResource(Res.string.action_cancel),
-            onConfirm = { processor.action(SecurityAction.RemoveKeyFileConfirm) },
-            onDismiss = { processor.action(SecurityAction.RemoveKeyFileDismiss) },
+            onConfirm = processor::onRemoveKeyFileConfirm,
+            onDismiss = processor::onRemoveKeyFileDismiss,
             destructive = true,
         )
     }
@@ -127,7 +127,7 @@ private fun LazyListScope.credentialRows(
     security: DatabaseSecurity,
     saving: SecurityPart?,
     pickKeyFile: () -> Unit,
-    action: (SecurityAction) -> Unit,
+    actions: SecurityActions,
 ) {
     item(key = "credentials") {
         SettingsSectionHeader(title = stringResource(Res.string.settings_security_credentials_group))
@@ -143,18 +143,18 @@ private fun LazyListScope.credentialRows(
                 },
             ),
             hint = stringResource(Res.string.settings_security_password_hint),
-            onClick = { action(SecurityAction.EditPassword) },
+            onClick = { actions.onEditPassword() },
             enabled = saving == null,
         )
     }
-    item(key = "key_file") { KeyFileCard(security, saving, pickKeyFile, action) }
+    item(key = "key_file") { actions.KeyFileCard(security, saving, pickKeyFile) }
 }
 
 private fun LazyListScope.encryptionRows(
     security: DatabaseSecurity,
     kdfPass: KdfPass,
     saving: SecurityPart?,
-    action: (SecurityAction) -> Unit,
+    actions: SecurityActions,
 ) {
     val encryption = security.encryption
     item(key = "encryption") {
@@ -172,7 +172,7 @@ private fun LazyListScope.encryptionRows(
                 options = listOf(Cipher.Aes256, Cipher.ChaCha20),
                 selected = encryption.cipher,
                 label = { cipherLabel(it) },
-                onSelect = { action(SecurityAction.SelectCipher(it)) },
+                onSelect = { actions.onSelectCipher(it) },
                 enabled = saving == null,
             )
         }
@@ -184,7 +184,7 @@ private fun LazyListScope.encryptionRows(
                 options = listOf(KdfVariant.Argon2id, KdfVariant.Argon2d),
                 selected = encryption.kdf,
                 label = { kdfLabel(it) },
-                onSelect = { action(SecurityAction.SelectKdf(it)) },
+                onSelect = { actions.onSelectKdf(it) },
                 enabled = saving == null,
             )
         }
@@ -198,7 +198,7 @@ private fun LazyListScope.encryptionRows(
                 ValueRow(
                     title = stringResource(Res.string.settings_security_rounds),
                     value = rounds.toString(),
-                    onClick = { action(SecurityAction.ChooseRounds) },
+                    onClick = { actions.onChooseRounds() },
                     text = (kdfPass as? KdfPass.Measured)?.let { openTime(it, rounds) },
                     enabled = saving == null,
                 )
@@ -224,11 +224,10 @@ private fun LazyListScope.encryptionRows(
  * a password the key file is all that opens the database, and it cannot go.
  */
 @Composable
-private fun KeyFileCard(
+private fun SecurityActions.KeyFileCard(
     security: DatabaseSecurity,
     saving: SecurityPart?,
     pickKeyFile: () -> Unit,
-    action: (SecurityAction) -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
     val hasKeyFile = security.credentials.keyFile
@@ -249,7 +248,7 @@ private fun KeyFileCard(
                 add(MenuItem(stringResource(Res.string.action_change), Icons.Filled.SwapHoriz, pickKeyFile))
                 if (security.credentials.password) {
                     add(MenuItem(stringResource(Res.string.action_remove), Icons.Filled.LinkOff) {
-                        action(SecurityAction.RemoveKeyFile)
+                        onRemoveKeyFile()
                     })
                 }
             },
@@ -290,14 +289,14 @@ private fun SavingProgress(modifier: Modifier) {
 }
 
 @Composable
-private fun RoundsDialog(security: DatabaseSecurity, kdfPass: KdfPass, action: (SecurityAction) -> Unit) {
+private fun SecurityActions.RoundsDialog(security: DatabaseSecurity, kdfPass: KdfPass) {
     WheelPickerDialog(
         title = stringResource(Res.string.settings_security_rounds),
         options = RoundsChoices.OPTIONS,
         selected = RoundsChoices.onWheel(security.encryption.iterations),
         label = { it.toString() },
-        onConfirm = { action(SecurityAction.SelectRounds(it)) },
-        onDismiss = { action(SecurityAction.DismissRounds) },
+        onConfirm = { onSelectRounds(it) },
+        onDismiss = { onDismissRounds() },
         confirmText = stringResource(Res.string.action_save),
     ) { rounds ->
         Column(modifier = Modifier.padding(top = 16.dp)) {

@@ -1,147 +1,60 @@
 package ru.kino.dev.settings.pres.security
 
 import ru.kino.dev.core.Cipher
-import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.KdfVariant
-import kotlin.time.Duration
 
-sealed interface SecurityAction {
+/** What the security of the database is asked to do - done by [SecurityProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
+interface SecurityActions {
 
     /** The screen is shown: the security is read, then one KDF pass is measured. */
-    data object Load : SecurityAction
+    fun onLoad()
 
-    data object Back : SecurityAction
+    fun onBack()
 
     /** A cipher chosen: kept and the file written at once. */
-    data class SelectCipher(val cipher: Cipher) : SecurityAction
+    fun onSelectCipher(cipher: Cipher)
 
     /** An Argon2 variant chosen: kept and the file written at once. */
-    data class SelectKdf(val kdf: KdfVariant) : SecurityAction
+    fun onSelectKdf(kdf: KdfVariant)
 
     /** The rounds tapped: the wheel with them. */
-    data object ChooseRounds : SecurityAction
+    fun onChooseRounds()
 
     /** "Save" on the wheel of the rounds: kept and the file written. */
-    data class SelectRounds(val rounds: Long) : SecurityAction
+    fun onSelectRounds(rounds: Long)
 
-    data object DismissRounds : SecurityAction
+    fun onDismissRounds()
 
     /** The master password tapped: the dialog - to change it, or to set the first one of a database without. */
-    data object EditPassword : SecurityAction
+    fun onEditPassword()
 
-    data class CurrentPasswordChanged(val password: String) : SecurityAction
+    fun onCurrentPasswordChange(password: String)
 
-    data class NewPasswordChanged(val password: String) : SecurityAction
+    fun onNewPasswordChange(password: String)
 
-    data class ConfirmPasswordChanged(val password: String) : SecurityAction
+    fun onConfirmPasswordChange(password: String)
 
     /** The confirmation lost focus: a mismatch is shown from now on. */
-    data object ConfirmPasswordLeft : SecurityAction
+    fun onConfirmPasswordLeft()
 
     /** The eye of one field: shows or hides that one alone. */
-    data class TogglePasswordVisible(val field: PasswordInput) : SecurityAction
+    fun onTogglePasswordVisible(field: PasswordInput)
 
     /** "Save" in the dialog: the current one checked, the new one set and the file written. */
-    data object SavePassword : SecurityAction
+    fun onSavePassword()
 
-    data object DismissPassword : SecurityAction
+    fun onDismissPassword()
 
     /** A key file picked - a first one, or another: read, set and the file written at once. */
-    data class KeyFilePicked(val uri: String) : SecurityAction
+    fun onKeyFilePicked(uri: String)
 
     /** "Remove" of the key file: asked first. */
-    data object RemoveKeyFile : SecurityAction
+    fun onRemoveKeyFile()
 
-    data object RemoveKeyFileConfirm : SecurityAction
+    fun onRemoveKeyFileConfirm()
 
-    data object RemoveKeyFileDismiss : SecurityAction
+    fun onRemoveKeyFileDismiss()
 
     /** The snackbar took the message. */
-    data object MessageShown : SecurityAction
-}
-
-/**
- * The dialog of the master password, as `masterpassword` of creating: 12 to 256 characters, typed twice. Each
- * field has its eye.
- *
- * @param needsCurrent the database has a password: it is asked first. One with only a key file gets its first
- * password without
- * @param visible the fields shown as typed
- * @param confirmLeft the confirmation lost focus once - a mismatch is shown only after that
- * @param tooLong the last thing typed was over the limit and was not taken
- * @param wrongCurrent the current password given did not match - said under it until it is typed again
- * @param saving the password is checked and the file written - the dialog waits, it does not close
- */
-data class PasswordDialog(
-    val needsCurrent: Boolean,
-    val current: String = "",
-    val password: String = "",
-    val confirm: String = "",
-    val visible: Set<PasswordInput> = emptySet(),
-    val confirmLeft: Boolean = false,
-    val tooLong: Boolean = false,
-    val wrongCurrent: Boolean = false,
-    val saving: Boolean = false,
-) {
-
-    /** Shorter than the minimum - said under the field while it is, and "Save" stays off. */
-    val tooShort: Boolean
-        get() = CredentialLimits.isPasswordTooShort(password)
-
-    val mismatch: Boolean
-        get() = confirmLeft && confirm.isNotEmpty() && confirm != password
-
-    val canSave: Boolean
-        get() = (!needsCurrent || current.isNotEmpty()) && !tooShort && password == confirm && !saving
-
-    // Never the passwords: a state in a log is the password given away
-    override fun toString(): String = "PasswordDialog(needsCurrent=$needsCurrent, saving=$saving)"
-}
-
-/** A field of the dialog of the master password. */
-enum class PasswordInput { Current, New, Confirm }
-
-/** What part of the screen is written into the file - every row waits, that one shows progress. */
-enum class SecurityPart { Cipher, Kdf, Rounds, KeyFile }
-
-/** One KDF pass on this phone: the open time is a pass times the rounds. */
-sealed interface KdfPass {
-
-    /** Measured in the background, after the screen is read - no open time meanwhile, it opens out once known. */
-    data object Measuring : KdfPass
-
-    data class Measured(val pass: Duration) : KdfPass
-
-    /** It could not be measured: no time is shown. */
-    data object Unknown : KdfPass
-}
-
-/** What the snackbar says. */
-enum class SecurityMessage {
-    /** The change is made, but the file was not written: it waits for the next save. */
-    NotSaved,
-
-    /** The core refused - the database closed meanwhile, or a bug. */
-    Failed,
-
-    /** The new master password is written. */
-    PasswordSaved,
-
-    /** The same, and the biometrics of the database are off: the stored password opens it no more. */
-    PasswordSavedBiometricsOff,
-
-    /** The new key file is written - to be kept apart from the database. */
-    KeyFileSaved,
-
-    /** The key file is gone: the password alone opens the database. */
-    KeyFileRemoved,
-
-    /** The key file picked is over the limit. Nothing changed. */
-    KeyFileTooLarge,
-
-    /** The key file picked cannot be read, or its access kept. Nothing changed. */
-    KeyFileUnreadable,
-
-    /** The key file is changed and written, but the sign-in remembers the old one. */
-    KeyFileNotRemembered,
+    fun onMessageShown()
 }

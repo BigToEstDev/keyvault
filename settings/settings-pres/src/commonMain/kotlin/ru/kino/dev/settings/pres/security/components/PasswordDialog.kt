@@ -23,7 +23,7 @@ import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.settings.pres.security.PasswordDialog
 import ru.kino.dev.settings.pres.security.PasswordInput
-import ru.kino.dev.settings.pres.security.SecurityAction
+import ru.kino.dev.settings.pres.security.SecurityActions
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.res.pluralStringResource
 import ru.kino.dev.ui.res.stringResource
@@ -36,12 +36,12 @@ import ru.kino.dev.ui.res.stringResource
  * progress and nothing takes input; the dialog does not close.
  */
 @Composable
-internal fun PasswordDialog(dialog: PasswordDialog, action: (SecurityAction) -> Unit) {
+internal fun SecurityActions.PasswordDialog(dialog: PasswordDialog) {
     val focus = remember { FocusRequester() }
     val enabled = !dialog.saving
 
     AlertDialog(
-        onDismissRequest = { action(SecurityAction.DismissPassword) },
+        onDismissRequest = { onDismissPassword() },
         title = {
             Text(
                 stringResource(
@@ -60,10 +60,10 @@ internal fun PasswordDialog(dialog: PasswordDialog, action: (SecurityAction) -> 
                 if (dialog.needsCurrent) {
                     PasswordField(
                         value = dialog.current,
-                        onValueChange = { action(SecurityAction.CurrentPasswordChanged(it)) },
+                        onValueChange = { onCurrentPasswordChange(it) },
                         label = stringResource(Res.string.settings_security_password_current),
                         visible = PasswordInput.Current in dialog.visible,
-                        onToggleVisible = { action(SecurityAction.TogglePasswordVisible(PasswordInput.Current)) },
+                        onToggleVisible = { onTogglePasswordVisible(PasswordInput.Current) },
                         error = if (dialog.wrongCurrent) stringResource(Res.string.settings_biometric_wrong_password) else null,
                         enabled = enabled,
                         imeAction = ImeAction.Next,
@@ -72,10 +72,10 @@ internal fun PasswordDialog(dialog: PasswordDialog, action: (SecurityAction) -> 
                 }
                 PasswordField(
                     value = dialog.password,
-                    onValueChange = { action(SecurityAction.NewPasswordChanged(it)) },
+                    onValueChange = { onNewPasswordChange(it) },
                     label = stringResource(Res.string.settings_security_password_new),
                     visible = PasswordInput.New in dialog.visible,
-                    onToggleVisible = { action(SecurityAction.TogglePasswordVisible(PasswordInput.New)) },
+                    onToggleVisible = { onTogglePasswordVisible(PasswordInput.New) },
                     error = if (dialog.tooLong) {
                         val max = CredentialLimits.PASSWORD_MAX_CHARS
                         pluralStringResource(Res.plurals.create_password_too_long, max, max)
@@ -97,23 +97,23 @@ internal fun PasswordDialog(dialog: PasswordDialog, action: (SecurityAction) -> 
                 )
                 PasswordField(
                     value = dialog.confirm,
-                    onValueChange = { action(SecurityAction.ConfirmPasswordChanged(it)) },
+                    onValueChange = { onConfirmPasswordChange(it) },
                     label = stringResource(Res.string.create_password_confirm),
                     visible = PasswordInput.Confirm in dialog.visible,
-                    onToggleVisible = { action(SecurityAction.TogglePasswordVisible(PasswordInput.Confirm)) },
+                    onToggleVisible = { onTogglePasswordVisible(PasswordInput.Confirm) },
                     error = if (dialog.mismatch) stringResource(Res.string.create_password_mismatch) else null,
                     enabled = enabled,
-                    onImeAction = { if (dialog.canSave) action(SecurityAction.SavePassword) },
+                    onImeAction = { if (dialog.canSave) onSavePassword() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .onFocusChanged {
-                            if (!it.isFocused && dialog.confirm.isNotEmpty()) action(SecurityAction.ConfirmPasswordLeft)
+                            if (!it.isFocused && dialog.confirm.isNotEmpty()) onConfirmPasswordLeft()
                         },
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = { action(SecurityAction.SavePassword) }, enabled = dialog.canSave) {
+            TextButton(onClick = { onSavePassword() }, enabled = dialog.canSave) {
                 if (dialog.saving) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
@@ -126,7 +126,7 @@ internal fun PasswordDialog(dialog: PasswordDialog, action: (SecurityAction) -> 
             }
         },
         dismissButton = {
-            TextButton(onClick = { action(SecurityAction.DismissPassword) }, enabled = enabled) {
+            TextButton(onClick = { onDismissPassword() }, enabled = enabled) {
                 Text(stringResource(Res.string.action_cancel))
             }
         },
