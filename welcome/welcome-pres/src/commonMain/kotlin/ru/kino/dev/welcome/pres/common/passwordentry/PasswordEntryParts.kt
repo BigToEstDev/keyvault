@@ -37,9 +37,67 @@ import ru.kino.dev.ui.theme.DISABLED_ALPHA
 import ru.kino.dev.welcome.pres.common.BiometricNotice
 import ru.kino.dev.welcome.pres.common.EntryProblem
 import ru.kino.dev.welcome.pres.common.PasswordEntry
+import ru.kino.dev.welcome.pres.common.hidesPassword
 import ru.kino.dev.welcome.pres.common.isAboutKeyFile
 
 // The pieces of the layouts of entering a password (pass-docs, Step 94): the layouts place them, these draw them
+
+/** The shield alone while the state is read, and by the card of a wide window - as large as on the welcome screen. */
+internal val SHIELD_SIZE_LARGE = 140.dp
+
+/** What was read coming into view - one length for all of it, so it goes as one. */
+internal const val READ_MILLIS = 400
+
+/** What the screen is about: the subtitle of the locked screen, if any, and the name of the database. */
+@Composable
+internal fun PasswordEntryActions.DatabaseHeader(
+    databaseName: String,
+    subtitle: String?,
+    abilities: PasswordEntryAbilities,
+    enabled: Boolean,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        subtitle?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(8.dp))
+        }
+        DatabaseName(name = databaseName, changeable = abilities.changeDatabase, enabled = enabled)
+    }
+}
+
+/**
+ * What is asked to get in: the password and the ways next to it; a problem with the database file takes the place
+ * of all of it - the one fades into the other.
+ */
+@Composable
+internal fun PasswordEntryActions.EntryForm(entry: PasswordEntry, submitText: String, abilities: PasswordEntryAbilities) {
+    AnimatedContent(
+        targetState = entry,
+        contentKey = { it.problem.hidesPassword },
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        label = "file problem",
+    ) { shown ->
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (shown.problem.hidesPassword) {
+                FileProblem(entry = shown, abilities = abilities)
+            } else {
+                PasswordInput(entry = shown, submitText = submitText)
+                BiometricSignInRow(entry = shown)
+                Spacer(Modifier.height(16.dp))
+                KeyFileRow(entry = shown, changeable = abilities.changeKeyFile)
+                if (abilities.createDatabase) {
+                    Spacer(Modifier.height(24.dp))
+                    CreateDatabaseButton(enabled = !shown.busy)
+                }
+            }
+        }
+    }
+}
 
 /**
  * The name: a link in the accent when it picks another database ([changeable]); otherwise in the accent, not a
