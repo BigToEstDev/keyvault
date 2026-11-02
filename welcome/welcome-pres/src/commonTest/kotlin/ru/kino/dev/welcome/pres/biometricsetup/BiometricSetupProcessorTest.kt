@@ -31,12 +31,11 @@ class BiometricSetupProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this) {
-            containerHost.action(BiometricSetupAction.Enable)
+            containerHost.onEnable()
             expectInternalState(BiometricSetupState(busy = true))
             val prompt = awaitSideEffect() as BiometricSetupSideEffect.ShowPrompt
 
-            containerHost.action(BiometricSetupAction.PromptFinished(BiometricOutcome.Succeeded(prompt.session))).join()
-            cancelAndIgnoreRemainingItems()
+            containerHost.onPromptFinished(BiometricOutcome.Succeeded(prompt.session))
         }
 
         assertEquals(listOf("startSaving", "save $DB"), journal)
@@ -49,7 +48,7 @@ class BiometricSetupProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this, BiometricSetupState(busy = true)) {
-            containerHost.action(BiometricSetupAction.PromptFinished(BiometricOutcome.Cancelled))
+            containerHost.onPromptFinished(BiometricOutcome.Cancelled)
             expectInternalState(BiometricSetupState())
         }
 
@@ -61,10 +60,10 @@ class BiometricSetupProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this, BiometricSetupState(busy = true)) {
-            containerHost.action(BiometricSetupAction.PromptFinished(BiometricOutcome.Failed))
+            containerHost.onPromptFinished(BiometricOutcome.Failed)
             expectInternalState(BiometricSetupState(failed = true))
 
-            containerHost.action(BiometricSetupAction.Skip).join()
+            containerHost.onSkip()
         }
 
         assertEquals(listOf(toVault()), events)
@@ -75,7 +74,7 @@ class BiometricSetupProcessorTest {
         val (processor, events) = processor()
 
         processor.testWithInternalState(this) {
-            containerHost.action(BiometricSetupAction.Skip).join()
+            containerHost.onSkip()
         }
 
         assertTrue(journal.isEmpty())
