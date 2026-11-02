@@ -3,7 +3,10 @@ package ru.kino.dev.settings.pres.security
 import ru.kino.dev.core.Cipher
 import ru.kino.dev.core.KdfVariant
 
-/** What the security of the database is asked to do - done by [SecurityProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
+/**
+ * What the security of the database is asked to do - done by [SecurityProcessor]
+ * (pass-docs, `docs/app/mvi-arc.md`).
+ */
 interface SecurityActions {
 
     /** The screen is shown: the security is read, then one KDF pass is measured. */
