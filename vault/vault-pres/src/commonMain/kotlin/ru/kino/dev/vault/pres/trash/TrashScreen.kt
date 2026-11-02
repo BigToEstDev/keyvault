@@ -69,13 +69,13 @@ internal fun TrashScreen(
     val snackbar = remember { SnackbarHostState() }
 
     // Every time the screen is shown: after unlocking, the bin may differ
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.action(TrashAction.Load) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onLoad() }
 
     // "Back" lets go of the choice first
-    BackHandler(enabled = state.choosing) { processor.action(TrashAction.Back) }
+    BackHandler(enabled = state.choosing, onBack = processor::onBack)
 
     SnackbarMessage(state.message?.let { stringResource(it.text) }, snackbar) {
-        processor.action(TrashAction.MessageShown)
+        processor.onMessageShown()
     }
 
     GradientBackground {
@@ -85,18 +85,20 @@ internal fun TrashScreen(
             topBar = {
                 Column {
                     if (state.choosing) {
-                        ChoiceTopBar(count = state.picked.size, action = processor::action)
+                        processor.ChoiceTopBar(count = state.picked.size)
                     } else {
                         BackTopBar(
                             title = stringResource(Res.string.settings_recycle_bin),
-                            onBack = { processor.action(TrashAction.Back) },
+                            onBack = processor::onBack,
                             actions = {
                                 MoreMenuButton(
                                     contentDescription = stringResource(Res.string.trash_menu),
                                     items = listOf(
-                                        MenuItem(stringResource(Res.string.trash_empty_action), Icons.Filled.DeleteForever) {
-                                            processor.action(TrashAction.Empty)
-                                        },
+                                        MenuItem(
+                                            stringResource(Res.string.trash_empty_action),
+                                            Icons.Filled.DeleteForever,
+                                            processor::onEmpty,
+                                        ),
                                     ),
                                     enabled = state.entries.orEmpty().isNotEmpty(),
                                 )
@@ -105,7 +107,7 @@ internal fun TrashScreen(
                     }
                     SearchBar(
                         query = state.query,
-                        onQueryChange = { processor.action(TrashAction.QueryChanged(it)) },
+                        onQueryChange = processor::onQueryChange,
                         placeholder = stringResource(Res.string.vault_search),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -114,25 +116,25 @@ internal fun TrashScreen(
                 }
             },
             bottomBar = {
-                if (state.choosing) ChoiceButtons(processor::action)
+                if (state.choosing) processor.ChoiceButtons()
             },
             snackbarHost = { SnackbarHost(snackbar) },
         ) { padding ->
-            TrashContent(state, padding, processor::action)
+            processor.TrashContent(state, padding)
         }
 
         TrashDialogs(
             dialog = state.dialog,
-            onGroup = { processor.action(TrashAction.GroupChosen(it)) },
-            onConfirm = { processor.action(TrashAction.DialogConfirm) },
-            onDismiss = { processor.action(TrashAction.DialogDismiss) },
+            onGroup = processor::onGroupChosen,
+            onConfirm = processor::onDialogConfirm,
+            onDismiss = processor::onDialogDismiss,
         )
     }
 }
 
 /** The top bar while choosing: the cross lets go of everything, how many are picked, "pick all". */
 @Composable
-private fun ChoiceTopBar(count: Int, action: (TrashAction) -> Unit) {
+private fun TrashActions.ChoiceTopBar(count: Int) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -141,7 +143,7 @@ private fun ChoiceTopBar(count: Int, action: (TrashAction) -> Unit) {
             .heightIn(min = 48.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = { action(TrashAction.ClearChoice) }) {
+        IconButton(onClick = ::onClearChoice) {
             Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.action_close))
         }
         Text(
@@ -152,7 +154,7 @@ private fun ChoiceTopBar(count: Int, action: (TrashAction) -> Unit) {
                 .weight(1f)
                 .padding(start = 8.dp),
         )
-        IconButton(onClick = { action(TrashAction.PickAll) }) {
+        IconButton(onClick = ::onPickAll) {
             Icon(Icons.Filled.SelectAll, contentDescription = stringResource(Res.string.action_select_all))
         }
     }
@@ -160,7 +162,7 @@ private fun ChoiceTopBar(count: Int, action: (TrashAction) -> Unit) {
 
 /** Under the list while choosing: restore the picked, or delete them for good. */
 @Composable
-private fun ChoiceButtons(action: (TrashAction) -> Unit) {
+private fun TrashActions.ChoiceButtons() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -170,19 +172,19 @@ private fun ChoiceButtons(action: (TrashAction) -> Unit) {
     ) {
         SecondaryButton(
             text = stringResource(Res.string.action_delete),
-            onClick = { action(TrashAction.Remove) },
+            onClick = ::onRemove,
             modifier = Modifier.weight(1f),
         )
         PrimaryButton(
             text = stringResource(Res.string.action_restore),
-            onClick = { action(TrashAction.Restore) },
+            onClick = ::onRestore,
             modifier = Modifier.weight(1f),
         )
     }
 }
 
 @Composable
-private fun TrashContent(state: TrashState, padding: PaddingValues, action: (TrashAction) -> Unit) {
+private fun TrashActions.TrashContent(state: TrashState, padding: PaddingValues) {
     val empty = state.empty
     when {
         // The search shows the skeleton too: while the typing goes on, and while the core looks
@@ -215,8 +217,8 @@ private fun TrashContent(state: TrashState, padding: PaddingValues, action: (Tra
                     item = item,
                     choosing = state.choosing,
                     picked = id in state.picked,
-                    onTap = { action(TrashAction.Tap(id)) },
-                    onContextClick = { action(TrashAction.LongPress(id)) },
+                    onTap = { onTap(id) },
+                    onContextClick = { onLongPress(id) },
                 )
             }
         }

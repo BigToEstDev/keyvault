@@ -12,52 +12,13 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
+import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.pres.common.SEARCH_DELAY
 import ru.kino.dev.vault.pres.navigation.TrashEntryRoute
 import ru.kino.dev.vault.trash.TrashEditor
-import ru.kino.dev.vault.trash.TrashEntry
 import ru.kino.dev.vault.trash.TrashFailure
 import ru.kino.dev.vault.trash.TrashRepository
-
-/**
- * @param entries what the bin holds; null until read - a skeleton meanwhile
- * @param query the search field
- * @param searching the typing goes on, or the core looks - a skeleton meanwhile
- * @param found what the search found; null - no search, the whole bin
- * @param picked the cards chosen; empty - no choice going on
- * @param dialog the dialog shown, if any
- * @param message for the snackbar, until it takes it
- */
-data class TrashState(
-    val entries: List<TrashEntry>? = null,
-    val query: String = "",
-    val searching: Boolean = false,
-    val found: List<TrashEntry>? = null,
-    val picked: Set<EntryId> = emptySet(),
-    val dialog: TrashDialog? = null,
-    val message: TrashMessage? = null,
-) {
-    /** The cards: the last deleted first; deleted in the same second - by title, case aside. */
-    val shown: List<TrashEntry> = (found ?: entries.orEmpty()).sortedWith(NEWEST_FIRST)
-
-    val loading: Boolean get() = entries == null
-
-    val choosing: Boolean get() = picked.isNotEmpty()
-
-    /** Why there is no card; null while there are cards, or while something is read. */
-    val empty: TrashEmpty?
-        get() = when {
-            loading || searching || shown.isNotEmpty() -> null
-            found != null -> TrashEmpty.NothingFound
-            else -> TrashEmpty.Bin
-        }
-
-    private companion object {
-        val NEWEST_FIRST = compareByDescending<TrashEntry> { it.deletedAt }
-            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.entry.title }
-    }
-}
 
 /**
  * The recycle bin of the database [dbKey] (pass-docs, Step 70): its entries flat, from any depth of it - groups are
@@ -75,64 +36,105 @@ class TrashProcessor(
     private val groups: GroupRepository,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<TrashState, TrashState, Nothing> {
+) : ViewModel(), OrbitContainerHost<TrashState, TrashState, Nothing>, TrashActions {
 
     override val container = orbitContainer<TrashState, Nothing>(TrashState())
 
     /** The search waiting for the typing to stop, or for its answer; the next letter cancels it. */
     private var searchJob: Job? = null
 
-    fun action(action: TrashAction): Job = when (action) {
-        is TrashAction.QueryChanged -> queryChanged(action.query)
-        else -> intent { handle(action) }
+    override fun onLoad() {
+        intent { load() }
     }
 
-    private suspend fun Syntax<TrashState, Nothing>.handle(action: TrashAction) {
-        when (action) {
-            is TrashAction.QueryChanged -> Unit // in action()
-
-            TrashAction.Load -> load()
-
-            TrashAction.Back -> if (state.choosing) {
+    override fun onBack() {
+        intent {
+            if (state.choosing) {
                 reduce { state.copy(picked = emptySet()) }
             } else {
                 navigator.navigate(MviNavEvent.NavigateBack)
             }
+        }
+    }
 
-            is TrashAction.LongPress -> pick(action.id)
+    override fun onQueryChange(query: String) {
+        // Typed text: the state is updated before the field draws again, or the cursor jumps
+        textIntent {
+            reduce {
+                if (query.isBlank()) {
+                    state.copy(query = query, searching = false, found = null)
+                } else {
+                    state.copy(query = query, searching = true)
+                }
+            }
+        }
+        searchJob?.cancel()
+        if (query.isBlank()) return
 
-            is TrashAction.Tap -> if (state.choosing) {
-                pick(action.id)
+        searchJob = intent {
+            delay(SEARCH_DELAY)
+            search(query)
+        }
+    }
+
+    override fun onLongPress(id: EntryId) {
+        intent { pick(id) }
+    }
+
+    override fun onTap(id: EntryId) {
+        intent {
+            if (state.choosing) {
+                pick(id)
             } else {
-                navigator.navigate(MviNavEvent.NavigateTo(TrashEntryRoute(dbKey, action.id.value)))
+                navigator.navigate(MviNavEvent.NavigateTo(TrashEntryRoute(dbKey, id.value)))
             }
+        }
+    }
 
-            TrashAction.ClearChoice -> reduce { state.copy(picked = emptySet()) }
+    override fun onClearChoice() {
+        intent { reduce { state.copy(picked = emptySet()) } }
+    }
 
-            TrashAction.PickAll -> if (state.choosing) {
-                reduce { state.copy(picked = state.shown.map { it.entry.id }.toSet()) }
+    override fun onPickAll() {
+        intent { if (state.choosing) reduce { state.copy(picked = state.shown.map { it.entry.id }.toSet()) } }
+    }
+
+    override fun onRestore() {
+        intent { if (state.choosing && state.dialog == null) askRestore() }
+    }
+
+    override fun onGroupChosen(id: GroupId) {
+        intent {
+            (state.dialog as? TrashDialog.Restore)?.let { dialog ->
+                if (!dialog.saving) reduce { state.copy(dialog = dialog.copy(group = id)) }
             }
+        }
+    }
 
-            TrashAction.Restore -> if (state.choosing && state.dialog == null) askRestore()
+    override fun onRemove() {
+        intent {
+            if (state.choosing && state.dialog == null) reduce { state.copy(dialog = TrashDialog.Remove(state.picked.size)) }
+        }
+    }
 
-            is TrashAction.GroupChosen -> (state.dialog as? TrashDialog.Restore)?.let { dialog ->
-                if (!dialog.saving) reduce { state.copy(dialog = dialog.copy(group = action.id)) }
-            }
-
-            TrashAction.Remove -> if (state.choosing && state.dialog == null) {
-                reduce { state.copy(dialog = TrashDialog.Remove(state.picked.size)) }
-            }
-
-            TrashAction.Empty -> if (!state.choosing && state.dialog == null && state.entries.orEmpty().isNotEmpty()) {
+    override fun onEmpty() {
+        intent {
+            if (!state.choosing && state.dialog == null && state.entries.orEmpty().isNotEmpty()) {
                 reduce { state.copy(dialog = TrashDialog.Empty()) }
             }
-
-            TrashAction.DialogConfirm -> confirm()
-
-            TrashAction.DialogDismiss -> if (state.dialog?.saving == false) reduce { state.copy(dialog = null) }
-
-            TrashAction.MessageShown -> reduce { state.copy(message = null) }
         }
+    }
+
+    override fun onDialogConfirm() {
+        intent { confirm() }
+    }
+
+    override fun onDialogDismiss() {
+        intent { if (state.dialog?.saving == false) reduce { state.copy(dialog = null) } }
+    }
+
+    override fun onMessageShown() {
+        intent { reduce { state.copy(message = null) } }
     }
 
     private suspend fun Syntax<TrashState, Nothing>.load() {
@@ -196,26 +198,6 @@ class TrashProcessor(
         }
         reduce { state.copy(dialog = null, picked = emptySet(), message = message) }
         load()
-    }
-
-    private fun queryChanged(query: String): Job {
-        // Typed text: the state is updated before the field draws again, or the cursor jumps
-        val typed = textIntent {
-            reduce {
-                if (query.isBlank()) {
-                    state.copy(query = query, searching = false, found = null)
-                } else {
-                    state.copy(query = query, searching = true)
-                }
-            }
-        }
-        searchJob?.cancel()
-        if (query.isBlank()) return typed
-
-        return intent {
-            delay(SEARCH_DELAY)
-            search(query)
-        }.also { searchJob = it }
     }
 
     private suspend fun Syntax<TrashState, Nothing>.search(term: String) {
