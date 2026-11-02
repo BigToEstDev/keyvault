@@ -14,6 +14,7 @@ import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.FakeAppearanceRepository
 import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.pres.testing.RecordingLog
+import ru.kino.dev.settings.pres.testing.runToEnd
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 
@@ -27,7 +28,7 @@ class AppearanceProcessorTest {
         val repository = FakeAppearanceRepository(ThemeMode.Dark, AppLanguage.Russian)
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this) {
-            containerHost.action(AppearanceAction.Load).join()
+            containerHost.runToEnd { onLoad() }
 
             expectInternalState {
                 copy(
@@ -48,7 +49,7 @@ class AppearanceProcessorTest {
         val repository = FakeAppearanceRepository(ThemeMode.System)
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
-            containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Light)).join()
+            containerHost.runToEnd { onSelectTheme(ThemeMode.Light) }
 
             expectInternalState { copy(themeMode = ThemeMode.Light) }
         }
@@ -61,7 +62,7 @@ class AppearanceProcessorTest {
         val repository = FakeAppearanceRepository(ThemeMode.System, failSave = true)
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
-            containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Dark)).join()
+            containerHost.runToEnd { onSelectTheme(ThemeMode.Dark) }
 
             expectInternalState { copy(themeMode = ThemeMode.Dark) }
             expectInternalState { copy(themeMode = ThemeMode.System, message = AppearanceMessage.NotSaved) }
@@ -73,7 +74,7 @@ class AppearanceProcessorTest {
         val repository = FakeAppearanceRepository(ThemeMode.Dark, failSave = true)
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this, AppearanceState(ThemeMode.System)) {
-            containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Light)).join()
+            containerHost.runToEnd { onSelectTheme(ThemeMode.Light) }
 
             expectInternalState { copy(themeMode = ThemeMode.Light) }
             expectInternalState { copy(themeMode = ThemeMode.Dark, message = AppearanceMessage.NotSaved) }
@@ -85,7 +86,7 @@ class AppearanceProcessorTest {
         val repository = FakeAppearanceRepository(ThemeMode.Dark)
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this, AppearanceState(ThemeMode.Dark)) {
-            containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Dark)).join()
+            containerHost.runToEnd { onSelectTheme(ThemeMode.Dark) }
         }
 
         assertEquals(emptyList<ThemeMode>(), repository.saved)
@@ -96,7 +97,7 @@ class AppearanceProcessorTest {
         val repository = FakeAppearanceRepository(ThemeMode.System)
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log).testWithInternalState(this) {
-            containerHost.action(AppearanceAction.SelectTheme(ThemeMode.Light)).join()
+            containerHost.runToEnd { onSelectTheme(ThemeMode.Light) }
         }
 
         assertEquals(emptyList<ThemeMode>(), repository.saved)
@@ -108,7 +109,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System)) {
-                containerHost.action(AppearanceAction.SelectLanguage(AppLanguage.English)).join()
+                containerHost.runToEnd { onSelectLanguage(AppLanguage.English) }
 
                 expectInternalState { copy(language = AppLanguage.English) }
             }
@@ -122,7 +123,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System)) {
-                containerHost.action(AppearanceAction.SelectLanguage(AppLanguage.Russian)).join()
+                containerHost.runToEnd { onSelectLanguage(AppLanguage.Russian) }
 
                 expectInternalState { copy(language = AppLanguage.Russian) }
                 expectInternalState {
@@ -137,7 +138,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.Russian)) {
-                containerHost.action(AppearanceAction.SelectLanguage(AppLanguage.Russian)).join()
+                containerHost.runToEnd { onSelectLanguage(AppLanguage.Russian) }
             }
 
         assertEquals(emptyList<AppLanguage>(), repository.savedLanguages)
@@ -149,7 +150,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordColoring = true)) {
-                containerHost.action(AppearanceAction.SetPasswordColoring(false)).join()
+                containerHost.runToEnd { onSetPasswordColoring(false) }
 
                 expectInternalState { copy(passwordColoring = false) }
             }
@@ -163,7 +164,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordColoring = true)) {
-                containerHost.action(AppearanceAction.SetPasswordColoring(false)).join()
+                containerHost.runToEnd { onSetPasswordColoring(false) }
 
                 expectInternalState { copy(passwordColoring = false) }
                 expectInternalState { copy(passwordColoring = true, message = AppearanceMessage.NotSaved) }
@@ -176,7 +177,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordStrength = false)) {
-                containerHost.action(AppearanceAction.SetPasswordStrength(true)).join()
+                containerHost.runToEnd { onSetPasswordStrength(true) }
 
                 expectInternalState { copy(passwordStrength = true) }
             }
@@ -190,7 +191,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, passwordStrength = false)) {
-                containerHost.action(AppearanceAction.SetPasswordStrength(true)).join()
+                containerHost.runToEnd { onSetPasswordStrength(true) }
 
                 expectInternalState { copy(passwordStrength = true) }
                 expectInternalState { copy(passwordStrength = false, message = AppearanceMessage.NotSaved) }
@@ -203,7 +204,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, userNameInList = false)) {
-                containerHost.action(AppearanceAction.SetUserNameInList(true)).join()
+                containerHost.runToEnd { onSetUserNameInList(true) }
 
                 expectInternalState { copy(userNameInList = true) }
             }
@@ -217,7 +218,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, userNameInList = false)) {
-                containerHost.action(AppearanceAction.SetUserNameInList(true)).join()
+                containerHost.runToEnd { onSetUserNameInList(true) }
 
                 expectInternalState { copy(userNameInList = true) }
                 expectInternalState { copy(userNameInList = false, message = AppearanceMessage.NotSaved) }
@@ -230,7 +231,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCount = true)) {
-                containerHost.action(AppearanceAction.SetEntryCount(false)).join()
+                containerHost.runToEnd { onSetEntryCount(false) }
 
                 expectInternalState { copy(entryCount = false) }
             }
@@ -244,7 +245,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCount = true)) {
-                containerHost.action(AppearanceAction.SetEntryCount(false)).join()
+                containerHost.runToEnd { onSetEntryCount(false) }
 
                 expectInternalState { copy(entryCount = false) }
                 expectInternalState { copy(entryCount = true, message = AppearanceMessage.NotSaved) }
@@ -257,7 +258,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCountNested = true)) {
-                containerHost.action(AppearanceAction.SetEntryCountNested(false)).join()
+                containerHost.runToEnd { onSetEntryCountNested(false) }
 
                 expectInternalState { copy(entryCountNested = false) }
             }
@@ -271,7 +272,7 @@ class AppearanceProcessorTest {
 
         AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
             .testWithInternalState(this, AppearanceState(ThemeMode.System, AppLanguage.System, entryCountNested = true)) {
-                containerHost.action(AppearanceAction.SetEntryCountNested(false)).join()
+                containerHost.runToEnd { onSetEntryCountNested(false) }
 
                 expectInternalState { copy(entryCountNested = false) }
                 expectInternalState { copy(entryCountNested = true, message = AppearanceMessage.NotSaved) }
@@ -286,7 +287,7 @@ class AppearanceProcessorTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
         AppearanceProcessor(DB, FakeAppearanceRepository(ThemeMode.System), entrySettings, navigator, log).testWithInternalState(this) {
-            containerHost.action(AppearanceAction.Back).join()
+            containerHost.runToEnd { onBack() }
         }
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)
@@ -299,8 +300,8 @@ class AppearanceProcessorTest {
         val processor = AppearanceProcessor(DB, repository, entrySettings, Navigator(), log)
 
         processor.testWithInternalState(this) {
-            containerHost.action(AppearanceAction.Load).join()
-            containerHost.action(AppearanceAction.SetUserNameInList(false)).join()
+            containerHost.runToEnd { onLoad() }
+            containerHost.runToEnd { onSetUserNameInList(false) }
             cancelAndIgnoreRemainingItems()
         }
 
@@ -314,7 +315,7 @@ class AppearanceProcessorTest {
         val processor = AppearanceProcessor(DB, FakeAppearanceRepository(), entrySettings, Navigator(), log)
 
         processor.testWithInternalState(this) {
-            containerHost.action(AppearanceAction.Load).join()
+            containerHost.runToEnd { onLoad() }
             cancelAndIgnoreRemainingItems()
         }
 

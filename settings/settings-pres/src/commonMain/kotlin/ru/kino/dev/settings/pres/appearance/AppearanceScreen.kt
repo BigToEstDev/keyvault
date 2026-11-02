@@ -49,7 +49,7 @@ internal fun AppearanceScreen(
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) { processor.action(AppearanceAction.Load) }
+    LaunchedEffect(Unit) { processor.onLoad() }
 
     val message = state.message?.let {
         stringResource(
@@ -58,7 +58,7 @@ internal fun AppearanceScreen(
             },
         )
     }
-    SnackbarMessage(message, snackbar) { processor.action(AppearanceAction.MessageShown) }
+    SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
     GradientBackground {
         Scaffold(
@@ -67,7 +67,7 @@ internal fun AppearanceScreen(
             topBar = {
                 BackTopBar(
                     title = stringResource(Res.string.settings_appearance),
-                    onBack = { processor.action(AppearanceAction.Back) },
+                    onBack = processor::onBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },
@@ -88,7 +88,7 @@ internal fun AppearanceScreen(
                             // Until read nothing is chosen for real: the choice is disabled meanwhile
                             selected = state.themeMode ?: ThemeMode.System,
                             label = { stringResource(it.label) },
-                            onSelect = { processor.action(AppearanceAction.SelectTheme(it)) },
+                            onSelect = processor::onSelectTheme,
                             enabled = state.themeMode != null,
                             modifier = Modifier.padding(16.dp),
                         )
@@ -112,7 +112,7 @@ internal fun AppearanceScreen(
                         Dropdown(
                             selected = state.language,
                             options = AppLanguage.entries.map { DropdownOption(it, stringResource(it.label)) },
-                            onSelect = { processor.action(AppearanceAction.SelectLanguage(it)) },
+                            onSelect = processor::onSelectLanguage,
                             label = stringResource(Res.string.settings_language),
                             // Until read nothing is chosen for real: the choice is disabled meanwhile
                             enabled = state.language != null,
@@ -130,7 +130,7 @@ internal fun AppearanceScreen(
                             text = stringResource(Res.string.settings_password_coloring_hint),
                             // Until read nothing is chosen for real: the switch is disabled meanwhile, shown on
                             checked = state.passwordColoring ?: true,
-                            onCheckedChange = { processor.action(AppearanceAction.SetPasswordColoring(it)) },
+                            onCheckedChange = processor::onSetPasswordColoring,
                             enabled = state.passwordColoring != null,
                         )
                     }
@@ -142,7 +142,7 @@ internal fun AppearanceScreen(
                             text = stringResource(Res.string.settings_password_strength_hint),
                             // Until read nothing is chosen for real: the switch is disabled meanwhile, shown off
                             checked = state.passwordStrength ?: false,
-                            onCheckedChange = { processor.action(AppearanceAction.SetPasswordStrength(it)) },
+                            onCheckedChange = processor::onSetPasswordStrength,
                             enabled = state.passwordStrength != null,
                         )
                     }
@@ -160,7 +160,7 @@ internal fun AppearanceScreen(
                                 },
                             ),
                             checked = !state.userNameHidden && state.userNameInList == true,
-                            onCheckedChange = { processor.action(AppearanceAction.SetUserNameInList(it)) },
+                            onCheckedChange = processor::onSetUserNameInList,
                             enabled = !state.userNameHidden && state.userNameInList != null,
                         )
                     }
@@ -171,7 +171,7 @@ internal fun AppearanceScreen(
                             title = stringResource(Res.string.settings_entry_count),
                             text = stringResource(Res.string.settings_entry_count_hint),
                             checked = state.entryCount ?: true,
-                            onCheckedChange = { processor.action(AppearanceAction.SetEntryCount(it)) },
+                            onCheckedChange = processor::onSetEntryCount,
                             enabled = state.entryCount != null,
                         )
                     }
@@ -182,7 +182,7 @@ internal fun AppearanceScreen(
                             title = stringResource(Res.string.settings_entry_count_nested),
                             text = stringResource(Res.string.settings_entry_count_nested_hint),
                             checked = state.entryCountNested ?: true,
-                            onCheckedChange = { processor.action(AppearanceAction.SetEntryCountNested(it)) },
+                            onCheckedChange = processor::onSetEntryCountNested,
                             // Nothing to count without the number
                             enabled = state.entryCountNested != null && state.entryCount == true,
                         )
