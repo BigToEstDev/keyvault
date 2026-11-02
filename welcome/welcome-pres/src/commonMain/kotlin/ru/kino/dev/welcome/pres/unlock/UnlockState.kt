@@ -15,8 +15,7 @@ data class UnlockState(
     val fileName: String? = null,
     val entry: PasswordEntry = PasswordEntry(),
     val read: Boolean = false,
-)
-
-/** The title of the screen: the name from inside the database, else the file name. */
-internal val UnlockState.title: String?
-    get() = databaseName ?: fileName
+) {
+    /** The title of the screen: the name from inside the database, else the file name. */
+    val title: String? = databaseName ?: fileName
+}
