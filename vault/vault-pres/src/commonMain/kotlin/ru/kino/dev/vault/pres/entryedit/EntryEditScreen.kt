@@ -33,6 +33,7 @@ import ru.kino.dev.ui.components.BackHandler
 import ru.kino.dev.ui.components.Dropdown
 import ru.kino.dev.ui.components.FieldSection
 import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.components.PaneCloseHandler
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.PhoneField
 import ru.kino.dev.ui.components.PickerField
@@ -63,16 +64,12 @@ import ru.kino.dev.vault.pres.entryedit.components.nameProblemText
 
 /**
  * Creating an entry inside [groupId], or editing [entryId] - exactly one of them is given.
- *
- * @param canGoBack false - a pane of the container of a wide window: the cross of its tab is its "back" (pass-docs,
- * Step 98, item 6)
  */
 @Composable
 internal fun EntryEditScreen(
     dbKey: String,
     groupId: String?,
     entryId: String?,
-    canGoBack: Boolean = true,
     processor: EntryEditProcessor = koinProcessor(EntryEditArgs(dbKey = dbKey, groupId = groupId, entryId = entryId)),
 ) {
     val state by processor.collectAsState()
@@ -80,6 +77,8 @@ internal fun EntryEditScreen(
 
     // The system "back" asks as the one in the top bar does
     BackHandler(onBack = processor::onBack)
+    // The cross of its tab in a container: changes - it asks, as on "back"
+    PaneCloseHandler(onClose = processor::onClose)
 
     // Back from the screen of a new preset: the form picks it
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onResumed() }
@@ -103,7 +102,6 @@ internal fun EntryEditScreen(
                 EntryTopBar(
                     title = stringResource(if (state.creating) Res.string.entry_title_new else Res.string.entry_title_edit),
                     onBack = processor::onBack,
-                    back = canGoBack,
                     // An entry that is there, once read; a new one has nothing to delete
                     menu = if (!state.creating && state.content != null) {
                         listOf(deleteMenuItem(processor::onDelete))

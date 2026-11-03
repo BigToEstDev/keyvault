@@ -67,22 +67,24 @@ internal fun VaultContainerActions.VaultContainerTablet(dbKey: String, state: Va
     }
 }
 
-/** The page of [tab] - in its place, one at a time (pass-docs, Step 98, items 6, 7); no "back" of its own: the cross is. */
+/**
+ * The page of [tab] - in its place, one at a time (pass-docs, Step 98, items 6, 7): a page over the reading goes back
+ * to the one under it by its arrow, as on a phone; the reading has none - the cross of the tab closes it (item 8).
+ */
 @Composable
 private fun VaultContainerActions.TabPage(dbKey: String, tab: EntryTab, panes: PaneHost) {
     when (tab) {
         is EntryTab.Entry -> panes.Pane(key = tab.pane, router = entryRouter(tab.entryId, tab.top)) {
             when (val page = tab.top) {
                 null -> EntryReadScreen(dbKey = dbKey, entryId = tab.entryId, canGoBack = false)
-                EntryPage.Edit -> EntryEditScreen(dbKey = dbKey, groupId = null, entryId = tab.entryId, canGoBack = false)
-                EntryPage.History -> EntryHistoryScreen(dbKey = dbKey, entryId = tab.entryId, canGoBack = false)
-                is EntryPage.Version ->
-                    EntryVersionScreen(dbKey = dbKey, entryId = tab.entryId, index = page.index, canGoBack = false)
+                EntryPage.Edit -> EntryEditScreen(dbKey = dbKey, groupId = null, entryId = tab.entryId)
+                EntryPage.History -> EntryHistoryScreen(dbKey = dbKey, entryId = tab.entryId)
+                is EntryPage.Version -> EntryVersionScreen(dbKey = dbKey, entryId = tab.entryId, index = page.index)
             }
         }
 
         is EntryTab.New -> panes.Pane(key = tab.pane, router = newRouter(tab.key)) {
-            EntryEditScreen(dbKey = dbKey, groupId = tab.groupId, entryId = null, canGoBack = false)
+            EntryEditScreen(dbKey = dbKey, groupId = tab.groupId, entryId = null)
         }
     }
 }

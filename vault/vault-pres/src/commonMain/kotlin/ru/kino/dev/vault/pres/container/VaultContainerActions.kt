@@ -23,7 +23,7 @@ interface VaultContainerActions {
     /** A tab tapped: it is shown. */
     fun onSelectTab(key: String)
 
-    /** The cross of a tab - its "back": read - the tab closed; a page over it - back to the one under, a form asks. */
+    /** The cross of a tab: it closes, from any page; a form with changes asks first (pass-docs, Step 98, item 8). */
     fun onCloseTab(key: String)
 
     /** "Back" of the system: the list goes one group up. */

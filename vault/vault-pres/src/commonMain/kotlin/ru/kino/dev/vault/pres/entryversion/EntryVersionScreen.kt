@@ -35,16 +35,11 @@ import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.RestoreVersionDialog
 import ru.kino.dev.vault.pres.common.entryTimeText
 
-/**
- * @param canGoBack false - a page of a tab of the container of a wide window: the cross of the tab is its "back"
- * (pass-docs, Step 98, item 7)
- */
 @Composable
 internal fun EntryVersionScreen(
     dbKey: String,
     entryId: String,
     index: Int,
-    canGoBack: Boolean = true,
     processor: EntryVersionProcessor = koinProcessor(EntryVersionArgs(dbKey = dbKey, entryId = entryId, index = index)),
 ) {
     val state by processor.collectAsState()
@@ -77,7 +72,6 @@ internal fun EntryVersionScreen(
                 EntryTopBar(
                     title = modified?.let(::entryTimeText).orEmpty(),
                     onBack = processor::onBack,
-                    back = canGoBack,
                     skeleton = skeleton,
                 )
             },

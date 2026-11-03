@@ -34,15 +34,10 @@ import ru.kino.dev.vault.pres.common.restoreMenuItem
 import ru.kino.dev.vault.pres.entryhistory.components.EntryHistoryDialogs
 import ru.kino.dev.vault.pres.entryhistory.components.HistoryCard
 
-/**
- * @param canGoBack false - a page of a tab of the container of a wide window: the cross of the tab is its "back"
- * (pass-docs, Step 98, item 7)
- */
 @Composable
 internal fun EntryHistoryScreen(
     dbKey: String,
     entryId: String,
-    canGoBack: Boolean = true,
     processor: EntryHistoryProcessor = koinProcessor(EntryHistoryArgs(dbKey = dbKey, entryId = entryId)),
 ) {
     val state by processor.collectAsState()
@@ -73,7 +68,6 @@ internal fun EntryHistoryScreen(
                 EntryTopBar(
                     title = title?.let { stringResource(Res.string.entry_history_title, it) }.orEmpty(),
                     onBack = processor::onBack,
-                    back = canGoBack,
                     skeleton = if (history == null && state.loading) skeletonBrush() else null,
                     // Only with versions to delete: "Created" is the entry's own and stays
                     menu = if (history?.versions?.isNotEmpty() == true) {

@@ -5,51 +5,51 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class PaneBackTest {
+class PaneCloseTest {
 
     private val calls = mutableListOf<String>()
-    private val back = PaneBack()
+    private val pane = PaneClose()
 
     @Test
     fun `no handler - not handled`() {
-        assertFalse(back.handle())
+        assertFalse(pane.close())
     }
 
     @Test
     fun `a handler registered answers`() {
-        back.register { calls += "form" }
+        pane.register { calls += "form" }
 
-        assertTrue(back.handle())
+        assertTrue(pane.close())
         assertEquals(listOf("form"), calls)
     }
 
     @Test
     fun `the last handler registered answers, alone`() {
-        back.register { calls += "form" }
-        back.register { calls += "dialog" }
+        pane.register { calls += "form" }
+        pane.register { calls += "dialog" }
 
-        back.handle()
+        pane.close()
 
         assertEquals(listOf("dialog"), calls)
     }
 
     @Test
     fun `a handler unregistered - the one before answers`() {
-        back.register { calls += "form" }
-        val unregister = back.register { calls += "dialog" }
+        pane.register { calls += "form" }
+        val unregister = pane.register { calls += "dialog" }
 
         unregister()
-        back.handle()
+        pane.close()
 
         assertEquals(listOf("form"), calls)
     }
 
     @Test
     fun `every handler unregistered - not handled`() {
-        val unregister = back.register { calls += "form" }
+        val unregister = pane.register { calls += "form" }
 
         unregister()
 
-        assertFalse(back.handle())
+        assertFalse(pane.close())
     }
 }

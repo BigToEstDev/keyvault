@@ -13,10 +13,9 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.channels.Channel
 import ru.kino.dev.navigation.LocalNavigator
-import ru.kino.dev.navigation.MviNavEvent
-import ru.kino.dev.ui.components.LocalPaneBack
+import ru.kino.dev.ui.components.LocalPaneClose
 import ru.kino.dev.ui.components.LocalScreenBackdrop
-import ru.kino.dev.ui.components.PaneBack
+import ru.kino.dev.ui.components.PaneClose
 
 /**
  * The panes of one container: each with its own processors ([PaneStores]) and its own saved state. Made by
@@ -28,7 +27,7 @@ class PaneHost internal constructor(
     private val saveable: SaveableStateHolder,
 ) {
 
-    private val backs = mutableMapOf<String, PaneBackSlot>()
+    private val closes = mutableMapOf<String, PaneCloseSlot>()
 
     /**
      * A pane: [content] - a screen as it is, its processor in the pane's store, its navigation through [router]
@@ -41,42 +40,39 @@ class PaneHost internal constructor(
         val currentRouter by rememberUpdatedState(router)
         val navigator = remember(key, parent) { PaneNavigator(parent) { currentRouter.route(it) } }
         val owner = remember(key) { stores.owner(key) }
-        val back = remember(key) { backs.getOrPut(key, ::PaneBackSlot) }
+        val close = remember(key) { closes.getOrPut(key, ::PaneCloseSlot) }
         saveable.SaveableStateProvider(key) {
             CompositionLocalProvider(
                 LocalViewModelStoreOwner provides owner,
                 LocalNavigator provides navigator,
                 LocalScreenBackdrop provides false,
-                LocalPaneBack provides back.handlers,
+                LocalPaneClose provides close.handlers,
                 content = content,
             )
-            // After the screen has registered its "back": asked before the pane was drawn, it is done now
-            LaunchedEffect(back, navigator) {
-                for (request in back.requests) {
-                    if (!back.handlers.handle()) navigator.navigate(MviNavEvent.NavigateBack)
-                }
+            // After the screen has registered its handler: asked before the pane was drawn, it is done now
+            LaunchedEffect(close) {
+                for (request in close.requests) close.handlers.close()
             }
         }
     }
 
     /**
-     * "Back" of the pane [key], as its screen would go back (pass-docs, Step 98, item 6): the screen asks before
-     * leaving ([ru.kino.dev.ui.components.BackHandler]) - it asks; it does not - "back" to its navigation. The pane not
-     * drawn yet - done once it is.
+     * Closing the pane [key] - asked of its screen ([ru.kino.dev.ui.components.PaneCloseHandler]), it goes away itself
+     * through its navigation (pass-docs, Step 98, item 8). The pane not drawn yet - done once it is.
      */
-    fun back(key: String) {
-        backs.getOrPut(key, ::PaneBackSlot).requests.trySend(Unit)
+    fun close(key: String) {
+        closes.getOrPut(key, ::PaneCloseSlot).requests.trySend(Unit)
     }
 
     internal fun retain(keys: Set<String>) {
         stores.retain(keys).forEach(saveable::removeState)
-        backs.keys.retainAll(keys)
+        closes.keys.retainAll(keys)
     }
 }
 
-/** The "back" of one pane: what its screen registered, and the requests of the container not done yet. */
-private class PaneBackSlot {
-    val handlers = PaneBack()
+/** Closing one pane: what its screen registered, and the requests of the container not done yet. */
+private class PaneCloseSlot {
+    val handlers = PaneClose()
     val requests = Channel<Unit>(Channel.CONFLATED)
 }
 

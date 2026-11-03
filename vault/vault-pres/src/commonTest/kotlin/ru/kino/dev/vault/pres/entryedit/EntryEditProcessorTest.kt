@@ -117,7 +117,7 @@ class EntryEditProcessorTest {
     fun `leaving with another group asks first`() = runTest {
         val (state, events) = editing({ onGroupChosen(work) }, { onBack() })
 
-        assertEquals(EntryEditDialog.Leave, state.dialog)
+        assertEquals(EntryEditDialog.Leave(), state.dialog)
         assertTrue(events.isEmpty())
     }
 
@@ -230,7 +230,7 @@ class EntryEditProcessorTest {
     fun `back from a changed form asks first`() = runTest {
         val (state, events) = creating(typed(), { onBack() })
 
-        assertEquals(EntryEditDialog.Leave, state.dialog)
+        assertEquals(EntryEditDialog.Leave(), state.dialog)
         assertTrue(events.isEmpty())
     }
 
@@ -241,6 +241,45 @@ class EntryEditProcessorTest {
         assertNull(state.dialog)
         assertTrue(state.changed)
         assertTrue(events.isEmpty())
+    }
+
+    // Closed - the cross of its tab in a container (pass-docs, Step 98, item 8)
+
+    @Test
+    fun `an untouched form of an entry closed goes past its reading`() = runTest {
+        val (_, events) = editing({ onClose() })
+
+        assertEquals(listOf(MviNavEvent.NavigateBackTo(EntryReadRoute(DB, mail.value), inclusive = true, orBack = true)), events)
+    }
+
+    @Test
+    fun `a changed form closed asks first, as back does - the question knows it closes`() = runTest {
+        val (state, events) = editing(typed(), { onClose() })
+
+        assertEquals(EntryEditDialog.Leave(closing = true), state.dialog)
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `leave on the question of closing goes past the reading`() = runTest {
+        val (_, events) = editing(typed(), { onClose() }, { onDialogConfirm() })
+
+        assertEquals(listOf(MviNavEvent.NavigateBackTo(EntryReadRoute(DB, mail.value), inclusive = true, orBack = true)), events)
+    }
+
+    @Test
+    fun `stay on the question of closing keeps the form, and back after it is back again`() = runTest {
+        val (state, events) = editing(typed(), { onClose() }, { onDialogDismiss() }, { onBack() })
+
+        assertEquals(EntryEditDialog.Leave(), state.dialog)
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `an untouched new entry closed goes back`() = runTest {
+        val (_, events) = creating({ onClose() })
+
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
     }
 
     @Test

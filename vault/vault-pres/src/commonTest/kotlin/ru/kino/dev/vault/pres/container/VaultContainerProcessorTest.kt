@@ -175,7 +175,7 @@ class VaultContainerProcessorTest {
     }
 
     @Test
-    fun `an entry deleted on its form closes its tab`() = runTest {
+    fun `an entry deleted on its form, or the form closed, closes its tab`() = runTest {
         val deleted = MviNavEvent.NavigateBackTo(EntryReadRoute(DB, "mail"), inclusive = true, orBack = true)
 
         val state = perform(open("mail"), open("bank"), { onSelectTab("mail") }, edit("mail"), fromForm("mail", deleted))
@@ -241,7 +241,7 @@ class VaultContainerProcessorTest {
     }
 
     @Test
-    fun `the cross of a form not shown shows it, the tab stays until the form goes back`() = runTest {
+    fun `the cross of a form not shown shows it, the tab stays until the form goes away`() = runTest {
         val state = perform(open("mail"), edit("mail"), open("bank"), { onCloseTab("mail") })
 
         assertEquals(listOf("mail", "bank"), state.tabs.keys)
@@ -249,24 +249,24 @@ class VaultContainerProcessorTest {
     }
 
     @Test
-    fun `the cross of the form of an entry is the back of the form`() = runTest {
+    fun `the cross of the form of an entry closes the form - it asks`() = runTest {
         val editing = VaultContainerState(tabs = listOf(EntryTab.Entry("mail", "Mail", pages = listOf(EntryPage.Edit))), active = "mail")
 
         processor().testWithInternalState(this, editing) {
             containerHost.onCloseTab("mail")
 
-            expectSideEffect(VaultContainerSideEffect.PaneBack(formPane("mail")))
+            expectSideEffect(VaultContainerSideEffect.ClosePane(formPane("mail")))
         }
     }
 
     @Test
-    fun `the cross of a new entry is the back of its form`() = runTest {
+    fun `the cross of a new entry closes its form - it asks`() = runTest {
         val making = VaultContainerState(tabs = listOf(EntryTab.New(newTab(1), "work")), active = newTab(1))
 
         processor().testWithInternalState(this, making) {
             containerHost.onCloseTab(newTab(1))
 
-            expectSideEffect(VaultContainerSideEffect.PaneBack(newTab(1)))
+            expectSideEffect(VaultContainerSideEffect.ClosePane(newTab(1)))
         }
     }
 
@@ -338,14 +338,17 @@ class VaultContainerProcessorTest {
     }
 
     @Test
-    fun `the cross of a version is its back`() = runTest {
-        val version = EntryTab.Entry("mail", "Mail", pages = listOf(EntryPage.History, EntryPage.Version(2)))
+    fun `the cross of a version closes the whole tab`() = runTest {
+        val state = perform(open("mail"), open("bank"), history("mail"), version("mail", 2), { onCloseTab("mail") })
 
-        processor().testWithInternalState(this, VaultContainerState(tabs = listOf(version), active = "mail")) {
-            containerHost.onCloseTab("mail")
+        assertEquals(listOf("bank"), state.tabs.keys)
+    }
 
-            expectSideEffect(VaultContainerSideEffect.PaneBack(versionPane("mail", 2)))
-        }
+    @Test
+    fun `the cross of the history closes the whole tab`() = runTest {
+        val state = perform(open("mail"), history("mail"), { onCloseTab("mail") })
+
+        assertEquals(emptyList(), state.tabs.keys)
     }
 
     @Test

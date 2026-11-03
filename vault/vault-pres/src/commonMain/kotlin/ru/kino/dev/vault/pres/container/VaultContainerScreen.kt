@@ -27,7 +27,7 @@ internal fun VaultContainerScreen(
 
     processor.collectSideEffect {
         when (it) {
-            is VaultContainerSideEffect.PaneBack -> panes.back(it.pane)
+            is VaultContainerSideEffect.ClosePane -> panes.close(it.pane)
         }
     }
 

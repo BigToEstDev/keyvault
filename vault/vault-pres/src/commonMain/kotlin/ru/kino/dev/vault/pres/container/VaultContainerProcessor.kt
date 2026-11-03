@@ -28,8 +28,8 @@ import ru.kino.dev.vault.pres.navigation.GroupRoute
  * through [listRouter], [entryRouter] and [newRouter], the rest goes on to the navigation of the app.
  *
  * A tab is one page at a time (items 6, 7): the entry read, or a page over it - its form, history, a version - in its
- * place, not over the window; a new entry is made in a tab of its own. The cross of a tab is its "back": a form with
- * changes asks first, as on a phone.
+ * place, not over the window; a new entry is made in a tab of its own. The cross of a tab closes it, from any page
+ * (item 8); a form with changes asks first, as on "back".
  *
  * A router answers at once, from the kind of the event; the state changes after, in an intent.
  *
@@ -139,13 +139,14 @@ class VaultContainerProcessor(
     override fun onCloseTab(key: String) {
         intent {
             val tab = state.tabs.firstOrNull { it.key == key } ?: return@intent
-            if (tab is EntryTab.Entry && tab.top == null) {
-                // Reading asks nothing before leaving
-                reduce { state.closed(key) }
-            } else {
-                // Shown, so its form can ask; it goes back through its router
+            val form = tab is EntryTab.New || (tab is EntryTab.Entry && tab.top == EntryPage.Edit)
+            if (form) {
+                // Shown, so it can ask; it goes away itself, through its router
                 reduce { state.copy(active = key) }
-                postSideEffect(VaultContainerSideEffect.PaneBack(tab.pane))
+                postSideEffect(VaultContainerSideEffect.ClosePane(tab.pane))
+            } else {
+                // The other pages ask nothing: the whole tab closes
+                reduce { state.closed(key) }
             }
         }
     }

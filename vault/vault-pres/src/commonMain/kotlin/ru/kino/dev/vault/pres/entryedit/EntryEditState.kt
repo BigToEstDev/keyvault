@@ -120,8 +120,11 @@ sealed interface EntryEditDialog {
      */
     data class HiddenFields(val keys: List<String>) : EntryEditDialog
 
-    /** "Leave without saving?" - "back" with changes. */
-    data object Leave : EntryEditDialog
+    /**
+     * "Leave without saving?" - "back" with changes; [closing] - the cross of the tab of the form in a container: the
+     * tab closes on "leave", not back to the reading (pass-docs, Step 98, item 8).
+     */
+    data class Leave(val closing: Boolean = false) : EntryEditDialog
 
     /**
      * "Delete the entry?" - called [title] as the file holds it; what is typed goes with it, unasked
