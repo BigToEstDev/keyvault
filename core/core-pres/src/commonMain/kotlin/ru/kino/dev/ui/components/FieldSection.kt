@@ -60,12 +60,20 @@ fun FieldRowsSection(rows: List<@Composable () -> Unit>, modifier: Modifier = Mo
     }
 }
 
+/**
+ * On the backdrop - the high container; on a card of a container, itself the high container ([LocalScreenBackdrop]
+ * false) - the highest one, as the cards of a list are (`Card` of Material 3 by default): on the card the list and the
+ * entry look alike (pass-docs, Step 99, item 3).
+ */
 @Composable
 private fun SectionCard(modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val colors = MaterialTheme.colorScheme
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = SECTION_SHAPE,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        colors = CardDefaults.cardColors(
+            containerColor = if (LocalScreenBackdrop.current) colors.surfaceContainerHigh else colors.surfaceContainerHighest,
+        ),
         content = content,
     )
 }

@@ -12,6 +12,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.kino.dev.navigation.LocalNavigator
+import ru.kino.dev.ui.components.LocalScreenBackdrop
 
 /**
  * The panes of one container: each with its own processors ([PaneStores]) and its own saved state. Made by
@@ -25,7 +26,8 @@ class PaneHost internal constructor(
 
     /**
      * A pane: [content] - a screen as it is, its processor in the pane's store, its navigation through [router]
-     * first. [key] - which pane: the same key, the same processor.
+     * first, on the card of the container - no backdrop of its own. [key] - which pane: the same key, the same
+     * processor.
      */
     @Composable
     fun Pane(key: String, router: PaneRouter, content: @Composable () -> Unit) {
@@ -37,6 +39,7 @@ class PaneHost internal constructor(
             CompositionLocalProvider(
                 LocalViewModelStoreOwner provides owner,
                 LocalNavigator provides navigator,
+                LocalScreenBackdrop provides false,
                 content = content,
             )
         }

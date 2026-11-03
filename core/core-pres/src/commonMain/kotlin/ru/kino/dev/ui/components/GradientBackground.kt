@@ -7,6 +7,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -26,12 +27,18 @@ import androidx.compose.ui.unit.dp
  * Colors come from the theme, so it follows light and dark on its own. What lies on it is painted
  * `onBackground`: the screens put a transparent `Scaffold` over it, which takes the color from here - without
  * it icons with no tint of their own are black, in the dark theme too (pass-docs, Step 56, item 1).
+ *
+ * On a card ([LocalScreenBackdrop] false) there is no backdrop of its own: [content] lies on the card, in its colors.
  */
 @Composable
 fun GradientBackground(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit,
 ) {
+    if (!LocalScreenBackdrop.current) {
+        Box(modifier = modifier.fillMaxSize(), content = content)
+        return
+    }
     val colors = MaterialTheme.colorScheme
     val background = colors.background
     val glowTop = colors.primary.copy(alpha = GLOW_TOP_ALPHA)
@@ -51,6 +58,13 @@ fun GradientBackground(
         CompositionLocalProvider(LocalContentColor provides colors.onBackground) { content() }
     }
 }
+
+/**
+ * Whether a screen draws its own backdrop - [GradientBackground]: true on its own, false lying on a card - a pane of a
+ * container on a wide window, the gradient one for the whole window under the cards (pass-docs, Step 99). The panes
+ * of `core-pane` set it; the screens do not ask.
+ */
+val LocalScreenBackdrop = staticCompositionLocalOf { true }
 
 private fun DrawScope.drawGlow(color: Color, center: Offset) {
     val radius = size.minDimension * GLOW_RADIUS
