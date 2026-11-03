@@ -75,7 +75,7 @@ private fun TabCard(title: String, selected: Boolean, onSelect: () -> Unit, onCl
         contentColor = if (selected) colors.onSurface else colors.onSurfaceVariant,
         border = if (selected) null else BorderStroke(1.dp, colors.outlineVariant),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 12.dp, end = 6.dp)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
@@ -83,11 +83,13 @@ private fun TabCard(title: String, selected: Boolean, onSelect: () -> Unit, onCl
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.widthIn(max = TITLE_MAX_WIDTH),
             )
-            IconButton(onClick = onClose, modifier = Modifier.size(TAB_HEIGHT)) {
+            // Small - its highlight is no bigger than the cross itself; on a touch screen Material widens the touch
+            // to its minimum unseen
+            IconButton(onClick = onClose, modifier = Modifier.padding(start = 4.dp).size(CLOSE_SIZE)) {
                 Icon(
                     Icons.Filled.Close,
                     contentDescription = stringResource(Res.string.action_close),
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(16.dp),
                 )
             }
         }
@@ -96,4 +98,5 @@ private fun TabCard(title: String, selected: Boolean, onSelect: () -> Unit, onCl
 
 private val TAB_HEIGHT = 40.dp
 private val TAB_GAP = 8.dp
+private val CLOSE_SIZE = 28.dp
 private val TITLE_MAX_WIDTH = 200.dp
