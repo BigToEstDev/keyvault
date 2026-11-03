@@ -3,6 +3,7 @@ package ru.kino.dev.vault.pres.container
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.pane.rememberPaneHost
 import ru.kino.dev.ui.components.BackHandler
@@ -23,6 +24,12 @@ internal fun VaultContainerScreen(
 
     // Below the root "back" goes one group up in the list; at the root - the app's, as on a phone
     BackHandler(enabled = state.groups.size > 1, onBack = processor::onGroupUp)
+
+    processor.collectSideEffect {
+        when (it) {
+            is VaultContainerSideEffect.PaneBack -> panes.back(it.pane)
+        }
+    }
 
     processor.VaultContainerTablet(dbKey = dbKey, state = state, panes = panes)
 }

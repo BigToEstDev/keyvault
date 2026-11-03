@@ -63,12 +63,16 @@ import ru.kino.dev.vault.pres.entryedit.components.nameProblemText
 
 /**
  * Creating an entry inside [groupId], or editing [entryId] - exactly one of them is given.
+ *
+ * @param canGoBack false - a pane of the container of a wide window: the cross of its tab is its "back" (pass-docs,
+ * Step 98, item 6)
  */
 @Composable
 internal fun EntryEditScreen(
     dbKey: String,
     groupId: String?,
     entryId: String?,
+    canGoBack: Boolean = true,
     processor: EntryEditProcessor = koinProcessor(EntryEditArgs(dbKey = dbKey, groupId = groupId, entryId = entryId)),
 ) {
     val state by processor.collectAsState()
@@ -99,6 +103,7 @@ internal fun EntryEditScreen(
                 EntryTopBar(
                     title = stringResource(if (state.creating) Res.string.entry_title_new else Res.string.entry_title_edit),
                     onBack = processor::onBack,
+                    back = canGoBack,
                     // An entry that is there, once read; a new one has nothing to delete
                     menu = if (!state.creating && state.content != null) {
                         listOf(deleteMenuItem(processor::onDelete))

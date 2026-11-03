@@ -11,14 +11,17 @@ interface VaultContainerActions {
     /** The navigation of the list on the left. */
     val listRouter: PaneRouter
 
-    /** The navigation of the entry [entryId] on the right: going back closes its tab. */
-    fun entryRouter(entryId: String): PaneRouter
+    /** The navigation of the entry [entryId] read on the right: going back closes its tab, "edit" - its form. */
+    fun readRouter(entryId: String): PaneRouter
 
-    /** A tab tapped: its entry is shown. */
-    fun onSelectTab(entryId: String)
+    /** The navigation of the form in the tab [key]: going back - the entry read again; a new one - the tab closed. */
+    fun formRouter(key: String): PaneRouter
 
-    /** The cross of a tab: the entry is closed, the tab next to it shown. */
-    fun onCloseTab(entryId: String)
+    /** A tab tapped: it is shown. */
+    fun onSelectTab(key: String)
+
+    /** The cross of a tab - its "back": read - the tab closed; a form - it asks, as on a phone. */
+    fun onCloseTab(key: String)
 
     /** "Back" of the system: the list goes one group up. */
     fun onGroupUp()
