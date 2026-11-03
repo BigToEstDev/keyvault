@@ -17,7 +17,7 @@ interface VaultContainerActions {
      */
     fun entryRouter(entryId: String, page: EntryPage?): PaneRouter
 
-    /** The navigation of the form of a new entry in the tab [key]: going back - saved or left - closes the tab. */
+    /** The navigation of the form of a new entry in the tab [key]: saved - the tab reads it; left - closed. */
     fun newRouter(key: String): PaneRouter
 
     /** A tab tapped: it is shown. */

@@ -39,6 +39,7 @@ import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.common.groupChoices
 import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.common.toggled
+import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.trash.TrashRepository
 import ru.kino.dev.vault.trash.deletesToBin
@@ -463,11 +464,12 @@ class EntryEditProcessor(
         reduce { state.copy(saving = true, problems = emptyList()) }
         try {
             if (entryId == null) {
-                editor.create(dbKey, group, content)
+                val created = editor.create(dbKey, group, content)
+                openCreated(created)
             } else {
                 editor.update(dbKey, EntryId(entryId), content, group)
+                leave()
             }
-            leave()
         } catch (failure: EntryFailure) {
             failed(failure)
         }
@@ -493,6 +495,15 @@ class EntryEditProcessor(
 
     private suspend fun leave() {
         navigator.navigate(MviNavEvent.NavigateBack)
+    }
+
+    /**
+     * The entry [created] made: its reading in place of the form - "back" from it goes to the list (pass-docs, Step 98,
+     * item 9); in a container its tab reads it.
+     */
+    private suspend fun openCreated(created: EntryId) {
+        val form = EntryCreateRoute(dbKey, requireNotNull(groupId))
+        navigator.navigate(MviNavEvent.NavigateTo(EntryReadRoute(dbKey, created.value), popUpTo = form, inclusive = true))
     }
 
     /**

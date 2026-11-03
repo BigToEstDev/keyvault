@@ -36,6 +36,7 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.common.GroupChoice
+import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
@@ -133,14 +134,16 @@ class EntryEditProcessorTest {
     }
 
     @Test
-    fun `a filled new entry is created in its group, written, and the screen closes`() = runTest {
+    fun `a filled new entry is created in its group, written, and read in place of the form`() = runTest {
         val (state, events) = creating(*filled(), { onSave() })
 
         val created = entries.stored.values.last()
         assertEquals(group, created.groupId)
         assertEquals("Bank", created.fields.single { it.key == StandardPreset.TITLE }.value)
         assertEquals(listOf("save"), database.calls)
-        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+        val id = entries.stored.keys.last().value
+        val read = MviNavEvent.NavigateTo(EntryReadRoute(DB, id), popUpTo = EntryCreateRoute(DB, group.value), inclusive = true)
+        assertEquals(listOf(read), events)
         assertTrue(state.problems.isEmpty())
     }
 

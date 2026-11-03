@@ -149,7 +149,18 @@ class VaultContainerProcessorTest {
     }
 
     @Test
-    fun `back from the form of a new entry - saved or left - closes its tab`() = runTest {
+    fun `a new entry saved - its tab reads it, in the same place`() = runTest {
+        val read = MviNavEvent.NavigateTo(EntryReadRoute(DB, "bank"), popUpTo = EntryCreateRoute(DB, "work"), inclusive = true)
+
+        val state = perform(create("work"), open("mail"), { onSelectTab(newTab(1)) }, fromNew(newTab(1), read))
+
+        assertEquals(listOf(EntryTab.Entry("bank", "Bank"), EntryTab.Entry("mail", "Mail")), state.tabs)
+        assertEquals("bank", state.active)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `a new entry left closes its tab`() = runTest {
         val state = perform(open("mail"), create("work"), fromNew(newTab(1), MviNavEvent.NavigateBack))
 
         assertEquals(listOf("mail"), state.tabs.keys)

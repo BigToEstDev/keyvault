@@ -126,10 +126,25 @@ class VaultContainerProcessor(
         change != null
     }
 
-    /** Saved or left: its tab closed - the entry is in the list now. */
+    /** Saved: the tab reads the entry made, in its place (item 9); left - closed. */
     override fun newRouter(key: String) = PaneRouter { event ->
-        if (event == MviNavEvent.NavigateBack) intent { reduce { state.closed(key) } }
-        event == MviNavEvent.NavigateBack
+        when {
+            event == MviNavEvent.NavigateBack -> {
+                intent { reduce { state.closed(key) } }
+                true
+            }
+
+            event is MviNavEvent.NavigateTo && event.route is EntryReadRoute -> {
+                val entryId = (event.route as EntryReadRoute).entryId
+                intent {
+                    reduce { state.created(key, entryId) }
+                    readTitle(entryId)
+                }
+                true
+            }
+
+            else -> false
+        }
     }
 
     override fun onSelectTab(key: String) {
@@ -184,6 +199,15 @@ class VaultContainerProcessor(
 
     private fun VaultContainerState.withPages(entryId: String, change: (List<EntryPage>) -> List<EntryPage>) =
         withEntry(entryId) { it.copy(pages = change(it.pages)) }
+
+    /** The new entry of the tab [key] made - [entryId]: the tab reads it, in the same place; shown, if it was. */
+    private fun VaultContainerState.created(key: String, entryId: String): VaultContainerState {
+        if (tabs.none { it.key == key }) return this
+        return copy(
+            tabs = tabs.map { if (it.key == key) EntryTab.Entry(entryId) else it },
+            active = if (active == key) entryId else active,
+        )
+    }
 
     /** The tab [key] gone; shown instead - the next one, else the one before. */
     private fun VaultContainerState.closed(key: String): VaultContainerState {
