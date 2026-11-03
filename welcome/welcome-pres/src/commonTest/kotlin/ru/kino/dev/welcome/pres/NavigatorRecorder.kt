@@ -5,6 +5,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.AppNavigator
 import ru.kino.dev.navigation.Navigator
 
 /**
@@ -13,7 +14,7 @@ import ru.kino.dev.navigation.Navigator
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 internal fun TestScope.recordNavigation(): Pair<Navigator, List<MviNavEvent>> {
-    val navigator = Navigator()
+    val navigator = AppNavigator()
     val events = mutableListOf<MviNavEvent>()
     backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
         navigator.events.collect { events += it }

@@ -8,7 +8,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
-import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.AppNavigator
 import ru.kino.dev.settings.pres.navigation.AppearanceRoute
 import ru.kino.dev.settings.pres.navigation.RecycleBinRoute
 import ru.kino.dev.settings.pres.testing.runToEnd
@@ -20,7 +20,7 @@ class SettingsProcessorTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `back leaves the settings`() = runTest {
-        val navigator = Navigator()
+        val navigator = AppNavigator()
         val events = mutableListOf<MviNavEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
@@ -34,7 +34,7 @@ class SettingsProcessorTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `a card with a screen behind it opens the screen`() = runTest {
-        val navigator = Navigator()
+        val navigator = AppNavigator()
         val events = mutableListOf<MviNavEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
@@ -48,7 +48,7 @@ class SettingsProcessorTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `the card of the recycle bin opens its screen`() = runTest {
-        val navigator = Navigator()
+        val navigator = AppNavigator()
         val events = mutableListOf<MviNavEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 

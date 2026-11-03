@@ -38,7 +38,7 @@ import ru.kino.dev.welcome.pres.start.WelcomeStart
  * @param start decided once from the remembered database, before the first frame
  */
 @Composable
-fun AppNavHost(navigator: Navigator, autoLock: AutoLock, start: WelcomeStart) {
+fun AppNavHost(navigator: AppNavigator, autoLock: AutoLock, start: WelcomeStart) {
     val navController = rememberNavController()
 
     LaunchedEffect(navigator) {

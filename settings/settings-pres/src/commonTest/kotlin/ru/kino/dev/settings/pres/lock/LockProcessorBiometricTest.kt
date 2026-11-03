@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
-import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.AppNavigator
 import ru.kino.dev.settings.biometric.FakeBiometrics
 import ru.kino.dev.settings.lock.AutoLockTimeout
 import ru.kino.dev.settings.lock.FakeInactivityTimer
@@ -153,7 +153,7 @@ class LockProcessorBiometricTest {
         biometric = biometrics,
         credentials = credentials,
         timer = timer,
-        navigator = Navigator(),
+        navigator = AppNavigator(),
         log = RecordingLog(),
     )
 

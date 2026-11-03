@@ -8,7 +8,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
-import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.AppNavigator
 import ru.kino.dev.settings.pres.testing.runToEnd
 import ru.kino.dev.settings.privacy.FakePrivacySettingsRepository
 
@@ -18,7 +18,7 @@ class PrivacyProcessorTest {
     fun `the screen shown reads what is chosen`() = runTest {
         val repository = FakePrivacySettingsRepository(allowScreenshots = true)
 
-        PrivacyProcessor(repository, Navigator()).testWithInternalState(this) {
+        PrivacyProcessor(repository, AppNavigator()).testWithInternalState(this) {
             containerHost.runToEnd { onLoad() }
 
             expectInternalState { copy(allowScreenshots = true) }
@@ -29,7 +29,7 @@ class PrivacyProcessorTest {
     fun `screenshots allowed are kept at once`() = runTest {
         val repository = FakePrivacySettingsRepository()
 
-        PrivacyProcessor(repository, Navigator()).testWithInternalState(this, PrivacyState(allowScreenshots = false)) {
+        PrivacyProcessor(repository, AppNavigator()).testWithInternalState(this, PrivacyState(allowScreenshots = false)) {
             containerHost.runToEnd { onSetAllowScreenshots(true) }
 
             expectInternalState { copy(allowScreenshots = true) }
@@ -42,7 +42,7 @@ class PrivacyProcessorTest {
     fun `screenshots not written show what is kept, with a message`() = runTest {
         val repository = FakePrivacySettingsRepository(failSave = true)
 
-        PrivacyProcessor(repository, Navigator()).testWithInternalState(this, PrivacyState(allowScreenshots = false)) {
+        PrivacyProcessor(repository, AppNavigator()).testWithInternalState(this, PrivacyState(allowScreenshots = false)) {
             containerHost.runToEnd { onSetAllowScreenshots(true) }
 
             expectInternalState { copy(allowScreenshots = true) }
@@ -54,7 +54,7 @@ class PrivacyProcessorTest {
     fun `nothing is written before the setting is read`() = runTest {
         val repository = FakePrivacySettingsRepository()
 
-        PrivacyProcessor(repository, Navigator()).testWithInternalState(this) {
+        PrivacyProcessor(repository, AppNavigator()).testWithInternalState(this) {
             containerHost.runToEnd { onSetAllowScreenshots(true) }
         }
 
@@ -64,7 +64,7 @@ class PrivacyProcessorTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `back leaves the screen`() = runTest {
-        val navigator = Navigator()
+        val navigator = AppNavigator()
         val events = mutableListOf<MviNavEvent>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
 
