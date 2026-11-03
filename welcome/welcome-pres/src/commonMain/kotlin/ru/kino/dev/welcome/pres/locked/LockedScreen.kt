@@ -2,11 +2,10 @@ package ru.kino.dev.welcome.pres.locked
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.ui.biometric.BiometricPurpose
 import ru.kino.dev.ui.components.BackHandler
 import ru.kino.dev.ui.components.rememberPutAppAway
@@ -20,7 +19,7 @@ import ru.kino.dev.welcome.pres.common.rememberBiometricPrompt
 @Composable
 internal fun LockedScreen(
     dbKey: String,
-    processor: LockedProcessor = koinViewModel { parametersOf(dbKey) },
+    processor: LockedProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
     val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.onKeyFilePicked(it) }

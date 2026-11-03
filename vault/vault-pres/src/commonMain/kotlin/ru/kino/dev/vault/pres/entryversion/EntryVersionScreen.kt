@@ -22,10 +22,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.skeletonBrush
@@ -41,9 +40,7 @@ internal fun EntryVersionScreen(
     dbKey: String,
     entryId: String,
     index: Int,
-    processor: EntryVersionProcessor = koinViewModel {
-        parametersOf(EntryVersionArgs(dbKey = dbKey, entryId = entryId, index = index))
-    },
+    processor: EntryVersionProcessor = koinProcessor(EntryVersionArgs(dbKey = dbKey, entryId = entryId, index = index)),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

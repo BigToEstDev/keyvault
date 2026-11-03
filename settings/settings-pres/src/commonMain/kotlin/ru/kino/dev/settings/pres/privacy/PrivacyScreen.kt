@@ -17,9 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import org.koin.compose.viewmodel.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.GradientBackground
@@ -29,7 +29,7 @@ import ru.kino.dev.ui.res.stringResource
 
 /** What the app lets out of its screen: the group "Data protection" - allowing screenshots (pass-docs, Step 61). */
 @Composable
-internal fun PrivacyScreen(processor: PrivacyProcessor = koinViewModel()) {
+internal fun PrivacyScreen(processor: PrivacyProcessor = koinProcessor()) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 

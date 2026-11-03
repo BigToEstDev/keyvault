@@ -23,11 +23,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.deleteMenuItem
@@ -45,9 +44,7 @@ import ru.kino.dev.vault.pres.common.historyMenuItem
 internal fun EntryReadScreen(
     dbKey: String,
     entryId: String,
-    processor: EntryReadProcessor = koinViewModel {
-        parametersOf(EntryReadArgs(dbKey = dbKey, entryId = entryId))
-    },
+    processor: EntryReadProcessor = koinProcessor(EntryReadArgs(dbKey = dbKey, entryId = entryId)),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

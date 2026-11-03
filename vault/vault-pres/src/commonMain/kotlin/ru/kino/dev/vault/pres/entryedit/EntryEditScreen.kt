@@ -23,13 +23,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.PresetField
 import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.ui.components.BackHandler
 import ru.kino.dev.ui.components.Dropdown
 import ru.kino.dev.ui.components.FieldSection
@@ -70,9 +69,7 @@ internal fun EntryEditScreen(
     dbKey: String,
     groupId: String?,
     entryId: String?,
-    processor: EntryEditProcessor = koinViewModel {
-        parametersOf(EntryEditArgs(dbKey = dbKey, groupId = groupId, entryId = entryId))
-    },
+    processor: EntryEditProcessor = koinProcessor(EntryEditArgs(dbKey = dbKey, groupId = groupId, entryId = entryId)),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

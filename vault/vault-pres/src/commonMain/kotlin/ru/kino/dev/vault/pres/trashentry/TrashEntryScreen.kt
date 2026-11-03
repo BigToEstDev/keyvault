@@ -26,11 +26,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
@@ -50,9 +49,7 @@ import ru.kino.dev.vault.pres.trash.components.TrashDialogs
 internal fun TrashEntryScreen(
     dbKey: String,
     entryId: String,
-    processor: TrashEntryProcessor = koinViewModel {
-        parametersOf(TrashEntryArgs(dbKey = dbKey, entryId = entryId))
-    },
+    processor: TrashEntryProcessor = koinProcessor(TrashEntryArgs(dbKey = dbKey, entryId = entryId)),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

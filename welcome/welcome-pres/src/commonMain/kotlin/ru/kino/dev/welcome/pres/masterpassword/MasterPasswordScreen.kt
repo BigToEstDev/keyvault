@@ -2,10 +2,9 @@ package ru.kino.dev.welcome.pres.masterpassword
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.ui.files.DocumentKind
 import ru.kino.dev.ui.files.rememberCreateDocument
 import ru.kino.dev.welcome.pres.create.CreateDraft
@@ -14,7 +13,7 @@ import ru.kino.dev.welcome.pres.create.OverwriteDialog
 @Composable
 internal fun MasterPasswordScreen(
     draft: CreateDraft,
-    processor: MasterPasswordProcessor = koinViewModel { parametersOf(draft) },
+    processor: MasterPasswordProcessor = koinProcessor(draft),
 ) {
     val state by processor.collectAsState()
     val pickDatabase = rememberCreateDocument(DocumentKind.Database) { processor.onDatabasePicked(it) }
