@@ -2,6 +2,7 @@ package ru.kino.dev.welcome.pres.common
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -15,6 +16,9 @@ import androidx.compose.ui.unit.dp
 /**
  * A card on the backdrop of `welcome` holding what is asked of the person (pass-docs, Step 94) - set off by its fill
  * alone, as the cards of an entry are (Step 73): the fields have outlines of their own.
+ *
+ * Its column is as wide as the card: what is narrower - the shield alone, before the database is read - is in the
+ * middle, not at the start (pass-docs, Step 99, item 2).
  */
 @Composable
 internal fun WelcomeCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -24,7 +28,9 @@ internal fun WelcomeCard(modifier: Modifier = Modifier, content: @Composable Col
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             content = content,
         )
