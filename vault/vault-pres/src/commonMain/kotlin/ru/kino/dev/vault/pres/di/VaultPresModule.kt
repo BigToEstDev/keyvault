@@ -1,8 +1,10 @@
 package ru.kino.dev.vault.pres.di
 
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.vault.pres.container.VaultContainerProcessor
 import ru.kino.dev.vault.pres.entryedit.EntryEditArgs
 import ru.kino.dev.vault.pres.entryedit.EntryEditProcessor
 import ru.kino.dev.vault.pres.entryhistory.EntryHistoryArgs
@@ -23,6 +25,9 @@ import ru.kino.dev.vault.pres.trashentry.TrashEntryProcessor
  * graph's: inside a container it is the container's (Step 98).
  */
 val vaultPresModule = module {
+    // The container of a wide window: the screens in it bring their own processors (pass-docs, Step 98)
+    viewModelOf(::VaultContainerProcessor)
+
     viewModel { (args: GroupListArgs, navigator: Navigator) ->
         GroupListProcessor(
             dbKey = args.dbKey,
