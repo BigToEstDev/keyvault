@@ -28,13 +28,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import java.text.NumberFormat
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.DatabaseEntries
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.settings.pres.entries.components.EntriesSkeleton
 import ru.kino.dev.settings.pres.entries.components.PhonePrefixRow
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
@@ -59,7 +58,7 @@ import ru.kino.dev.ui.res.stringResource
 @Composable
 internal fun EntriesScreen(
     dbKey: String,
-    processor: EntriesProcessor = koinViewModel { parametersOf(dbKey) },
+    processor: EntriesProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

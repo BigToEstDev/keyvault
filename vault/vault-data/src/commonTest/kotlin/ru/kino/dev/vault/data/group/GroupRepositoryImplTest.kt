@@ -14,6 +14,7 @@ import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.KdbxVersion
 import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
@@ -21,7 +22,8 @@ import ru.kino.dev.vault.group.GroupId
 class GroupRepositoryImplTest {
 
     private val core = FakeNativeCore()
-    private val repository = GroupRepositoryImpl(core)
+    private val changes = VaultChangesImpl()
+    private val repository = GroupRepositoryImpl(core, changes)
 
     init {
         core.opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null)

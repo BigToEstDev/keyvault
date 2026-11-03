@@ -11,6 +11,7 @@ import ru.kino.dev.core.FakeNativeCore
 import ru.kino.dev.core.GroupNode
 import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryRecord
@@ -21,7 +22,8 @@ import ru.kino.dev.vault.group.GroupId
 class EntryRepositoryImplTest {
 
     private val core = FakeNativeCore()
-    private val repository = EntryRepositoryImpl(core)
+    private val changes = VaultChangesImpl()
+    private val repository = EntryRepositoryImpl(core, changes)
 
     init {
         core.groupTrees[DB] = GroupTree(
@@ -172,6 +174,27 @@ class EntryRepositoryImplTest {
         val failure = expectFailure<EntryFailure.Unexpected> { repository.entries(DB, GroupId(WORK)) }
 
         assertSame(cause, failure.cause)
+    }
+
+    @Test
+    fun `every write moves the version of the database on, reading does not`() = runTest {
+        repository.entries(DB, GroupId(WORK))
+        repository.read(DB, EntryId("mail"))
+        assertEquals(0, changes.current(DB))
+
+        val id = repository.create(DB, GroupId(WORK), listOf(EntryField("Title", "New", false)))
+        repository.update(DB, id, listOf(EntryField("Title", "Newer", false)))
+        repository.move(DB, id, GroupId(ROOT))
+        repository.delete(DB, id)
+
+        assertEquals(4, changes.current(DB))
+    }
+
+    @Test
+    fun `a write the core refused does not move the version`() = runTest {
+        expectFailure<EntryFailure.EntryNotFound> { repository.delete(DB, EntryId("missing")) }
+
+        assertEquals(0, changes.current(DB))
     }
 
     private fun data(key: String, value: String, protected: Boolean = false) = EntryFieldData(key, value, protected)

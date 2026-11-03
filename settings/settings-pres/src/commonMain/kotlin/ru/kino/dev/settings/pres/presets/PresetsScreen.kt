@@ -24,10 +24,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.koin.compose.viewmodel.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.settings.pres.presets.components.PresetCard
 import ru.kino.dev.settings.pres.presets.components.PresetCardSkeleton
 import ru.kino.dev.settings.pres.presets.components.UsePresetsSkeleton
@@ -47,7 +47,7 @@ import ru.kino.dev.ui.res.stringResource
  * and the fab "Create" while there is room for one; off - the switch alone (pass-docs, Step 62).
  */
 @Composable
-internal fun PresetsScreen(processor: PresetsProcessor = koinViewModel()) {
+internal fun PresetsScreen(processor: PresetsProcessor = koinProcessor()) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 

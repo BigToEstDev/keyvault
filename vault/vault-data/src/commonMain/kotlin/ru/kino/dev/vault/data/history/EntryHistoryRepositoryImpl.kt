@@ -1,6 +1,7 @@
 package ru.kino.dev.vault.data.history
 
 import ru.kino.dev.core.NativeCore
+import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.data.entry.entryCall
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryRecord
@@ -13,6 +14,7 @@ import ru.kino.dev.vault.history.HistoryVersion
 /** [EntryHistoryRepository] over the native core; fails as the entry repository does - the history is the entry's. */
 internal class EntryHistoryRepositoryImpl(
     private val core: NativeCore,
+    private val changes: VaultChangesImpl,
 ) : EntryHistoryRepository {
 
     override suspend fun versions(dbKey: String, entryId: EntryId): List<HistoryVersion> = entryCall {
@@ -32,13 +34,13 @@ internal class EntryHistoryRepositoryImpl(
     // history again and sees which
     override suspend fun restore(dbKey: String, entryId: EntryId, index: Int) = entryCall {
         core.restoreHistoryVersion(dbKey, entryId.value, index)
-    }
+    }.also { changes.changed(dbKey) }
 
     override suspend fun delete(dbKey: String, entryId: EntryId, index: Int) = entryCall {
         core.deleteHistoryVersion(dbKey, entryId.value, index)
-    }
+    }.also { changes.changed(dbKey) }
 
     override suspend fun deleteAll(dbKey: String, entryId: EntryId) = entryCall {
         core.deleteHistory(dbKey, entryId.value)
-    }
+    }.also { changes.changed(dbKey) }
 }

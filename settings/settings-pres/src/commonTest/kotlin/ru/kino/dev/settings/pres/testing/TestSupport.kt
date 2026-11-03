@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.orbitmvi.orbit.OrbitContainerHost
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.AppNavigator
 import ru.kino.dev.navigation.Navigator
 
 /* What the tests of the processors of `settings` share: the log, the navigation. */
@@ -14,7 +15,7 @@ import ru.kino.dev.navigation.Navigator
 /** A navigator, and every event sent through it, in order. */
 @OptIn(ExperimentalCoroutinesApi::class)
 fun TestScope.recordNavigation(): Pair<Navigator, List<MviNavEvent>> {
-    val navigator = Navigator()
+    val navigator = AppNavigator()
     val events = mutableListOf<MviNavEvent>()
     backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { navigator.events.collect { events += it } }
     return navigator to events

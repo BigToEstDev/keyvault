@@ -12,13 +12,15 @@ import ru.kino.dev.core.FakeDatabaseFiles
 import ru.kino.dev.core.FakeNativeCore
 import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.vault.data.changes.VaultChangesImpl
 
 class VaultDatabaseRepositoryImplTest {
 
     private val journal = mutableListOf<String>()
     private val core = FakeNativeCore(journal)
     private val files = FakeDatabaseFiles(journal)
-    private val repository = VaultDatabaseRepositoryImpl(core, files)
+    private val changes = VaultChangesImpl()
+    private val repository = VaultDatabaseRepositoryImpl(core, files, changes)
 
     @Test
     fun `saving writes the bytes the core gave into the file`() = runTest {

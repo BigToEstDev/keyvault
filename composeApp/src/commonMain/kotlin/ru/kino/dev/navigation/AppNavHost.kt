@@ -20,6 +20,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import ru.kino.dev.pane.LayoutChangeEffect
 import ru.kino.dev.settings.pres.navigation.settingsGraph
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.pres.navigation.vaultGraph
@@ -38,7 +39,7 @@ import ru.kino.dev.welcome.pres.start.WelcomeStart
  * @param start decided once from the remembered database, before the first frame
  */
 @Composable
-fun AppNavHost(navigator: Navigator, autoLock: AutoLock, start: WelcomeStart) {
+fun AppNavHost(navigator: AppNavigator, autoLock: AutoLock, start: WelcomeStart) {
     val navController = rememberNavController()
 
     LaunchedEffect(navigator) {
@@ -55,6 +56,11 @@ fun AppNavHost(navigator: Navigator, autoLock: AutoLock, start: WelcomeStart) {
             navController.handle(MviNavEvent.NavigateTo(LockedRoute(dbKey), popUpTo = VaultGraph, inclusive = true))
         }
     }
+
+    // Across the line of the layout the stack of `vault` folds back to its root: on a wide window the root is the
+    // container, holding the groups and the entries a phone keeps on the stack (pass-docs, Step 98). Outside `vault` -
+    // nothing to fold
+    LayoutChangeEffect { navController.popBackStack<VaultRootRoute>(inclusive = false) }
 
     val covering by autoLock.covering.collectAsStateWithLifecycle()
     val current by navController.currentBackStackEntryAsState()

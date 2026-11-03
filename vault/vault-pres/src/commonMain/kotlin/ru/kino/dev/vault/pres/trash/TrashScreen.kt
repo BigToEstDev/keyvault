@@ -35,10 +35,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import org.jetbrains.compose.resources.StringResource
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.ui.components.BackHandler
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.EmptySearchIllustration
@@ -63,7 +62,7 @@ import ru.kino.dev.vault.pres.trash.components.TrashDialogs
 @Composable
 internal fun TrashScreen(
     dbKey: String,
-    processor: TrashProcessor = koinViewModel { parametersOf(dbKey) },
+    processor: TrashProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

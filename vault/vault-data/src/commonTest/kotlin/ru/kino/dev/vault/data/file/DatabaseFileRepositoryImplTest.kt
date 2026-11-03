@@ -10,6 +10,7 @@ import ru.kino.dev.core.FakeNativeCore
 import ru.kino.dev.core.KdbxVersion
 import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.file.DatabaseFileFailure
 import ru.kino.dev.vault.file.DatabaseFileInfo
 
@@ -20,7 +21,8 @@ class DatabaseFileRepositoryImplTest {
         databaseFile = DatabaseFile(name = "Passwords", version = KdbxVersion.V40, compression = Compression.GZip)
     }
     private val documents = FakeDatabaseFiles().apply { names[DB] = "Мои пароли.kdbx" }
-    private val repository = DatabaseFileRepositoryImpl(core, documents)
+    private val changes = VaultChangesImpl()
+    private val repository = DatabaseFileRepositoryImpl(core, documents, changes)
 
     @Test
     fun `the file is the core's settings and the name the provider gives`() = runTest {

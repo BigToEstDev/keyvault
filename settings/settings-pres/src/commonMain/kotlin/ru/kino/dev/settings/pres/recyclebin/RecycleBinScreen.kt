@@ -20,10 +20,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.settings.pres.recyclebin.components.RecycleBinSkeleton
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.ConfirmDialog
@@ -38,7 +37,7 @@ import ru.kino.dev.ui.res.stringResource
 @Composable
 internal fun RecycleBinScreen(
     dbKey: String,
-    processor: RecycleBinProcessor = koinViewModel { parametersOf(dbKey) },
+    processor: RecycleBinProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

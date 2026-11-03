@@ -24,13 +24,15 @@ import ru.kino.dev.ui.res.stringResource
 /**
  * The top bar of a screen one goes back from: "back" and the [title] - one line, cut short with an ellipsis -
  * and [actions] at the end. With [skeleton] the title is not known yet - a bar painted with it stands in, so
- * the title does not flash in (pass-docs, Step 40, fix 13).
+ * the title does not flash in (pass-docs, Step 40, fix 13). Without [back] - no way back from here: the screen is a
+ * pane of a container on a wide window, closed by it (Step 98).
  */
 @Composable
 fun BackTopBar(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    back: Boolean = true,
     skeleton: Brush? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -42,8 +44,10 @@ fun BackTopBar(
             .heightIn(min = 48.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.action_back))
+        if (back) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(Res.string.action_back))
+            }
         }
         if (skeleton != null) {
             SkeletonText(

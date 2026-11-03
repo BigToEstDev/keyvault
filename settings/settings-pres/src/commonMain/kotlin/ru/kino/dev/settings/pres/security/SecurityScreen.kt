@@ -29,14 +29,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import java.text.NumberFormat
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.Cipher
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.DatabaseSecurity
 import ru.kino.dev.core.KdfVariant
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.settings.pres.entries.MEGABYTE
 import ru.kino.dev.settings.pres.security.components.CredentialCard
 import ru.kino.dev.settings.pres.security.components.PasswordDialog
@@ -64,7 +63,7 @@ import ru.kino.dev.ui.res.stringResource
 @Composable
 internal fun SecurityScreen(
     dbKey: String,
-    processor: SecurityProcessor = koinViewModel { parametersOf(dbKey) },
+    processor: SecurityProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

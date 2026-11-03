@@ -14,9 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.settings.pres.navigation.route
 import ru.kino.dev.settings.pres.settings.components.SettingsCard
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
@@ -31,7 +30,7 @@ import ru.kino.dev.ui.res.stringResource
 @Composable
 internal fun SettingsScreen(
     dbKey: String,
-    processor: SettingsProcessor = koinViewModel { parametersOf(dbKey) },
+    processor: SettingsProcessor = koinProcessor(dbKey),
 ) {
     GradientBackground {
         Scaffold(

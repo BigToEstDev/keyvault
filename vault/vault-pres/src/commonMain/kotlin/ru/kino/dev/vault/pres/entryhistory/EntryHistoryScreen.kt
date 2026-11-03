@@ -17,10 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.skeletonBrush
@@ -39,9 +38,7 @@ import ru.kino.dev.vault.pres.entryhistory.components.HistoryCard
 internal fun EntryHistoryScreen(
     dbKey: String,
     entryId: String,
-    processor: EntryHistoryProcessor = koinViewModel {
-        parametersOf(EntryHistoryArgs(dbKey = dbKey, entryId = entryId))
-    },
+    processor: EntryHistoryProcessor = koinProcessor(EntryHistoryArgs(dbKey = dbKey, entryId = entryId)),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

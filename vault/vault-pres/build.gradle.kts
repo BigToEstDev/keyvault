@@ -8,6 +8,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.corePres)
             implementation(projects.core.coreNav)
+            implementation(projects.core.corePane)
             implementation(projects.vault.vaultDomain)
         }
         commonTest.dependencies {

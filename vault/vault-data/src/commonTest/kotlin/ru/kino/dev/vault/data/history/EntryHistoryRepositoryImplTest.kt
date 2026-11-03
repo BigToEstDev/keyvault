@@ -10,6 +10,7 @@ import ru.kino.dev.core.FakeNativeCore
 import ru.kino.dev.core.GroupNode
 import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.group.EntryId
@@ -19,7 +20,8 @@ import ru.kino.dev.vault.history.HistoryVersion
 class EntryHistoryRepositoryImplTest {
 
     private val core = FakeNativeCore()
-    private val repository = EntryHistoryRepositoryImpl(core)
+    private val changes = VaultChangesImpl()
+    private val repository = EntryHistoryRepositoryImpl(core, changes)
 
     init {
         core.groupTrees[DB] = GroupTree(

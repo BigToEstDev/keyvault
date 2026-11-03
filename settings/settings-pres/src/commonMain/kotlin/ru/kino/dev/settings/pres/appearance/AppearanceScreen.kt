@@ -20,10 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.StringResource
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.pres.settings.components.SettingsCard
@@ -44,7 +43,7 @@ import ru.kino.dev.ui.res.stringResource
 @Composable
 internal fun AppearanceScreen(
     dbKey: String,
-    processor: AppearanceProcessor = koinViewModel { parametersOf(dbKey) },
+    processor: AppearanceProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

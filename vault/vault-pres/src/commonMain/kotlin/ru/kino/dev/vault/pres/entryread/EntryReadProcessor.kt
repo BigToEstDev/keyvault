@@ -9,6 +9,7 @@ import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
@@ -17,6 +18,7 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.lock.AutoLock
+import ru.kino.dev.vault.pres.common.ChangeGate
 import ru.kino.dev.vault.pres.common.groupChoice
 import ru.kino.dev.vault.pres.common.prepareFor
 import ru.kino.dev.vault.pres.common.protectionOrDefault
@@ -32,7 +34,8 @@ import ru.kino.dev.vault.trash.deletesToBin
  *
  * The entry is read anew every time the screen is shown - it may come back from its form changed. What is
  * shown in clear stays shown while the entry is the same, and hides once it changed: the fields may have
- * moved.
+ * moved. A change made elsewhere while the screen is shown - by the list beside it, in a container - is read again
+ * too ([ChangeGate], pass-docs, Step 98).
  *
  * An entry in the recycle bin is not shown: the screen goes back. The form deleting the entry goes past this
  * screen itself; this is the guard for an entry put there otherwise (pass-docs, Step 50, item 2). Deleted
@@ -48,11 +51,17 @@ class EntryReadProcessor(
     private val trash: TrashRepository,
     private val autoLock: AutoLock,
     private val phones: PhoneNumbers,
+    private val changes: VaultChanges,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryReadState, EntryReadState, Nothing>, EntryReadActions {
 
-    override val container = orbitContainer<EntryReadState, Nothing>(EntryReadState())
+    private val gate = ChangeGate(changes, dbKey)
+
+    override val container = orbitContainer<EntryReadState, Nothing>(EntryReadState()) {
+        // While the screen is shown: a change made beside it is read again
+        repeatOnSubscription { gate.elsewhere.collect { load() } }
+    }
 
     override fun onLoad() {
         intent { load() }
@@ -132,27 +141,35 @@ class EntryReadProcessor(
         if (dialog.deleting) return
 
         reduce { state.copy(delete = dialog.copy(deleting = true)) }
-        try {
-            editor.delete(dbKey, EntryId(entryId))
-            navigator.navigate(MviNavEvent.NavigateBack)
-        } catch (failure: EntryFailure) {
-            when (failure) {
-                // In the recycle bin, but not in the file: the error is shown here (pass-docs, Step 50, item 2)
-                is EntryFailure.NotSaved -> reduce { state.copy(delete = null, message = EntryReadMessage.NotSaved) }
+        // Its own change: the screen goes back, or says it is not written, here - not by the change as well
+        gate.own {
+            try {
+                editor.delete(dbKey, EntryId(entryId))
+                navigator.navigate(MviNavEvent.NavigateBack)
+            } catch (failure: EntryFailure) {
+                deleteFailed(failure)
+            }
+        }
+    }
 
-                // Gone already - deleted or merged away
-                is EntryFailure.EntryNotFound -> navigator.navigate(MviNavEvent.NavigateBack)
+    private suspend fun Syntax<EntryReadState, Nothing>.deleteFailed(failure: EntryFailure) {
+        when (failure) {
+            // In the recycle bin, but not in the file: the error is shown here (pass-docs, Step 50, item 2)
+            is EntryFailure.NotSaved -> reduce { state.copy(delete = null, message = EntryReadMessage.NotSaved) }
 
-                // Not what deleting an entry throws
-                is EntryFailure.InvalidFields, is EntryFailure.GroupNotFound, is EntryFailure.Unexpected -> {
-                    log.unexpected(TAG, failure)
-                    reduce { state.copy(delete = null, message = EntryReadMessage.Unexpected) }
-                }
+            // Gone already - deleted or merged away
+            is EntryFailure.EntryNotFound -> navigator.navigate(MviNavEvent.NavigateBack)
+
+            // Not what deleting an entry throws
+            is EntryFailure.InvalidFields, is EntryFailure.GroupNotFound, is EntryFailure.Unexpected -> {
+                log.unexpected(TAG, failure)
+                reduce { state.copy(delete = null, message = EntryReadMessage.Unexpected) }
             }
         }
     }
 
     private suspend fun Syntax<EntryReadState, Nothing>.load() {
+        gate.reading()
         val opened = try {
             opener.open(dbKey, EntryId(entryId))
         } catch (_: EntryFailure.EntryNotFound) {

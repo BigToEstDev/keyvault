@@ -22,12 +22,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.Compression
 import ru.kino.dev.core.KdbxVersion
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.settings.pres.file.components.FileSkeleton
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.GradientBackground
@@ -46,7 +45,7 @@ import ru.kino.dev.vault.file.DatabaseFileInfo
 @Composable
 internal fun FileScreen(
     dbKey: String,
-    processor: FileProcessor = koinViewModel { parametersOf(dbKey) },
+    processor: FileProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }

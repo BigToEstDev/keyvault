@@ -10,7 +10,8 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import ru.kino.dev.core.phone.PhoneNumbers
 import ru.kino.dev.navigation.AppNavHost
-import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.AppNavigator
+import ru.kino.dev.navigation.LocalNavigator
 import ru.kino.dev.settings.appearance.AppLanguage
 import ru.kino.dev.settings.appearance.ThemeMode
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
@@ -50,14 +51,20 @@ fun App(onDarkTheme: (Boolean) -> Unit = {}) {
     val display by theme.display.collectAsStateWithLifecycle()
     val shown = display ?: return
     AppLocale(locale = (language ?: return).locale) {
-        // What the screens show, as chosen in the settings: the features read it, not `settings`
-        CompositionLocalProvider(LocalAppDisplay provides shown, LocalPhoneNumbers provides koinInject<PhoneNumbers>()) {
+        val navigator = koinInject<AppNavigator>()
+        // What the screens show, as chosen in the settings: the features read it, not `settings`. The navigator of the
+        // screens - the app's; a container gives its own below (pass-docs, Step 98)
+        CompositionLocalProvider(
+            LocalAppDisplay provides shown,
+            LocalPhoneNumbers provides koinInject<PhoneNumbers>(),
+            LocalNavigator provides navigator,
+        ) {
             KeyVaultTheme(darkTheme = darkTheme) {
                 val start by startResolver.start.collectAsStateWithLifecycle()
                 // The layout by the width of the window, for the screens with layouts of their own (pass-docs, Step 94)
                 ProvideLayoutType {
                     start?.let {
-                        AppNavHost(navigator = koinInject<Navigator>(), autoLock = koinInject<AutoLock>(), start = it)
+                        AppNavHost(navigator = navigator, autoLock = koinInject<AutoLock>(), start = it)
                     }
                 }
             }

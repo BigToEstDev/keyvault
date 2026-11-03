@@ -9,6 +9,7 @@ import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.HistoryLimits
 import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 
 class EntrySettingsRepositoryImplTest {
@@ -16,7 +17,8 @@ class EntrySettingsRepositoryImplTest {
     private val core = FakeNativeCore().apply {
         opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null)
     }
-    private val repository = EntrySettingsRepositoryImpl(core)
+    private val changes = VaultChangesImpl()
+    private val repository = EntrySettingsRepositoryImpl(core, changes)
 
     @Test
     fun `the settings are the core's`() = runTest {

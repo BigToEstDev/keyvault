@@ -20,6 +20,7 @@ import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.changes.FakeVaultChanges
 import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
@@ -108,6 +109,7 @@ class GroupListProcessorTest {
     private val log = RecordingLog()
     private val entrySettings = FakeEntrySettingsRepository()
     private val trash = FakeTrashRepository()
+    private val changes = FakeVaultChanges()
     private lateinit var autoLock: AutoLock
 
     @Test
@@ -867,6 +869,22 @@ class GroupListProcessorTest {
      * Runs [actions] one after another on a new processor, each to its end - [runEach]; without [join] they are
      * only started. The state they end in, and the navigation.
      */
+    @Test
+    fun `a change made elsewhere while the list is shown is read again`() = runTest {
+        val (navigator, _) = recordNavigation()
+        val processor = processor(groupId = null, navigator)
+
+        processor.testWithInternalState(this) {
+            // Listening, as while the screen is shown
+            runOnCreate()
+            groups.add("travel", groups.rootId, "Travel")
+            changes.changed(DB)
+
+            assertEquals(listOf("Work", "Home", "Travel"), awaitInternalState().groups.map { it.name })
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
     private suspend fun TestScope.perform(
         groupId: String?,
         vararg actions: GroupListActions.() -> Unit,
@@ -895,6 +913,7 @@ class GroupListProcessorTest {
         filters,
         entrySettings,
         trash,
+        changes,
         navigator,
         log,
     )

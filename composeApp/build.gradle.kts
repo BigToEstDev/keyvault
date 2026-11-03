@@ -12,6 +12,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.corePres)
             implementation(projects.core.coreNav)
+            implementation(projects.core.corePane)
             // The data modules: the graph puts them together, nothing here calls them
             implementation(projects.core.coreData)
             implementation(projects.welcome.welcomeData)

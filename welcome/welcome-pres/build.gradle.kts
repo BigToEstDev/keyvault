@@ -8,6 +8,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.core.corePres)
             implementation(projects.core.coreNav)
+            implementation(projects.core.corePane)
             implementation(projects.welcome.welcomeDomain)
             // The sign-in settings: welcome listens through the domain of settings (pass-docs, Step 59)
             implementation(projects.settings.settingsDomain)
