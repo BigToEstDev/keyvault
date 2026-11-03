@@ -17,6 +17,7 @@ import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.changes.FakeVaultChanges
 import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
@@ -55,6 +56,7 @@ class EntryReadProcessorTest {
     private val log = RecordingLog()
     private val settings = FakeEntrySettingsRepository()
     private val trash = FakeTrashRepository()
+    private val changes = FakeVaultChanges()
 
     @Test
     fun `the group of the entry is shown with the path down to it`() = runTest {
@@ -315,6 +317,28 @@ class EntryReadProcessorTest {
         onFailure = { log.unexpected("AutoLock", it) },
     )
 
+    @Test
+    fun `a change made elsewhere while the entry is shown is read again`() = runTest {
+        val (navigator, _) = recordNavigation()
+        val editor = EntryEditor(entries, opener, settings, database)
+        val processor =
+            EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, trash, lock(), FakePhoneNumbers(), changes, navigator, log)
+
+        processor.testWithInternalState(this) {
+            // Listening, as while the screen is shown
+            runOnCreate()
+            val stored = entries.stored.getValue(mail)
+            entries.stored[mail] = stored.copy(
+                fields = stored.fields.map { if (it.key == StandardPreset.TITLE) it.copy(value = "Mail, renamed") else it },
+            )
+            changes.changed(DB)
+
+            val title = awaitInternalState().content?.presetFields?.first { it.key == StandardPreset.TITLE }?.value
+            assertEquals("Mail, renamed", title)
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(
         vararg actions: EntryReadActions.() -> Unit,
@@ -323,7 +347,7 @@ class EntryReadProcessorTest {
     ): Pair<EntryReadState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val editor = EntryEditor(entries, opener, settings, database)
-        val processor = EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, trash, autoLock, FakePhoneNumbers(), navigator, log)
+        val processor = EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, trash, autoLock, FakePhoneNumbers(), changes, navigator, log)
 
         processor.testWithInternalState(this, initial) {
             containerHost.runEach(actions)

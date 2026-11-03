@@ -10,6 +10,7 @@ import ru.kino.dev.core.Encryption
 import ru.kino.dev.core.KeyFile
 import ru.kino.dev.core.NativeCore
 import ru.kino.dev.core.readKeyFile
+import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.security.SecurityFailure
 import ru.kino.dev.vault.security.SecurityRepository
 import kotlin.time.Duration
@@ -21,16 +22,19 @@ import kotlin.time.Duration
 internal class SecurityRepositoryImpl(
     private val core: NativeCore,
     private val documents: DatabaseFiles,
+    private val changes: VaultChangesImpl,
 ) : SecurityRepository {
 
     override suspend fun read(dbKey: String): DatabaseSecurity = coreCall { core.databaseSecurity(dbKey) }
 
     override suspend fun changeEncryption(dbKey: String, encryption: Encryption) {
         coreCall { core.changeDatabaseEncryption(dbKey, encryption) }
+        changes.changed(dbKey)
     }
 
     override suspend fun changeCredentials(dbKey: String, change: CredentialsChange) {
         coreCall { core.changeDatabaseCredentials(dbKey, change) }
+        changes.changed(dbKey)
     }
 
     override suspend fun verifyPassword(dbKey: String, password: String): Boolean =

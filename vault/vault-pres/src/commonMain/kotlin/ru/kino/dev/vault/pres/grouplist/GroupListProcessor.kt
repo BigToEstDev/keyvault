@@ -15,6 +15,7 @@ import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.navigation.VaultRootRoute
+import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
 import ru.kino.dev.vault.entry.EntryFailure
@@ -32,6 +33,7 @@ import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.group.VaultTree
 import ru.kino.dev.vault.lock.AutoLock
+import ru.kino.dev.vault.pres.common.ChangeGate
 import ru.kino.dev.vault.pres.common.SEARCH_DELAY
 import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
@@ -48,7 +50,8 @@ import ru.kino.dev.vault.trash.deletesToBin
  *
  * The tree and the entries are read anew every time the screen is shown: a change made one level down, or
  * in an entry, has to show here on the way back. Changes go through [GroupEditor] and [EntryEditor] -
- * checked, made, written to the file - and everything is read again after each.
+ * checked, made, written to the file - and everything is read again after each. A change made elsewhere while the
+ * screen is shown - by the entry beside it, in a container - is read again too ([ChangeGate], pass-docs, Step 98).
  *
  * Typing into the search field searches this group and everything below it once the typing stops for
  * [SEARCH_DELAY]; an empty field is the group again. The search lives while the screen stays put: going
@@ -73,11 +76,17 @@ class GroupListProcessor(
     private val filters: VaultFilterRepository,
     private val entrySettings: EntrySettingsRepository,
     private val trash: TrashRepository,
+    private val changes: VaultChanges,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<GroupListState, GroupListState, Nothing>, GroupListActions {
 
-    override val container = orbitContainer<GroupListState, Nothing>(GroupListState(isRoot = groupId == null))
+    private val gate = ChangeGate(changes, dbKey)
+
+    override val container = orbitContainer<GroupListState, Nothing>(GroupListState(isRoot = groupId == null)) {
+        // While the screen is shown: a change made beside it is read again
+        repeatOnSubscription { gate.elsewhere.collect { load() } }
+    }
 
     /** The search waiting for the typing to stop, or for its answer; the next letter cancels it. */
     private var searchJob: Job? = null
@@ -253,6 +262,7 @@ class GroupListProcessor(
     }
 
     private suspend fun Syntax<GroupListState, Nothing>.load() {
+        gate.reading()
         val filter = filters.filter.first()
         val tree = try {
             groups.tree(dbKey)
@@ -387,20 +397,23 @@ class GroupListProcessor(
         val current = state.path.lastOrNull()?.id ?: return
 
         reduce { state.copy(dialog = dialog.underWay()) }
-        try {
-            when (dialog) {
-                is GroupDialog.Create -> editor.create(dbKey, current, dialog.name)
-                is GroupDialog.Rename -> editor.rename(dbKey, dialog.groupId, dialog.name)
-                is GroupDialog.Delete -> editor.delete(dbKey, dialog.groupId)
-                is GroupDialog.DeleteEntry -> entryEditor.delete(dbKey, dialog.entryId)
+        // Its own change: read again, or gone to the parent, here - not by the change as well
+        gate.own {
+            try {
+                when (dialog) {
+                    is GroupDialog.Create -> editor.create(dbKey, current, dialog.name)
+                    is GroupDialog.Rename -> editor.rename(dbKey, dialog.groupId, dialog.name)
+                    is GroupDialog.Delete -> editor.delete(dbKey, dialog.groupId)
+                    is GroupDialog.DeleteEntry -> entryEditor.delete(dbKey, dialog.entryId)
+                }
+                reduce { state.copy(dialog = null) }
+                // This group is in the recycle bin now: nothing to show here, the screen goes to its parent
+                if (dialog.isDeleting(current)) openCrumb(state.path.lastIndex - 1) else load()
+            } catch (failure: GroupFailure) {
+                failed(failure)
+            } catch (failure: EntryFailure) {
+                failed(failure)
             }
-            reduce { state.copy(dialog = null) }
-            // This group is in the recycle bin now: nothing to show here, the screen goes to its parent
-            if (dialog.isDeleting(current)) openCrumb(state.path.lastIndex - 1) else load()
-        } catch (failure: GroupFailure) {
-            failed(failure)
-        } catch (failure: EntryFailure) {
-            failed(failure)
         }
     }
 

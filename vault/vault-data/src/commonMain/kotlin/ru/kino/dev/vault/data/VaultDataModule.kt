@@ -12,7 +12,9 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.storage.AppDataDir
 import ru.kino.dev.storage.preferencesStore
 import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.credentials.DatabaseCredentials
+import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.data.credentials.DatabaseCredentialsImpl
 import ru.kino.dev.vault.data.entries.EntrySettingsRepositoryImpl
 import ru.kino.dev.vault.data.entry.EntryRepositoryImpl
@@ -48,6 +50,8 @@ private const val VAULT_FILTER_STORE = "vault_filter"
 
 /** Binds the repositories of `vault` to their implementations, and builds its use cases and its lock. */
 val vaultDataModule = module {
+    // One for the app: the repositories move the versions, the screens listen (pass-docs, Step 98)
+    singleOf(::VaultChangesImpl) { bind<VaultChanges>() }
     singleOf(::VaultDatabaseRepositoryImpl) { bind<VaultDatabaseRepository>() }
     singleOf(::GroupRepositoryImpl) { bind<GroupRepository>() }
     singleOf(::EntryRepositoryImpl) { bind<EntryRepository>() }

@@ -27,7 +27,7 @@ val vaultPresModule = module {
         GroupListProcessor(
             dbKey = args.dbKey,
             groupId = args.groupId,
-            get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
             navigator = navigator,
             log = get(),
         )
@@ -36,7 +36,7 @@ val vaultPresModule = module {
         EntryReadProcessor(
             dbKey = args.dbKey,
             entryId = args.entryId,
-            get(), get(), get(), get(), get(), get(), get(),
+            get(), get(), get(), get(), get(), get(), get(), get(),
             navigator = navigator,
             log = get(),
         )

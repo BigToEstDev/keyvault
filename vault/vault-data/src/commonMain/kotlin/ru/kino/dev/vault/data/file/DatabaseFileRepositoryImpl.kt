@@ -4,6 +4,7 @@ import ru.kino.dev.core.Compression
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.DatabaseFiles
 import ru.kino.dev.core.NativeCore
+import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.file.DatabaseFileFailure
 import ru.kino.dev.vault.file.DatabaseFileInfo
 import ru.kino.dev.vault.file.DatabaseFileRepository
@@ -16,6 +17,7 @@ import ru.kino.dev.vault.file.DatabaseFileRepository
 internal class DatabaseFileRepositoryImpl(
     private val core: NativeCore,
     private val documents: DatabaseFiles,
+    private val changes: VaultChangesImpl,
 ) : DatabaseFileRepository {
 
     override suspend fun read(dbKey: String): DatabaseFileInfo {
@@ -30,6 +32,7 @@ internal class DatabaseFileRepositoryImpl(
 
     override suspend fun change(dbKey: String, name: String, compression: Compression) {
         coreCall { core.changeDatabaseFile(dbKey, name, compression) }
+        changes.changed(dbKey)
     }
 
     private inline fun <T> coreCall(block: () -> T): T = try {

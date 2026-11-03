@@ -12,6 +12,7 @@ import ru.kino.dev.core.FakeNativeCore
 import ru.kino.dev.core.GroupNode
 import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.trash.TrashFailure
@@ -19,7 +20,8 @@ import ru.kino.dev.vault.trash.TrashFailure
 class TrashRepositoryImplTest {
 
     private val core = FakeNativeCore()
-    private val repository = TrashRepositoryImpl(core)
+    private val changes = VaultChangesImpl()
+    private val repository = TrashRepositoryImpl(core, changes)
 
     init {
         core.groupTrees[DB] = GroupTree(
