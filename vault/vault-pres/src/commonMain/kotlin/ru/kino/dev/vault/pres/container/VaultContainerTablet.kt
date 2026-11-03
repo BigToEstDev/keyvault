@@ -26,14 +26,16 @@ import ru.kino.dev.ui.components.ClosableTabs
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.pres.entryedit.EntryEditScreen
+import ru.kino.dev.vault.pres.entryhistory.EntryHistoryScreen
 import ru.kino.dev.vault.pres.entryread.EntryReadScreen
+import ru.kino.dev.vault.pres.entryversion.EntryVersionScreen
 import ru.kino.dev.vault.pres.grouplist.GroupListScreen
 
 /**
  * The container on the gradient of the whole window: cards, the screens on them with no backdrop of their own
  * (pass-docs, Step 99). On the left - the card of `vault`, the list of the group, always there and always as wide. On
  * the right, only while an entry is open - two cards, one over the other: the entries open, as tabs, and the one shown
- * (item 5) - read, or its form (Step 98, item 6); none open - the gradient. The screens are the phone's, each in a pane
+ * (item 5) - read, or a page over it: its form, history, a version (Step 98, items 6, 7); none open - the gradient. The screens are the phone's, each in a pane
  * of its own ([panes]).
  */
 @Composable
@@ -65,21 +67,21 @@ internal fun VaultContainerActions.VaultContainerTablet(dbKey: String, state: Va
     }
 }
 
-/** The page of [tab] - in its place, one at a time (pass-docs, Step 98, item 6); no "back" of its own: the cross is. */
+/** The page of [tab] - in its place, one at a time (pass-docs, Step 98, items 6, 7); no "back" of its own: the cross is. */
 @Composable
 private fun VaultContainerActions.TabPage(dbKey: String, tab: EntryTab, panes: PaneHost) {
     when (tab) {
-        is EntryTab.Entry -> if (tab.editing) {
-            panes.Pane(key = tab.pane, router = formRouter(tab.key)) {
-                EntryEditScreen(dbKey = dbKey, groupId = null, entryId = tab.entryId, canGoBack = false)
-            }
-        } else {
-            panes.Pane(key = tab.pane, router = readRouter(tab.entryId)) {
-                EntryReadScreen(dbKey = dbKey, entryId = tab.entryId, canGoBack = false)
+        is EntryTab.Entry -> panes.Pane(key = tab.pane, router = entryRouter(tab.entryId, tab.top)) {
+            when (val page = tab.top) {
+                null -> EntryReadScreen(dbKey = dbKey, entryId = tab.entryId, canGoBack = false)
+                EntryPage.Edit -> EntryEditScreen(dbKey = dbKey, groupId = null, entryId = tab.entryId, canGoBack = false)
+                EntryPage.History -> EntryHistoryScreen(dbKey = dbKey, entryId = tab.entryId, canGoBack = false)
+                is EntryPage.Version ->
+                    EntryVersionScreen(dbKey = dbKey, entryId = tab.entryId, index = page.index, canGoBack = false)
             }
         }
 
-        is EntryTab.New -> panes.Pane(key = tab.pane, router = formRouter(tab.key)) {
+        is EntryTab.New -> panes.Pane(key = tab.pane, router = newRouter(tab.key)) {
             EntryEditScreen(dbKey = dbKey, groupId = tab.groupId, entryId = null, canGoBack = false)
         }
     }

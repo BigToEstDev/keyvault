@@ -19,6 +19,7 @@ import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
+import ru.kino.dev.vault.pres.navigation.EntryVersionRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
@@ -149,7 +150,7 @@ class VaultContainerProcessorTest {
 
     @Test
     fun `back from the form of a new entry - saved or left - closes its tab`() = runTest {
-        val state = perform(open("mail"), create("work"), fromForm(newTab(1), MviNavEvent.NavigateBack))
+        val state = perform(open("mail"), create("work"), fromNew(newTab(1), MviNavEvent.NavigateBack))
 
         assertEquals(listOf("mail"), state.tabs.keys)
         assertEquals("mail", state.active)
@@ -160,7 +161,7 @@ class VaultContainerProcessorTest {
     fun `edit in an entry read turns its tab to the form, in its place`() = runTest {
         val state = perform(open("mail"), open("bank"), fromEntry("mail", MviNavEvent.NavigateTo(EntryEditRoute(DB, "mail"))))
 
-        assertEquals(listOf(EntryTab.Entry("mail", "Mail", editing = true), EntryTab.Entry("bank", "Bank")), state.tabs)
+        assertEquals(listOf(EntryTab.Entry("mail", "Mail", pages = listOf(EntryPage.Edit)), EntryTab.Entry("bank", "Bank")), state.tabs)
         assertEquals(true, taken.last())
     }
 
@@ -189,14 +190,14 @@ class VaultContainerProcessorTest {
         val state = perform(open("mail"), edit("mail"), fromForm("mail", MviNavEvent.NavigateTo(PresetEditRoute())))
 
         assertEquals(false, taken.last())
-        assertEquals(listOf(EntryTab.Entry("mail", "Mail", editing = true)), state.tabs)
+        assertEquals(listOf(EntryTab.Entry("mail", "Mail", pages = listOf(EntryPage.Edit))), state.tabs)
     }
 
     @Test
     fun `back of the reading of an entry on its form already leaves the tab as it is`() = runTest {
         val state = perform(open("mail"), edit("mail"), fromEntry("mail", MviNavEvent.NavigateBack))
 
-        assertEquals(listOf(EntryTab.Entry("mail", "Mail", editing = true)), state.tabs)
+        assertEquals(listOf(EntryTab.Entry("mail", "Mail", pages = listOf(EntryPage.Edit))), state.tabs)
         assertEquals(true, taken.last())
     }
 
@@ -249,7 +250,7 @@ class VaultContainerProcessorTest {
 
     @Test
     fun `the cross of the form of an entry is the back of the form`() = runTest {
-        val editing = VaultContainerState(tabs = listOf(EntryTab.Entry("mail", "Mail", editing = true)), active = "mail")
+        val editing = VaultContainerState(tabs = listOf(EntryTab.Entry("mail", "Mail", pages = listOf(EntryPage.Edit))), active = "mail")
 
         processor().testWithInternalState(this, editing) {
             containerHost.onCloseTab("mail")
@@ -278,11 +279,90 @@ class VaultContainerProcessorTest {
     }
 
     @Test
-    fun `the rest an entry goes to is the app's - its history`() = runTest {
-        val state = perform(open("mail"), fromEntry("mail", MviNavEvent.NavigateTo(EntryHistoryRoute(DB, "mail"))))
+    fun `history in an entry read opens over its reading, in its tab`() = runTest {
+        val state = perform(open("mail"), history("mail"))
 
-        assertEquals(listOf(true, false), taken)
-        assertEquals(listOf("mail"), state.tabs.keys)
+        assertEquals(listOf(EntryTab.Entry("mail", "Mail", pages = listOf(EntryPage.History))), state.tabs)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `a version opened in the history opens over it`() = runTest {
+        val state = perform(open("mail"), history("mail"), version("mail", 2))
+
+        assertEquals(listOf(EntryPage.History, EntryPage.Version(2)), (state.tabs.single() as EntryTab.Entry).pages)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `back from a version - the history`() = runTest {
+        val state = perform(
+            open("mail"),
+            history("mail"),
+            version("mail", 2),
+            fromPage("mail", EntryPage.Version(2), MviNavEvent.NavigateBack),
+        )
+
+        assertEquals(listOf(EntryPage.History), (state.tabs.single() as EntryTab.Entry).pages)
+    }
+
+    @Test
+    fun `back from the history - the entry read`() = runTest {
+        val state = perform(open("mail"), history("mail"), fromPage("mail", EntryPage.History, MviNavEvent.NavigateBack))
+
+        assertEquals(listOf(EntryTab.Entry("mail", "Mail")), state.tabs)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `a version restored - the entry read, past the history`() = runTest {
+        val restored = MviNavEvent.NavigateBackTo(EntryReadRoute(DB, "mail"), orBack = true)
+
+        val state = perform(open("mail"), history("mail"), version("mail", 2), fromPage("mail", EntryPage.Version(2), restored))
+
+        assertEquals(listOf(EntryTab.Entry("mail", "Mail")), state.tabs)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `back of a page not shown any more leaves the tab as it is`() = runTest {
+        val state = perform(
+            open("mail"),
+            history("mail"),
+            version("mail", 2),
+            fromPage("mail", EntryPage.History, MviNavEvent.NavigateBack),
+        )
+
+        assertEquals(listOf(EntryPage.History, EntryPage.Version(2)), (state.tabs.single() as EntryTab.Entry).pages)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `the cross of a version is its back`() = runTest {
+        val version = EntryTab.Entry("mail", "Mail", pages = listOf(EntryPage.History, EntryPage.Version(2)))
+
+        processor().testWithInternalState(this, VaultContainerState(tabs = listOf(version), active = "mail")) {
+            containerHost.onCloseTab("mail")
+
+            expectSideEffect(VaultContainerSideEffect.PaneBack(versionPane("mail", 2)))
+        }
+    }
+
+    @Test
+    fun `the rest a page of an entry goes to is the app's - the settings`() = runTest {
+        perform(open("mail"), history("mail"), fromPage("mail", EntryPage.History, MviNavEvent.NavigateTo(SettingsRoute(DB))))
+
+        assertEquals(false, taken.last())
+    }
+
+    @Test
+    fun `an entry on its history keeps its reading too`() = runTest {
+        val state = perform(open("mail"), history("mail"), version("mail", 2))
+
+        assertEquals(
+            setOf(groupPane(null), entryPane("mail"), historyPane("mail"), versionPane("mail", 2)),
+            state.paneKeys,
+        )
     }
 
     @Test
@@ -332,10 +412,20 @@ class VaultContainerProcessorTest {
         { taken += listRouter.route(event) }
 
     private fun fromEntry(entryId: String, event: MviNavEvent): VaultContainerProcessor.() -> Unit =
-        { taken += readRouter(entryId).route(event) }
+        { taken += entryRouter(entryId, page = null).route(event) }
 
-    private fun fromForm(key: String, event: MviNavEvent): VaultContainerProcessor.() -> Unit =
-        { taken += formRouter(key).route(event) }
+    private fun fromForm(entryId: String, event: MviNavEvent) = fromPage(entryId, EntryPage.Edit, event)
+
+    private fun fromPage(entryId: String, page: EntryPage, event: MviNavEvent): VaultContainerProcessor.() -> Unit =
+        { taken += entryRouter(entryId, page).route(event) }
+
+    private fun fromNew(key: String, event: MviNavEvent): VaultContainerProcessor.() -> Unit =
+        { taken += newRouter(key).route(event) }
+
+    private fun history(entryId: String) = fromEntry(entryId, MviNavEvent.NavigateTo(EntryHistoryRoute(DB, entryId)))
+
+    private fun version(entryId: String, index: Int) =
+        fromPage(entryId, EntryPage.History, MviNavEvent.NavigateTo(EntryVersionRoute(DB, entryId, index)))
 
     /** Runs [actions] one after another on a new processor; the state they end in. */
     private suspend fun TestScope.perform(vararg actions: VaultContainerProcessor.() -> Unit): VaultContainerState {

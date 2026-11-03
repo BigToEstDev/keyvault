@@ -16,17 +16,20 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.pres.common.ChangeGate
 import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
+import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
+import ru.kino.dev.vault.pres.navigation.EntryVersionRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
 
 /**
  * The container of `vault` on a wide window: the list of a group on the left, the entries open on the right as tabs
  * (pass-docs, Step 98, `docs/dev/navigation.md`). The screens in it are those of a phone, each with its own
- * processor; what they navigate to that is the container's - another group, an entry, its form, back - comes here
- * through [listRouter], [readRouter] and [formRouter], the rest goes on to the navigation of the app.
+ * processor; what they navigate to that is the container's - another group, an entry, its pages, back - comes here
+ * through [listRouter], [entryRouter] and [newRouter], the rest goes on to the navigation of the app.
  *
- * A tab is one page at a time (item 6): the entry read, or its form - in its place, not over the window; a new entry is
- * made in a tab of its own. The cross of a tab is its "back": a form with changes asks first, as on a phone.
+ * A tab is one page at a time (items 6, 7): the entry read, or a page over it - its form, history, a version - in its
+ * place, not over the window; a new entry is made in a tab of its own. The cross of a tab is its "back": a form with
+ * changes asks first, as on a phone.
  *
  * A router answers at once, from the kind of the event; the state changes after, in an intent.
  *
@@ -95,48 +98,38 @@ class VaultContainerProcessor(
     }
 
     /**
-     * Its tab closed already - by its cross, while the entry was being deleted - "back" is still the container's; the
-     * tab on the form by now - the reading has nothing to close.
+     * What a page of an entry goes to, as on a phone a screen does (item 7): its form, history, a version - over it;
+     * "back" - the page under it, from the reading - the tab closed; back to the reading - a version restored; past it -
+     * the entry deleted on its form, the tab closed.
+     *
+     * Only from the page shown: one under it by now - its tab closed by its cross, a page over it - nothing changes,
+     * and the event is still the container's - it does not leave `vault`.
      */
-    override fun readRouter(entryId: String) = PaneRouter { event ->
-        when {
-            event == MviNavEvent.NavigateBack -> {
-                intent { reduce { if (state.entry(entryId)?.editing == true) state else state.closed(entryId) } }
-                true
+    override fun entryRouter(entryId: String, page: EntryPage?) = PaneRouter { event ->
+        val change: (VaultContainerState.() -> VaultContainerState)? = when {
+            event == MviNavEvent.NavigateBack ->
+                if (page == null) { { closed(entryId) } } else { { withPages(entryId) { it.dropLast(1) } } }
+
+            event is MviNavEvent.NavigateTo -> when (val route = event.route) {
+                is EntryEditRoute -> { { withPages(entryId) { it + EntryPage.Edit } } }
+                is EntryHistoryRoute -> { { withPages(entryId) { it + EntryPage.History } } }
+                is EntryVersionRoute -> { { withPages(entryId) { it + EntryPage.Version(route.index) } } }
+                else -> null
             }
 
-            event is MviNavEvent.NavigateTo && event.route is EntryEditRoute -> {
-                intent { reduce { state.editing(entryId, editing = true) } }
-                true
-            }
+            event is MviNavEvent.NavigateBackTo && event.popUpTo is EntryReadRoute ->
+                if (event.inclusive) { { closed(entryId) } } else { { withPages(entryId) { emptyList() } } }
 
-            else -> false
+            else -> null
         }
+        if (change != null) intent { reduce { if (state.entry(entryId)?.top == page) state.change() else state } }
+        change != null
     }
 
-    /** Saved or left: an entry is read again, a new one - its tab closed (it is in the list now); deleted - closed. */
-    override fun formRouter(key: String) = PaneRouter { event ->
-        when {
-            event == MviNavEvent.NavigateBack -> {
-                intent {
-                    reduce {
-                        when (state.tabs.firstOrNull { it.key == key }) {
-                            is EntryTab.Entry -> state.editing(key, editing = false)
-                            is EntryTab.New -> state.closed(key)
-                            null -> state
-                        }
-                    }
-                }
-                true
-            }
-
-            event is MviNavEvent.NavigateBackTo && event.popUpTo is EntryReadRoute -> {
-                intent { reduce { state.closed(key) } }
-                true
-            }
-
-            else -> false
-        }
+    /** Saved or left: its tab closed - the entry is in the list now. */
+    override fun newRouter(key: String) = PaneRouter { event ->
+        if (event == MviNavEvent.NavigateBack) intent { reduce { state.closed(key) } }
+        event == MviNavEvent.NavigateBack
     }
 
     override fun onSelectTab(key: String) {
@@ -146,7 +139,7 @@ class VaultContainerProcessor(
     override fun onCloseTab(key: String) {
         intent {
             val tab = state.tabs.firstOrNull { it.key == key } ?: return@intent
-            if (tab is EntryTab.Entry && !tab.editing) {
+            if (tab is EntryTab.Entry && tab.top == null) {
                 // Reading asks nothing before leaving
                 reduce { state.closed(key) }
             } else {
@@ -188,8 +181,8 @@ class VaultContainerProcessor(
     private fun VaultContainerState.withEntry(entryId: String, change: (EntryTab.Entry) -> EntryTab.Entry) =
         copy(tabs = tabs.map { if (it is EntryTab.Entry && it.entryId == entryId) change(it) else it })
 
-    private fun VaultContainerState.editing(entryId: String, editing: Boolean) =
-        withEntry(entryId) { it.copy(editing = editing) }
+    private fun VaultContainerState.withPages(entryId: String, change: (List<EntryPage>) -> List<EntryPage>) =
+        withEntry(entryId) { it.copy(pages = change(it.pages)) }
 
     /** The tab [key] gone; shown instead - the next one, else the one before. */
     private fun VaultContainerState.closed(key: String): VaultContainerState {
