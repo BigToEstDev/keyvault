@@ -33,6 +33,7 @@ import ru.kino.dev.ui.components.BackHandler
 import ru.kino.dev.ui.components.Dropdown
 import ru.kino.dev.ui.components.FieldSection
 import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.components.PaneCloseHandler
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.PhoneField
 import ru.kino.dev.ui.components.PickerField
@@ -76,6 +77,8 @@ internal fun EntryEditScreen(
 
     // The system "back" asks as the one in the top bar does
     BackHandler(onBack = processor::onBack)
+    // The cross of its tab in a container: changes - it asks, as on "back"
+    PaneCloseHandler(onClose = processor::onClose)
 
     // Back from the screen of a new preset: the form picks it
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onResumed() }

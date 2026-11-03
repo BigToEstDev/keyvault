@@ -39,6 +39,7 @@ import ru.kino.dev.vault.pres.common.GroupChoice
 import ru.kino.dev.vault.pres.common.groupChoices
 import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.common.toggled
+import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.trash.TrashRepository
 import ru.kino.dev.vault.trash.deletesToBin
@@ -257,8 +258,18 @@ class EntryEditProcessor(
         intent {
             when {
                 state.saving -> Unit
-                state.content != null && state.changed -> reduce { state.copy(dialog = EntryEditDialog.Leave) }
+                state.content != null && state.changed -> reduce { state.copy(dialog = EntryEditDialog.Leave()) }
                 else -> leave()
+            }
+        }
+    }
+
+    override fun onClose() {
+        intent {
+            when {
+                state.saving -> Unit
+                state.content != null && state.changed -> reduce { state.copy(dialog = EntryEditDialog.Leave(closing = true)) }
+                else -> close()
             }
         }
     }
@@ -287,14 +298,14 @@ class EntryEditProcessor(
         reduce { state.copy(dialog = dialog.copy(deleting = true)) }
         try {
             editor.delete(dbKey, EntryId(id))
-            leaveDeleted(id)
+            leavePastReading(id)
         } catch (failure: EntryFailure) {
             when (failure) {
                 // In the recycle bin, but not in the file: the error is shown here (pass-docs, Step 50, item 2)
                 is EntryFailure.NotSaved -> reduce { state.copy(dialog = null, message = EntryEditMessage.NotSaved) }
 
                 // Gone already - deleted or merged away
-                is EntryFailure.EntryNotFound -> leaveDeleted(id)
+                is EntryFailure.EntryNotFound -> leavePastReading(id)
 
                 // Not what deleting an entry throws
                 is EntryFailure.InvalidFields, is EntryFailure.GroupNotFound, is EntryFailure.Unexpected -> {
@@ -410,7 +421,9 @@ class EntryEditProcessor(
                 save(dropHidden = true)
             }
 
-            EntryEditDialog.Leave, EntryEditDialog.NotSaved -> leave()
+            is EntryEditDialog.Leave -> if (dialog.closing) close() else leave()
+
+            EntryEditDialog.NotSaved -> leave()
 
             is EntryEditDialog.Delete -> delete(dialog)
         }
@@ -451,11 +464,12 @@ class EntryEditProcessor(
         reduce { state.copy(saving = true, problems = emptyList()) }
         try {
             if (entryId == null) {
-                editor.create(dbKey, group, content)
+                val created = editor.create(dbKey, group, content)
+                openCreated(created)
             } else {
                 editor.update(dbKey, EntryId(entryId), content, group)
+                leave()
             }
-            leave()
         } catch (failure: EntryFailure) {
             failed(failure)
         }
@@ -481,6 +495,15 @@ class EntryEditProcessor(
 
     private suspend fun leave() {
         navigator.navigate(MviNavEvent.NavigateBack)
+    }
+
+    /**
+     * The entry [created] made: its reading in place of the form - "back" from it goes to the list (pass-docs, Step 98,
+     * item 9); in a container its tab reads it.
+     */
+    private suspend fun openCreated(created: EntryId) {
+        val form = EntryCreateRoute(dbKey, requireNotNull(groupId))
+        navigator.navigate(MviNavEvent.NavigateTo(EntryReadRoute(dbKey, created.value), popUpTo = form, inclusive = true))
     }
 
     /**
@@ -514,10 +537,18 @@ class EntryEditProcessor(
     }
 
     /**
-     * The entry [id] deleted: back to the list it was opened from - past its reading too, when the form was
-     * opened from it, so that screen does not flash on the way (pass-docs, Step 50, item 2).
+     * The form closed - the cross of its tab in a container (pass-docs, Step 98, item 8): an entry - past its reading,
+     * the tab closes; a new one - back, its tab closes too.
      */
-    private suspend fun leaveDeleted(id: String) {
+    private suspend fun close() {
+        if (entryId == null) leave() else leavePastReading(entryId)
+    }
+
+    /**
+     * Back to the list it was opened from - past the reading of the entry [id] too, when the form was opened from it,
+     * so that screen does not flash on the way: the entry deleted (pass-docs, Step 50, item 2), the form closed.
+     */
+    private suspend fun leavePastReading(id: String) {
         navigator.navigate(MviNavEvent.NavigateBackTo(EntryReadRoute(dbKey, id), inclusive = true, orBack = true))
     }
 

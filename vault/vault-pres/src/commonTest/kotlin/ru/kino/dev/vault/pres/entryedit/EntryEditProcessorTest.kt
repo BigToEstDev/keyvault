@@ -36,6 +36,7 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.common.GroupChoice
+import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.testing.DB
 import ru.kino.dev.vault.pres.testing.RecordingLog
@@ -117,7 +118,7 @@ class EntryEditProcessorTest {
     fun `leaving with another group asks first`() = runTest {
         val (state, events) = editing({ onGroupChosen(work) }, { onBack() })
 
-        assertEquals(EntryEditDialog.Leave, state.dialog)
+        assertEquals(EntryEditDialog.Leave(), state.dialog)
         assertTrue(events.isEmpty())
     }
 
@@ -133,14 +134,16 @@ class EntryEditProcessorTest {
     }
 
     @Test
-    fun `a filled new entry is created in its group, written, and the screen closes`() = runTest {
+    fun `a filled new entry is created in its group, written, and read in place of the form`() = runTest {
         val (state, events) = creating(*filled(), { onSave() })
 
         val created = entries.stored.values.last()
         assertEquals(group, created.groupId)
         assertEquals("Bank", created.fields.single { it.key == StandardPreset.TITLE }.value)
         assertEquals(listOf("save"), database.calls)
-        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+        val id = entries.stored.keys.last().value
+        val read = MviNavEvent.NavigateTo(EntryReadRoute(DB, id), popUpTo = EntryCreateRoute(DB, group.value), inclusive = true)
+        assertEquals(listOf(read), events)
         assertTrue(state.problems.isEmpty())
     }
 
@@ -230,7 +233,7 @@ class EntryEditProcessorTest {
     fun `back from a changed form asks first`() = runTest {
         val (state, events) = creating(typed(), { onBack() })
 
-        assertEquals(EntryEditDialog.Leave, state.dialog)
+        assertEquals(EntryEditDialog.Leave(), state.dialog)
         assertTrue(events.isEmpty())
     }
 
@@ -241,6 +244,45 @@ class EntryEditProcessorTest {
         assertNull(state.dialog)
         assertTrue(state.changed)
         assertTrue(events.isEmpty())
+    }
+
+    // Closed - the cross of its tab in a container (pass-docs, Step 98, item 8)
+
+    @Test
+    fun `an untouched form of an entry closed goes past its reading`() = runTest {
+        val (_, events) = editing({ onClose() })
+
+        assertEquals(listOf(MviNavEvent.NavigateBackTo(EntryReadRoute(DB, mail.value), inclusive = true, orBack = true)), events)
+    }
+
+    @Test
+    fun `a changed form closed asks first, as back does - the question knows it closes`() = runTest {
+        val (state, events) = editing(typed(), { onClose() })
+
+        assertEquals(EntryEditDialog.Leave(closing = true), state.dialog)
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `leave on the question of closing goes past the reading`() = runTest {
+        val (_, events) = editing(typed(), { onClose() }, { onDialogConfirm() })
+
+        assertEquals(listOf(MviNavEvent.NavigateBackTo(EntryReadRoute(DB, mail.value), inclusive = true, orBack = true)), events)
+    }
+
+    @Test
+    fun `stay on the question of closing keeps the form, and back after it is back again`() = runTest {
+        val (state, events) = editing(typed(), { onClose() }, { onDialogDismiss() }, { onBack() })
+
+        assertEquals(EntryEditDialog.Leave(), state.dialog)
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `an untouched new entry closed goes back`() = runTest {
+        val (_, events) = creating({ onClose() })
+
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
     }
 
     @Test

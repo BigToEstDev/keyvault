@@ -11,8 +11,11 @@ import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.channels.Channel
 import ru.kino.dev.navigation.LocalNavigator
+import ru.kino.dev.ui.components.LocalPaneClose
 import ru.kino.dev.ui.components.LocalScreenBackdrop
+import ru.kino.dev.ui.components.PaneClose
 
 /**
  * The panes of one container: each with its own processors ([PaneStores]) and its own saved state. Made by
@@ -23,6 +26,8 @@ class PaneHost internal constructor(
     private val stores: PaneStores,
     private val saveable: SaveableStateHolder,
 ) {
+
+    private val closes = mutableMapOf<String, PaneCloseSlot>()
 
     /**
      * A pane: [content] - a screen as it is, its processor in the pane's store, its navigation through [router]
@@ -35,19 +40,40 @@ class PaneHost internal constructor(
         val currentRouter by rememberUpdatedState(router)
         val navigator = remember(key, parent) { PaneNavigator(parent) { currentRouter.route(it) } }
         val owner = remember(key) { stores.owner(key) }
+        val close = remember(key) { closes.getOrPut(key, ::PaneCloseSlot) }
         saveable.SaveableStateProvider(key) {
             CompositionLocalProvider(
                 LocalViewModelStoreOwner provides owner,
                 LocalNavigator provides navigator,
                 LocalScreenBackdrop provides false,
+                LocalPaneClose provides close.handlers,
                 content = content,
             )
+            // After the screen has registered its handler: asked before the pane was drawn, it is done now
+            LaunchedEffect(close) {
+                for (request in close.requests) close.handlers.close()
+            }
         }
+    }
+
+    /**
+     * Closing the pane [key] - asked of its screen ([ru.kino.dev.ui.components.PaneCloseHandler]), it goes away itself
+     * through its navigation (pass-docs, Step 98, item 8). The pane not drawn yet - done once it is.
+     */
+    fun close(key: String) {
+        closes.getOrPut(key, ::PaneCloseSlot).requests.trySend(Unit)
     }
 
     internal fun retain(keys: Set<String>) {
         stores.retain(keys).forEach(saveable::removeState)
+        closes.keys.retainAll(keys)
     }
+}
+
+/** Closing one pane: what its screen registered, and the requests of the container not done yet. */
+private class PaneCloseSlot {
+    val handlers = PaneClose()
+    val requests = Channel<Unit>(Channel.CONFLATED)
 }
 
 /**

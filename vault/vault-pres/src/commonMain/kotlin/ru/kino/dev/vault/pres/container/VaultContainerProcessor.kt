@@ -14,14 +14,22 @@ import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryOpener
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.pres.common.ChangeGate
+import ru.kino.dev.vault.pres.navigation.EntryCreateRoute
+import ru.kino.dev.vault.pres.navigation.EntryEditRoute
+import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
+import ru.kino.dev.vault.pres.navigation.EntryVersionRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
 
 /**
  * The container of `vault` on a wide window: the list of a group on the left, the entries open on the right as tabs
  * (pass-docs, Step 98, `docs/dev/navigation.md`). The screens in it are those of a phone, each with its own
- * processor; what they navigate to that is the container's - another group, an entry, back - comes here through
- * [listRouter] and [entryRouter], the rest goes on to the navigation of the app.
+ * processor; what they navigate to that is the container's - another group, an entry, its pages, back - comes here
+ * through [listRouter], [entryRouter] and [newRouter], the rest goes on to the navigation of the app.
+ *
+ * A tab is one page at a time (items 6, 7): the entry read, or a page over it - its form, history, a version - in its
+ * place, not over the window; a new entry is made in a tab of its own. The cross of a tab closes it, from any page
+ * (item 8); a form with changes asks first, as on "back".
  *
  * A router answers at once, from the kind of the event; the state changes after, in an intent.
  *
@@ -33,13 +41,18 @@ class VaultContainerProcessor(
     private val opener: EntryOpener,
     changes: VaultChanges,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<VaultContainerState, VaultContainerState, Nothing>, VaultContainerActions {
+) : ViewModel(),
+    OrbitContainerHost<VaultContainerState, VaultContainerState, VaultContainerSideEffect>,
+    VaultContainerActions {
 
     private val gate = ChangeGate(changes, dbKey)
 
-    override val container = orbitContainer<VaultContainerState, Nothing>(VaultContainerState()) {
+    /** The new entries made in the container so far - the tab of each its own key. */
+    private var made = 0
+
+    override val container = orbitContainer<VaultContainerState, VaultContainerSideEffect>(VaultContainerState()) {
         // While the container is shown: the titles of the tabs follow the entries
-        repeatOnSubscription { gate.elsewhere.collect { state.tabs.forEach { readTitle(it.entryId) } } }
+        repeatOnSubscription { gate.elsewhere.collect { state.entries.forEach { readTitle(it.entryId) } } }
     }
 
     override val listRouter = PaneRouter { event ->
@@ -51,6 +64,15 @@ class VaultContainerProcessor(
 
             event is MviNavEvent.NavigateTo && event.route is EntryReadRoute -> {
                 open((event.route as EntryReadRoute).entryId)
+                true
+            }
+
+            event is MviNavEvent.NavigateTo && event.route is EntryCreateRoute -> {
+                val groupId = (event.route as EntryCreateRoute).groupId
+                intent {
+                    val key = newTab(++made)
+                    reduce { state.copy(tabs = state.tabs + EntryTab.New(key, groupId), active = key) }
+                }
                 true
             }
 
@@ -75,11 +97,49 @@ class VaultContainerProcessor(
         }
     }
 
-    /** Its tab closed already - by its cross, while the entry was being deleted - "back" is still the container's. */
-    override fun entryRouter(entryId: String) = PaneRouter { event ->
-        when (event) {
-            MviNavEvent.NavigateBack -> {
-                intent { reduce { state.closed(entryId) } }
+    /**
+     * What a page of an entry goes to, as on a phone a screen does (item 7): its form, history, a version - over it;
+     * "back" - the page under it, from the reading - the tab closed; back to the reading - a version restored; past it -
+     * the entry deleted on its form, the tab closed.
+     *
+     * Only from the page shown: one under it by now - its tab closed by its cross, a page over it - nothing changes,
+     * and the event is still the container's - it does not leave `vault`.
+     */
+    override fun entryRouter(entryId: String, page: EntryPage?) = PaneRouter { event ->
+        val change: (VaultContainerState.() -> VaultContainerState)? = when {
+            event == MviNavEvent.NavigateBack ->
+                if (page == null) { { closed(entryId) } } else { { withPages(entryId) { it.dropLast(1) } } }
+
+            event is MviNavEvent.NavigateTo -> when (val route = event.route) {
+                is EntryEditRoute -> { { withPages(entryId) { it + EntryPage.Edit } } }
+                is EntryHistoryRoute -> { { withPages(entryId) { it + EntryPage.History } } }
+                is EntryVersionRoute -> { { withPages(entryId) { it + EntryPage.Version(route.index) } } }
+                else -> null
+            }
+
+            event is MviNavEvent.NavigateBackTo && event.popUpTo is EntryReadRoute ->
+                if (event.inclusive) { { closed(entryId) } } else { { withPages(entryId) { emptyList() } } }
+
+            else -> null
+        }
+        if (change != null) intent { reduce { if (state.entry(entryId)?.top == page) state.change() else state } }
+        change != null
+    }
+
+    /** Saved: the tab reads the entry made, in its place (item 9); left - closed. */
+    override fun newRouter(key: String) = PaneRouter { event ->
+        when {
+            event == MviNavEvent.NavigateBack -> {
+                intent { reduce { state.closed(key) } }
+                true
+            }
+
+            event is MviNavEvent.NavigateTo && event.route is EntryReadRoute -> {
+                val entryId = (event.route as EntryReadRoute).entryId
+                intent {
+                    reduce { state.created(key, entryId) }
+                    readTitle(entryId)
+                }
                 true
             }
 
@@ -87,12 +147,23 @@ class VaultContainerProcessor(
         }
     }
 
-    override fun onSelectTab(entryId: String) {
-        intent { reduce { if (state.tabs.any { it.entryId == entryId }) state.copy(active = entryId) else state } }
+    override fun onSelectTab(key: String) {
+        intent { reduce { if (state.tabs.any { it.key == key }) state.copy(active = key) else state } }
     }
 
-    override fun onCloseTab(entryId: String) {
-        intent { reduce { state.closed(entryId) } }
+    override fun onCloseTab(key: String) {
+        intent {
+            val tab = state.tabs.firstOrNull { it.key == key } ?: return@intent
+            val form = tab is EntryTab.New || (tab is EntryTab.Entry && tab.top == EntryPage.Edit)
+            if (form) {
+                // Shown, so it can ask; it goes away itself, through its router
+                reduce { state.copy(active = key) }
+                postSideEffect(VaultContainerSideEffect.ClosePane(tab.pane))
+            } else {
+                // The other pages ask nothing: the whole tab closes
+                reduce { state.closed(key) }
+            }
+        }
     }
 
     override fun onGroupUp() {
@@ -101,13 +172,13 @@ class VaultContainerProcessor(
 
     private fun open(entryId: String) {
         intent {
-            val open = state.tabs.any { it.entryId == entryId }
-            reduce { state.copy(tabs = if (open) state.tabs else state.tabs + EntryTab(entryId), active = entryId) }
+            val open = state.entry(entryId) != null
+            reduce { state.copy(tabs = if (open) state.tabs else state.tabs + EntryTab.Entry(entryId), active = entryId) }
             if (!open) readTitle(entryId)
         }
     }
 
-    private suspend fun Syntax<VaultContainerState, Nothing>.readTitle(entryId: String) {
+    private suspend fun Syntax<VaultContainerState, VaultContainerSideEffect>.readTitle(entryId: String) {
         gate.reading()
         val title = try {
             opener.open(dbKey, EntryId(entryId)).content.value(StandardPreset.TITLE)
@@ -116,15 +187,34 @@ class VaultContainerProcessor(
             if (failure !is EntryFailure.EntryNotFound) log.unexpected(TAG, failure)
             return
         }
-        reduce { state.copy(tabs = state.tabs.map { if (it.entryId == entryId) it.copy(title = title) else it }) }
+        reduce { state.withEntry(entryId) { it.copy(title = title) } }
     }
 
-    /** The tab of [entryId] gone; shown instead - the next one, else the one before. */
-    private fun VaultContainerState.closed(entryId: String): VaultContainerState {
-        val index = tabs.indexOfFirst { it.entryId == entryId }
+    private val VaultContainerState.entries: List<EntryTab.Entry> get() = tabs.filterIsInstance<EntryTab.Entry>()
+
+    private fun VaultContainerState.entry(entryId: String): EntryTab.Entry? = entries.firstOrNull { it.entryId == entryId }
+
+    private fun VaultContainerState.withEntry(entryId: String, change: (EntryTab.Entry) -> EntryTab.Entry) =
+        copy(tabs = tabs.map { if (it is EntryTab.Entry && it.entryId == entryId) change(it) else it })
+
+    private fun VaultContainerState.withPages(entryId: String, change: (List<EntryPage>) -> List<EntryPage>) =
+        withEntry(entryId) { it.copy(pages = change(it.pages)) }
+
+    /** The new entry of the tab [key] made - [entryId]: the tab reads it, in the same place; shown, if it was. */
+    private fun VaultContainerState.created(key: String, entryId: String): VaultContainerState {
+        if (tabs.none { it.key == key }) return this
+        return copy(
+            tabs = tabs.map { if (it.key == key) EntryTab.Entry(entryId) else it },
+            active = if (active == key) entryId else active,
+        )
+    }
+
+    /** The tab [key] gone; shown instead - the next one, else the one before. */
+    private fun VaultContainerState.closed(key: String): VaultContainerState {
+        val index = tabs.indexOfFirst { it.key == key }
         if (index < 0) return this
         val left = tabs - tabs[index]
-        val shown = if (active != entryId) active else left.getOrNull(index)?.entryId ?: left.lastOrNull()?.entryId
+        val shown = if (active != key) active else left.getOrNull(index)?.key ?: left.lastOrNull()?.key
         return copy(tabs = left, active = shown)
     }
 

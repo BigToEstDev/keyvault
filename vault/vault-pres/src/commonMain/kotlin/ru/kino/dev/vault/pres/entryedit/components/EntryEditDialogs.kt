@@ -104,7 +104,7 @@ internal fun EntryEditDialogs(
             onDismiss = onDismiss,
         )
 
-        EntryEditDialog.Leave -> ConfirmDialog(
+        is EntryEditDialog.Leave -> ConfirmDialog(
             title = stringResource(Res.string.entry_leave_title),
             text = stringResource(Res.string.entry_leave_text),
             confirmText = stringResource(Res.string.entry_leave_confirm),

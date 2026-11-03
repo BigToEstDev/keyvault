@@ -74,6 +74,9 @@ interface EntryEditActions {
     /** "Back" - in the top bar or the system one. */
     fun onBack()
 
+    /** The cross of the tab of the form in a container: as "back", but the tab closes (pass-docs, Step 98, item 8). */
+    fun onClose()
+
     /** "Delete" in the menu of the top bar - an entry that is there, not a new one: asks first. */
     fun onDelete()
 
