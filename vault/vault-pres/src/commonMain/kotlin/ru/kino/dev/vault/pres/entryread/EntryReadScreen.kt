@@ -40,10 +40,12 @@ import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.LockFab
 import ru.kino.dev.vault.pres.common.historyMenuItem
 
+/** @param canGoBack false - a pane of the container of a wide window: its tab closes it, not "back" (pass-docs, Step 98) */
 @Composable
 internal fun EntryReadScreen(
     dbKey: String,
     entryId: String,
+    canGoBack: Boolean = true,
     processor: EntryReadProcessor = koinProcessor(EntryReadArgs(dbKey = dbKey, entryId = entryId)),
 ) {
     val state by processor.collectAsState()
@@ -76,6 +78,7 @@ internal fun EntryReadScreen(
                 EntryTopBar(
                     title = title?.ifEmpty { stringResource(Res.string.entry_untitled) }.orEmpty(),
                     onBack = processor::onBack,
+                    back = canGoBack,
                     skeleton = skeleton,
                     // Once the entry is read: there is nothing to delete before
                     menu = if (state.content != null) {

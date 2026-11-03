@@ -19,6 +19,7 @@ import ru.kino.dev.settings.pres.privacy.PrivacyProcessor
 import ru.kino.dev.settings.pres.recyclebin.RecycleBinProcessor
 import ru.kino.dev.settings.pres.security.SecurityProcessor
 import ru.kino.dev.settings.pres.settings.SettingsProcessor
+import ru.kino.dev.vault.pres.container.VaultContainerProcessor
 import ru.kino.dev.vault.pres.entryedit.EntryEditProcessor
 import ru.kino.dev.vault.pres.entryhistory.EntryHistoryProcessor
 import ru.kino.dev.vault.pres.entryread.EntryReadProcessor
@@ -67,6 +68,7 @@ class AppGraphTest {
                 definition<MasterPasswordProcessor>(CreateDraft::class, Navigator::class),
                 definition<KeyFileBackupProcessor>(CreateDraft::class, Navigator::class),
                 definition<BiometricSetupProcessor>(String::class, CreateDraft::class, Navigator::class),
+                definition<VaultContainerProcessor>(String::class, Navigator::class),
                 definition<GroupListProcessor>(String::class, Navigator::class),
                 definition<EntryReadProcessor>(String::class, Navigator::class),
                 definition<EntryEditProcessor>(String::class, Navigator::class),

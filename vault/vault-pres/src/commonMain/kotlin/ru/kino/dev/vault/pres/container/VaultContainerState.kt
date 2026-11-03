@@ -20,8 +20,8 @@ data class VaultContainerState(
     val paneKeys: Set<String> = groups.map(::groupPane).toSet() + tabs.map { entryPane(it.entryId) }
 }
 
-/** An entry open on the right. */
-data class EntryTab(val entryId: String)
+/** An entry open on the right; [title] - null while it is read, empty - the entry has none. */
+data class EntryTab(val entryId: String, val title: String? = null)
 
 /** The key of the pane of the group [groupId] - null for the root. */
 fun groupPane(groupId: String?): String = "group:${groupId ?: "root"}"

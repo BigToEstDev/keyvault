@@ -44,11 +44,12 @@ internal fun EntryTopBar(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    back: Boolean = true,
     skeleton: Brush? = null,
     menu: List<MenuItem> = emptyList(),
     menuEnabled: Boolean = true,
 ) {
-    BackTopBar(title = title, onBack = onBack, modifier = modifier, skeleton = skeleton) {
+    BackTopBar(title = title, onBack = onBack, modifier = modifier, back = back, skeleton = skeleton) {
         if (menu.isNotEmpty()) {
             MoreMenuButton(
                 contentDescription = stringResource(Res.string.entry_menu),

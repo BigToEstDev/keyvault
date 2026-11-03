@@ -7,6 +7,8 @@ import androidx.navigation.toRoute
 import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.navigation.VaultGraph
 import ru.kino.dev.navigation.VaultRootRoute
+import ru.kino.dev.pane.adaptiveComposable
+import ru.kino.dev.vault.pres.container.VaultContainerScreen
 import ru.kino.dev.vault.pres.entryedit.EntryEditScreen
 import ru.kino.dev.vault.pres.entryhistory.EntryHistoryScreen
 import ru.kino.dev.vault.pres.entryread.EntryReadScreen
@@ -17,16 +19,18 @@ import ru.kino.dev.vault.pres.trashentry.TrashEntryScreen
 
 /**
  * The screens of `vault` - the database is open. Entered at its root, with its dbKey; every group below is
- * the same screen again, one place on the back stack per level.
+ * the same screen again, one place on the back stack per level. On a wide window the root is the container - the
+ * list with the entries open beside it; its groups and entries stay in it, not on the back stack (pass-docs, Step 98).
  *
  * @param nested the screens of other modules that belong to the open database - the settings: inside this
  * graph the lock pops them with `vault`, and `vault` does not depend on those modules (pass-docs, Step 52)
  */
 fun NavGraphBuilder.vaultGraph(nested: NavGraphBuilder.() -> Unit = {}) {
     navigation<VaultGraph>(startDestination = VaultRootRoute::class) {
-        composable<VaultRootRoute> { entry ->
-            GroupListScreen(dbKey = entry.toRoute<VaultRootRoute>().dbKey, groupId = null)
-        }
+        adaptiveComposable<VaultRootRoute>(
+            mobile = { entry -> GroupListScreen(dbKey = entry.toRoute<VaultRootRoute>().dbKey, groupId = null) },
+            tablet = { entry -> VaultContainerScreen(dbKey = entry.toRoute<VaultRootRoute>().dbKey) },
+        )
         composable<GroupRoute> { entry ->
             val route = entry.toRoute<GroupRoute>()
             GroupListScreen(dbKey = route.dbKey, groupId = route.groupId)

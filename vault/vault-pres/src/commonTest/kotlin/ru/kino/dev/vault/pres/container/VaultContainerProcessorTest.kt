@@ -3,14 +3,23 @@ package ru.kino.dev.vault.pres.container
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
+import ru.kino.dev.core.preset.FakePresetRepository
+import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.navigation.VaultRootRoute
+import ru.kino.dev.vault.changes.FakeVaultChanges
+import ru.kino.dev.vault.entry.EntryField
+import ru.kino.dev.vault.entry.EntryOpener
+import ru.kino.dev.vault.entry.FakeEntryRepository
+import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
 import ru.kino.dev.vault.pres.testing.DB
+import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.runEach
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,11 +30,44 @@ class VaultContainerProcessorTest {
     /** What the routers answered, in order: true - taken by the container. */
     private val taken = mutableListOf<Boolean>()
 
+    private val entries = FakeEntryRepository().apply {
+        listOf("mail" to "Mail", "bank" to "Bank", "shop" to "Shop", "untitled" to "").forEach { (id, title) ->
+            add(id, GroupId("root"), listOf(EntryField(StandardPreset.TITLE, title, protected = false)))
+        }
+    }
+    private val changes = FakeVaultChanges()
+    private val log = RecordingLog()
+
+    @Test
+    fun `a tab is titled as its entry`() = runTest {
+        val state = perform(open("mail"), open("untitled"))
+
+        assertEquals(listOf("Mail", ""), state.tabs.map { it.title })
+    }
+
+    @Test
+    fun `an entry renamed elsewhere renames its tab`() = runTest {
+        val processor = processor()
+
+        val shown = VaultContainerState(tabs = listOf(EntryTab("mail", "Mail")), active = "mail")
+
+        processor.testWithInternalState(this, shown) {
+            // Listening, as while the container is shown
+            runOnCreate()
+            val stored = entries.stored.getValue(EntryId("mail"))
+            entries.stored[EntryId("mail")] = stored.copy(fields = listOf(EntryField(StandardPreset.TITLE, "Mail, renamed", false)))
+            changes.changed(DB)
+
+            assertEquals(listOf("Mail, renamed"), awaitInternalState().tabs.map { it.title })
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
     @Test
     fun `an entry opened in the list opens its tab, shown`() = runTest {
         val state = perform(open("mail"), open("bank"))
 
-        assertEquals(listOf(EntryTab("mail"), EntryTab("bank")), state.tabs)
+        assertEquals(listOf("mail", "bank"), state.tabs.ids)
         assertEquals("bank", state.active)
         assertEquals(listOf(true, true), taken)
     }
@@ -34,7 +76,7 @@ class VaultContainerProcessorTest {
     fun `an entry open already is shown, not opened twice`() = runTest {
         val state = perform(open("mail"), open("bank"), open("mail"))
 
-        assertEquals(listOf(EntryTab("mail"), EntryTab("bank")), state.tabs)
+        assertEquals(listOf("mail", "bank"), state.tabs.ids)
         assertEquals("mail", state.active)
     }
 
@@ -100,7 +142,7 @@ class VaultContainerProcessorTest {
             fromEntry("bank", MviNavEvent.NavigateBack),
         )
 
-        assertEquals(listOf(EntryTab("mail"), EntryTab("shop")), state.tabs)
+        assertEquals(listOf("mail", "shop"), state.tabs.ids)
         assertEquals("shop", state.active)
         assertEquals(true, taken.last())
     }
@@ -109,7 +151,7 @@ class VaultContainerProcessorTest {
     fun `the last tab closed - the one before is shown`() = runTest {
         val state = perform(open("mail"), open("bank"), { onCloseTab("bank") })
 
-        assertEquals(listOf(EntryTab("mail")), state.tabs)
+        assertEquals(listOf("mail"), state.tabs.ids)
         assertEquals("mail", state.active)
     }
 
@@ -117,7 +159,7 @@ class VaultContainerProcessorTest {
     fun `a tab not shown closed - the shown one stays`() = runTest {
         val state = perform(open("mail"), open("bank"), { onCloseTab("mail") })
 
-        assertEquals(listOf(EntryTab("bank")), state.tabs)
+        assertEquals(listOf("bank"), state.tabs.ids)
         assertEquals("bank", state.active)
     }
 
@@ -125,7 +167,7 @@ class VaultContainerProcessorTest {
     fun `every tab closed - nothing is shown`() = runTest {
         val state = perform(open("mail"), { onCloseTab("mail") })
 
-        assertEquals(emptyList(), state.tabs)
+        assertEquals(emptyList(), state.tabs.ids)
         assertNull(state.active)
     }
 
@@ -134,7 +176,7 @@ class VaultContainerProcessorTest {
         val state = perform(open("mail"), { onCloseTab("mail") }, fromEntry("mail", MviNavEvent.NavigateBack))
 
         assertEquals(true, taken.last())
-        assertEquals(emptyList(), state.tabs)
+        assertEquals(emptyList(), state.tabs.ids)
     }
 
     @Test
@@ -146,7 +188,7 @@ class VaultContainerProcessorTest {
         )
 
         assertEquals(listOf(true, false, false), taken)
-        assertEquals(listOf(EntryTab("mail")), state.tabs)
+        assertEquals(listOf("mail"), state.tabs.ids)
     }
 
     @Test
@@ -189,11 +231,15 @@ class VaultContainerProcessorTest {
 
     /** Runs [actions] one after another on a new processor; the state they end in. */
     private suspend fun TestScope.perform(vararg actions: VaultContainerProcessor.() -> Unit): VaultContainerState {
-        val processor = VaultContainerProcessor()
+        val processor = processor()
         processor.testWithInternalState(this) {
             containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value
     }
+
+    private fun processor() = VaultContainerProcessor(DB, EntryOpener(entries, FakePresetRepository()), changes, log)
+
+    private val List<EntryTab>.ids get() = map { it.entryId }
 }
