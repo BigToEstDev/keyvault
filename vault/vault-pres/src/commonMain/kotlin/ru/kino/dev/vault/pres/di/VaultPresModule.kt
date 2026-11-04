@@ -58,7 +58,14 @@ val vaultPresModule = module {
         )
     }
     viewModel { (args: EntryHistoryArgs, navigator: Navigator) ->
-        EntryHistoryProcessor(dbKey = args.dbKey, entryId = args.entryId, get(), get(), navigator = navigator, log = get())
+        EntryHistoryProcessor(
+            dbKey = args.dbKey,
+            entryId = args.entryId,
+            get(), get(), get(),
+            changes = get(),
+            navigator = navigator,
+            log = get(),
+        )
     }
     viewModel { (args: EntryVersionArgs, navigator: Navigator) ->
         EntryVersionProcessor(

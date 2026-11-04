@@ -27,6 +27,7 @@ class EntryHistoryReaderTest {
         assertEquals(listOf(2, 1, 0), history.versions.map { it.index })
         assertEquals(listOf(3_000L, 2_000L, 1_000L), history.versions.map { it.modified })
         assertEquals(1_000L, history.created)
+        assertEquals(GroupId("work"), history.groupId)
     }
 
     @Test
