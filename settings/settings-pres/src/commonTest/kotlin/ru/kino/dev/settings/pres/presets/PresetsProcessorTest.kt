@@ -19,6 +19,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
+import ru.kino.dev.settings.pres.navigation.PresetReadRoute
 import ru.kino.dev.settings.pres.testing.runEach
 import ru.kino.dev.settings.presets.FakePresetSettingsRepository
 
@@ -91,6 +92,20 @@ class PresetsProcessorTest {
 
         assertFalse(state.canCreate)
         assertEquals(emptyList<MviNavEvent>(), events)
+    }
+
+    @Test
+    fun `a preset tapped is read`() = runTest {
+        val (_, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onOpen(PresetId(CARD_ID)) })
+
+        assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(PresetReadRoute(CARD_ID))), events)
+    }
+
+    @Test
+    fun `the standard preset tapped is read`() = runTest {
+        val (_, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onOpen(null) })
+
+        assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(PresetReadRoute(null))), events)
     }
 
     @Test

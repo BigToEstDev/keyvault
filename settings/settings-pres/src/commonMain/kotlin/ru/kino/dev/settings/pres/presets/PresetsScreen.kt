@@ -29,12 +29,12 @@ import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.pane.koinProcessor
-import ru.kino.dev.settings.pres.presets.components.PresetCard
 import ru.kino.dev.settings.pres.presets.components.PresetCardSkeleton
 import ru.kino.dev.settings.pres.presets.components.UsePresetsSkeleton
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.components.MenuCard
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.SwitchRow
 import ru.kino.dev.ui.components.deleteMenuItem
@@ -44,8 +44,8 @@ import ru.kino.dev.ui.preset.presetName
 import ru.kino.dev.ui.res.stringResource
 
 /**
- * The presets: "Use presets" on top; on - the standard preset, those of one's own with their pen - "Edit", "Delete" -
- * and the fab "Create" while there is room for one; off - the switch alone (pass-docs, Step 62).
+ * The presets: "Use presets" on top; on - the standard preset, those of one's own - a tap reads one, the long press or
+ * the right button its menu: "Edit", "Delete" (Step 99, item 8) - and the fab "Create" while there is room for one; off - the switch alone (pass-docs, Step 62).
  *
  * @param drafts the new presets open beside it, in a container, not saved yet: they take their places (Step 99, item 7)
  */
@@ -122,15 +122,24 @@ internal fun PresetsScreen(drafts: Int = 0, processor: PresetsProcessor = koinPr
                 }
                 if (usePresets) {
                     item(key = "standard") {
-                        PresetCard(name = presetName(StandardPreset.preset), menu = emptyList())
+                        // Only read: not one's own to change, no menu
+                        MenuCard(
+                            icon = null,
+                            title = presetName(StandardPreset.preset),
+                            items = emptyList(),
+                            onOpen = { processor.onOpen(null) },
+                        )
                     }
                     items(own, key = { it.id?.value.orEmpty() }) { preset ->
-                        PresetCard(
-                            name = presetName(preset),
-                            menu = listOf(
+                        // A tap reads it; the long press, the right button on the desktop - its menu
+                        MenuCard(
+                            icon = null,
+                            title = presetName(preset),
+                            items = listOf(
                                 editMenuItem { preset.id?.let { processor.onEdit(it) } },
                                 deleteMenuItem { processor.onDelete(preset) },
                             ),
+                            onOpen = { processor.onOpen(preset.id) },
                         )
                     }
                 }
