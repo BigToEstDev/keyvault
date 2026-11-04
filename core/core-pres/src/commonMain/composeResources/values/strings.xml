@@ -286,9 +286,8 @@
     <string name="settings_history_trim_text">Older versions over the limit will be deleted from every entry. This cannot be undone.</string>
     <string name="settings_history_trim_confirm">Trim</string>
     <string name="settings_entries">Entries</string>
-    <string name="settings_entries_text">Hidden fields, history</string>
+    <string name="settings_entries_text">Hidden fields, history, recycle bin</string>
     <string name="settings_recycle_bin">Recycle bin</string>
-    <string name="settings_recycle_bin_text">Deleted entries</string>
     <string name="settings_recycle_bin_use">Use the recycle bin</string>
     <string name="settings_recycle_bin_use_on">Deleted entries can be restored</string>
     <string name="settings_recycle_bin_use_off">Off — a delete is for good at once</string>

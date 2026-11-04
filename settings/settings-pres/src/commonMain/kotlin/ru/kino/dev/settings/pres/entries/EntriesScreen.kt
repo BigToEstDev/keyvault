@@ -24,6 +24,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -53,7 +55,7 @@ import ru.kino.dev.ui.res.stringResource
 
 /**
  * The entries of the database: the fields hidden on every entry, how much history an entry keeps (pass-docs,
- * Step 65).
+ * Step 65), the recycle bin (Step 99, item 11), the prefix of a new phone field.
  */
 @Composable
 internal fun EntriesScreen(
@@ -64,6 +66,8 @@ internal fun EntriesScreen(
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) { processor.onLoad() }
+    // Back from the bin, it holds another number
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onLoadBin() }
 
     val message = state.message?.let {
         stringResource(
@@ -101,6 +105,7 @@ internal fun EntriesScreen(
                 } else {
                     protectionRows(entries.protection, state.saving, processor)
                     historyRows(entries, state.saving, processor)
+                    state.bin?.let { binRows(it, state.saving, processor) }
                     state.phone?.let { phoneRows(it, processor) }
                 }
             }
@@ -169,6 +174,45 @@ private fun LazyListScope.historyRows(
             onLimit = { actions.onLimitSize(it) },
             onChoose = { actions.onChoose(HistoryLimit.Size) },
         )
+    }
+}
+
+/**
+ * The recycle bin (pass-docs, Step 70; here since Step 99, item 11): whether it is used - progress while the file is
+ * written - and how many entries it holds; that row opens the bin, empty - it waits.
+ */
+private fun LazyListScope.binRows(bin: RecycleBin, saving: EntriesPart?, actions: EntriesActions) {
+    item(key = "bin") {
+        SettingsSectionHeader(title = stringResource(Res.string.settings_recycle_bin), top = 8.dp)
+    }
+    item(key = "bin-use") {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column {
+                SwitchRow(
+                    title = stringResource(Res.string.settings_recycle_bin_use),
+                    text = stringResource(
+                        if (bin.enabled) Res.string.settings_recycle_bin_use_on else Res.string.settings_recycle_bin_use_off,
+                    ),
+                    checked = bin.enabled,
+                    onCheckedChange = { actions.onSetBinEnabled(it) },
+                    enabled = saving == null,
+                )
+                // The key derivation takes seconds
+                if (saving == EntriesPart.RecycleBin) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp))
+                }
+            }
+        }
+    }
+    item(key = "bin-deleted") {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            ValueRow(
+                title = stringResource(Res.string.settings_recycle_bin_deleted),
+                value = if (bin.count == 0) stringResource(Res.string.settings_recycle_bin_empty) else bin.count.toString(),
+                onClick = { actions.onOpenTrash() },
+                enabled = bin.count > 0 && saving == null,
+            )
+        }
     }
 }
 
@@ -302,6 +346,18 @@ private fun EntriesActions.Dialogs(state: EntriesState) {
             dismissText = stringResource(Res.string.action_cancel),
             onConfirm = { onTrimConfirm() },
             onDismiss = { onTrimDismiss() },
+            destructive = true,
+        )
+    }
+
+    if (state.confirmingBinOff) {
+        ConfirmDialog(
+            title = stringResource(Res.string.settings_recycle_bin_off_title),
+            text = stringResource(Res.string.settings_recycle_bin_off_text),
+            confirmText = stringResource(Res.string.settings_recycle_bin_off_confirm),
+            dismissText = stringResource(Res.string.action_cancel),
+            onConfirm = { onBinOffConfirm() },
+            onDismiss = { onBinOffDismiss() },
             destructive = true,
         )
     }

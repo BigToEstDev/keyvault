@@ -3,7 +3,6 @@ package ru.kino.dev.settings.pres.settings
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
@@ -32,6 +31,5 @@ enum class SettingsItem(
     Presets(SettingsSection.App, Icons.Filled.Dashboard, Res.string.settings_presets, Res.string.settings_presets_text),
     File(SettingsSection.Database, Icons.Filled.Description, Res.string.settings_file, Res.string.settings_file_text),
     Entries(SettingsSection.Database, Icons.AutoMirrored.Filled.ListAlt, Res.string.settings_entries, Res.string.settings_entries_text),
-    RecycleBin(SettingsSection.Database, Icons.Filled.Delete, Res.string.settings_recycle_bin, Res.string.settings_recycle_bin_text),
     Security(SettingsSection.Database, Icons.Filled.Key, Res.string.settings_security, Res.string.settings_security_text),
 }

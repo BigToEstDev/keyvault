@@ -14,7 +14,6 @@ import ru.kino.dev.settings.pres.presetread.PresetReadProcessor
 import ru.kino.dev.settings.pres.presets.PresetsProcessor
 import ru.kino.dev.settings.pres.presetscontainer.PresetsContainerProcessor
 import ru.kino.dev.settings.pres.privacy.PrivacyProcessor
-import ru.kino.dev.settings.pres.recyclebin.RecycleBinProcessor
 import ru.kino.dev.settings.pres.security.SecurityProcessor
 import ru.kino.dev.settings.pres.settings.SettingsProcessor
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
@@ -40,7 +39,6 @@ val settingsPresModule = module {
     viewModel { (dbKey: String, navigator: Navigator) ->
         LockProcessor(dbKey, get(), get(), get(), get(), get(), navigator, get())
     }
-    viewModel { (dbKey: String, navigator: Navigator) -> RecycleBinProcessor(dbKey, get(), get(), navigator, get()) }
     viewModel { (dbKey: String, navigator: Navigator) ->
         SecurityProcessor(dbKey, get(), get(), get(), navigator, get())
     }

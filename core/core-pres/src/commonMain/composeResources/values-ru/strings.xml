@@ -294,9 +294,8 @@
     <string name="settings_history_trim_text">Старые версии сверх лимита будут удалены у всех записей. Это нельзя отменить.</string>
     <string name="settings_history_trim_confirm">Сократить</string>
     <string name="settings_entries">Записи</string>
-    <string name="settings_entries_text">Скрытые поля, история</string>
+    <string name="settings_entries_text">Скрытые поля, история, корзина</string>
     <string name="settings_recycle_bin">Корзина</string>
-    <string name="settings_recycle_bin_text">Удалённые записи</string>
     <string name="settings_recycle_bin_use">Использовать корзину</string>
     <string name="settings_recycle_bin_use_on">Удалённые записи можно восстановить</string>
     <string name="settings_recycle_bin_use_off">Выключено — удаление сразу насовсем</string>
