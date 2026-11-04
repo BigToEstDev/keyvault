@@ -9,6 +9,7 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.pane.PaneRouter
+import ru.kino.dev.pane.closeTab
 import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryOpener
@@ -234,13 +235,8 @@ class VaultContainerProcessor(
     }
 
     /** The tab [key] gone; shown instead - the next one, else the one before. */
-    private fun VaultContainerState.closed(key: String): VaultContainerState {
-        val index = tabs.indexOfFirst { it.key == key }
-        if (index < 0) return this
-        val left = tabs - tabs[index]
-        val shown = if (active != key) active else left.getOrNull(index)?.key ?: left.lastOrNull()?.key
-        return copy(tabs = left, active = shown)
-    }
+    private fun VaultContainerState.closed(key: String): VaultContainerState =
+        closeTab(tabs, active, key, EntryTab::key)?.let { copy(tabs = it.tabs, active = it.active) } ?: this
 
     private fun VaultContainerState.up(): VaultContainerState =
         if (groups.size > 1) copy(groups = groups.dropLast(1)) else this

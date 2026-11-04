@@ -1,0 +1,16 @@
+package ru.kino.dev.pane
+
+/** The tabs of a container, and the key of the one shown - null: none. */
+data class ShownTabs<T>(val tabs: List<T>, val active: String?)
+
+/**
+ * The tab [key] closed (pass-docs, Step 98, `docs/dev/navigation.md`): shown instead - the next one, else the one
+ * before; another one shown - it stays. Not among them - null.
+ */
+fun <T> closeTab(tabs: List<T>, active: String?, key: String, keyOf: (T) -> String): ShownTabs<T>? {
+    val index = tabs.indexOfFirst { keyOf(it) == key }
+    if (index < 0) return null
+    val left = tabs - tabs[index]
+    val shown = if (active != key) active else left.getOrNull(index)?.let(keyOf) ?: left.lastOrNull()?.let(keyOf)
+    return ShownTabs(left, shown)
+}
