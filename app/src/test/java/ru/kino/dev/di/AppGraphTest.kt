@@ -15,6 +15,7 @@ import ru.kino.dev.settings.pres.entries.EntriesProcessor
 import ru.kino.dev.settings.pres.file.FileProcessor
 import ru.kino.dev.settings.pres.lock.LockProcessor
 import ru.kino.dev.settings.pres.presetedit.PresetEditProcessor
+import ru.kino.dev.settings.pres.presetread.PresetReadProcessor
 import ru.kino.dev.settings.pres.presets.PresetsProcessor
 import ru.kino.dev.settings.pres.presetscontainer.PresetsContainerProcessor
 import ru.kino.dev.settings.pres.privacy.PrivacyProcessor
@@ -90,6 +91,7 @@ class AppGraphTest {
                 definition<PresetsProcessor>(Navigator::class),
                 definition<PrivacyProcessor>(Navigator::class),
                 definition<PresetEditProcessor>(String::class, Navigator::class),
+                definition<PresetReadProcessor>(String::class, Navigator::class),
                 definition<PresetsContainerProcessor>(PresetEditRoute::class, Navigator::class),
             ),
         )

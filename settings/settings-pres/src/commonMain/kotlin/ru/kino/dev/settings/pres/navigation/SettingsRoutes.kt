@@ -38,6 +38,13 @@ internal data class SecurityRoute(val dbKey: String)
 @Serializable
 internal data object PresetsRoute
 
+/**
+ * A preset read (pass-docs, Step 99, item 8): [presetId] - one of one's own, null - the standard one. Opened from the
+ * list of the presets; from it - its form.
+ */
+@Serializable
+internal data class PresetReadRoute(val presetId: String? = null)
+
 /** Where a card of the settings of [dbKey] leads - every card has its screen since the recycle bin (Step 70). */
 internal fun SettingsItem.route(dbKey: String): Any = when (this) {
     SettingsItem.Appearance -> AppearanceRoute(dbKey)
