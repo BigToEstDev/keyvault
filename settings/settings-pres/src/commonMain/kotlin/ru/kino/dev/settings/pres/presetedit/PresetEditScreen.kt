@@ -39,11 +39,13 @@ import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.PaneCloseHandler
 import ru.kino.dev.ui.components.FieldSection
 import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.components.MoreMenuButton
 import ru.kino.dev.ui.components.SECTION_PADDING
 import ru.kino.dev.ui.components.SaveFab
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.TextField
+import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.preset.fieldLabel
 import ru.kino.dev.ui.res.pluralStringResource
 import ru.kino.dev.ui.res.stringResource
@@ -52,13 +54,15 @@ import ru.kino.dev.ui.res.stringResource
  * Creating a preset of one's own, or editing the one of [presetId] (pass-docs, vault-our.md "Экран создания
  * пресетов", Step 62).
  *
+ * @param readSaved a new one made - its reading in place of the form (pass-docs, Step 99, item 8)
  * @param canGoBack false - a pane of the container of a wide window: its tab closes it, not "back" (pass-docs, Step 100)
  */
 @Composable
 internal fun PresetEditScreen(
     presetId: String?,
+    readSaved: Boolean = false,
     canGoBack: Boolean = true,
-    processor: PresetEditProcessor = koinProcessor(presetId, key = presetId),
+    processor: PresetEditProcessor = koinProcessor(presetId, readSaved, key = presetId),
 ) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
@@ -68,8 +72,8 @@ internal fun PresetEditScreen(
 
     // The system "back" asks as the one in the top bar does
     BackHandler { processor.onBack() }
-    // The cross of its tab, in a container, asks as "back" does
-    PaneCloseHandler(onClose = processor::onBack)
+    // The cross of its tab, in a container, asks as "back" does - and closes the tab, past the reading
+    PaneCloseHandler(onClose = processor::onClose)
 
     val message = state.message?.let {
         when (it) {
@@ -80,6 +84,7 @@ internal fun PresetEditScreen(
             )
             PresetEditMessage.NotSaved -> stringResource(Res.string.preset_not_saved)
             PresetEditMessage.Gone -> stringResource(Res.string.preset_gone)
+            PresetEditMessage.NotDeleted -> stringResource(Res.string.preset_not_deleted)
         }
     }
     SnackbarMessage(message, snackbar) { processor.onMessageShown() }
@@ -93,7 +98,16 @@ internal fun PresetEditScreen(
                     title = stringResource(if (state.editing) Res.string.preset_edit_title else Res.string.preset_create_title),
                     onBack = processor::onBack,
                     back = canGoBack,
-                )
+                ) {
+                    // A preset that is there, once read; a new one has nothing to delete
+                    if (state.editing && !state.loading) {
+                        MoreMenuButton(
+                            contentDescription = stringResource(Res.string.preset_menu),
+                            items = listOf(deleteMenuItem(processor::onDelete)),
+                            enabled = !state.saving,
+                        )
+                    }
+                }
             },
             floatingActionButton = {
                 // While the preset to edit is read the fab waits as while it is saved

@@ -12,6 +12,8 @@ import ru.kino.dev.core.phone.PhoneCountry
  * @param trimming "trim the history?", while asked
  * @param saving the part written into the file - every row waits, that one shows progress
  * @param phone the prefix of a new phone field; null until read (pass-docs, Step 77)
+ * @param bin the recycle bin of the database; null until read (pass-docs, Step 99, item 11)
+ * @param confirmingBinOff "switch the bin off?", while asked - the bin holds something
  * @param message for the snackbar, until it takes it
  */
 data class EntriesState(
@@ -22,6 +24,8 @@ data class EntriesState(
     val trimming: TrimDialog? = null,
     val saving: EntriesPart? = null,
     val phone: PhonePrefix? = null,
+    val bin: RecycleBin? = null,
+    val confirmingBinOff: Boolean = false,
     val message: EntriesMessage? = null,
 )
 
@@ -29,7 +33,10 @@ data class EntriesState(
 enum class HistoryLimit { Items, Size }
 
 /** What part of the screen is written into the file - its rows wait, it shows progress. */
-enum class EntriesPart { Protection, Items, Size }
+enum class EntriesPart { Protection, Items, Size, RecycleBin }
+
+/** The recycle bin of the database: whether it is used, and how many entries it holds (pass-docs, Step 70). */
+data class RecycleBin(val enabled: Boolean, val count: Int)
 
 /**
  * "Trim the history?" - asked before [history] is kept: it drops versions already kept, at once and for good.

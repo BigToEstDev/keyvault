@@ -14,8 +14,14 @@ interface PresetsActions {
     /** "Use presets" switched: kept at once. */
     fun onSetUsePresets(on: Boolean)
 
+    /** [count] new presets are open beside the list, in a container, not saved yet: they take their places. */
+    fun onDrafts(count: Int)
+
     /** The fab "Create": a new preset, while there is room for one. */
     fun onCreate()
+
+    /** A preset tapped - [id], null for the standard one: it is read (pass-docs, Step 99, item 8). */
+    fun onOpen(id: PresetId?)
 
     /** "Edit" in the menu of the preset of [id]. */
     fun onEdit(id: PresetId)

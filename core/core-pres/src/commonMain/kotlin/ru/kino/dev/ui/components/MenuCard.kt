@@ -1,4 +1,4 @@
-package ru.kino.dev.vault.pres.common
+package ru.kino.dev.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,12 +22,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import ru.kino.dev.ui.components.ItemMenu
-import ru.kino.dev.ui.components.MenuItem
-import ru.kino.dev.ui.components.contextClickable
 
 /**
- * A card with an icon and a title - a group or an entry of a list, a version of a history. A tap opens it,
+ * A card with an icon and a title - a group or an entry of a list, a version of a history, a preset (pass-docs, Step 99,
+ * item 8); no [icon] - the title alone. A tap opens it,
  * when there is [onOpen]; the gesture of the context - a long press, the right button on the desktop - opens the menu
  * of [items] with its top corner where it was, when there is one.
  *
@@ -37,8 +35,8 @@ import ru.kino.dev.ui.components.contextClickable
  * its start when long, so the nearest group stays in sight
  */
 @Composable
-internal fun MenuCard(
-    icon: @Composable () -> Unit,
+fun MenuCard(
+    icon: (@Composable () -> Unit)?,
     title: String,
     items: List<MenuItem>,
     modifier: Modifier = Modifier,
@@ -76,8 +74,8 @@ internal fun MenuCard(
                     .padding(horizontal = 16.dp, vertical = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                icon()
-                Column(modifier = Modifier.padding(start = 24.dp)) {
+                icon?.invoke()
+                Column(modifier = if (icon != null) Modifier.padding(start = 24.dp) else Modifier) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.bodyLarge,

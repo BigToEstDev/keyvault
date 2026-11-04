@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 import ru.kino.dev.ui.components.CountBadgeIcon
 import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.editMenuItem
-import ru.kino.dev.vault.pres.common.MenuCard
+import ru.kino.dev.ui.components.MenuCard
 import ru.kino.dev.vault.pres.grouplist.GroupItem
 
 /**

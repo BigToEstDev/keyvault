@@ -15,10 +15,10 @@ import ru.kino.dev.settings.pres.entries.EntriesProcessor
 import ru.kino.dev.settings.pres.file.FileProcessor
 import ru.kino.dev.settings.pres.lock.LockProcessor
 import ru.kino.dev.settings.pres.presetedit.PresetEditProcessor
+import ru.kino.dev.settings.pres.presetread.PresetReadProcessor
 import ru.kino.dev.settings.pres.presets.PresetsProcessor
 import ru.kino.dev.settings.pres.presetscontainer.PresetsContainerProcessor
 import ru.kino.dev.settings.pres.privacy.PrivacyProcessor
-import ru.kino.dev.settings.pres.recyclebin.RecycleBinProcessor
 import ru.kino.dev.settings.pres.security.SecurityProcessor
 import ru.kino.dev.settings.pres.settings.SettingsProcessor
 import ru.kino.dev.vault.pres.container.VaultContainerProcessor
@@ -85,11 +85,11 @@ class AppGraphTest {
                 definition<EntriesProcessor>(String::class, Navigator::class),
                 definition<FileProcessor>(String::class, Navigator::class),
                 definition<LockProcessor>(String::class, Navigator::class),
-                definition<RecycleBinProcessor>(String::class, Navigator::class),
                 definition<SecurityProcessor>(String::class, Navigator::class),
                 definition<PresetsProcessor>(Navigator::class),
                 definition<PrivacyProcessor>(Navigator::class),
-                definition<PresetEditProcessor>(String::class, Navigator::class),
+                definition<PresetEditProcessor>(String::class, Boolean::class, Navigator::class),
+                definition<PresetReadProcessor>(String::class, Navigator::class),
                 definition<PresetsContainerProcessor>(PresetEditRoute::class, Navigator::class),
             ),
         )

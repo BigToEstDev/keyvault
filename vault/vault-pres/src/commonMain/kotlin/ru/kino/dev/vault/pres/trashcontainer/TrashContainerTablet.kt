@@ -20,6 +20,8 @@ internal fun TrashContainerActions.TrashContainerTablet(dbKey: String, state: Tr
     TabbedContainer(
         tabs = state.tabs.map { ClosableTab(it.entryId, it.title?.ifEmpty { untitled }.orEmpty()) },
         selected = state.shown?.entryId,
+        tabLimit = if (state.tabLimit) TRASH_MAX_TABS else null,
+        onTabLimitDismiss = ::onTabLimitDismiss,
         onSelect = ::onSelectTab,
         onClose = ::onCloseTab,
         list = {

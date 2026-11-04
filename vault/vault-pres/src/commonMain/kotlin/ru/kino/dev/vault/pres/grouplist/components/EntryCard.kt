@@ -11,7 +11,7 @@ import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.editMenuItem
 import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.ui.theme.LocalAppDisplay
-import ru.kino.dev.vault.pres.common.MenuCard
+import ru.kino.dev.ui.components.MenuCard
 import ru.kino.dev.vault.pres.grouplist.EntryItem
 
 /**

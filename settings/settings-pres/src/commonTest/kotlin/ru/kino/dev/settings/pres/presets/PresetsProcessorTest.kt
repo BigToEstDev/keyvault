@@ -3,6 +3,7 @@ package ru.kino.dev.settings.pres.presets
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.assertNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
@@ -18,6 +19,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
+import ru.kino.dev.settings.pres.navigation.PresetReadRoute
 import ru.kino.dev.settings.pres.testing.runEach
 import ru.kino.dev.settings.presets.FakePresetSettingsRepository
 
@@ -60,7 +62,7 @@ class PresetsProcessorTest {
     fun `create opens a new preset`() = runTest {
         val (_, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onCreate() })
 
-        assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(PresetEditRoute())), events)
+        assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(PresetEditRoute(readSaved = true))), events)
     }
 
     @Test
@@ -71,6 +73,39 @@ class PresetsProcessorTest {
 
         assertFalse(state.canCreate)
         assertEquals(emptyList<MviNavEvent>(), events)
+    }
+
+    @Test
+    fun `the new presets open beside the list take their places`() = runTest {
+        repeat(6) { repository.save(CustomPreset.of(PresetId("$it"), "P$it", listOf(emptyList()))) }
+
+        val (state, _) = perform(FakePresetSettingsRepository(), { onLoad() }, { onDrafts(1) })
+
+        assertTrue(state.canCreate)
+    }
+
+    @Test
+    fun `no create past the most presets, the new ones open beside the list counted`() = runTest {
+        repeat(6) { repository.save(CustomPreset.of(PresetId("$it"), "P$it", listOf(emptyList()))) }
+
+        val (state, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onDrafts(2) }, { onCreate() })
+
+        assertFalse(state.canCreate)
+        assertEquals(emptyList<MviNavEvent>(), events)
+    }
+
+    @Test
+    fun `a preset tapped is read`() = runTest {
+        val (_, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onOpen(PresetId(CARD_ID)) })
+
+        assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(PresetReadRoute(CARD_ID))), events)
+    }
+
+    @Test
+    fun `the standard preset tapped is read`() = runTest {
+        val (_, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onOpen(null) })
+
+        assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(PresetReadRoute(null))), events)
     }
 
     @Test

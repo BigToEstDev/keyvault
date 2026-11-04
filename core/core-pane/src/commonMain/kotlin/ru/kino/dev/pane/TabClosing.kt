@@ -1,5 +1,11 @@
 package ru.kino.dev.pane
 
+/**
+ * Whether one more tab opens next to [open] tabs, [limit] the most a container keeps (pass-docs, Step 99, item 10).
+ * None closes by itself to make room - the person closes one; a tab open already is only shown, it is not counted.
+ */
+fun canOpenTab(open: Int, limit: Int): Boolean = open < limit
+
 /** The tabs of a container, and the key of the one shown - null: none. */
 data class ShownTabs<T>(val tabs: List<T>, val active: String?)
 

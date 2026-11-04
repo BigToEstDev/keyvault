@@ -90,6 +90,12 @@ class PresetValidatorTest {
     }
 
     @Test
+    fun `the presets not saved yet count as those kept`() {
+        assertTrue(PresetValidator.canAdd(own = 8))
+        assertFalse(PresetValidator.canAdd(own = 9))
+    }
+
+    @Test
     fun `every problem of a preset is told, with where it is`() {
         val problems = PresetValidator.problems(
             name = "Card",

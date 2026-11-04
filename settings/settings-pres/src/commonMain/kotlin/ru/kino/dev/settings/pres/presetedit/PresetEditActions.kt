@@ -47,6 +47,15 @@ interface PresetEditActions {
     /** "Back" - in the top bar or the system one. */
     fun onBack()
 
+    /**
+     * The cross of its tab, in a container: as "back" - with changes it asks first - but past the reading of the preset
+     * too, the tab closes (pass-docs, Step 99, item 8).
+     */
+    fun onClose()
+
+    /** "Delete" in the menu - a preset that is there: asks first. */
+    fun onDelete()
+
     /** The snackbar took the message. */
     fun onMessageShown()
 }

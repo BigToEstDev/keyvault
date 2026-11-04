@@ -33,6 +33,8 @@ internal fun VaultContainerActions.VaultContainerTablet(dbKey: String, state: Va
             ClosableTab(tab.key, title)
         },
         selected = state.shown?.key,
+        tabLimit = if (state.tabLimit) VAULT_MAX_TABS else null,
+        onTabLimitDismiss = ::onTabLimitDismiss,
         onSelect = ::onSelectTab,
         onClose = ::onCloseTab,
         list = {

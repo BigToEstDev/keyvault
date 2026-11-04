@@ -10,10 +10,10 @@ import ru.kino.dev.settings.pres.entries.EntriesProcessor
 import ru.kino.dev.settings.pres.file.FileProcessor
 import ru.kino.dev.settings.pres.lock.LockProcessor
 import ru.kino.dev.settings.pres.presetedit.PresetEditProcessor
+import ru.kino.dev.settings.pres.presetread.PresetReadProcessor
 import ru.kino.dev.settings.pres.presets.PresetsProcessor
 import ru.kino.dev.settings.pres.presetscontainer.PresetsContainerProcessor
 import ru.kino.dev.settings.pres.privacy.PrivacyProcessor
-import ru.kino.dev.settings.pres.recyclebin.RecycleBinProcessor
 import ru.kino.dev.settings.pres.security.SecurityProcessor
 import ru.kino.dev.settings.pres.settings.SettingsProcessor
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
@@ -33,18 +33,20 @@ val settingsPresModule = module {
     viewModel { (dbKey: String, navigator: Navigator) -> SettingsProcessor(dbKey, navigator) }
     viewModel { (dbKey: String, navigator: Navigator) -> AppearanceProcessor(dbKey, get(), get(), navigator, get()) }
     viewModel { (dbKey: String, navigator: Navigator) ->
-        EntriesProcessor(dbKey, get(), get(), get(), get(), get(), get(), navigator, get())
+        EntriesProcessor(dbKey, get(), get(), get(), get(), get(), get(), get(), get(), navigator, get())
     }
     viewModel { (dbKey: String, navigator: Navigator) -> FileProcessor(dbKey, get(), get(), navigator, get()) }
     viewModel { (dbKey: String, navigator: Navigator) ->
         LockProcessor(dbKey, get(), get(), get(), get(), get(), navigator, get())
     }
-    viewModel { (dbKey: String, navigator: Navigator) -> RecycleBinProcessor(dbKey, get(), get(), navigator, get()) }
     viewModel { (dbKey: String, navigator: Navigator) ->
         SecurityProcessor(dbKey, get(), get(), get(), navigator, get())
     }
+    viewModel { (presetId: String?, readSaved: Boolean, navigator: Navigator) ->
+        PresetEditProcessor(presetId, readSaved, get(), get(), navigator, get())
+    }
     viewModel { (presetId: String?, navigator: Navigator) ->
-        PresetEditProcessor(presetId, get(), get(), navigator, get())
+        PresetReadProcessor(presetId, get(), get(), navigator, get())
     }
     // The container of a wide window: the screens in it bring their own processors (pass-docs, Step 100, item 3)
     viewModel { (opening: PresetEditRoute?) -> PresetsContainerProcessor(opening, get()) }

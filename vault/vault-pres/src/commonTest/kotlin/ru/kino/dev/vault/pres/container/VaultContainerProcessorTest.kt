@@ -458,6 +458,40 @@ class VaultContainerProcessorTest {
         assertEquals(setOf(groupPane(null), entryPane("mail"), formPane("mail")), state.paneKeys)
     }
 
+    @Test
+    fun `at the most tabs an entry read does not open - close one first`() = runTest {
+        val state = perform(open("mail"), from = FULL)
+
+        assertEquals(FULL.tabs, state.tabs)
+        assertEquals(true, state.tabLimit)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `at the most tabs edit from the list and a new entry do not open either`() = runTest {
+        val state = perform(editFromList("mail"), create("root"), from = FULL)
+
+        assertEquals(FULL.tabs, state.tabs)
+        assertEquals(true, state.tabLimit)
+    }
+
+    @Test
+    fun `at the most tabs an entry open already is shown, nothing asked`() = runTest {
+        val state = perform(open("e1"), from = FULL)
+
+        assertEquals("e1", state.active)
+        assertEquals(false, state.tabLimit)
+    }
+
+    @Test
+    fun `close one first taken - it goes, a tab closed makes room`() = runTest {
+        val state = perform(open("mail"), { onTabLimitDismiss() }, { onCloseTab("e1") }, open("mail"), from = FULL)
+
+        assertEquals(false, state.tabLimit)
+        assertEquals("mail", state.active)
+        assertEquals(VAULT_MAX_TABS, state.tabs.size)
+    }
+
     private fun open(entryId: String) = fromList(MviNavEvent.NavigateTo(EntryReadRoute(DB, entryId)))
 
     private fun group(groupId: String) = fromList(MviNavEvent.NavigateTo(GroupRoute(DB, groupId)))
@@ -488,9 +522,12 @@ class VaultContainerProcessorTest {
         fromPage(entryId, EntryPage.History, MviNavEvent.NavigateTo(EntryVersionRoute(DB, entryId, index)))
 
     /** Runs [actions] one after another on a new processor; the state they end in. */
-    private suspend fun TestScope.perform(vararg actions: VaultContainerProcessor.() -> Unit): VaultContainerState {
+    private suspend fun TestScope.perform(
+        vararg actions: VaultContainerProcessor.() -> Unit,
+        from: VaultContainerState = VaultContainerState(),
+    ): VaultContainerState {
         val processor = processor()
-        processor.testWithInternalState(this) {
+        processor.testWithInternalState(this, from) {
             containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
@@ -500,4 +537,9 @@ class VaultContainerProcessorTest {
     private fun processor() = VaultContainerProcessor(DB, EntryOpener(entries, FakePresetRepository()), changes, log)
 
     private val List<EntryTab>.keys get() = map { it.key }
+
+    private companion object {
+        /** The most tabs open, none of them in the repository: read, nothing to ask. */
+        val FULL = VaultContainerState(tabs = (1..VAULT_MAX_TABS).map { EntryTab.Entry("e$it", "E$it") }, active = "e12")
+    }
 }

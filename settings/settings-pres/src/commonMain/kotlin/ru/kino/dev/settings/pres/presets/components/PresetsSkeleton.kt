@@ -53,15 +53,14 @@ internal fun UsePresetsSkeleton(brush: Brush) {
     }
 }
 
-/** A preset while the list is read: the line of its name, as tall as [PresetCard]. */
+/** A preset while the list is read: the line of its name, as tall as its card ([ru.kino.dev.ui.components.MenuCard]). */
 @Composable
 internal fun PresetCardSkeleton(brush: Brush) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 56.dp)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 20.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
             SkeletonText(brush = brush, style = MaterialTheme.typography.bodyLarge, widthFraction = NAME_WIDTH)

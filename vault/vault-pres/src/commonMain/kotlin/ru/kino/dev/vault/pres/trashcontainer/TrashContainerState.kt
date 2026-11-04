@@ -6,10 +6,12 @@ package ru.kino.dev.vault.pres.trashcontainer
  *
  * @param tabs the entries open, in the order they were opened
  * @param active the entry shown; null - none open
+ * @param tabLimit [TRASH_MAX_TABS] open, one more asked for: "close one first" is shown (pass-docs, Step 99, item 10)
  */
 data class TrashContainerState(
     val tabs: List<TrashTab> = emptyList(),
     val active: String? = null,
+    val tabLimit: Boolean = false,
 ) {
     /** The tab shown; null - none. */
     val shown: TrashTab? = tabs.firstOrNull { it.entryId == active }
@@ -23,6 +25,9 @@ data class TrashContainerState(
  * entry has none.
  */
 data class TrashTab(val entryId: String, val title: String? = null)
+
+/** The most tabs the container of the bin keeps open: each holds an entry read in memory (Step 99, item 10). */
+const val TRASH_MAX_TABS = 12
 
 /** The key of the pane of the list of the bin. */
 const val TRASH_LIST_PANE = "trash"

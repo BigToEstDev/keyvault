@@ -15,6 +15,7 @@ import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.settings.pres.common.keepSetting
+import ru.kino.dev.settings.pres.navigation.PresetReadRoute
 import ru.kino.dev.settings.presets.PresetSettingsRepository
 
 /**
@@ -63,8 +64,16 @@ class PresetsProcessor(
         }
     }
 
+    override fun onDrafts(count: Int) {
+        intent { reduce { state.copy(drafts = count) } }
+    }
+
     override fun onCreate() {
-        intent { if (state.canCreate) navigator.navigate(MviNavEvent.NavigateTo(PresetEditRoute())) }
+        intent { if (state.canCreate) navigator.navigate(MviNavEvent.NavigateTo(PresetEditRoute(readSaved = true))) }
+    }
+
+    override fun onOpen(id: PresetId?) {
+        intent { navigator.navigate(MviNavEvent.NavigateTo(PresetReadRoute(id?.value))) }
     }
 
     override fun onEdit(id: PresetId) {

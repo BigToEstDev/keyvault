@@ -14,11 +14,15 @@ import ru.kino.dev.core.phone.PhoneSettingsRepository
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.settings.appearance.AppearanceRepository
 import ru.kino.dev.vault.entries.EntrySettingsEditor
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entries.trims
+import ru.kino.dev.vault.trash.TrashEditor
+import ru.kino.dev.vault.trash.TrashFailure
+import ru.kino.dev.vault.trash.TrashRepository
 import java.io.IOException
 
 /**
@@ -30,6 +34,10 @@ import java.io.IOException
  *
  * The user name made private takes it out of the list: "user name in the list" of the appearance goes off, for
  * every database - it is of the app (pass-docs, Step 56, item 5). Made open again, it stays off.
+ *
+ * The recycle bin is here too (pass-docs, Step 99, item 11; before - a screen of its own, Step 70): whether it is used,
+ * and how many entries it holds - read each time the screen is shown, the bin opens from here. Off, a delete is for
+ * good, and the bin goes at once with all it holds - asked first when it holds something.
  */
 class EntriesProcessor(
     private val dbKey: String,
@@ -39,6 +47,8 @@ class EntriesProcessor(
     private val phoneSettings: PhoneSettingsRepository,
     private val phoneDefaults: PhoneDefaults,
     private val phones: PhoneNumbers,
+    private val trash: TrashRepository,
+    private val trashEditor: TrashEditor,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntriesState, EntriesState, Nothing>, EntriesActions {
@@ -156,6 +166,33 @@ class EntriesProcessor(
         intent { state.phone?.let { reduce { state.copy(phone = it.copy(countries = null)) } } }
     }
 
+    override fun onLoadBin() {
+        intent { loadBin() }
+    }
+
+    override fun onSetBinEnabled(enabled: Boolean) {
+        intent { setBinEnabled(enabled) }
+    }
+
+    override fun onBinOffConfirm() {
+        intent {
+            if (state.confirmingBinOff) {
+                reduce { state.copy(confirmingBinOff = false) }
+                writeBin(false)
+            }
+        }
+    }
+
+    override fun onBinOffDismiss() {
+        intent { reduce { state.copy(confirmingBinOff = false) } }
+    }
+
+    override fun onOpenTrash() {
+        intent {
+            if ((state.bin?.count ?: 0) > 0) navigator.navigate(MviNavEvent.NavigateTo(TrashRoute(dbKey)))
+        }
+    }
+
     override fun onMessageShown() {
         intent { reduce { state.copy(message = null) } }
     }
@@ -255,7 +292,47 @@ class EntriesProcessor(
         }
     }
 
-    private suspend fun Syntax<EntriesState, Nothing>.failed(failure: EntrySettingsFailure) {
+    private suspend fun Syntax<EntriesState, Nothing>.loadBin() {
+        try {
+            val enabled = trash.enabled(dbKey)
+            val count = trash.entries(dbKey).size
+            reduce { state.copy(bin = RecycleBin(enabled, count)) }
+        } catch (failure: TrashFailure) {
+            failed(failure)
+        }
+    }
+
+    private suspend fun Syntax<EntriesState, Nothing>.setBinEnabled(enabled: Boolean) {
+        val bin = state.bin ?: return
+        if (state.saving != null || enabled == bin.enabled) return
+
+        if (!enabled && bin.count > 0) {
+            reduce { state.copy(confirmingBinOff = true) }
+        } else {
+            writeBin(enabled)
+        }
+    }
+
+    /** Shows [enabled] at once, while it is written; refused - the switch as it was. */
+    private suspend fun Syntax<EntriesState, Nothing>.writeBin(enabled: Boolean) {
+        val before = state.bin ?: return
+        if (state.saving != null) return
+
+        // Off, the bin is gone - made in the database, written or not
+        val changed = RecycleBin(enabled, if (enabled) before.count else 0)
+        reduce { state.copy(bin = before.copy(enabled = enabled), saving = EntriesPart.RecycleBin) }
+        try {
+            trashEditor.setEnabled(dbKey, enabled)
+            reduce { state.copy(bin = changed, saving = null) }
+        } catch (_: TrashFailure.NotSaved) {
+            reduce { state.copy(bin = changed, saving = null, message = EntriesMessage.NotSaved) }
+        } catch (failure: TrashFailure) {
+            reduce { state.copy(bin = before, saving = null) }
+            failed(failure)
+        }
+    }
+
+    private suspend fun Syntax<EntriesState, Nothing>.failed(failure: Exception) {
         log.unexpected(TAG, failure)
         reduce { state.copy(message = EntriesMessage.Failed) }
     }
