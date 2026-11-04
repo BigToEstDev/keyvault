@@ -11,6 +11,7 @@ import ru.kino.dev.settings.pres.entries.EntriesScreen
 import ru.kino.dev.settings.pres.file.FileScreen
 import ru.kino.dev.settings.pres.lock.LockScreen
 import ru.kino.dev.settings.pres.presetedit.PresetEditScreen
+import ru.kino.dev.settings.pres.presetread.PresetReadScreen
 import ru.kino.dev.settings.pres.presets.PresetsScreen
 import ru.kino.dev.settings.pres.presetscontainer.PresetsContainerScreen
 import ru.kino.dev.settings.pres.privacy.PrivacyScreen
@@ -29,6 +30,8 @@ fun NavGraphBuilder.settingsGraph() {
     composable<PrivacyRoute> { PrivacyScreen() }
     // On a wide window the presets are a container: their list with the presets open beside it (Step 100, item 3)
     adaptiveComposable<PresetsRoute>(mobile = { PresetsScreen() }, tablet = { PresetsContainerScreen() })
+    // On a wide window the container opens it in a tab: on the stack only on a phone (Step 99, item 8)
+    composable<PresetReadRoute> { entry -> PresetReadScreen(presetId = entry.toRoute<PresetReadRoute>().presetId) }
     composable<FileRoute> { entry -> FileScreen(dbKey = entry.toRoute<FileRoute>().dbKey) }
     composable<EntriesRoute> { entry -> EntriesScreen(dbKey = entry.toRoute<EntriesRoute>().dbKey) }
     composable<RecycleBinRoute> { entry -> RecycleBinScreen(dbKey = entry.toRoute<RecycleBinRoute>().dbKey) }
