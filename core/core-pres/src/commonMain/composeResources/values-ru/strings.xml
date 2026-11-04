@@ -184,6 +184,7 @@
     <string name="entry_hidden_keep">Добавить вне пресета</string>
     <string name="preset_create_title">Создать пресет</string>
     <string name="preset_edit_title">Изменить пресет</string>
+    <string name="preset_title_new">Новый пресет</string>
     <string name="preset_fields_dropped_title">Сохранить пресет?</string>
     <string name="preset_fields_dropped_text">Записи с этим пресетом покажут прежние поля как свои.</string>
     <string name="preset_gone">Пресет уже удалён</string>

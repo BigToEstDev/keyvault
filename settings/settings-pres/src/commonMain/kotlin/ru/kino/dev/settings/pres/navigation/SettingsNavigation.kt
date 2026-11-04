@@ -5,12 +5,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.navigation.SettingsRoute
+import ru.kino.dev.pane.adaptiveComposable
 import ru.kino.dev.settings.pres.appearance.AppearanceScreen
 import ru.kino.dev.settings.pres.entries.EntriesScreen
 import ru.kino.dev.settings.pres.file.FileScreen
 import ru.kino.dev.settings.pres.lock.LockScreen
 import ru.kino.dev.settings.pres.presetedit.PresetEditScreen
 import ru.kino.dev.settings.pres.presets.PresetsScreen
+import ru.kino.dev.settings.pres.presetscontainer.PresetsContainerScreen
 import ru.kino.dev.settings.pres.privacy.PrivacyScreen
 import ru.kino.dev.settings.pres.recyclebin.RecycleBinScreen
 import ru.kino.dev.settings.pres.security.SecurityScreen
@@ -25,10 +27,16 @@ fun NavGraphBuilder.settingsGraph() {
     composable<AppearanceRoute> { entry -> AppearanceScreen(dbKey = entry.toRoute<AppearanceRoute>().dbKey) }
     composable<LockRoute> { entry -> LockScreen(dbKey = entry.toRoute<LockRoute>().dbKey) }
     composable<PrivacyRoute> { PrivacyScreen() }
-    composable<PresetsRoute> { PresetsScreen() }
+    // On a wide window the presets are a container: their list with the presets open beside it (Step 100, item 3)
+    adaptiveComposable<PresetsRoute>(mobile = { PresetsScreen() }, tablet = { PresetsContainerScreen() })
     composable<FileRoute> { entry -> FileScreen(dbKey = entry.toRoute<FileRoute>().dbKey) }
     composable<EntriesRoute> { entry -> EntriesScreen(dbKey = entry.toRoute<EntriesRoute>().dbKey) }
     composable<RecycleBinRoute> { entry -> RecycleBinScreen(dbKey = entry.toRoute<RecycleBinRoute>().dbKey) }
     composable<SecurityRoute> { entry -> SecurityScreen(dbKey = entry.toRoute<SecurityRoute>().dbKey) }
-    composable<PresetEditRoute> { entry -> PresetEditScreen(presetId = entry.toRoute<PresetEditRoute>().presetId) }
+    // A preset from outside the presets - "a new preset" from the form of an entry: on a wide window the container,
+    // with its tab; leaving it - back to the form
+    adaptiveComposable<PresetEditRoute>(
+        mobile = { entry -> PresetEditScreen(presetId = entry.toRoute<PresetEditRoute>().presetId) },
+        tablet = { entry -> PresetsContainerScreen(opening = entry.toRoute<PresetEditRoute>()) },
+    )
 }

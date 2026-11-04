@@ -9,12 +9,14 @@ import org.koin.test.verify.definition
 import org.koin.test.verify.injectedParameters
 import org.koin.test.verify.verify
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.settings.pres.appearance.AppearanceProcessor
 import ru.kino.dev.settings.pres.entries.EntriesProcessor
 import ru.kino.dev.settings.pres.file.FileProcessor
 import ru.kino.dev.settings.pres.lock.LockProcessor
 import ru.kino.dev.settings.pres.presetedit.PresetEditProcessor
 import ru.kino.dev.settings.pres.presets.PresetsProcessor
+import ru.kino.dev.settings.pres.presetscontainer.PresetsContainerProcessor
 import ru.kino.dev.settings.pres.privacy.PrivacyProcessor
 import ru.kino.dev.settings.pres.recyclebin.RecycleBinProcessor
 import ru.kino.dev.settings.pres.security.SecurityProcessor
@@ -26,6 +28,7 @@ import ru.kino.dev.vault.pres.entryread.EntryReadProcessor
 import ru.kino.dev.vault.pres.entryversion.EntryVersionProcessor
 import ru.kino.dev.vault.pres.grouplist.GroupListProcessor
 import ru.kino.dev.vault.pres.trash.TrashProcessor
+import ru.kino.dev.vault.pres.trashcontainer.TrashContainerProcessor
 import ru.kino.dev.vault.pres.trashentry.TrashEntryProcessor
 import ru.kino.dev.welcome.pres.biometricsetup.BiometricSetupProcessor
 import ru.kino.dev.welcome.pres.create.CreateDraft
@@ -76,6 +79,7 @@ class AppGraphTest {
                 definition<EntryVersionProcessor>(String::class, Int::class, Navigator::class),
                 definition<TrashProcessor>(String::class, Navigator::class),
                 definition<TrashEntryProcessor>(String::class, Navigator::class),
+                definition<TrashContainerProcessor>(String::class, Navigator::class),
                 definition<SettingsProcessor>(String::class, Navigator::class),
                 definition<AppearanceProcessor>(String::class, Navigator::class),
                 definition<EntriesProcessor>(String::class, Navigator::class),
@@ -86,6 +90,7 @@ class AppGraphTest {
                 definition<PresetsProcessor>(Navigator::class),
                 definition<PrivacyProcessor>(Navigator::class),
                 definition<PresetEditProcessor>(String::class, Navigator::class),
+                definition<PresetsContainerProcessor>(PresetEditRoute::class, Navigator::class),
             ),
         )
     }
