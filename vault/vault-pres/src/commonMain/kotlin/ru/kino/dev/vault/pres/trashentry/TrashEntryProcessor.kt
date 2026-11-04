@@ -8,6 +8,7 @@ import ru.kino.dev.core.phone.PhoneNumbers
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryOpener
@@ -15,6 +16,7 @@ import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupRepository
+import ru.kino.dev.vault.pres.common.ChangeGate
 import ru.kino.dev.vault.pres.common.prepareFor
 import ru.kino.dev.vault.pres.common.protectionOrDefault
 import ru.kino.dev.vault.pres.common.toggled
@@ -31,7 +33,8 @@ import ru.kino.dev.vault.trash.TrashRepository
  * fab restores it to a group - the one it came from offered; the bin in the top bar deletes it for good. Either way
  * the screen goes back to the bin, which reads itself anew.
  *
- * An entry no longer in the bin - restored or removed meanwhile - sends the screen back.
+ * An entry no longer in the bin - restored or removed meanwhile - sends the screen back: when it is read, and while it
+ * is shown, on a change made beside it - in the list of the bin, in a container (pass-docs, Step 100, item 2).
  */
 class TrashEntryProcessor(
     private val dbKey: String,
@@ -42,11 +45,17 @@ class TrashEntryProcessor(
     private val editor: TrashEditor,
     private val groups: GroupRepository,
     private val phones: PhoneNumbers,
+    changes: VaultChanges,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<TrashEntryState, TrashEntryState, Nothing>, TrashEntryActions {
 
-    override val container = orbitContainer<TrashEntryState, Nothing>(TrashEntryState())
+    private val gate = ChangeGate(changes, dbKey)
+
+    override val container = orbitContainer<TrashEntryState, Nothing>(TrashEntryState()) {
+        // While the screen is shown: gone from the bin beside it - back
+        repeatOnSubscription { gate.elsewhere.collect { checkStillThere() } }
+    }
 
     private val id = EntryId(entryId)
 
@@ -109,6 +118,7 @@ class TrashEntryProcessor(
     private suspend fun Syntax<TrashEntryState, Nothing>.load() {
         // Read once: shown in clear stays shown when the screen comes back
         if (state.entry != null) return
+        gate.reading()
         try {
             val trashed = trash.entries(dbKey).find { it.entry.id == id }
             if (trashed == null) {
@@ -126,6 +136,19 @@ class TrashEntryProcessor(
         } catch (failure: TrashFailure) {
             loadFailed(failure)
         }
+    }
+
+    /** A change made elsewhere: the entry gone from the bin - the screen goes back; still there - shown as it is. */
+    private suspend fun Syntax<TrashEntryState, Nothing>.checkStillThere() {
+        gate.reading()
+        val there = try {
+            trash.entries(dbKey).any { it.entry.id == id }
+        } catch (failure: TrashFailure) {
+            // Not known: the screen stays, the next change or action tells
+            log.unexpected(TAG, failure)
+            return
+        }
+        if (!there) navigator.navigate(MviNavEvent.NavigateBack)
     }
 
     private suspend fun Syntax<TrashEntryState, Nothing>.loadFailed(failure: Exception) {
@@ -159,6 +182,12 @@ class TrashEntryProcessor(
         }
 
         reduce { state.copy(dialog = dialog.saving()) }
+        // Its own change: the screen goes back here, not by the change as well
+        gate.own { write(change) }
+    }
+
+    /** [change] made: back to the bin - or what came of it said. */
+    private suspend fun Syntax<TrashEntryState, Nothing>.write(change: suspend () -> Unit) {
         try {
             change()
             navigator.navigate(MviNavEvent.NavigateBack)

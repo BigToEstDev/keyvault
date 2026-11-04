@@ -10,10 +10,12 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.group.GroupRepository
+import ru.kino.dev.vault.pres.common.ChangeGate
 import ru.kino.dev.vault.pres.common.SEARCH_DELAY
 import ru.kino.dev.vault.pres.navigation.TrashEntryRoute
 import ru.kino.dev.vault.trash.TrashEditor
@@ -28,17 +30,26 @@ import ru.kino.dev.vault.trash.TrashRepository
  * A tap reads the entry (pass-docs, Step 71); a long press starts a choice, and while choosing a tap picks or lets go. The picked entries are
  * restored - all to one group, the one they came from offered when they share it - or removed for good. The whole bin
  * is emptied from the menu of the top bar. Each is one write of the file; after it the bin is read again.
+ *
+ * While the screen is shown, a change made beside it - an entry restored or removed in its tab, in a container - is
+ * read again (pass-docs, Step 100, item 2).
  */
 class TrashProcessor(
     private val dbKey: String,
     private val trash: TrashRepository,
     private val editor: TrashEditor,
     private val groups: GroupRepository,
+    changes: VaultChanges,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<TrashState, TrashState, Nothing>, TrashActions {
 
-    override val container = orbitContainer<TrashState, Nothing>(TrashState())
+    private val gate = ChangeGate(changes, dbKey)
+
+    override val container = orbitContainer<TrashState, Nothing>(TrashState()) {
+        // While the screen is shown: a change made beside it is read again
+        repeatOnSubscription { gate.elsewhere.collect { load() } }
+    }
 
     /** The search waiting for the typing to stop, or for its answer; the next letter cancels it. */
     private var searchJob: Job? = null
@@ -138,6 +149,7 @@ class TrashProcessor(
     }
 
     private suspend fun Syntax<TrashState, Nothing>.load() {
+        gate.reading()
         val entries = try {
             trash.entries(dbKey)
         } catch (failure: TrashFailure) {
@@ -183,6 +195,12 @@ class TrashProcessor(
         }
 
         reduce { state.copy(dialog = dialog.saving()) }
+        // Its own change: read again here, not by the change as well
+        gate.own { write(change) }
+    }
+
+    /** [change] made, what came of it said, the bin read again. */
+    private suspend fun Syntax<TrashState, Nothing>.write(change: suspend () -> Unit) {
         val message = try {
             change()
             null

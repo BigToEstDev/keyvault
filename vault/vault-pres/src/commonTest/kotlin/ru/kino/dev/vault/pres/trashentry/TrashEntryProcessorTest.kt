@@ -14,6 +14,7 @@ import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.changes.FakeVaultChanges
 import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryOpener
@@ -49,6 +50,7 @@ class TrashEntryProcessorTest {
     }
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
+    private val changes = FakeVaultChanges()
 
     @Test
     fun `the deleted entry is read with when it was deleted`() = runTest {
@@ -84,6 +86,15 @@ class TrashEntryProcessorTest {
         val (state, _) = perform({ onLoad() }, { onRestore() })
 
         assertEquals(work, (state.dialog as TrashDialog.Restore).group)
+    }
+
+    @Test
+    fun `restore offers the root when where the entry came from is not known`() = runTest {
+        trash.entries[0] = trash.entries[0].copy(previousGroupId = null)
+
+        val (state, _) = perform({ onLoad() }, { onRestore() })
+
+        assertEquals(groups.rootId, (state.dialog as TrashDialog.Restore).group)
     }
 
     @Test
@@ -156,6 +167,7 @@ class TrashEntryProcessorTest {
             TrashEditor(trash, database),
             groups,
             FakePhoneNumbers(),
+            changes,
             navigator,
             log,
         )

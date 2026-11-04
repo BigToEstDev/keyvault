@@ -7,18 +7,24 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.GroupFailure
+import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.history.EntryHistoryEditor
 import ru.kino.dev.vault.history.EntryHistoryReader
+import ru.kino.dev.vault.pres.common.ChangeGate
+import ru.kino.dev.vault.pres.common.groupChoice
 import ru.kino.dev.vault.pres.navigation.EntryVersionRoute
 
 /**
  * The history of an entry (pass-docs, Step 51, item 3): "Modified" for every old version, newest first, and
  * "Created" last.
  *
- * Read anew every time the screen is shown. An entry that is gone - deleted or merged away - leaves nothing
- * to show: the screen goes back.
+ * Read anew every time the screen is shown, and while it is shown on a change made elsewhere - by the list beside
+ * it, in a container ([ChangeGate], pass-docs, Step 100). An entry that is gone - deleted or merged away - or in the
+ * recycle bin leaves nothing to show: the screen goes back.
  *
  * A version restored - the screen goes back to the entry, which reads itself anew; one deleted - the history
  * is read again, the indexes moved. A change not written to the file is said here, and the history is read
@@ -29,11 +35,18 @@ class EntryHistoryProcessor(
     private val entryId: String,
     private val reader: EntryHistoryReader,
     private val editor: EntryHistoryEditor,
+    private val groups: GroupRepository,
+    changes: VaultChanges,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryHistoryState, EntryHistoryState, Nothing>, EntryHistoryActions {
 
-    override val container = orbitContainer<EntryHistoryState, Nothing>(EntryHistoryState())
+    private val gate = ChangeGate(changes, dbKey)
+
+    override val container = orbitContainer<EntryHistoryState, Nothing>(EntryHistoryState()) {
+        // While the screen is shown: a change made beside it is read again
+        repeatOnSubscription { gate.elsewhere.collect { load() } }
+    }
 
     override fun onLoad() {
         intent { load() }
@@ -91,15 +104,27 @@ class EntryHistoryProcessor(
     }
 
     private suspend fun Syntax<EntryHistoryState, Nothing>.load() {
+        gate.reading()
         try {
             val history = reader.read(dbKey, EntryId(entryId))
+            if (groups.tree(dbKey).groupChoice(history.groupId) == null) {
+                // Not in the visible tree: in the recycle bin, put there beside this screen
+                navigator.navigate(MviNavEvent.NavigateBack)
+                return
+            }
             reduce { state.copy(loading = false, history = history) }
         } catch (_: EntryFailure.EntryNotFound) {
             navigator.navigate(MviNavEvent.NavigateBack)
         } catch (failure: EntryFailure) {
-            log.unexpected(TAG, failure)
-            reduce { state.copy(loading = false, message = EntryHistoryMessage.LoadFailed) }
+            loadFailed(failure)
+        } catch (failure: GroupFailure) {
+            loadFailed(failure)
         }
+    }
+
+    private suspend fun Syntax<EntryHistoryState, Nothing>.loadFailed(failure: Exception) {
+        log.unexpected(TAG, failure)
+        reduce { state.copy(loading = false, message = EntryHistoryMessage.LoadFailed) }
     }
 
     /** When the version at [index] was saved; null when the history shown has no such version. */
@@ -111,6 +136,11 @@ class EntryHistoryProcessor(
         if (dialog.saving) return
 
         reduce { state.copy(dialog = dialog.underWay()) }
+        // Its own change: read again or back here, not by the change as well
+        gate.own { write(dialog) }
+    }
+
+    private suspend fun Syntax<EntryHistoryState, Nothing>.write(dialog: EntryHistoryDialog) {
         try {
             when (dialog) {
                 is EntryHistoryDialog.Restore -> {

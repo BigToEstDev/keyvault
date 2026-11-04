@@ -9,6 +9,7 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.pane.PaneRouter
+import ru.kino.dev.pane.closeTab
 import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryOpener
@@ -24,7 +25,7 @@ import ru.kino.dev.vault.pres.navigation.GroupRoute
 /**
  * The container of `vault` on a wide window: the list of a group on the left, the entries open on the right as tabs
  * (pass-docs, Step 98, `docs/dev/navigation.md`). The screens in it are those of a phone, each with its own
- * processor; what they navigate to that is the container's - another group, an entry, its pages, back - comes here
+ * processor; what they navigate to that is the container's - another group, an entry, its form, its pages, back - comes here
  * through [listRouter], [entryRouter] and [newRouter], the rest goes on to the navigation of the app.
  *
  * A tab is one page at a time (items 6, 7): the entry read, or a page over it - its form, history, a version - in its
@@ -64,6 +65,11 @@ class VaultContainerProcessor(
 
             event is MviNavEvent.NavigateTo && event.route is EntryReadRoute -> {
                 open((event.route as EntryReadRoute).entryId)
+                true
+            }
+
+            event is MviNavEvent.NavigateTo && event.route is EntryEditRoute -> {
+                edit((event.route as EntryEditRoute).entryId)
                 true
             }
 
@@ -178,6 +184,25 @@ class VaultContainerProcessor(
         }
     }
 
+    /**
+     * "Edit" in the menu of the list (pass-docs, Step 100, item 1): the form of the entry in its tab, over the page
+     * shown - "back" from it reads the entry, as from a form opened in it. Not open - its tab opens on the form; on the
+     * form already - only shown, its changes kept.
+     */
+    private fun edit(entryId: String) {
+        intent {
+            val tab = state.entry(entryId)
+            reduce {
+                when {
+                    tab == null -> state.copy(tabs = state.tabs + EntryTab.Entry(entryId, pages = listOf(EntryPage.Edit)))
+                    EntryPage.Edit in tab.pages -> state
+                    else -> state.withPages(entryId) { it + EntryPage.Edit }
+                }.copy(active = entryId)
+            }
+            if (tab == null) readTitle(entryId)
+        }
+    }
+
     private suspend fun Syntax<VaultContainerState, VaultContainerSideEffect>.readTitle(entryId: String) {
         gate.reading()
         val title = try {
@@ -210,13 +235,8 @@ class VaultContainerProcessor(
     }
 
     /** The tab [key] gone; shown instead - the next one, else the one before. */
-    private fun VaultContainerState.closed(key: String): VaultContainerState {
-        val index = tabs.indexOfFirst { it.key == key }
-        if (index < 0) return this
-        val left = tabs - tabs[index]
-        val shown = if (active != key) active else left.getOrNull(index)?.key ?: left.lastOrNull()?.key
-        return copy(tabs = left, active = shown)
-    }
+    private fun VaultContainerState.closed(key: String): VaultContainerState =
+        closeTab(tabs, active, key, EntryTab::key)?.let { copy(tabs = it.tabs, active = it.active) } ?: this
 
     private fun VaultContainerState.up(): VaultContainerState =
         if (groups.size > 1) copy(groups = groups.dropLast(1)) else this

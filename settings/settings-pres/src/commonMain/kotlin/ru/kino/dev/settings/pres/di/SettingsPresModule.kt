@@ -4,12 +4,14 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.settings.pres.appearance.AppearanceProcessor
 import ru.kino.dev.settings.pres.entries.EntriesProcessor
 import ru.kino.dev.settings.pres.file.FileProcessor
 import ru.kino.dev.settings.pres.lock.LockProcessor
 import ru.kino.dev.settings.pres.presetedit.PresetEditProcessor
 import ru.kino.dev.settings.pres.presets.PresetsProcessor
+import ru.kino.dev.settings.pres.presetscontainer.PresetsContainerProcessor
 import ru.kino.dev.settings.pres.privacy.PrivacyProcessor
 import ru.kino.dev.settings.pres.recyclebin.RecycleBinProcessor
 import ru.kino.dev.settings.pres.security.SecurityProcessor
@@ -44,4 +46,6 @@ val settingsPresModule = module {
     viewModel { (presetId: String?, navigator: Navigator) ->
         PresetEditProcessor(presetId, get(), get(), navigator, get())
     }
+    // The container of a wide window: the screens in it bring their own processors (pass-docs, Step 100, item 3)
+    viewModel { (opening: PresetEditRoute?) -> PresetsContainerProcessor(opening, get()) }
 }

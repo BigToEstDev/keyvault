@@ -177,6 +177,50 @@ class VaultContainerProcessorTest {
     }
 
     @Test
+    fun `edit in the list of an entry not open opens its tab on the form, shown`() = runTest {
+        val state = perform(open("bank"), editFromList("mail"))
+
+        assertEquals(listOf(EntryTab.Entry("bank", "Bank"), EntryTab.Entry("mail", "Mail", pages = listOf(EntryPage.Edit))), state.tabs)
+        assertEquals("mail", state.active)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `edit in the list of an entry read turns its tab to the form, shown`() = runTest {
+        val state = perform(open("mail"), open("bank"), editFromList("mail"))
+
+        assertEquals(listOf(EntryTab.Entry("mail", "Mail", pages = listOf(EntryPage.Edit)), EntryTab.Entry("bank", "Bank")), state.tabs)
+        assertEquals("mail", state.active)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `edit in the list of an entry on its history opens the form over it`() = runTest {
+        val state = perform(open("mail"), history("mail"), editFromList("mail"))
+
+        assertEquals(listOf(EntryPage.History, EntryPage.Edit), (state.tabs.single() as EntryTab.Entry).pages)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `edit in the list of an entry on its form already only shows it`() = runTest {
+        val state = perform(open("mail"), edit("mail"), open("bank"), editFromList("mail"))
+
+        assertEquals(listOf(EntryTab.Entry("mail", "Mail", pages = listOf(EntryPage.Edit)), EntryTab.Entry("bank", "Bank")), state.tabs)
+        assertEquals("mail", state.active)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `back from the form opened in the list reads the entry, its tab stays`() = runTest {
+        val state = perform(editFromList("mail"), fromForm("mail", MviNavEvent.NavigateBack))
+
+        assertEquals(listOf(EntryTab.Entry("mail", "Mail")), state.tabs)
+        assertEquals("mail", state.active)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
     fun `back from the form of an entry - saved or left - reads it again`() = runTest {
         val state = perform(open("mail"), edit("mail"), fromForm("mail", MviNavEvent.NavigateBack))
 
@@ -421,6 +465,8 @@ class VaultContainerProcessorTest {
     private fun create(groupId: String) = fromList(MviNavEvent.NavigateTo(EntryCreateRoute(DB, groupId)))
 
     private fun edit(entryId: String) = fromEntry(entryId, MviNavEvent.NavigateTo(EntryEditRoute(DB, entryId)))
+
+    private fun editFromList(entryId: String) = fromList(MviNavEvent.NavigateTo(EntryEditRoute(DB, entryId)))
 
     private fun fromList(event: MviNavEvent): VaultContainerProcessor.() -> Unit =
         { taken += listRouter.route(event) }

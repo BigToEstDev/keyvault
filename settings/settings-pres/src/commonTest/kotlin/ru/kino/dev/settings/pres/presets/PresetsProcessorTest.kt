@@ -131,6 +131,25 @@ class PresetsProcessorTest {
     }
 
     @Test
+    fun `a preset made beside the list while it is shown is in it`() = runTest {
+        val (navigator, _) = recordNavigation()
+        val processor = PresetsProcessor(FakePresetSettingsRepository(), repository, PresetEditor(repository), navigator, log)
+        val made = CustomPreset.of(PresetId("site"), "Site", listOf(emptyList()))
+
+        processor.testWithInternalState(this) {
+            // Listening, as while the screen is shown
+            runOnCreate()
+            assertEquals(listOf(CARD), awaitInternalState().presets)
+
+            // Saved in its tab, beside the list
+            repository.save(made)
+
+            assertEquals(listOf(CARD, made), awaitInternalState().presets)
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
+    @Test
     fun `back leaves the screen`() = runTest {
         val (_, events) = perform(FakePresetSettingsRepository(), { onBack() })
 

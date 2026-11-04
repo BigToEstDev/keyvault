@@ -11,10 +11,13 @@ import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.changes.FakeVaultChanges
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.FakeEntryRepository
+import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
 import ru.kino.dev.vault.history.EntryHistoryEditor
 import ru.kino.dev.vault.history.EntryHistoryReader
@@ -37,6 +40,8 @@ class EntryHistoryProcessorTest {
     )
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
+    private val groups = FakeGroupRepository()
+    private val changes = FakeVaultChanges()
 
     @Test
     fun `the history is read when the screen is shown, newest first, with when the entry was made`() = runTest {
@@ -242,20 +247,39 @@ class EntryHistoryProcessorTest {
         assertNull(state.dialog)
     }
 
+    @Test
+    fun `an entry in the recycle bin - put there beside the screen - has no history to show, back`() = runTest {
+        entries.stored[mail] = entries.stored.getValue(mail).copy(groupId = GroupId("bin"))
+
+        val (state, events) = perform({ onLoad() })
+
+        assertNull(state.history)
+        assertEquals(listOf(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `a change made elsewhere while the history is shown is read again`() = runTest {
+        entries.putHistory(mail, 1_000L)
+        val (navigator, _) = recordNavigation()
+
+        processor(navigator).testWithInternalState(this) {
+            // Listening, as while the screen is shown
+            runOnCreate()
+            entries.putHistory(mail, 1_000L, 2_000L)
+            changes.changed(DB)
+
+            assertEquals(listOf(2_000L, 1_000L), awaitInternalState().history?.versions?.map { it.modified })
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(
         vararg actions: EntryHistoryActions.() -> Unit,
         initial: EntryHistoryState = EntryHistoryState(),
     ): Pair<EntryHistoryState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = EntryHistoryProcessor(
-            DB,
-            mail.value,
-            EntryHistoryReader(entries, history),
-            EntryHistoryEditor(history, database),
-            navigator,
-            log,
-        )
+        val processor = processor(navigator)
 
         processor.testWithInternalState(this, initial) {
             containerHost.runEach(actions)
@@ -263,4 +287,15 @@ class EntryHistoryProcessorTest {
         }
         return processor.container.stateFlow.value to events
     }
+
+    private fun processor(navigator: Navigator) = EntryHistoryProcessor(
+        DB,
+        mail.value,
+        EntryHistoryReader(entries, history),
+        EntryHistoryEditor(history, database),
+        groups,
+        changes,
+        navigator,
+        log,
+    )
 }
