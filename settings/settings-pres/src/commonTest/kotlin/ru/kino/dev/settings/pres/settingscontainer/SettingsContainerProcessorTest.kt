@@ -66,6 +66,25 @@ class SettingsContainerProcessorTest {
     }
 
     @Test
+    fun `the cross of the tab closes the page - the right is empty`() = runTest {
+        val state = perform(open(SettingsItem.Lock), { onCloseTab(settingsPagePane(SettingsItem.Lock)) })
+
+        assertEquals(SettingsContainerState(), state)
+        assertEquals(setOf(SETTINGS_LIST_PANE), state.paneKeys)
+    }
+
+    @Test
+    fun `the cross late, of a page left, changes nothing`() = runTest {
+        val state = perform(
+            open(SettingsItem.Lock),
+            open(SettingsItem.File),
+            { onCloseTab(settingsPagePane(SettingsItem.Lock)) },
+        )
+
+        assertEquals(SettingsContainerState(SettingsItem.File), state)
+    }
+
+    @Test
     fun `back late from a page left changes nothing`() = runTest {
         val state = perform(
             open(SettingsItem.File),

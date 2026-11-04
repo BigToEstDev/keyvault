@@ -4,7 +4,7 @@ import ru.kino.dev.settings.pres.settings.SettingsItem
 
 /**
  * What the container of the settings holds on a wide window (pass-docs, Step 101): the page open on the right - one,
- * no tabs; the main settings screen on the left is always the same.
+ * in one tab; the main settings screen on the left is always the same.
  *
  * @param page the page open; null - none, the right is empty
  */

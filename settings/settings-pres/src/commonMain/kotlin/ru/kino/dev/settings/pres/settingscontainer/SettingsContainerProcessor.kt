@@ -10,7 +10,8 @@ import ru.kino.dev.settings.pres.settings.SettingsItem
 
 /**
  * The container of the settings of [dbKey] on a wide window (pass-docs, Step 101, `docs/dev/navigation.md`): the main
- * settings screen on the left, the page chosen in it on the right - one, no tabs; another chosen - it takes the place.
+ * settings screen on the left, the page chosen in it on the right - in one tab: another chosen - the tab opens it
+ * instead, its cross - the right empty.
  * The screens in it are those of a phone, each with its own processor; what they navigate to that is the container's
  * comes here through [listRouter] and [pageRouter], the rest goes on to the navigation of the app: "back" of the list -
  * to `vault`, the presets - their own container over this one, the recycle bin from the entries - its container.
@@ -34,5 +35,11 @@ class SettingsContainerProcessor(
         if (event != MviNavEvent.NavigateBack) return@PaneRouter false
         intent { reduce { if (state.page == item) state.copy(page = null) else state } }
         true
+    }
+
+    override fun onSelectTab(key: String) = Unit
+
+    override fun onCloseTab(key: String) {
+        intent { reduce { if (state.page?.let(::settingsPagePane) == key) state.copy(page = null) else state } }
     }
 }
