@@ -24,7 +24,7 @@ import ru.kino.dev.vault.pres.navigation.GroupRoute
 /**
  * The container of `vault` on a wide window: the list of a group on the left, the entries open on the right as tabs
  * (pass-docs, Step 98, `docs/dev/navigation.md`). The screens in it are those of a phone, each with its own
- * processor; what they navigate to that is the container's - another group, an entry, its pages, back - comes here
+ * processor; what they navigate to that is the container's - another group, an entry, its form, its pages, back - comes here
  * through [listRouter], [entryRouter] and [newRouter], the rest goes on to the navigation of the app.
  *
  * A tab is one page at a time (items 6, 7): the entry read, or a page over it - its form, history, a version - in its
@@ -64,6 +64,11 @@ class VaultContainerProcessor(
 
             event is MviNavEvent.NavigateTo && event.route is EntryReadRoute -> {
                 open((event.route as EntryReadRoute).entryId)
+                true
+            }
+
+            event is MviNavEvent.NavigateTo && event.route is EntryEditRoute -> {
+                edit((event.route as EntryEditRoute).entryId)
                 true
             }
 
@@ -175,6 +180,25 @@ class VaultContainerProcessor(
             val open = state.entry(entryId) != null
             reduce { state.copy(tabs = if (open) state.tabs else state.tabs + EntryTab.Entry(entryId), active = entryId) }
             if (!open) readTitle(entryId)
+        }
+    }
+
+    /**
+     * "Edit" in the menu of the list (pass-docs, Step 100, item 1): the form of the entry in its tab, over the page
+     * shown - "back" from it reads the entry, as from a form opened in it. Not open - its tab opens on the form; on the
+     * form already - only shown, its changes kept.
+     */
+    private fun edit(entryId: String) {
+        intent {
+            val tab = state.entry(entryId)
+            reduce {
+                when {
+                    tab == null -> state.copy(tabs = state.tabs + EntryTab.Entry(entryId, pages = listOf(EntryPage.Edit)))
+                    EntryPage.Edit in tab.pages -> state
+                    else -> state.withPages(entryId) { it + EntryPage.Edit }
+                }.copy(active = entryId)
+            }
+            if (tab == null) readTitle(entryId)
         }
     }
 
