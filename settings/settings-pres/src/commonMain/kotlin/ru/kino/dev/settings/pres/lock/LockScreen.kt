@@ -39,10 +39,13 @@ import ru.kino.dev.ui.res.stringResource
  * How the database locks and how one gets in: the group "Locking" - the auto-lock, locking on leaving the app,
  * the lock button; the group "Sign-in" - biometrics of the database, asking for them by themselves, wiping a wrong
  * password (pass-docs, Step 59).
+ *
+ * @param canGoBack false - a page of the container of a wide window: its tab closes it, not "back" (Step 101)
  */
 @Composable
 internal fun LockScreen(
     dbKey: String,
+    canGoBack: Boolean = true,
     processor: LockProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
@@ -77,6 +80,7 @@ internal fun LockScreen(
                 BackTopBar(
                     title = stringResource(Res.string.settings_lock),
                     onBack = processor::onBack,
+                    back = canGoBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },

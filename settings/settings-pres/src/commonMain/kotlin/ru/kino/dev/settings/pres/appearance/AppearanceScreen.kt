@@ -39,10 +39,13 @@ import ru.kino.dev.ui.res.stringResource
 /**
  * How the app looks: the group "Theme" - the theme of the app and the color theme to come (pass-docs, Step 55);
  * the group "Language" (Step 57); the group "Entries" (Step 58).
+ *
+ * @param canGoBack false - a page of the container of a wide window: its tab closes it, not "back" (Step 101)
  */
 @Composable
 internal fun AppearanceScreen(
     dbKey: String,
+    canGoBack: Boolean = true,
     processor: AppearanceProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
@@ -67,6 +70,7 @@ internal fun AppearanceScreen(
                 BackTopBar(
                     title = stringResource(Res.string.settings_appearance),
                     onBack = processor::onBack,
+                    back = canGoBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },

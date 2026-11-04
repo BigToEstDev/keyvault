@@ -56,10 +56,13 @@ import ru.kino.dev.ui.res.stringResource
 /**
  * The entries of the database: the fields hidden on every entry, how much history an entry keeps (pass-docs,
  * Step 65), the recycle bin (Step 99, item 11), the prefix of a new phone field.
+ *
+ * @param canGoBack false - a page of the container of a wide window: its tab closes it, not "back" (Step 101)
  */
 @Composable
 internal fun EntriesScreen(
     dbKey: String,
+    canGoBack: Boolean = true,
     processor: EntriesProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
@@ -87,6 +90,7 @@ internal fun EntriesScreen(
                 BackTopBar(
                     title = stringResource(Res.string.settings_entries),
                     onBack = processor::onBack,
+                    back = canGoBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },

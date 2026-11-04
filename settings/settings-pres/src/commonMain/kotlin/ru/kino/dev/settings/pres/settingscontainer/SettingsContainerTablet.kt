@@ -46,16 +46,16 @@ internal fun SettingsContainerActions.SettingsContainerTablet(
     )
 }
 
-/** The screen of the page [item] - of a phone, as it is. */
+/** The screen of the page [item] - of a phone, as it is, but with no "back": the cross of the tab closes it. */
 @Composable
 private fun SettingsPage(dbKey: String, item: SettingsItem) {
     when (item) {
-        SettingsItem.Appearance -> AppearanceScreen(dbKey = dbKey)
-        SettingsItem.Lock -> LockScreen(dbKey = dbKey)
-        SettingsItem.Privacy -> PrivacyScreen()
-        SettingsItem.File -> FileScreen(dbKey = dbKey)
-        SettingsItem.Entries -> EntriesScreen(dbKey = dbKey)
-        SettingsItem.Security -> SecurityScreen(dbKey = dbKey)
+        SettingsItem.Appearance -> AppearanceScreen(dbKey = dbKey, canGoBack = false)
+        SettingsItem.Lock -> LockScreen(dbKey = dbKey, canGoBack = false)
+        SettingsItem.Privacy -> PrivacyScreen(canGoBack = false)
+        SettingsItem.File -> FileScreen(dbKey = dbKey, canGoBack = false)
+        SettingsItem.Entries -> EntriesScreen(dbKey = dbKey, canGoBack = false)
+        SettingsItem.Security -> SecurityScreen(dbKey = dbKey, canGoBack = false)
         // Their own container, over this one: never a page here
         SettingsItem.Presets -> Unit
     }

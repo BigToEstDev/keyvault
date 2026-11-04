@@ -27,9 +27,16 @@ import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.SwitchRow
 import ru.kino.dev.ui.res.stringResource
 
-/** What the app lets out of its screen: the group "Data protection" - allowing screenshots (pass-docs, Step 61). */
+/**
+ * What the app lets out of its screen: the group "Data protection" - allowing screenshots (pass-docs, Step 61).
+ *
+ * @param canGoBack false - a page of the container of a wide window: its tab closes it, not "back" (Step 101)
+ */
 @Composable
-internal fun PrivacyScreen(processor: PrivacyProcessor = koinProcessor()) {
+internal fun PrivacyScreen(
+    canGoBack: Boolean = true,
+    processor: PrivacyProcessor = koinProcessor(),
+) {
     val state by processor.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 
@@ -52,6 +59,7 @@ internal fun PrivacyScreen(processor: PrivacyProcessor = koinProcessor()) {
                 BackTopBar(
                     title = stringResource(Res.string.settings_privacy),
                     onBack = processor::onBack,
+                    back = canGoBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },
