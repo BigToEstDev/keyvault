@@ -3,10 +3,9 @@ package ru.kino.dev.pane
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.SaveableStateHolder
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -29,16 +28,19 @@ class PaneHost internal constructor(
 
     private val closes = mutableMapOf<String, PaneCloseSlot>()
 
+    private val routers = PaneRouters()
+
     /**
      * A pane: [content] - a screen as it is, its processor in the pane's store, its navigation through [router]
      * first, on the card of the container - no backdrop of its own. [key] - which pane: the same key, the same
-     * processor.
+     * processor. Its navigation goes through the [router] the pane was last drawn with, whatever place of the layout
+     * draws it (pass-docs, Step 99, item 9).
      */
     @Composable
     fun Pane(key: String, router: PaneRouter, content: @Composable () -> Unit) {
         val parent = LocalNavigator.current
-        val currentRouter by rememberUpdatedState(router)
-        val navigator = remember(key, parent) { PaneNavigator(parent) { currentRouter.route(it) } }
+        SideEffect { routers.set(key, router) }
+        val navigator = remember(key, parent) { PaneNavigator(parent, routers.router(key)) }
         val owner = remember(key) { stores.owner(key) }
         val close = remember(key) { closes.getOrPut(key, ::PaneCloseSlot) }
         saveable.SaveableStateProvider(key) {
@@ -67,6 +69,7 @@ class PaneHost internal constructor(
     internal fun retain(keys: Set<String>) {
         stores.retain(keys).forEach(saveable::removeState)
         closes.keys.retainAll(keys)
+        routers.retain(keys)
     }
 }
 
