@@ -7,11 +7,13 @@ package ru.kino.dev.vault.pres.container
  * @param groups the way down from the root, the root first (null): the list shows the last; "back" goes one up
  * @param tabs the entries open, in the order they were opened
  * @param active the key of the tab shown; null - none open
+ * @param tabLimit [VAULT_MAX_TABS] open, one more asked for: "close one first" is shown (pass-docs, Step 99, item 10)
  */
 data class VaultContainerState(
     val groups: List<String?> = listOf(null),
     val tabs: List<EntryTab> = emptyList(),
     val active: String? = null,
+    val tabLimit: Boolean = false,
 ) {
     /** The group the list shows; null - the root. */
     val group: String? = groups.last()
@@ -83,6 +85,9 @@ sealed interface EntryPage {
         override fun pane(entryId: String) = versionPane(entryId, index)
     }
 }
+
+/** The most tabs the container of `vault` keeps open: each holds an entry read - its secrets - in memory (Step 99, item 10). */
+const val VAULT_MAX_TABS = 12
 
 /** The key of the pane of the group [groupId] - null for the root. */
 fun groupPane(groupId: String?): String = "group:${groupId ?: "root"}"

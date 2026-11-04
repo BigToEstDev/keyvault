@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -17,15 +20,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import ru.kino.dev.core.pres.Res
+import ru.kino.dev.core.pres.action_ok
+import ru.kino.dev.core.pres.tabs_limit_text
+import ru.kino.dev.core.pres.tabs_limit_title
 import ru.kino.dev.ui.components.ClosableTab
 import ru.kino.dev.ui.components.ClosableTabs
 import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.res.pluralStringResource
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * A container of a list and the tabs it opens, on the gradient of the whole window: cards, the screens on them with no
  * backdrop of their own (pass-docs, Step 99, `docs/dev/navigation.md`). On the left - the card of [list], always there
  * and always as wide. On the right, only while a tab is open ([selected] not null) - two cards, one over the other:
  * the [tabs] open, and the [page] of the one shown; none open - the gradient.
+ *
+ * @param tabLimit the most tabs open, reached as one more was asked for - "close one first" over the container; null -
+ *   none (pass-docs, Step 99, item 10)
  */
 @Composable
 fun TabbedContainer(
@@ -35,6 +47,8 @@ fun TabbedContainer(
     onClose: (String) -> Unit,
     list: @Composable ColumnScope.() -> Unit,
     page: @Composable ColumnScope.() -> Unit,
+    tabLimit: Int? = null,
+    onTabLimitDismiss: () -> Unit = {},
 ) {
     GradientBackground {
         Row(
@@ -60,6 +74,16 @@ fun TabbedContainer(
                 }
             }
         }
+    }
+
+    // One button: nothing to choose - a tab is closed by its cross
+    if (tabLimit != null) {
+        AlertDialog(
+            onDismissRequest = onTabLimitDismiss,
+            title = { Text(stringResource(Res.string.tabs_limit_title)) },
+            text = { Text(pluralStringResource(Res.plurals.tabs_limit_text, tabLimit, tabLimit)) },
+            confirmButton = { TextButton(onClick = onTabLimitDismiss) { Text(stringResource(Res.string.action_ok)) } },
+        )
     }
 }
 

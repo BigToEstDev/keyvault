@@ -183,6 +183,11 @@
     <string name="preset_create_title">Create preset</string>
     <string name="preset_edit_title">Edit preset</string>
     <string name="preset_title_new">New preset</string>
+    <string name="tabs_limit_title">Too many tabs</string>
+    <plurals name="tabs_limit_text">
+        <item quantity="one">Up to %1$d tab is open at once. Close one to open another</item>
+        <item quantity="other">Up to %1$d tabs are open at once. Close one to open another</item>
+    </plurals>
     <string name="preset_fields_dropped_title">Save the preset?</string>
     <string name="preset_fields_dropped_text">Entries with this preset will show the old fields as their own.</string>
     <string name="preset_gone">The preset is already deleted</string>

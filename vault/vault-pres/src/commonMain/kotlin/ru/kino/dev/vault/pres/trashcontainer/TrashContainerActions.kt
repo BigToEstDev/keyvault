@@ -19,4 +19,7 @@ interface TrashContainerActions {
 
     /** The cross of a tab: it closes. */
     fun onCloseTab(entryId: String)
+
+    /** "Close one first" taken: it goes. */
+    fun onTabLimitDismiss()
 }

@@ -28,4 +28,7 @@ interface VaultContainerActions {
 
     /** "Back" of the system: the list goes one group up. */
     fun onGroupUp()
+
+    /** "Close one first" taken: it goes. */
+    fun onTabLimitDismiss()
 }

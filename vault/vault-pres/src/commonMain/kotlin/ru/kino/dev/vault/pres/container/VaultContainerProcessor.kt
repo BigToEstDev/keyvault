@@ -9,6 +9,7 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.VaultRootRoute
 import ru.kino.dev.pane.PaneRouter
+import ru.kino.dev.pane.canOpenTab
 import ru.kino.dev.pane.closeTab
 import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.entry.EntryFailure
@@ -76,6 +77,10 @@ class VaultContainerProcessor(
             event is MviNavEvent.NavigateTo && event.route is EntryCreateRoute -> {
                 val groupId = (event.route as EntryCreateRoute).groupId
                 intent {
+                    if (!state.roomForTab) {
+                        reduce { state.copy(tabLimit = true) }
+                        return@intent
+                    }
                     val key = newTab(++made)
                     reduce { state.copy(tabs = state.tabs + EntryTab.New(key, groupId), active = key) }
                 }
@@ -176,9 +181,17 @@ class VaultContainerProcessor(
         intent { reduce { state.up() } }
     }
 
+    override fun onTabLimitDismiss() {
+        intent { reduce { state.copy(tabLimit = false) } }
+    }
+
     private fun open(entryId: String) {
         intent {
             val open = state.entry(entryId) != null
+            if (!open && !state.roomForTab) {
+                reduce { state.copy(tabLimit = true) }
+                return@intent
+            }
             reduce { state.copy(tabs = if (open) state.tabs else state.tabs + EntryTab.Entry(entryId), active = entryId) }
             if (!open) readTitle(entryId)
         }
@@ -192,6 +205,10 @@ class VaultContainerProcessor(
     private fun edit(entryId: String) {
         intent {
             val tab = state.entry(entryId)
+            if (tab == null && !state.roomForTab) {
+                reduce { state.copy(tabLimit = true) }
+                return@intent
+            }
             reduce {
                 when {
                     tab == null -> state.copy(tabs = state.tabs + EntryTab.Entry(entryId, pages = listOf(EntryPage.Edit)))
@@ -214,6 +231,9 @@ class VaultContainerProcessor(
         }
         reduce { state.withEntry(entryId) { it.copy(title = title) } }
     }
+
+    /** One more tab opens - [VAULT_MAX_TABS] not reached; none closes by itself to make room (Step 99, item 10). */
+    private val VaultContainerState.roomForTab: Boolean get() = canOpenTab(tabs.size, VAULT_MAX_TABS)
 
     private val VaultContainerState.entries: List<EntryTab.Entry> get() = tabs.filterIsInstance<EntryTab.Entry>()
 

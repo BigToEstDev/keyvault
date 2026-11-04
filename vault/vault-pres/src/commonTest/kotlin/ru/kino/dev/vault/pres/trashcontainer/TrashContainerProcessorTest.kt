@@ -123,6 +123,32 @@ class TrashContainerProcessorTest {
         assertEquals(setOf(TRASH_LIST_PANE, trashEntryPane("mail"), trashEntryPane("bank")), state.paneKeys)
     }
 
+    @Test
+    fun `at the most tabs an entry does not open - close one first`() = runTest {
+        val state = perform(open("mail"), from = FULL)
+
+        assertEquals(FULL.tabs, state.tabs)
+        assertEquals(true, state.tabLimit)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `at the most tabs an entry open already is shown, nothing asked`() = runTest {
+        val state = perform(open("e1"), from = FULL)
+
+        assertEquals("e1", state.active)
+        assertEquals(false, state.tabLimit)
+    }
+
+    @Test
+    fun `close one first taken - it goes, a tab closed makes room`() = runTest {
+        val state = perform(open("mail"), { onTabLimitDismiss() }, { onCloseTab("e1") }, open("mail"), from = FULL)
+
+        assertEquals(false, state.tabLimit)
+        assertEquals("mail", state.active)
+        assertEquals(TRASH_MAX_TABS, state.tabs.size)
+    }
+
     private fun open(entryId: String) = fromList(MviNavEvent.NavigateTo(TrashEntryRoute(DB, entryId)))
 
     private fun fromList(event: MviNavEvent): TrashContainerProcessor.() -> Unit =
@@ -132,9 +158,12 @@ class TrashContainerProcessorTest {
         { taken += entryRouter(entryId).route(event) }
 
     /** Runs [actions] one after another on a new processor; the state they end in. */
-    private suspend fun TestScope.perform(vararg actions: TrashContainerProcessor.() -> Unit): TrashContainerState {
+    private suspend fun TestScope.perform(
+        vararg actions: TrashContainerProcessor.() -> Unit,
+        from: TrashContainerState = TrashContainerState(),
+    ): TrashContainerState {
         val processor = TrashContainerProcessor(DB, EntryOpener(entries, FakePresetRepository()), log)
-        processor.testWithInternalState(this) {
+        processor.testWithInternalState(this, from) {
             containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
@@ -142,4 +171,9 @@ class TrashContainerProcessorTest {
     }
 
     private val List<TrashTab>.keys get() = map { it.entryId }
+
+    private companion object {
+        /** The most tabs open, none of them in the repository. */
+        val FULL = TrashContainerState(tabs = (1..TRASH_MAX_TABS).map { TrashTab("e$it", "E$it") }, active = "e12")
+    }
 }

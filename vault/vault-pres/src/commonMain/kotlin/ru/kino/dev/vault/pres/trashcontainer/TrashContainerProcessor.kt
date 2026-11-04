@@ -8,6 +8,7 @@ import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.pane.PaneRouter
+import ru.kino.dev.pane.canOpenTab
 import ru.kino.dev.pane.closeTab
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryOpener
@@ -64,9 +65,18 @@ class TrashContainerProcessor(
         intent { reduce { state.closed(entryId) } }
     }
 
+    override fun onTabLimitDismiss() {
+        intent { reduce { state.copy(tabLimit = false) } }
+    }
+
+    /** Open already - shown; else a tab of its own, while [TRASH_MAX_TABS] is not reached (Step 99, item 10). */
     private fun open(entryId: String) {
         intent {
             val open = state.tabs.any { it.entryId == entryId }
+            if (!open && !canOpenTab(state.tabs.size, TRASH_MAX_TABS)) {
+                reduce { state.copy(tabLimit = true) }
+                return@intent
+            }
             reduce { state.copy(tabs = if (open) state.tabs else state.tabs + TrashTab(entryId), active = entryId) }
             if (!open) readTitle(entryId)
         }

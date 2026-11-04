@@ -185,6 +185,13 @@
     <string name="preset_create_title">Создать пресет</string>
     <string name="preset_edit_title">Изменить пресет</string>
     <string name="preset_title_new">Новый пресет</string>
+    <string name="tabs_limit_title">Слишком много вкладок</string>
+    <plurals name="tabs_limit_text">
+        <item quantity="one">Открыть можно не больше %1$d вкладки. Закройте одну, чтобы открыть новую</item>
+        <item quantity="few">Открыть можно не больше %1$d вкладок. Закройте одну, чтобы открыть новую</item>
+        <item quantity="many">Открыть можно не больше %1$d вкладок. Закройте одну, чтобы открыть новую</item>
+        <item quantity="other">Открыть можно не больше %1$d вкладки. Закройте одну, чтобы открыть новую</item>
+    </plurals>
     <string name="preset_fields_dropped_title">Сохранить пресет?</string>
     <string name="preset_fields_dropped_text">Записи с этим пресетом покажут прежние поля как свои.</string>
     <string name="preset_gone">Пресет уже удалён</string>

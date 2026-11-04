@@ -9,6 +9,12 @@ class TabClosingTest {
     private val tabs = listOf("a", "b", "c")
 
     @Test
+    fun `one more tab opens below the limit, not at it`() {
+        assertEquals(true, canOpenTab(open = 11, limit = 12))
+        assertEquals(false, canOpenTab(open = 12, limit = 12))
+    }
+
+    @Test
     fun `the tab shown closed - the next one is shown`() {
         assertEquals(ShownTabs(listOf("a", "c"), "c"), closeTab(tabs, active = "b", key = "b") { it })
     }
