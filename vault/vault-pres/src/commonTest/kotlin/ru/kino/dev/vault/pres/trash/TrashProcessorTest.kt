@@ -149,23 +149,21 @@ class TrashProcessorTest {
     }
 
     @Test
-    fun `restore offers no group when the picked came from different ones`() = runTest {
+    fun `restore offers the root when the picked came from different ones`() = runTest {
         trash.entries.clear()
         trash.entries += binned("a", "A", 1, previous = work)
         trash.entries += binned("b", "B", 2, previous = home)
 
         val (state, _) = perform({ onLoad() }, { onLongPress(EntryId("a")) }, { onTap(EntryId("b")) }, { onRestore() })
 
-        assertNull((state.dialog as TrashDialog.Restore).group)
+        assertEquals(groups.rootId, (state.dialog as TrashDialog.Restore).group)
     }
 
     @Test
-    fun `restore without a group chosen does nothing`() = runTest {
-        val (state, _) = perform({ onLoad() }, { onLongPress(OLD) }, { onRestore() }, { onDialogConfirm() })
+    fun `restore offers the root when where the picked came from is not known`() = runTest {
+        val (state, _) = perform({ onLoad() }, { onLongPress(OLD) }, { onRestore() })
 
-        assertTrue(state.dialog is TrashDialog.Restore)
-        assertTrue(trash.restored.isEmpty())
-        assertEquals(emptyList<String>(), database.calls)
+        assertEquals(groups.rootId, (state.dialog as TrashDialog.Restore).group)
     }
 
     @Test

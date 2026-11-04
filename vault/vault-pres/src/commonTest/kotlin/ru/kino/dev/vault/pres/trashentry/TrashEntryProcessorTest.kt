@@ -89,6 +89,15 @@ class TrashEntryProcessorTest {
     }
 
     @Test
+    fun `restore offers the root when where the entry came from is not known`() = runTest {
+        trash.entries[0] = trash.entries[0].copy(previousGroupId = null)
+
+        val (state, _) = perform({ onLoad() }, { onRestore() })
+
+        assertEquals(groups.rootId, (state.dialog as TrashDialog.Restore).group)
+    }
+
+    @Test
     fun `restored, the file is written and the screen goes back to the bin`() = runTest {
         val (_, events) = perform({ onLoad() }, { onRestore() }, { onDialogConfirm() })
 
