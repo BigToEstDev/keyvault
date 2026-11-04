@@ -134,7 +134,8 @@ private fun LazyListScope.protectionRows(
                         title = fieldLabel(key),
                         checked = protection.protects(key),
                         onCheckedChange = { actions.onSetProtection(protection.with(key, it)) },
-                        enabled = saving == null,
+                        // Only the card written waits; a tap elsewhere meanwhile is not taken (Step 99, item 12)
+                        enabled = saving != EntriesPart.Protection,
                     )
                 }
                 SavingProgress(saving == EntriesPart.Protection)
@@ -195,7 +196,7 @@ private fun LazyListScope.binRows(bin: RecycleBin, saving: EntriesPart?, actions
                     ),
                     checked = bin.enabled,
                     onCheckedChange = { actions.onSetBinEnabled(it) },
-                    enabled = saving == null,
+                    enabled = saving != EntriesPart.RecycleBin,
                 )
                 // The key derivation takes seconds
                 if (saving == EntriesPart.RecycleBin) {
@@ -210,7 +211,7 @@ private fun LazyListScope.binRows(bin: RecycleBin, saving: EntriesPart?, actions
                 title = stringResource(Res.string.settings_recycle_bin_deleted),
                 value = if (bin.count == 0) stringResource(Res.string.settings_recycle_bin_empty) else bin.count.toString(),
                 onClick = { actions.onOpenTrash() },
-                enabled = bin.count > 0 && saving == null,
+                enabled = bin.count > 0 && saving != EntriesPart.RecycleBin,
             )
         }
     }
@@ -270,7 +271,7 @@ private fun LimitCard(
                 title = limitTitle,
                 checked = value != null,
                 onCheckedChange = onLimit,
-                enabled = saving == null,
+                enabled = saving != part,
             )
             // The last limit stays in the row while it shrinks away, not an empty value
             var shown by remember { mutableStateOf(value) }
@@ -284,7 +285,7 @@ private fun LimitCard(
                     title = valueTitle,
                     value = shown.orEmpty(),
                     onClick = onChoose,
-                    enabled = saving == null,
+                    enabled = saving != part,
                 )
             }
             SavingProgress(saving == part)

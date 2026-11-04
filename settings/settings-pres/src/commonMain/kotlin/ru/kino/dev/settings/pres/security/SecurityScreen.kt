@@ -143,7 +143,8 @@ private fun LazyListScope.credentialRows(
             ),
             hint = stringResource(Res.string.settings_security_password_hint),
             onClick = { actions.onEditPassword() },
-            enabled = saving == null,
+            // Changed in its dialog, not on the screen: it waits for nothing written here
+            enabled = true,
         )
     }
     item(key = "key_file") { actions.KeyFileCard(security, saving, pickKeyFile) }
@@ -172,7 +173,8 @@ private fun LazyListScope.encryptionRows(
                 selected = encryption.cipher,
                 label = { cipherLabel(it) },
                 onSelect = { actions.onSelectCipher(it) },
-                enabled = saving == null,
+                // Only the card written waits; a tap elsewhere meanwhile is not taken (Step 99, item 12)
+                enabled = saving != SecurityPart.Cipher,
             )
         }
     }
@@ -184,7 +186,7 @@ private fun LazyListScope.encryptionRows(
                 selected = encryption.kdf,
                 label = { kdfLabel(it) },
                 onSelect = { actions.onSelectKdf(it) },
-                enabled = saving == null,
+                enabled = saving != SecurityPart.Kdf,
             )
         }
     }
@@ -199,7 +201,7 @@ private fun LazyListScope.encryptionRows(
                     value = rounds.toString(),
                     onClick = { actions.onChooseRounds() },
                     text = (kdfPass as? KdfPass.Measured)?.let { openTime(it, rounds) },
-                    enabled = saving == null,
+                    enabled = saving != SecurityPart.Rounds,
                 )
                 if (saving == SecurityPart.Rounds) SavingProgress(Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
                 // What makes guessing expensive stays as the file has it: to read only
@@ -235,7 +237,7 @@ private fun SecurityActions.KeyFileCard(
         value = security.keyFileName ?: stringResource(Res.string.settings_security_key_file_none),
         hint = stringResource(Res.string.settings_security_key_file_hint),
         onClick = { if (hasKeyFile) menu = true else pickKeyFile() },
-        enabled = saving == null,
+        enabled = saving != SecurityPart.KeyFile,
         footer = {
             if (saving == SecurityPart.KeyFile) SavingProgress(Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
         },
