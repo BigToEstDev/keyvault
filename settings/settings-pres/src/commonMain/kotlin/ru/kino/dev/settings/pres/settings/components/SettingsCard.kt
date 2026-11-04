@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +25,7 @@ import ru.kino.dev.ui.theme.DISABLED_ALPHA
  * arrow. A tap opens the screen behind it with [onClick]; without one the card does not take taps - the
  * screen is not made yet (pass-docs, Step 55). Not [enabled] - a setting to come - it takes no taps and fades as
  * a disabled element of Material 3 does: the text color of the theme at 38% (pass-docs, Step 55, item 2).
+ * [selected] - its screen is the one open beside the list, on a wide window (pass-docs, Step 101).
  */
 @Composable
 internal fun SettingsCard(
@@ -32,20 +34,35 @@ internal fun SettingsCard(
     modifier: Modifier = Modifier,
     text: String? = null,
     enabled: Boolean = true,
+    selected: Boolean = false,
     onClick: (() -> Unit)? = null,
 ) {
-    if (onClick != null && enabled) {
-        Card(onClick = onClick, modifier = modifier.fillMaxWidth()) { CardContent(icon, title, text, enabled) }
+    val colors = if (selected) {
+        CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
     } else {
-        Card(modifier = modifier.fillMaxWidth()) { CardContent(icon, title, text, enabled) }
+        CardDefaults.cardColors()
+    }
+    if (onClick != null && enabled) {
+        Card(onClick = onClick, modifier = modifier.fillMaxWidth(), colors = colors) {
+            CardContent(icon, title, text, enabled, selected)
+        }
+    } else {
+        Card(modifier = modifier.fillMaxWidth(), colors = colors) { CardContent(icon, title, text, enabled, selected) }
     }
 }
 
 @Composable
-private fun CardContent(icon: ImageVector, title: String, text: String?, enabled: Boolean) {
+private fun CardContent(icon: ImageVector, title: String, text: String?, enabled: Boolean, selected: Boolean) {
     val disabled = MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA)
     val main = if (enabled) LocalContentColor.current else disabled
-    val secondary = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else disabled
+    val secondary = when {
+        !enabled -> disabled
+        selected -> MaterialTheme.colorScheme.onSecondaryContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
 
     Row(
         modifier = Modifier

@@ -33,7 +33,7 @@ internal fun SettingsContainerActions.SettingsContainerTablet(
         onClose = ::onCloseTab,
         list = {
             panes.Pane(key = SETTINGS_LIST_PANE, router = listRouter) {
-                SettingsScreen(dbKey = dbKey)
+                SettingsScreen(dbKey = dbKey, selected = page)
             }
         },
         page = {
