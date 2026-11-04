@@ -36,6 +36,7 @@ import ru.kino.dev.settings.pres.presetedit.components.fieldNameProblemText
 import ru.kino.dev.settings.pres.presetedit.components.presetNameProblemText
 import ru.kino.dev.ui.components.BackHandler
 import ru.kino.dev.ui.components.BackTopBar
+import ru.kino.dev.ui.components.PaneCloseHandler
 import ru.kino.dev.ui.components.FieldSection
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SECTION_PADDING
@@ -50,10 +51,13 @@ import ru.kino.dev.ui.res.stringResource
 /**
  * Creating a preset of one's own, or editing the one of [presetId] (pass-docs, vault-our.md "Экран создания
  * пресетов", Step 62).
+ *
+ * @param canGoBack false - a pane of the container of a wide window: its tab closes it, not "back" (pass-docs, Step 100)
  */
 @Composable
 internal fun PresetEditScreen(
     presetId: String?,
+    canGoBack: Boolean = true,
     processor: PresetEditProcessor = koinProcessor(presetId, key = presetId),
 ) {
     val state by processor.collectAsState()
@@ -64,6 +68,8 @@ internal fun PresetEditScreen(
 
     // The system "back" asks as the one in the top bar does
     BackHandler { processor.onBack() }
+    // The cross of its tab, in a container, asks as "back" does
+    PaneCloseHandler(onClose = processor::onBack)
 
     val message = state.message?.let {
         when (it) {
@@ -86,6 +92,7 @@ internal fun PresetEditScreen(
                 BackTopBar(
                     title = stringResource(if (state.editing) Res.string.preset_edit_title else Res.string.preset_create_title),
                     onBack = processor::onBack,
+                    back = canGoBack,
                 )
             },
             floatingActionButton = {
