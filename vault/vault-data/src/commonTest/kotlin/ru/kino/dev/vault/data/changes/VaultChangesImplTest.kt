@@ -1,5 +1,6 @@
 package ru.kino.dev.vault.data.changes
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -35,6 +36,8 @@ class VaultChangesImplTest {
         assertEquals(1, changes.current(OTHER))
     }
 
+    // UnconfinedTestDispatcher: the listener is there before the first change
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `a listener gets the current version, then each new one`() = runTest {
         val seen = mutableListOf<Long>()
