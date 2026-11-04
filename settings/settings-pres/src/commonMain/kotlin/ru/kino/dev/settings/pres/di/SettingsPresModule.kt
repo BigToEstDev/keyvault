@@ -34,7 +34,7 @@ val settingsPresModule = module {
     viewModel { (dbKey: String, navigator: Navigator) -> SettingsProcessor(dbKey, navigator) }
     viewModel { (dbKey: String, navigator: Navigator) -> AppearanceProcessor(dbKey, get(), get(), navigator, get()) }
     viewModel { (dbKey: String, navigator: Navigator) ->
-        EntriesProcessor(dbKey, get(), get(), get(), get(), get(), get(), navigator, get())
+        EntriesProcessor(dbKey, get(), get(), get(), get(), get(), get(), get(), get(), navigator, get())
     }
     viewModel { (dbKey: String, navigator: Navigator) -> FileProcessor(dbKey, get(), get(), navigator, get()) }
     viewModel { (dbKey: String, navigator: Navigator) ->

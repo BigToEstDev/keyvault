@@ -46,6 +46,20 @@ interface EntriesActions {
 
     fun onDismissPrefix()
 
+    /** The screen is shown - first, or back from the bin: what the bin holds is read again (Step 99, item 11). */
+    fun onLoadBin()
+
+    /** "Use the recycle bin" flipped: on - kept at once; off with something in the bin - asked first. */
+    fun onSetBinEnabled(enabled: Boolean)
+
+    /** "Switch off" in the dialog: the bin goes with all it holds, the file is written. */
+    fun onBinOffConfirm()
+
+    fun onBinOffDismiss()
+
+    /** "Deleted" tapped: the screen of the bin, in `vault`. */
+    fun onOpenTrash()
+
     /** The snackbar took the message. */
     fun onMessageShown()
 }

@@ -3,6 +3,7 @@ package ru.kino.dev.settings.pres.entries
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.first
@@ -15,6 +16,7 @@ import ru.kino.dev.core.phone.FakePhoneNumbers
 import ru.kino.dev.core.phone.FakePhoneSettingsRepository
 import ru.kino.dev.core.phone.PhoneDefaults
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.TrashRoute
 import ru.kino.dev.settings.appearance.FakeAppearanceRepository
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
@@ -23,6 +25,13 @@ import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.entries.EntrySettingsEditor
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
+import ru.kino.dev.vault.entry.EntrySummary
+import ru.kino.dev.vault.group.EntryId
+import ru.kino.dev.vault.group.GroupId
+import ru.kino.dev.vault.trash.FakeTrashRepository
+import ru.kino.dev.vault.trash.TrashEditor
+import ru.kino.dev.vault.trash.TrashEntry
+import ru.kino.dev.vault.trash.TrashFailure
 
 class EntriesProcessorTest {
 
@@ -32,6 +41,11 @@ class EntriesProcessorTest {
     private var appearance = FakeAppearanceRepository(initialUserNameInList = true)
     private val phoneSettings = FakePhoneSettingsRepository()
     private val phones = FakePhoneNumbers()
+
+    private val trash = FakeTrashRepository().apply {
+        entries += binned("mail")
+        entries += binned("bank")
+    }
 
     @Test
     fun `the screen shown reads the settings`() = runTest {
@@ -235,6 +249,120 @@ class EntriesProcessorTest {
         assertEquals("KZ", phoneSettings.prefixRegion.first())
     }
 
+    @Test
+    fun `the screen shown reads the switch of the bin and what it holds`() = runTest {
+        val (state, _) = perform({ onLoadBin() })
+
+        assertEquals(RecycleBin(enabled = true, count = 2), state.bin)
+    }
+
+    @Test
+    fun `a bin that cannot be read says so and goes to the log`() = runTest {
+        trash.failures["enabled"] = TrashFailure.Unexpected()
+
+        val (state, _) = perform({ onLoadBin() })
+
+        assertNull(state.bin)
+        assertEquals(EntriesMessage.Failed, state.message)
+        assertEquals(1, log.logged.size)
+    }
+
+    @Test
+    fun `switching off a bin that holds something asks first and writes nothing`() = runTest {
+        val (state, _) = perform({ onLoadBin() }, { onSetBinEnabled(false) })
+
+        assertTrue(state.confirmingBinOff)
+        assertEquals(true, state.bin?.enabled)
+        assertEquals(emptyList<String>(), database.calls)
+    }
+
+    @Test
+    fun `the bin switched off after asking goes, and the file is written`() = runTest {
+        val (state, _) = perform({ onLoadBin() }, { onSetBinEnabled(false) }, { onBinOffConfirm() })
+
+        assertEquals(RecycleBin(enabled = false, count = 0), state.bin)
+        assertFalse(state.confirmingBinOff)
+        assertNull(state.saving)
+        assertFalse(trash.enabled)
+        assertEquals(listOf("save"), database.calls)
+    }
+
+    @Test
+    fun `switching the bin off cancelled - it stays as it was`() = runTest {
+        val (state, _) = perform({ onLoadBin() }, { onSetBinEnabled(false) }, { onBinOffDismiss() })
+
+        assertEquals(RecycleBin(enabled = true, count = 2), state.bin)
+        assertTrue(trash.enabled)
+    }
+
+    @Test
+    fun `an empty bin is switched off without asking`() = runTest {
+        trash.entries.clear()
+
+        val (state, _) = perform({ onLoadBin() }, { onSetBinEnabled(false) })
+
+        assertFalse(state.confirmingBinOff)
+        assertEquals(false, state.bin?.enabled)
+        assertEquals(listOf("save"), database.calls)
+    }
+
+    @Test
+    fun `the bin switched on is written at once`() = runTest {
+        trash.enabled = false
+        trash.entries.clear()
+
+        val (state, _) = perform({ onLoadBin() }, { onSetBinEnabled(true) })
+
+        assertEquals(true, state.bin?.enabled)
+        assertTrue(trash.enabled)
+        assertEquals(listOf("save"), database.calls)
+    }
+
+    @Test
+    fun `the bin switched, the file not written - the switch stays, and says so`() = runTest {
+        trash.entries.clear()
+        database.saveFailure = IOException("provider gone")
+
+        val (state, _) = perform({ onLoadBin() }, { onSetBinEnabled(false) })
+
+        assertEquals(false, state.bin?.enabled)
+        assertEquals(EntriesMessage.NotSaved, state.message)
+    }
+
+    @Test
+    fun `a switch of the bin the core refused goes back`() = runTest {
+        trash.entries.clear()
+        trash.failures["setEnabled"] = TrashFailure.Unexpected()
+
+        val (state, _) = perform({ onLoadBin() }, { onSetBinEnabled(false) })
+
+        assertEquals(true, state.bin?.enabled)
+        assertNull(state.saving)
+        assertEquals(EntriesMessage.Failed, state.message)
+    }
+
+    @Test
+    fun `deleted opens the bin`() = runTest {
+        val (_, events) = perform({ onLoadBin() }, { onOpenTrash() })
+
+        assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(TrashRoute(DB))), events)
+    }
+
+    @Test
+    fun `an empty bin opens nothing`() = runTest {
+        trash.entries.clear()
+
+        val (_, events) = perform({ onLoadBin() }, { onOpenTrash() })
+
+        assertEquals(emptyList<MviNavEvent>(), events)
+    }
+
+    private fun binned(id: String) = TrashEntry(
+        entry = EntrySummary(EntryId(id), GroupId("bin"), id, "", createdAt = 0),
+        previousGroupId = null,
+        deletedAt = 0,
+    )
+
     /** Runs [actions] one after another on a new processor; the state they end in, and the navigation. */
     private suspend fun TestScope.perform(vararg actions: EntriesActions.() -> Unit): Pair<EntriesState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
@@ -246,6 +374,8 @@ class EntriesProcessorTest {
             phoneSettings,
             PhoneDefaults { phoneSettings.prefixRegion.first().takeIf { phoneSettings.rememberPrefix.first() } ?: "NL" },
             phones,
+            trash,
+            TrashEditor(trash, database),
             navigator,
             log,
         )
