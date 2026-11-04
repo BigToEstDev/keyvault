@@ -12,6 +12,7 @@ import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.navigation.SettingsRoute
+import ru.kino.dev.settings.pres.navigation.PresetReadRoute
 import ru.kino.dev.settings.pres.testing.runEach
 
 class PresetsContainerProcessorTest {
@@ -25,19 +26,43 @@ class PresetsContainerProcessorTest {
     )
 
     @Test
-    fun `a preset opened in the list opens its tab, shown, titled by its name`() = runTest {
-        val state = perform(edit(CARD), edit(SITE))
+    fun `a preset opened in the list opens its tab, read, shown, titled by its name`() = runTest {
+        val state = perform(read(CARD), read(SITE))
 
-        assertEquals(listOf(PresetTab.Edit(CARD, "Card"), PresetTab.Edit(SITE, "Site")), state.tabs)
+        assertEquals(listOf(PresetTab.Preset(CARD, "Card"), PresetTab.Preset(SITE, "Site")), state.tabs)
         assertEquals(presetPane(SITE), state.active)
         assertEquals(listOf(true, true), taken)
     }
 
     @Test
+    fun `the standard preset opens its tab, read`() = runTest {
+        val state = perform(read(null))
+
+        assertEquals(listOf(PresetTab.Preset(null)), state.tabs)
+        assertEquals(presetPane(null), state.active)
+    }
+
+    @Test
     fun `a preset open already is shown, not opened twice`() = runTest {
-        val state = perform(edit(CARD), edit(SITE), edit(CARD))
+        val state = perform(read(CARD), read(SITE), read(CARD))
 
         assertEquals(listOf(presetPane(CARD), presetPane(SITE)), state.tabs.keys)
+        assertEquals(presetPane(CARD), state.active)
+    }
+
+    @Test
+    fun `edit in the menu of the list opens the form in the tab of the preset`() = runTest {
+        val state = perform(edit(CARD))
+
+        assertEquals(listOf(PresetTab.Preset(CARD, "Card", editing = true)), state.tabs)
+        assertEquals(presetPane(CARD), state.active)
+    }
+
+    @Test
+    fun `edit in the menu of the list of a preset read - its form over the reading`() = runTest {
+        val state = perform(read(CARD), read(SITE), edit(CARD))
+
+        assertEquals(PresetTab.Preset(CARD, "Card", editing = true), state.tabs.first())
         assertEquals(presetPane(CARD), state.active)
     }
 
@@ -45,7 +70,7 @@ class PresetsContainerProcessorTest {
     fun `each new preset made has a tab of its own`() = runTest {
         val state = perform(create(), create())
 
-        assertEquals(listOf(PresetTab.New(newPresetTab(1)), PresetTab.New(newPresetTab(2))), state.tabs)
+        assertEquals(listOf(PresetTab.New(newPresetTab(1), true), PresetTab.New(newPresetTab(2), true)), state.tabs)
         assertEquals(newPresetTab(2), state.active)
     }
 
@@ -65,25 +90,79 @@ class PresetsContainerProcessorTest {
     }
 
     @Test
-    fun `back from a form - saved or left - closes its tab, the next one shown`() = runTest {
+    fun `edit from the reading - the form over it`() = runTest {
+        val state = perform(read(CARD), fromReading(CARD, MviNavEvent.NavigateTo(PresetEditRoute(CARD))))
+
+        assertEquals(PresetTab.Preset(CARD, "Card", editing = true), state.tabs.single())
+        assertEquals(presetFormPane(CARD), state.shown?.pane)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `back from the form - saved or left - the reading again`() = runTest {
+        val state = perform(edit(CARD), fromForm(CARD, MviNavEvent.NavigateBack))
+
+        assertEquals(PresetTab.Preset(CARD, "Card"), state.tabs.single())
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `back from the reading - deleted or gone - closes its tab, the next one shown`() = runTest {
         val state = perform(
-            edit(CARD),
+            read(CARD),
+            read(SITE),
             create(),
-            edit(SITE),
-            { onSelectTab(newPresetTab(1)) },
-            fromTab(newPresetTab(1), MviNavEvent.NavigateBack),
+            { onSelectTab(presetPane(SITE)) },
+            fromReading(SITE, MviNavEvent.NavigateBack),
         )
 
-        assertEquals(listOf(presetPane(CARD), presetPane(SITE)), state.tabs.keys)
+        assertEquals(listOf(presetPane(CARD), newPresetTab(1)), state.tabs.keys)
+        assertEquals(newPresetTab(1), state.active)
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `past the reading from the form - deleted or closed - closes its tab`() = runTest {
+        val past = MviNavEvent.NavigateBackTo(PresetReadRoute(CARD), inclusive = true, orBack = true)
+
+        val state = perform(read(CARD), edit(CARD), fromForm(CARD, past))
+
+        assertEquals(emptyList(), state.tabs)
+        assertNull(state.active)
+    }
+
+    @Test
+    fun `a page under the one shown changes nothing - still the container's`() = runTest {
+        val state = perform(edit(CARD), fromReading(CARD, MviNavEvent.NavigateBack))
+
+        assertEquals(PresetTab.Preset(CARD, "Card", editing = true), state.tabs.single())
+        assertEquals(true, taken.last())
+    }
+
+    @Test
+    fun `the rest a page goes to is the app's`() = runTest {
+        perform(read(CARD), fromReading(CARD, MviNavEvent.NavigateTo(SettingsRoute(DB))))
+
+        assertEquals(false, taken.last())
+    }
+
+    @Test
+    fun `a new preset saved from the list is read in its tab`() = runTest {
+        val made = MviNavEvent.NavigateTo(PresetReadRoute(SITE), popUpTo = PresetEditRoute(readSaved = true), inclusive = true)
+
+        val state = perform(create(), fromNew(newPresetTab(1), made))
+
+        assertEquals(listOf(PresetTab.Preset(SITE, "Site")), state.tabs)
         assertEquals(presetPane(SITE), state.active)
         assertEquals(true, taken.last())
     }
 
     @Test
-    fun `the rest a form goes to is the app's`() = runTest {
-        perform(edit(CARD), fromTab(presetPane(CARD), MviNavEvent.NavigateTo(SettingsRoute(DB))))
+    fun `back from a new preset - left - closes its tab`() = runTest {
+        val state = perform(read(CARD), create(), fromNew(newPresetTab(1), MviNavEvent.NavigateBack))
 
-        assertEquals(false, taken.last())
+        assertEquals(listOf(presetPane(CARD)), state.tabs.keys)
+        assertEquals(presetPane(CARD), state.active)
     }
 
     @Test
@@ -96,33 +175,44 @@ class PresetsContainerProcessorTest {
 
     @Test
     fun `back from the tab it was opened with is the app's - back to the form of the entry`() = runTest {
-        val state = perform(fromTab(newPresetTab(1), MviNavEvent.NavigateBack), opening = PresetEditRoute())
+        val state = perform(fromNew(newPresetTab(1), MviNavEvent.NavigateBack), opening = PresetEditRoute())
 
         assertEquals(listOf(false), taken)
         assertEquals(listOf(newPresetTab(1)), state.tabs.keys)
     }
 
     @Test
-    fun `opened with a preset - its tab titled by its name`() = runTest {
-        processor(PresetEditRoute(CARD)).testWithInternalState(this) {
-            // The titles come from the presets, as while the container is shown
-            runOnCreate()
-
-            assertEquals(listOf(PresetTab.Edit(CARD, "Card")), awaitInternalState().tabs)
-            cancelAndIgnoreRemainingItems()
-        }
-    }
-
-    @Test
-    fun `the cross of a tab closes its form - it asks`() = runTest {
-        val open = PresetsContainerState(tabs = listOf(PresetTab.Edit(CARD, "Card"), PresetTab.Edit(SITE, "Site")), active = presetPane(SITE))
+    fun `the cross of a form asks it - its tab shown`() = runTest {
+        val open = PresetsContainerState(
+            tabs = listOf(PresetTab.Preset(CARD, "Card", editing = true), PresetTab.Preset(SITE, "Site")),
+            active = presetPane(SITE),
+        )
 
         processor().testWithInternalState(this, open) {
             containerHost.onCloseTab(presetPane(CARD))
 
             assertEquals(presetPane(CARD), awaitInternalState().active)
-            expectSideEffect(PresetsContainerSideEffect.ClosePane(presetPane(CARD)))
+            expectSideEffect(PresetsContainerSideEffect.ClosePane(presetFormPane(CARD)))
         }
+    }
+
+    @Test
+    fun `the cross of a new preset asks its form`() = runTest {
+        val open = PresetsContainerState(tabs = listOf(PresetTab.New(newPresetTab(1))), active = newPresetTab(1))
+
+        processor().testWithInternalState(this, open) {
+            containerHost.onCloseTab(newPresetTab(1))
+
+            expectSideEffect(PresetsContainerSideEffect.ClosePane(newPresetTab(1)))
+        }
+    }
+
+    @Test
+    fun `the cross of a reading closes its tab at once`() = runTest {
+        val state = perform(read(CARD), read(SITE), { onCloseTab(presetPane(SITE)) })
+
+        assertEquals(listOf(presetPane(CARD)), state.tabs.keys)
+        assertEquals(presetPane(CARD), state.active)
     }
 
     @Test
@@ -133,51 +223,60 @@ class PresetsContainerProcessorTest {
     }
 
     @Test
-    fun `the panes kept are the list and the tabs`() = runTest {
-        val state = perform(edit(CARD), create())
+    fun `the panes kept are the list and the tabs, the reading under a form`() = runTest {
+        val state = perform(read(SITE), edit(CARD), create())
 
-        assertEquals(setOf(PRESETS_LIST_PANE, presetPane(CARD), newPresetTab(1)), state.paneKeys)
+        assertEquals(
+            setOf(PRESETS_LIST_PANE, presetPane(SITE), presetPane(CARD), presetFormPane(CARD), newPresetTab(1)),
+            state.paneKeys,
+        )
     }
 
     @Test
     fun `the new presets open are counted, the one it was opened with too`() = runTest {
-        val state = perform(create(), edit(CARD), create(), opening = PresetEditRoute())
+        val state = perform(create(), read(CARD), create(), opening = PresetEditRoute())
 
         assertEquals(3, state.drafts)
     }
 
     @Test
     fun `a new preset closed frees its place`() = runTest {
-        val state = perform(create(), create(), fromTab(newPresetTab(1), MviNavEvent.NavigateBack))
+        val state = perform(create(), create(), fromNew(newPresetTab(1), MviNavEvent.NavigateBack))
 
         assertEquals(1, state.drafts)
     }
 
     @Test
     fun `a preset renamed renames its tab`() = runTest {
-        val processor = processor(PresetEditRoute(CARD))
+        val open = PresetsContainerState(tabs = listOf(PresetTab.Preset(CARD, "Card")), active = presetPane(CARD))
 
-        processor.testWithInternalState(this) {
+        processor().testWithInternalState(this, open) {
             // Listening, as while the container is shown
             runOnCreate()
-            assertEquals("Card", (awaitInternalState().tabs.single() as PresetTab.Edit).title)
-
             repository.save(CustomPreset.of(PresetId(CARD), "Card, renamed", listOf(listOf("Bank"))))
 
-            assertEquals("Card, renamed", (awaitInternalState().tabs.single() as PresetTab.Edit).title)
+            assertEquals("Card, renamed", (awaitInternalState().tabs.single() as PresetTab.Preset).title)
             cancelAndIgnoreRemainingItems()
         }
     }
 
+    private fun read(presetId: String?) = fromList(MviNavEvent.NavigateTo(PresetReadRoute(presetId)))
+
     private fun edit(presetId: String) = fromList(MviNavEvent.NavigateTo(PresetEditRoute(presetId)))
 
-    private fun create() = fromList(MviNavEvent.NavigateTo(PresetEditRoute()))
+    private fun create() = fromList(MviNavEvent.NavigateTo(PresetEditRoute(readSaved = true)))
 
     private fun fromList(event: MviNavEvent): PresetsContainerProcessor.() -> Unit =
         { taken += listRouter.route(event) }
 
-    private fun fromTab(key: String, event: MviNavEvent): PresetsContainerProcessor.() -> Unit =
-        { taken += tabRouter(key).route(event) }
+    private fun fromReading(presetId: String?, event: MviNavEvent): PresetsContainerProcessor.() -> Unit =
+        { taken += presetRouter(presetId, editing = false).route(event) }
+
+    private fun fromForm(presetId: String?, event: MviNavEvent): PresetsContainerProcessor.() -> Unit =
+        { taken += presetRouter(presetId, editing = true).route(event) }
+
+    private fun fromNew(key: String, event: MviNavEvent): PresetsContainerProcessor.() -> Unit =
+        { taken += newRouter(key).route(event) }
 
     /** Runs [actions] one after another on a new processor, opened with [opening]; the state they end in. */
     private suspend fun TestScope.perform(
