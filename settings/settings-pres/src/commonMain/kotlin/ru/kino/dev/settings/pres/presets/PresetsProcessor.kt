@@ -63,6 +63,10 @@ class PresetsProcessor(
         }
     }
 
+    override fun onDrafts(count: Int) {
+        intent { reduce { state.copy(drafts = count) } }
+    }
+
     override fun onCreate() {
         intent { if (state.canCreate) navigator.navigate(MviNavEvent.NavigateTo(PresetEditRoute())) }
     }

@@ -13,7 +13,13 @@ object PresetValidator {
     fun normalize(name: String): String = name.trim()
 
     /** Whether one more preset can be made next to [presets] - the ones of one's own. */
-    fun canAdd(presets: List<EntryPreset>): Boolean = presets.size + 1 < PresetLimits.MAX_PRESETS
+    fun canAdd(presets: List<EntryPreset>): Boolean = canAdd(presets.size)
+
+    /**
+     * Whether one more preset can be made next to [own] of one's own - those kept and those made but not saved yet
+     * counted alike (pass-docs, Step 99, item 7): the standard one is not one of them.
+     */
+    fun canAdd(own: Int): Boolean = own + 1 < PresetLimits.MAX_PRESETS
 
     /** Whether one more card can be added to [cards], as [CustomPreset.of] takes them. */
     fun canAddCard(cards: List<List<String>>): Boolean = cards.size < PresetLimits.MAX_CARDS

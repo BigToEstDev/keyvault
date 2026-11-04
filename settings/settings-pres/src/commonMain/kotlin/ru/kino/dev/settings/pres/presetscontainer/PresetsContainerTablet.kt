@@ -32,7 +32,7 @@ internal fun PresetsContainerActions.PresetsContainerTablet(state: PresetsContai
         onClose = ::onCloseTab,
         list = {
             panes.Pane(key = PRESETS_LIST_PANE, router = listRouter) {
-                PresetsScreen()
+                PresetsScreen(drafts = state.drafts)
             }
         },
         page = {

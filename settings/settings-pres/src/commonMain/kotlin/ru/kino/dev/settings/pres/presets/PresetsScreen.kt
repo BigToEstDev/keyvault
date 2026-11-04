@@ -17,6 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -45,10 +46,14 @@ import ru.kino.dev.ui.res.stringResource
 /**
  * The presets: "Use presets" on top; on - the standard preset, those of one's own with their pen - "Edit", "Delete" -
  * and the fab "Create" while there is room for one; off - the switch alone (pass-docs, Step 62).
+ *
+ * @param drafts the new presets open beside it, in a container, not saved yet: they take their places (Step 99, item 7)
  */
 @Composable
-internal fun PresetsScreen(processor: PresetsProcessor = koinProcessor()) {
+internal fun PresetsScreen(drafts: Int = 0, processor: PresetsProcessor = koinProcessor()) {
     val state by processor.collectAsState()
+
+    LaunchedEffect(drafts) { processor.onDrafts(drafts) }
     val snackbar = remember { SnackbarHostState() }
 
     // Back from a preset made or edited, the list is read again

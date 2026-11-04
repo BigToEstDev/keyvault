@@ -14,6 +14,9 @@ data class PresetsContainerState(
     /** The tab shown; null - none. */
     val shown: PresetTab? = tabs.firstOrNull { it.key == active }
 
+    /** The tabs of new presets - not saved yet, each takes a place among the presets (pass-docs, Step 99, item 7). */
+    val drafts: Int = tabs.count { it is PresetTab.New }
+
     /** The panes to keep - the list and the tabs; the rest are cleared. */
     val paneKeys: Set<String> = setOf(PRESETS_LIST_PANE) + tabs.map { it.key }
 }

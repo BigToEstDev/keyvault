@@ -140,6 +140,20 @@ class PresetsContainerProcessorTest {
     }
 
     @Test
+    fun `the new presets open are counted, the one it was opened with too`() = runTest {
+        val state = perform(create(), edit(CARD), create(), opening = PresetEditRoute())
+
+        assertEquals(3, state.drafts)
+    }
+
+    @Test
+    fun `a new preset closed frees its place`() = runTest {
+        val state = perform(create(), create(), fromTab(newPresetTab(1), MviNavEvent.NavigateBack))
+
+        assertEquals(1, state.drafts)
+    }
+
+    @Test
     fun `a preset renamed renames its tab`() = runTest {
         val processor = processor(PresetEditRoute(CARD))
 

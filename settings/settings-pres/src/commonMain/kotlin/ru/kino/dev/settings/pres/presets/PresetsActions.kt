@@ -14,6 +14,9 @@ interface PresetsActions {
     /** "Use presets" switched: kept at once. */
     fun onSetUsePresets(on: Boolean)
 
+    /** [count] new presets are open beside the list, in a container, not saved yet: they take their places. */
+    fun onDrafts(count: Int)
+
     /** The fab "Create": a new preset, while there is room for one. */
     fun onCreate()
 

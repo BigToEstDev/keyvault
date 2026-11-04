@@ -3,6 +3,7 @@ package ru.kino.dev.settings.pres.presets
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.assertNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
@@ -68,6 +69,25 @@ class PresetsProcessorTest {
         repeat(8) { repository.save(CustomPreset.of(PresetId("$it"), "P$it", listOf(emptyList()))) }
 
         val (state, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onCreate() })
+
+        assertFalse(state.canCreate)
+        assertEquals(emptyList<MviNavEvent>(), events)
+    }
+
+    @Test
+    fun `the new presets open beside the list take their places`() = runTest {
+        repeat(6) { repository.save(CustomPreset.of(PresetId("$it"), "P$it", listOf(emptyList()))) }
+
+        val (state, _) = perform(FakePresetSettingsRepository(), { onLoad() }, { onDrafts(1) })
+
+        assertTrue(state.canCreate)
+    }
+
+    @Test
+    fun `no create past the most presets, the new ones open beside the list counted`() = runTest {
+        repeat(6) { repository.save(CustomPreset.of(PresetId("$it"), "P$it", listOf(emptyList()))) }
+
+        val (state, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onDrafts(2) }, { onCreate() })
 
         assertFalse(state.canCreate)
         assertEquals(emptyList<MviNavEvent>(), events)
