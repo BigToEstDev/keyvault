@@ -21,6 +21,8 @@ import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.core.preset.PresetNameProblem
 import ru.kino.dev.core.preset.PresetProblem
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.PresetEditRoute
+import ru.kino.dev.settings.pres.navigation.PresetReadRoute
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
 import ru.kino.dev.settings.pres.testing.runEach
@@ -481,6 +483,90 @@ class PresetEditProcessorTest {
         assertEquals(0, log.logged.size)
     }
 
+    @Test
+    fun `a preset made from the list is read in place of the form`() = runTest {
+        val (_, events) = perform({ onNameChange("Card") }, { onSave(STANDARD) }, readSaved = true)
+
+        val read = MviNavEvent.NavigateTo(PresetReadRoute("id-1"), popUpTo = PresetEditRoute(readSaved = true), inclusive = true)
+        assertEquals(listOf<MviNavEvent>(read), events)
+    }
+
+    @Test
+    fun `delete of a preset that is there asks first`() = runTest {
+        repository.save(CARD)
+
+        val (state, events) = perform({ onLoad() }, { onDelete() }, presetId = CARD_ID)
+
+        assertEquals(PresetEditDialog.Delete("Card"), state.dialog)
+        assertEquals(listOf(CARD), repository.presets.first())
+        assertEquals(emptyList<MviNavEvent>(), events)
+    }
+
+    @Test
+    fun `a new preset has nothing to delete`() = runTest {
+        val (state, _) = perform({ onDelete() })
+
+        assertNull(state.dialog)
+    }
+
+    @Test
+    fun `delete confirmed removes the preset and leaves past its reading`() = runTest {
+        repository.save(CARD)
+
+        val (_, events) = perform({ onLoad() }, { onDelete() }, { onDialogConfirm() }, presetId = CARD_ID)
+
+        assertEquals(emptyList<EntryPreset>(), repository.presets.first())
+        assertEquals(listOf<MviNavEvent>(pastReading(CARD_ID)), events)
+    }
+
+    @Test
+    fun `a delete not written says so, goes to the log and stays`() = runTest {
+        repository.save(CARD)
+        repository.failure = PresetFailure.NotSaved()
+
+        val (state, events) = perform({ onLoad() }, { onDelete() }, { onDialogConfirm() }, presetId = CARD_ID)
+
+        assertEquals(PresetEditMessage.NotDeleted, state.message)
+        assertFalse(state.saving)
+        assertEquals(1, log.logged.size)
+        assertEquals(emptyList<MviNavEvent>(), events)
+    }
+
+    @Test
+    fun `the cross of an untouched form of a preset closes past its reading`() = runTest {
+        repository.save(CARD)
+
+        val (_, events) = perform({ onLoad() }, { onClose() }, presetId = CARD_ID)
+
+        assertEquals(listOf<MviNavEvent>(pastReading(CARD_ID)), events)
+    }
+
+    @Test
+    fun `the cross of an untouched new preset goes back`() = runTest {
+        val (_, events) = perform({ onClose() })
+
+        assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateBack), events)
+    }
+
+    @Test
+    fun `the cross of a changed form asks first, and leave closes past its reading`() = runTest {
+        repository.save(CARD)
+
+        val (_, events) = perform(
+            { onLoad() },
+            { onNameChange("Card 2") },
+            { onClose() },
+            { onDialogConfirm() },
+            presetId = CARD_ID,
+        )
+
+        assertEquals(listOf<MviNavEvent>(pastReading(CARD_ID)), events)
+        assertEquals(listOf(CARD), repository.presets.first())
+    }
+
+    private fun pastReading(presetId: String) =
+        MviNavEvent.NavigateBackTo(PresetReadRoute(presetId), inclusive = true, orBack = true)
+
     private fun addField(card: Int, name: String, protected: Boolean = false) = arrayOf<PresetEditActions.() -> Unit>(
         { onAddField(card) },
         { onDialogNameChange(name) },
@@ -492,11 +578,12 @@ class PresetEditProcessorTest {
     private suspend fun TestScope.perform(
         vararg actions: PresetEditActions.() -> Unit,
         presetId: String? = null,
+        readSaved: Boolean = false,
     ): Pair<PresetEditState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         var ids = 0
         val editor = PresetEditor(repository, newId = { PresetId("id-${++ids}") })
-        val processor = PresetEditProcessor(presetId, repository, editor, navigator, log)
+        val processor = PresetEditProcessor(presetId, readSaved, repository, editor, navigator, log)
 
         processor.testWithInternalState(this) {
             containerHost.runEach(actions)

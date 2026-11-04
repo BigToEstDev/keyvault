@@ -99,8 +99,11 @@ sealed interface PresetEditDialog {
     /** "Delete the card? Its fields go too." */
     data class DeleteCard(val card: Int) : PresetEditDialog
 
-    /** "Leave without saving?" - "back" with changes. */
-    data object Leave : PresetEditDialog
+    /** "Leave without saving?" - "back" with changes; [closing] - the cross of its tab, past the reading too. */
+    data class Leave(val closing: Boolean = false) : PresetEditDialog
+
+    /** "Delete the preset?" - the one edited, called [name] (pass-docs, Step 99, item 8). */
+    data class Delete(val name: String) : PresetEditDialog
 
     /**
      * "Entries with this preset will show the old fields as their own" - a change of a preset that drops names of
@@ -119,4 +122,7 @@ enum class PresetEditMessage {
 
     /** The preset edited is gone - deleted on another screen; nothing is saved */
     Gone,
+
+    /** The preset could not be deleted - the store could not be written; it stays */
+    NotDeleted,
 }

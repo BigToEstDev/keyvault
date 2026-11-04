@@ -46,6 +46,9 @@ data class TrashRoute(val dbKey: String)
  * A preset of one's own: [presetId] - the one to edit, null - a new one. Its screen is in `settings` (pass-docs,
  * Step 62); `vault` opens it from the choice of presets of an entry. No database in it: presets are one list for
  * every database (Step 44).
+ *
+ * @param readSaved a new one made - its reading in place of the form, as made from the list of the presets (pass-docs,
+ *   Step 99, item 8); false - back where it came from: the form of an entry
  */
 @Serializable
-data class PresetEditRoute(val presetId: String? = null)
+data class PresetEditRoute(val presetId: String? = null, val readSaved: Boolean = false)

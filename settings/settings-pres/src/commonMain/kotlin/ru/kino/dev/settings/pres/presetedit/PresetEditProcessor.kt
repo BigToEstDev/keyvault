@@ -18,6 +18,8 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.navigation.PresetEditRoute
+import ru.kino.dev.settings.pres.navigation.PresetReadRoute
 
 /**
  * Creating a preset of one's own, or editing the one of [presetId] (pass-docs, vault-our.md "Экран создания
@@ -25,11 +27,14 @@ import ru.kino.dev.navigation.Navigator
  * cards the person adds; the notes come last by themselves.
  *
  * The checks are [PresetValidator]'s, the same the save is refused by. A preset made, the screen goes back -
- * the form of the entry picks the new preset up when it is shown again. An edit keeps the id, so the entries keep
+ * the form of the entry picks the new preset up when it is shown again; made from the list of the presets -
+ * [readSaved] - its reading in place of the form (pass-docs, Step 99, item 8). A preset that is there is deleted from
+ * its menu too, past its reading. An edit keeps the id, so the entries keep
  * the preset; one that drops names of its fields asks first - the entries keep their values under those names.
  */
 class PresetEditProcessor(
     private val presetId: String?,
+    private val readSaved: Boolean,
     private val presets: PresetRepository,
     private val editor: PresetEditor,
     private val navigator: Navigator,
@@ -138,8 +143,26 @@ class PresetEditProcessor(
         intent {
             when {
                 state.saving -> Unit
-                state.changed -> reduce { state.copy(dialog = PresetEditDialog.Leave) }
+                state.changed -> reduce { state.copy(dialog = PresetEditDialog.Leave()) }
                 else -> leave()
+            }
+        }
+    }
+
+    override fun onClose() {
+        intent {
+            when {
+                state.saving -> Unit
+                state.changed -> reduce { state.copy(dialog = PresetEditDialog.Leave(closing = true)) }
+                else -> close()
+            }
+        }
+    }
+
+    override fun onDelete() {
+        intent {
+            if (state.editing && !state.loading && !state.saving) {
+                reduce { state.copy(dialog = PresetEditDialog.Delete(state.initialName)) }
             }
         }
     }
@@ -212,7 +235,12 @@ class PresetEditProcessor(
                 )
             }
 
-            PresetEditDialog.Leave -> leave()
+            is PresetEditDialog.Leave -> if (dialog.closing) close() else leave()
+
+            is PresetEditDialog.Delete -> {
+                reduce { state.copy(dialog = null) }
+                delete()
+            }
 
             is PresetEditDialog.FieldsDropped -> {
                 reduce { state.copy(dialog = null) }
@@ -263,11 +291,13 @@ class PresetEditProcessor(
         try {
             val id = presetId
             if (id == null) {
-                editor.create(state.name, state.cards, standardName, state.protectedKeys, state.fieldTypes)
+                val made = editor.create(state.name, state.cards, standardName, state.protectedKeys, state.fieldTypes)
+                val madeId = made.id?.value
+                if (readSaved && madeId != null) openMade(madeId) else leave()
             } else {
                 editor.update(PresetId(id), state.name, state.cards, standardName, state.protectedKeys, state.fieldTypes)
+                leave()
             }
-            leave()
         } catch (failure: PresetFailure.Invalid) {
             val tooMany = PresetProblem.TooMany in failure.problems
             reduce {
@@ -285,8 +315,40 @@ class PresetEditProcessor(
         }
     }
 
+    private suspend fun Syntax<PresetEditState, Nothing>.delete() {
+        val id = presetId ?: return
+        reduce { state.copy(saving = true) }
+        try {
+            editor.delete(PresetId(id))
+        } catch (failure: PresetFailure) {
+            log.unexpected(TAG, failure)
+            reduce { state.copy(saving = false, message = PresetEditMessage.NotDeleted) }
+            return
+        }
+        leavePastReading(id)
+    }
+
     private suspend fun leave() {
         navigator.navigate(MviNavEvent.NavigateBack)
+    }
+
+    /** The form closed - the cross of its tab: a preset that is there - past its reading; a new one - back. */
+    private suspend fun close() {
+        if (presetId == null) leave() else leavePastReading(presetId)
+    }
+
+    /**
+     * Back to where its reading was opened from - the list - past the reading of the preset [id] too, when the form was
+     * opened from it: the preset deleted, the form closed.
+     */
+    private suspend fun leavePastReading(id: String) {
+        navigator.navigate(MviNavEvent.NavigateBackTo(PresetReadRoute(id), inclusive = true, orBack = true))
+    }
+
+    /** The preset [id] made from the list: its reading in place of the form - "back" from it goes to the list. */
+    private suspend fun openMade(id: String) {
+        val form = PresetEditRoute(readSaved = true)
+        navigator.navigate(MviNavEvent.NavigateTo(PresetReadRoute(id), popUpTo = form, inclusive = true))
     }
 
     private companion object {

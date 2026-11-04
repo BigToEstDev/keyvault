@@ -39,7 +39,10 @@ fun NavGraphBuilder.settingsGraph() {
     // A preset from outside the presets - "a new preset" from the form of an entry: on a wide window the container,
     // with its tab; leaving it - back to the form
     adaptiveComposable<PresetEditRoute>(
-        mobile = { entry -> PresetEditScreen(presetId = entry.toRoute<PresetEditRoute>().presetId) },
+        mobile = { entry ->
+            val route = entry.toRoute<PresetEditRoute>()
+            PresetEditScreen(presetId = route.presetId, readSaved = route.readSaved)
+        },
         tablet = { entry -> PresetsContainerScreen(opening = entry.toRoute<PresetEditRoute>()) },
     )
 }

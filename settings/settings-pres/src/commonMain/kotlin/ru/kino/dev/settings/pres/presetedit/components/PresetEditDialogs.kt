@@ -76,13 +76,23 @@ internal fun PresetEditDialogs(
             destructive = true,
         )
 
-        PresetEditDialog.Leave -> ConfirmDialog(
+        is PresetEditDialog.Leave -> ConfirmDialog(
             title = stringResource(Res.string.entry_leave_title),
             text = stringResource(Res.string.entry_leave_text),
             confirmText = stringResource(Res.string.entry_leave_confirm),
             dismissText = stringResource(Res.string.entry_leave_stay),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
+        )
+
+        is PresetEditDialog.Delete -> ConfirmDialog(
+            title = stringResource(Res.string.preset_delete_title, dialog.name),
+            text = stringResource(Res.string.preset_delete_text),
+            confirmText = stringResource(Res.string.action_delete),
+            dismissText = stringResource(Res.string.action_cancel),
+            onConfirm = onConfirm,
+            onDismiss = onDismiss,
+            destructive = true,
         )
 
         is PresetEditDialog.FieldsDropped -> ConfirmDialog(

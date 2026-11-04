@@ -69,7 +69,7 @@ class PresetsProcessor(
     }
 
     override fun onCreate() {
-        intent { if (state.canCreate) navigator.navigate(MviNavEvent.NavigateTo(PresetEditRoute())) }
+        intent { if (state.canCreate) navigator.navigate(MviNavEvent.NavigateTo(PresetEditRoute(readSaved = true))) }
     }
 
     override fun onOpen(id: PresetId?) {

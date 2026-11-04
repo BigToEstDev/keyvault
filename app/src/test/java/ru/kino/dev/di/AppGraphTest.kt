@@ -90,7 +90,7 @@ class AppGraphTest {
                 definition<SecurityProcessor>(String::class, Navigator::class),
                 definition<PresetsProcessor>(Navigator::class),
                 definition<PrivacyProcessor>(Navigator::class),
-                definition<PresetEditProcessor>(String::class, Navigator::class),
+                definition<PresetEditProcessor>(String::class, Boolean::class, Navigator::class),
                 definition<PresetReadProcessor>(String::class, Navigator::class),
                 definition<PresetsContainerProcessor>(PresetEditRoute::class, Navigator::class),
             ),

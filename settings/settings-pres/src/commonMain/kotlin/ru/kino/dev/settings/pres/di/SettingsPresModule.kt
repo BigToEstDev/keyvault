@@ -44,8 +44,8 @@ val settingsPresModule = module {
     viewModel { (dbKey: String, navigator: Navigator) ->
         SecurityProcessor(dbKey, get(), get(), get(), navigator, get())
     }
-    viewModel { (presetId: String?, navigator: Navigator) ->
-        PresetEditProcessor(presetId, get(), get(), navigator, get())
+    viewModel { (presetId: String?, readSaved: Boolean, navigator: Navigator) ->
+        PresetEditProcessor(presetId, readSaved, get(), get(), navigator, get())
     }
     viewModel { (presetId: String?, navigator: Navigator) ->
         PresetReadProcessor(presetId, get(), get(), navigator, get())

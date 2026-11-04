@@ -62,7 +62,7 @@ class PresetsProcessorTest {
     fun `create opens a new preset`() = runTest {
         val (_, events) = perform(FakePresetSettingsRepository(), { onLoad() }, { onCreate() })
 
-        assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(PresetEditRoute())), events)
+        assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(PresetEditRoute(readSaved = true))), events)
     }
 
     @Test
