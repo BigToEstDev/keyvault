@@ -15,6 +15,7 @@ import ru.kino.dev.vault.pres.entryversion.EntryVersionProcessor
 import ru.kino.dev.vault.pres.grouplist.GroupListArgs
 import ru.kino.dev.vault.pres.grouplist.GroupListProcessor
 import ru.kino.dev.vault.pres.trash.TrashProcessor
+import ru.kino.dev.vault.pres.trashcontainer.TrashContainerProcessor
 import ru.kino.dev.vault.pres.trashentry.TrashEntryArgs
 import ru.kino.dev.vault.pres.trashentry.TrashEntryProcessor
 
@@ -24,8 +25,9 @@ import ru.kino.dev.vault.pres.trashentry.TrashEntryProcessor
  * graph's: inside a container it is the container's (Step 98).
  */
 val vaultPresModule = module {
-    // The container of a wide window: the screens in it bring their own processors (pass-docs, Step 98)
+    // The containers of a wide window: the screens in them bring their own processors (pass-docs, Step 98, 100)
     viewModel { (dbKey: String) -> VaultContainerProcessor(dbKey, get(), get(), get()) }
+    viewModel { (dbKey: String) -> TrashContainerProcessor(dbKey, get(), get()) }
 
     viewModel { (args: GroupListArgs, navigator: Navigator) ->
         GroupListProcessor(

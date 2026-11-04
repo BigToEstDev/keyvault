@@ -15,12 +15,14 @@ import ru.kino.dev.vault.pres.entryread.EntryReadScreen
 import ru.kino.dev.vault.pres.entryversion.EntryVersionScreen
 import ru.kino.dev.vault.pres.grouplist.GroupListScreen
 import ru.kino.dev.vault.pres.trash.TrashScreen
+import ru.kino.dev.vault.pres.trashcontainer.TrashContainerScreen
 import ru.kino.dev.vault.pres.trashentry.TrashEntryScreen
 
 /**
  * The screens of `vault` - the database is open. Entered at its root, with its dbKey; every group below is
  * the same screen again, one place on the back stack per level. On a wide window the root is the container - the
  * list with the entries open beside it; its groups and entries stay in it, not on the back stack (pass-docs, Step 98).
+ * So is the recycle bin: its list with its entries open beside it (Step 100).
  *
  * @param nested the screens of other modules that belong to the open database - the settings: inside this
  * graph the lock pops them with `vault`, and `vault` does not depend on those modules (pass-docs, Step 52)
@@ -55,7 +57,11 @@ fun NavGraphBuilder.vaultGraph(nested: NavGraphBuilder.() -> Unit = {}) {
             val route = entry.toRoute<EntryEditRoute>()
             EntryEditScreen(dbKey = route.dbKey, groupId = null, entryId = route.entryId)
         }
-        composable<TrashRoute> { entry -> TrashScreen(dbKey = entry.toRoute<TrashRoute>().dbKey) }
+        // On a wide window the bin is a container of its own - its list with its entries open beside it (Step 100)
+        adaptiveComposable<TrashRoute>(
+            mobile = { entry -> TrashScreen(dbKey = entry.toRoute<TrashRoute>().dbKey) },
+            tablet = { entry -> TrashContainerScreen(dbKey = entry.toRoute<TrashRoute>().dbKey) },
+        )
         composable<TrashEntryRoute> { entry ->
             val route = entry.toRoute<TrashEntryRoute>()
             TrashEntryScreen(dbKey = route.dbKey, entryId = route.entryId)
