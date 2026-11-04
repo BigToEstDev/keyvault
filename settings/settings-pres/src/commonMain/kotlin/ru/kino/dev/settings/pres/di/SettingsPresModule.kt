@@ -16,6 +16,7 @@ import ru.kino.dev.settings.pres.presetscontainer.PresetsContainerProcessor
 import ru.kino.dev.settings.pres.privacy.PrivacyProcessor
 import ru.kino.dev.settings.pres.security.SecurityProcessor
 import ru.kino.dev.settings.pres.settings.SettingsProcessor
+import ru.kino.dev.settings.pres.settingscontainer.SettingsContainerProcessor
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
 
 /**
@@ -50,4 +51,6 @@ val settingsPresModule = module {
     }
     // The container of a wide window: the screens in it bring their own processors (pass-docs, Step 100, item 3)
     viewModel { (opening: PresetEditRoute?) -> PresetsContainerProcessor(opening, get()) }
+    // The container of the settings on a wide window (pass-docs, Step 101)
+    viewModel { (dbKey: String) -> SettingsContainerProcessor(dbKey) }
 }

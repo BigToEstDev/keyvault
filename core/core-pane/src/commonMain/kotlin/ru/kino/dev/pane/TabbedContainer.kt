@@ -13,13 +13,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
 import ru.kino.dev.core.pres.Res
 import ru.kino.dev.core.pres.action_ok
 import ru.kino.dev.core.pres.tabs_limit_text
@@ -55,10 +51,10 @@ fun TabbedContainer(
             modifier = Modifier
                 .fillMaxSize()
                 .safeDrawingPadding()
-                .padding(MARGIN),
-            horizontalArrangement = Arrangement.spacedBy(GAP),
+                .padding(PANE_MARGIN),
+            horizontalArrangement = Arrangement.spacedBy(PANE_GAP),
         ) {
-            PaneCard(modifier = Modifier.width(LIST_WIDTH).fillMaxHeight(), content = list)
+            PaneCard(modifier = Modifier.width(PANE_LIST_WIDTH).fillMaxHeight(), content = list)
             if (selected != null) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(TABS_GAP)) {
                     PaneCard(modifier = Modifier.fillMaxWidth()) {
@@ -86,27 +82,6 @@ fun TabbedContainer(
         )
     }
 }
-
-/** A card of the container: the tone and the corners of the card of `welcome` (pass-docs, Step 94). */
-@Composable
-private fun PaneCard(modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-    ) {
-        Column(content = content)
-    }
-}
-
-/** The list keeps the width of a phone: wider, its rows stretch to no use. */
-private val LIST_WIDTH = 400.dp
-
-/** From the edges of the window. */
-private val MARGIN = 24.dp
-
-/** Between the cards. */
-private val GAP = 16.dp
 
 /** Between the tabs open and the one shown: one block of the right. */
 private val TABS_GAP = 8.dp

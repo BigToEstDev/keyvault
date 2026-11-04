@@ -59,10 +59,13 @@ import ru.kino.dev.ui.res.stringResource
 /**
  * The security of the database: the credentials, the cipher, the key derivation and its rounds with the open time
  * on this phone (pass-docs, Step 67).
+ *
+ * @param canGoBack false - a page of the container of a wide window: its tab closes it, not "back" (Step 101)
  */
 @Composable
 internal fun SecurityScreen(
     dbKey: String,
+    canGoBack: Boolean = true,
     processor: SecurityProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
@@ -82,6 +85,7 @@ internal fun SecurityScreen(
                 BackTopBar(
                     title = stringResource(Res.string.settings_security),
                     onBack = processor::onBack,
+                    back = canGoBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },

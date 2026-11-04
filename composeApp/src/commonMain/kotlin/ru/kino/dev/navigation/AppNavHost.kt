@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
@@ -57,10 +58,9 @@ fun AppNavHost(navigator: AppNavigator, autoLock: AutoLock, start: WelcomeStart)
         }
     }
 
-    // Across the line of the layout the stack of `vault` folds back to its root: on a wide window the root is the
-    // container, holding the groups and the entries a phone keeps on the stack (pass-docs, Step 98). Outside `vault` -
-    // nothing to fold
-    LayoutChangeEffect { navController.popBackStack<VaultRootRoute>(inclusive = false) }
+    // Across the line of the layout the stack of `vault` folds back to the place of a container: on a wide window it
+    // holds what a phone keeps on the stack (pass-docs, Step 98, Step 101). Outside `vault` - nothing to fold
+    LayoutChangeEffect { navController.foldToContainer() }
 
     val covering by autoLock.covering.collectAsStateWithLifecycle()
     val current by navController.currentBackStackEntryAsState()
@@ -109,3 +109,13 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.direction(pop: Boo
 private fun NavBackStackEntry.isInVault(): Boolean = destination.hierarchy.any { it.hasRoute(VaultGraph::class) }
 
 private const val SLIDE_MILLIS = 300
+
+/**
+ * The stack folded back to the place of a container: the settings open - to them, they stay open (pass-docs, Step 101);
+ * else - to the root of `vault`. What is over the place goes - on a wide window the container holds it, on a phone it
+ * was a screen of its own.
+ */
+private fun NavController.foldToContainer() {
+    val settings = runCatching { getBackStackEntry<SettingsRoute>() }.isSuccess
+    if (settings) popBackStack<SettingsRoute>(inclusive = false) else popBackStack<VaultRootRoute>(inclusive = false)
+}

@@ -17,13 +17,18 @@ import ru.kino.dev.settings.pres.presetscontainer.PresetsContainerScreen
 import ru.kino.dev.settings.pres.privacy.PrivacyScreen
 import ru.kino.dev.settings.pres.security.SecurityScreen
 import ru.kino.dev.settings.pres.settings.SettingsScreen
+import ru.kino.dev.settings.pres.settingscontainer.SettingsContainerScreen
 
 /**
  * The screens of `settings`. Built inside the graph of `vault` - the database is open there, and the lock
  * pops them with it (pass-docs, Step 52).
  */
 fun NavGraphBuilder.settingsGraph() {
-    composable<SettingsRoute> { entry -> SettingsScreen(dbKey = entry.toRoute<SettingsRoute>().dbKey) }
+    // On a wide window the settings are a container: the main screen with the page chosen beside it (Step 101)
+    adaptiveComposable<SettingsRoute>(
+        mobile = { entry -> SettingsScreen(dbKey = entry.toRoute<SettingsRoute>().dbKey) },
+        tablet = { entry -> SettingsContainerScreen(dbKey = entry.toRoute<SettingsRoute>().dbKey) },
+    )
     composable<AppearanceRoute> { entry -> AppearanceScreen(dbKey = entry.toRoute<AppearanceRoute>().dbKey) }
     composable<LockRoute> { entry -> LockScreen(dbKey = entry.toRoute<LockRoute>().dbKey) }
     composable<PrivacyRoute> { PrivacyScreen() }

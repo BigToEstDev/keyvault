@@ -26,10 +26,13 @@ import ru.kino.dev.ui.res.stringResource
 /**
  * The settings: the cards of the app and of the database under their sections, "About" at the bottom, apart
  * behind a divider. A card opens its screen when the screen is made (pass-docs, Step 55).
+ *
+ * @param selected the card whose screen is open beside the list - a wide window (pass-docs, Step 101); null - none
  */
 @Composable
 internal fun SettingsScreen(
     dbKey: String,
+    selected: SettingsItem? = null,
     processor: SettingsProcessor = koinProcessor(dbKey),
 ) {
     GradientBackground {
@@ -64,6 +67,7 @@ internal fun SettingsScreen(
                             icon = item.icon,
                             title = stringResource(item.title),
                             text = stringResource(item.text),
+                            selected = item == selected,
                             onClick = { processor.onOpen(item) },
                         )
                     }

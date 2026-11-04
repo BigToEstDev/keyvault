@@ -41,10 +41,13 @@ import ru.kino.dev.vault.file.DatabaseFileInfo
 /**
  * The file of the database: its name inside the file - tapped, a dialog; the name of the file and the format -
  * to read; the compression (pass-docs, Step 63).
+ *
+ * @param canGoBack false - a page of the container of a wide window: its tab closes it, not "back" (Step 101)
  */
 @Composable
 internal fun FileScreen(
     dbKey: String,
+    canGoBack: Boolean = true,
     processor: FileProcessor = koinProcessor(dbKey),
 ) {
     val state by processor.collectAsState()
@@ -70,6 +73,7 @@ internal fun FileScreen(
                 BackTopBar(
                     title = stringResource(Res.string.settings_file),
                     onBack = processor::onBack,
+                    back = canGoBack,
                 )
             },
             snackbarHost = { SnackbarHost(snackbar) },
