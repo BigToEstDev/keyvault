@@ -69,13 +69,14 @@ val vaultPresModule = module {
         )
     }
     viewModel { (dbKey: String, navigator: Navigator) ->
-        TrashProcessor(dbKey, get(), get(), get(), navigator = navigator, log = get())
+        TrashProcessor(dbKey, get(), get(), get(), changes = get(), navigator = navigator, log = get())
     }
     viewModel { (args: TrashEntryArgs, navigator: Navigator) ->
         TrashEntryProcessor(
             dbKey = args.dbKey,
             entryId = args.entryId,
             get(), get(), get(), get(), get(), get(),
+            changes = get(),
             navigator = navigator,
             log = get(),
         )

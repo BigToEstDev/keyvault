@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.changes.FakeVaultChanges
 import ru.kino.dev.vault.entry.EntrySummary
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.FakeGroupRepository
@@ -33,6 +34,7 @@ class TrashProcessorTest {
         entries += binned("same-a", "Alpha", deletedAt = 200)
     }
     private val log = RecordingLog()
+    private val changes = FakeVaultChanges()
     private val database = FakeVaultDatabase()
     private val groups = FakeGroupRepository()
     private val work = groups.add("work", groups.rootId, "Work")
@@ -239,6 +241,23 @@ class TrashProcessorTest {
     }
 
     @Test
+    fun `a change made elsewhere while the bin is shown is read again`() = runTest {
+        val (navigator, _) = recordNavigation()
+        val processor = TrashProcessor(DB, trash, TrashEditor(trash, database), groups, changes, navigator, log)
+
+        processor.testWithInternalState(this) {
+            // Listening, as while the screen is shown
+            runOnCreate()
+            // Restored in its tab, beside the list
+            trash.entries.removeAll { it.entry.id == OLD }
+            changes.changed(DB)
+
+            assertEquals(listOf("new", "same-a", "same-b"), awaitInternalState().shown.map { it.entry.id.value })
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
+    @Test
     fun `back leaves the screen`() = runTest {
         val (_, events) = perform({ onBack() })
 
@@ -247,7 +266,7 @@ class TrashProcessorTest {
 
     private suspend fun TestScope.perform(vararg actions: TrashActions.() -> Unit): Pair<TrashState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = TrashProcessor(DB, trash, TrashEditor(trash, database), groups, navigator, log)
+        val processor = TrashProcessor(DB, trash, TrashEditor(trash, database), groups, changes, navigator, log)
 
         processor.testWithInternalState(this) {
             containerHost.runEach(actions)

@@ -44,11 +44,14 @@ import ru.kino.dev.vault.pres.trash.components.TrashDialogs
  * An entry of the recycle bin, read: its fields with copying, no group - when it was deleted in its place, under the
  * title (pass-docs, Step 72, item 6); under the fields its times. The bin in the top bar deletes it for good, the fab
  * restores it (pass-docs, Step 71).
+ *
+ * @param canGoBack false - a pane of the container of a wide window: its tab closes it, not "back" (pass-docs, Step 100)
  */
 @Composable
 internal fun TrashEntryScreen(
     dbKey: String,
     entryId: String,
+    canGoBack: Boolean = true,
     processor: TrashEntryProcessor = koinProcessor(TrashEntryArgs(dbKey = dbKey, entryId = entryId)),
 ) {
     val state by processor.collectAsState()
@@ -80,6 +83,7 @@ internal fun TrashEntryScreen(
                     title = entry?.content?.value(StandardPreset.TITLE)?.ifEmpty { stringResource(Res.string.entry_untitled) }
                         .orEmpty(),
                     onBack = processor::onBack,
+                    back = canGoBack,
                     skeleton = skeleton,
                 ) {
                     if (trashed != null) {
