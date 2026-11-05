@@ -246,7 +246,11 @@ class EntryEditProcessor(
     }
 
     override fun onAddAttachment() {
-        intent { if (state.editable && !state.addingAttachment) postSideEffect(EntryEditSideEffect.PickAttachment) }
+        intent {
+            if (state.editable && state.canAddAttachment && !state.addingAttachment) {
+                postSideEffect(EntryEditSideEffect.PickAttachment)
+            }
+        }
     }
 
     override fun onAttachmentPicked(uri: String) {
@@ -321,9 +325,12 @@ class EntryEditProcessor(
         super.onCleared()
     }
 
-    /** The file [uri] read onto the form, after the attachments there: one larger than the limit is refused. */
+    /**
+     * The file [uri] read onto the form, after the attachments there: one larger than the limit is refused; the entry
+     * full already takes none.
+     */
     private suspend fun Syntax<EntryEditState, EntryEditSideEffect>.addAttachment(uri: String) {
-        if (!state.editable || state.addingAttachment) return
+        if (!state.editable || !state.canAddAttachment || state.addingAttachment) return
 
         reduce { state.copy(addingAttachment = true) }
         try {

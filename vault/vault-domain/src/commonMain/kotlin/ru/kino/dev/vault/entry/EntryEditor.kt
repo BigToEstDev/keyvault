@@ -2,6 +2,7 @@ package ru.kino.dev.vault.entry
 
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.attachment.ATTACHMENTS_MAX_PER_ENTRY
 import ru.kino.dev.vault.attachment.ATTACHMENT_MAX_BYTES
 import ru.kino.dev.vault.attachment.AttachmentsEdit
 import ru.kino.dev.vault.attachment.NewAttachment
@@ -23,8 +24,9 @@ import ru.kino.dev.vault.lock.DatabaseGuard
  * preset says (pass-docs, Step 65); an entry changed keeps the protection its fields have.
  *
  * Attachments go with the form, in the same call (pass-docs, Step 102): the files added are held to
- * [ATTACHMENT_MAX_BYTES] and their names to one per entry - the form numbers them first, so a file refused here is
- * a bug of ours. Their bytes stay the caller's to wipe.
+ * [ATTACHMENT_MAX_BYTES], the entry they are added to - to [ATTACHMENTS_MAX_PER_ENTRY], their names to one per
+ * entry - the form numbers them first and stops at the limit, so a file refused here is a bug of ours. Their bytes
+ * stay the caller's to wipe.
  *
  * Throws [EntryFailure] and nothing else.
  */
@@ -110,6 +112,7 @@ class EntryEditor(
             names.any { it.isEmpty() } -> "an attachment has no name"
             names.size != names.toSet().size -> "two attachments with one name"
             edit.added.any { it.size > ATTACHMENT_MAX_BYTES } -> "a file larger than an attachment may be"
+            edit.addsPastLimit -> "files added past the attachments an entry may have"
             else -> return
         }
         throw EntryFailure.Unexpected(IllegalArgumentException(problem))

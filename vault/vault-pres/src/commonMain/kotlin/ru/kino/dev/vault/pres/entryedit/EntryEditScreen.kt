@@ -316,7 +316,12 @@ private fun EntryEditActions.EntryForm(state: EntryEditState, content: EntryCont
     }
 
     // The last card: the files of the entry and those added (pass-docs, Step 103)
-    FormAttachments(attachments = state.attachments, adding = state.addingAttachment, enabled = enabled)
+    FormAttachments(
+        attachments = state.attachments,
+        canAdd = state.canAddAttachment,
+        adding = state.addingAttachment,
+        enabled = enabled,
+    )
 }
 
 /**

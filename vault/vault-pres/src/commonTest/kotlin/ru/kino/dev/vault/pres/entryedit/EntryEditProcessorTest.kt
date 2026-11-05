@@ -23,6 +23,7 @@ import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.attachment.ATTACHMENTS_MAX_PER_ENTRY
 import ru.kino.dev.vault.attachment.ATTACHMENT_MAX_BYTES
 import ru.kino.dev.vault.attachment.AttachmentFiles
 import ru.kino.dev.vault.attachment.EntryAttachment
@@ -189,6 +190,34 @@ class EntryEditProcessorTest {
 
         assertEquals(EntryEditDialog.Leave(), state.dialog)
         assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `an entry with the most attachments takes no more - none can be added`() = runTest {
+        withAttachments(ATTACHMENTS_MAX_PER_ENTRY)
+        picked("one more.txt", byteArrayOf(1))
+
+        val (state, _) = editing({ onAttachmentPicked(PICKED) })
+
+        assertFalse(state.canAddAttachment)
+        assertEquals(ATTACHMENTS_MAX_PER_ENTRY, state.attachments.size)
+        assertTrue(files.journal.isEmpty())
+    }
+
+    @Test
+    fun `one removed from a full entry lets a file be added again`() = runTest {
+        withAttachments(ATTACHMENTS_MAX_PER_ENTRY)
+
+        val (state, _) = editing({ onRemoveAttachment(0) })
+
+        assertTrue(state.canAddAttachment)
+    }
+
+    /** The entry [mail] gets [count] attachments. */
+    private fun withAttachments(count: Int) {
+        val attachments = List(count) { EntryAttachment(id = "hash-$it", name = "file $it.txt", size = 1) }
+        attachments.forEach { entries.attachmentBytes[it.id] = byteArrayOf(1) }
+        entries.stored[mail] = entries.stored.getValue(mail).copy(attachments = attachments)
     }
 
     /** The entry [mail] gets the attachment `notes.txt`. */

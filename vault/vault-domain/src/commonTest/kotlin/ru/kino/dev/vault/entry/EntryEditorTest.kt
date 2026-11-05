@@ -18,6 +18,7 @@ import ru.kino.dev.core.preset.StandardPreset.PASSWORD
 import ru.kino.dev.core.preset.StandardPreset.TITLE
 import ru.kino.dev.core.preset.StandardPreset.USER_NAME
 import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.attachment.ATTACHMENTS_MAX_PER_ENTRY
 import ru.kino.dev.vault.attachment.ATTACHMENT_MAX_BYTES
 import ru.kino.dev.vault.attachment.AttachmentsEdit
 import ru.kino.dev.vault.attachment.EntryAttachment
@@ -313,6 +314,30 @@ class EntryEditorTest {
 
         assertEquals(listOf("read"), journal)
     }
+
+    @Test
+    fun `a file added past the limit of attachments is refused before anything changes`() = runTest {
+        val id = withAttachments(*names(ATTACHMENTS_MAX_PER_ENTRY))
+        val kept = entries.stored.getValue(id).attachments
+
+        expectFailure<EntryFailure.Unexpected> {
+            editor.update(DB, id, filled, GROUP, AttachmentsEdit(kept = kept, added = listOf(file("one more.txt"))))
+        }
+
+        assertEquals(listOf("read"), journal)
+    }
+
+    @Test
+    fun `an entry of another program past the limit is saved as it is - one removed too`() = runTest {
+        val id = withAttachments(*names(ATTACHMENTS_MAX_PER_ENTRY + 2))
+        val kept = entries.stored.getValue(id).attachments.drop(1)
+
+        editor.update(DB, id, filled, GROUP, AttachmentsEdit(kept = kept, added = emptyList()))
+
+        assertEquals(ATTACHMENTS_MAX_PER_ENTRY + 1, entries.stored.getValue(id).attachments.size)
+    }
+
+    private fun names(count: Int) = Array(count) { "file $it.txt" }
 
     /** An entry of [filled] with files of [names], made through the fake and the journal cleared. */
     private suspend fun withAttachments(vararg names: String): EntryId {

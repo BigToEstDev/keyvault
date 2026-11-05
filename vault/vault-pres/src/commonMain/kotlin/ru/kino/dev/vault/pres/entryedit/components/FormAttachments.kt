@@ -20,11 +20,13 @@ import ru.kino.dev.vault.pres.entryedit.FormAttachment
 
 /**
  * The attachments on the form - the last card, after the own fields (pass-docs, Step 103): each with its cross, then
- * "+ Add attachment", waiting while a file picked is read.
+ * "+ Add attachment", waiting while a file picked is read. At the limit - no button, as for own fields; one removed
+ * brings it back (item 5).
  */
 @Composable
 internal fun EntryEditActions.FormAttachments(
     attachments: List<FormAttachment>,
+    canAdd: Boolean,
     adding: Boolean,
     enabled: Boolean,
 ) {
@@ -52,7 +54,7 @@ internal fun EntryEditActions.FormAttachments(
             )
         }
     }
-    FieldRowsSection(rows = files + add)
+    FieldRowsSection(rows = if (canAdd) files + add else files)
 }
 
 private val BUTTON_PADDING = 16.dp

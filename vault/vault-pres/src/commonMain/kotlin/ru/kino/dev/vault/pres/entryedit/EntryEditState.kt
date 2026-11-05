@@ -4,6 +4,7 @@ import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.phone.PhoneCountry
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetId
+import ru.kino.dev.vault.attachment.ATTACHMENTS_MAX_PER_ENTRY
 import ru.kino.dev.vault.attachment.EntryAttachment
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryDraft
@@ -69,6 +70,9 @@ data class EntryEditState(
 
     /** The form differs from what it opened with - the fields, the group, or the attachments. */
     val changed: Boolean = content != initial || group != initialGroup || attachmentsChanged
+
+    /** One more file can be attached - the entry has fewer than the limit (pass-docs, Step 103, item 5). */
+    val canAddAttachment: Boolean = attachments.size < ATTACHMENTS_MAX_PER_ENTRY
 
     /** One more own field can be added - the card of own fields has room (pass-docs, Step 40, fix 19.1). */
     val canAddField: Boolean = content?.let(EntryValidator::canAddField) == true
