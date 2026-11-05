@@ -409,4 +409,20 @@
     <string name="picker_save_database">Сохранить базу</string>
     <string name="picker_open_key_file">Выбрать ключевой файл</string>
     <string name="picker_save_key_file">Сохранить ключевой файл</string>
+    <string name="picker_open_attachment">Выбрать файл для вложения</string>
+    <string name="picker_save_attachment">Сохранить вложение</string>
+
+    <!-- Размеры файлов: число — по правилам языка -->
+    <string name="size_decimal_separator">,</string>
+    <string name="size_bytes">%1$s Б</string>
+    <string name="size_kilobytes">%1$s КБ</string>
+    <string name="size_megabytes">%1$s МБ</string>
+
+    <!-- Вложения записи (Step 103) -->
+    <string name="entry_add_attachment">+ Добавить вложение</string>
+    <string name="entry_attachment_download">Скачать</string>
+    <string name="entry_attachment_saved">Файл сохранён</string>
+    <string name="entry_attachment_not_saved">Не удалось сохранить файл</string>
+    <string name="entry_attachment_too_large">Файл больше %1$s</string>
+    <string name="entry_attachment_not_read">Не удалось прочитать файл</string>
 </resources>

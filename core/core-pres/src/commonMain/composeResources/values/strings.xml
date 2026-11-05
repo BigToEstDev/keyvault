@@ -405,4 +405,20 @@
     <string name="picker_save_database">Save database</string>
     <string name="picker_open_key_file">Choose key file</string>
     <string name="picker_save_key_file">Save key file</string>
+    <string name="picker_open_attachment">Choose file to attach</string>
+    <string name="picker_save_attachment">Save attachment</string>
+
+    <!-- Sizes of files: the number in the way of the language -->
+    <string name="size_decimal_separator">.</string>
+    <string name="size_bytes">%1$s B</string>
+    <string name="size_kilobytes">%1$s KB</string>
+    <string name="size_megabytes">%1$s MB</string>
+
+    <!-- Attachments of an entry (Step 103) -->
+    <string name="entry_add_attachment">+ Add attachment</string>
+    <string name="entry_attachment_download">Download</string>
+    <string name="entry_attachment_saved">File saved</string>
+    <string name="entry_attachment_not_saved">Could not save the file</string>
+    <string name="entry_attachment_too_large">The file is larger than %1$s</string>
+    <string name="entry_attachment_not_read">Could not read the file</string>
 </resources>

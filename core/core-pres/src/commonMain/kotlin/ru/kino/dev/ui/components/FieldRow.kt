@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,6 +65,39 @@ fun FieldRow(
 }
 
 /**
+ * A file in a [FieldRowsSection] - an attachment of an entry (pass-docs, Step 103): the clip, the [name] - wrapped
+ * whole - and the [size] under it, buttons at the end. In the room of a [FieldRow], so the cards look alike.
+ */
+@Composable
+fun FileRow(
+    name: String,
+    size: String,
+    modifier: Modifier = Modifier,
+    actions: (@Composable RowScope.() -> Unit)? = null,
+) {
+    Row(
+        modifier = modifier.rowRoom(actions != null),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            Icons.Filled.AttachFile,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(end = 12.dp).size(FILE_ICON_SIZE),
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = name, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = size,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        actions?.let { Row(verticalAlignment = Alignment.CenterVertically, content = it) }
+    }
+}
+
+/**
  * A [FieldRow] while its value is being read: a bar for the label, one for the value - of the heights of their
  * lines, in the room of the row, so nothing moves when the value comes (pass-docs, Step 73, item 6).
  */
@@ -77,6 +114,8 @@ private fun Modifier.rowRoom(actions: Boolean): Modifier = this
     .fillMaxWidth()
     .heightIn(min = ROW_MIN_HEIGHT)
     .padding(start = 16.dp, end = if (actions) 4.dp else 16.dp, top = 8.dp, bottom = 8.dp)
+
+private val FILE_ICON_SIZE = 20.dp
 
 /** Share of the width the bar of the label takes - a label is shorter than a value. */
 private const val LABEL_WIDTH = 0.3f
