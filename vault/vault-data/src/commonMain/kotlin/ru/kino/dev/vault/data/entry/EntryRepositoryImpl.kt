@@ -3,6 +3,10 @@ package ru.kino.dev.vault.data.entry
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySummaryData
 import ru.kino.dev.core.NativeCore
+import ru.kino.dev.vault.attachment.AttachmentsEdit
+import ru.kino.dev.vault.attachment.NewAttachment
+import ru.kino.dev.vault.data.attachment.toAttachment
+import ru.kino.dev.vault.data.attachment.toData
 import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
@@ -35,16 +39,27 @@ internal class EntryRepositoryImpl(
             groupId = GroupId(entry.groupId),
             fields = entry.fields.map { it.toField() },
             times = EntryTimes(created = entry.createdAt, modified = entry.modifiedAt),
+            attachments = entry.attachments.map { it.toAttachment() },
         )
     }
 
-    override suspend fun create(dbKey: String, groupId: GroupId, fields: List<EntryField>): EntryId =
+    override suspend fun create(
+        dbKey: String,
+        groupId: GroupId,
+        fields: List<EntryField>,
+        attachments: List<NewAttachment>,
+    ): EntryId =
         entryCall(notFound = { EntryFailure.GroupNotFound(it) }) {
-            EntryId(core.createEntry(dbKey, groupId.value, fields.map { it.toData() }))
+            EntryId(core.createEntry(dbKey, groupId.value, fields.map { it.toData() }, attachments.map { it.toData() }))
         }.also { changes.changed(dbKey) }
 
-    override suspend fun update(dbKey: String, entryId: EntryId, fields: List<EntryField>) = entryCall {
-        core.updateEntry(dbKey, entryId.value, fields.map { it.toData() })
+    override suspend fun update(
+        dbKey: String,
+        entryId: EntryId,
+        fields: List<EntryField>,
+        attachments: AttachmentsEdit?,
+    ) = entryCall {
+        core.updateEntry(dbKey, entryId.value, fields.map { it.toData() }, attachments?.toData())
     }.also { changes.changed(dbKey) }
 
     override suspend fun delete(dbKey: String, entryId: EntryId) = entryCall {

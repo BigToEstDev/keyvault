@@ -1,5 +1,8 @@
 package ru.kino.dev.vault.entry
 
+import ru.kino.dev.vault.attachment.AttachmentsEdit
+import ru.kino.dev.vault.attachment.EntryAttachment
+import ru.kino.dev.vault.attachment.NewAttachment
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 
@@ -25,11 +28,23 @@ interface EntryRepository {
     /** The entry as the core holds it: the group it is in, its fields in the order of the file. */
     suspend fun read(dbKey: String, entryId: EntryId): EntryRecord
 
-    /** Creates an entry inside [groupId] holding exactly [fields] and returns its id. */
-    suspend fun create(dbKey: String, groupId: GroupId, fields: List<EntryField>): EntryId
+    /**
+     * Creates an entry inside [groupId] holding exactly [fields] and the files [attachments], in one call, and returns
+     * its id. The bytes of the files stay the caller's to wipe.
+     */
+    suspend fun create(
+        dbKey: String,
+        groupId: GroupId,
+        fields: List<EntryField>,
+        attachments: List<NewAttachment> = emptyList(),
+    ): EntryId
 
-    /** Replaces the fields of the entry with [fields]; nothing else of it changes. */
-    suspend fun update(dbKey: String, entryId: EntryId, fields: List<EntryField>)
+    /**
+     * Replaces the fields of the entry with [fields] and - when [attachments] is given - its attachments with those
+     * kept and added, in one call; null keeps them as they are. Nothing else of it changes. The bytes of the files
+     * added stay the caller's to wipe.
+     */
+    suspend fun update(dbKey: String, entryId: EntryId, fields: List<EntryField>, attachments: AttachmentsEdit? = null)
 
     /** Deletes the entry: into the recycle bin, or for good when the database does not use one (pass-docs, Step 69). */
     suspend fun delete(dbKey: String, entryId: EntryId)
@@ -45,6 +60,8 @@ data class EntryRecord(
     /** In the order of the file */
     val fields: List<EntryField>,
     val times: EntryTimes = EntryTimes(),
+    /** In the order of the file - names and sizes, the bytes only on "Download" */
+    val attachments: List<EntryAttachment> = emptyList(),
 )
 
 /**
@@ -54,7 +71,12 @@ data class EntryRecord(
 data class EntryTimes(val created: Long? = null, val modified: Long? = null)
 
 /**
- * An entry as its screens show it ([EntryOpener]): where it is, what it holds laid over its preset, and when
- * it was made and changed.
+ * An entry as its screens show it ([EntryOpener]): where it is, what it holds laid over its preset, when it was
+ * made and changed, and its attachments.
  */
-data class OpenedEntry(val groupId: GroupId, val content: EntryContent, val times: EntryTimes = EntryTimes())
+data class OpenedEntry(
+    val groupId: GroupId,
+    val content: EntryContent,
+    val times: EntryTimes = EntryTimes(),
+    val attachments: List<EntryAttachment> = emptyList(),
+)

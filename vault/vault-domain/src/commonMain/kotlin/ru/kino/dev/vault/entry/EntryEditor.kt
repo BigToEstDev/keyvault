@@ -2,6 +2,9 @@ package ru.kino.dev.vault.entry
 
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.attachment.ATTACHMENT_MAX_BYTES
+import ru.kino.dev.vault.attachment.AttachmentsEdit
+import ru.kino.dev.vault.attachment.NewAttachment
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.group.EntryId
@@ -19,6 +22,10 @@ import ru.kino.dev.vault.lock.DatabaseGuard
  * A new entry is private where the database says so - a field of [FieldProtection] is protected whatever the
  * preset says (pass-docs, Step 65); an entry changed keeps the protection its fields have.
  *
+ * Attachments go with the form, in the same call (pass-docs, Step 102): the files added are held to
+ * [ATTACHMENT_MAX_BYTES] and their names to one per entry - the form numbers them first, so a file refused here is
+ * a bug of ours. Their bytes stay the caller's to wipe.
+ *
  * Throws [EntryFailure] and nothing else.
  */
 class EntryEditor(
@@ -29,39 +36,49 @@ class EntryEditor(
     private val guard: DatabaseGuard = DatabaseGuard(),
 ) {
 
-    /** Creates an entry holding [content] inside [groupId], saves, and returns its id. */
-    suspend fun create(dbKey: String, groupId: GroupId, content: EntryContent): EntryId = guard.exclusive {
+    /** Creates an entry holding [content] and the files [attachments] inside [groupId], saves, and returns its id. */
+    suspend fun create(
+        dbKey: String,
+        groupId: GroupId,
+        content: EntryContent,
+        attachments: List<NewAttachment> = emptyList(),
+    ): EntryId = guard.exclusive {
         val normalized = content.withNamesNormalized(keptNames = emptySet())
         refuseProblems(EntryValidator.problems(normalized, read = null))
+        refuseAttachments(AttachmentsEdit(kept = emptyList(), added = attachments))
 
         val protection = protection(dbKey)
         val fields = normalized.fields().map { it.copy(protected = it.protected || protection.protects(it.key)) }
-        val id = entries.create(dbKey, groupId, fields)
+        val id = entries.create(dbKey, groupId, fields, attachments)
         save(dbKey)
         id
     }
 
     /**
-     * Saves [content] over the entry and puts it into [groupId] - one action, one write. The checks are
-     * against the entry as it is now in the database. The same fields again are not a change: they are not
-     * written - the core would put a version into the history on every update (pass-docs, Step 42, decision
-     * 15); the same group is not a move. Neither - nothing is written at all.
+     * Saves [content] and [attachments] over the entry and puts it into [groupId] - one action, one write; null
+     * [attachments] keeps them as they are. The checks are against the entry as it is now in the database. The same
+     * fields and attachments again are not a change: they are not written - the core would put a version into the
+     * history on every update (pass-docs, Step 42, decision 15); the same group is not a move. Neither - nothing is
+     * written at all.
      */
     suspend fun update(
         dbKey: String,
         entryId: EntryId,
         content: EntryContent,
         groupId: GroupId,
+        attachments: AttachmentsEdit? = null,
     ): Unit = guard.exclusive {
         val opened = opener.open(dbKey, entryId)
         val read = opened.content
         val normalized = content.withNamesNormalized(keptNames = read.ownFields.map { it.key }.toSet())
-        val changed = normalized.fields() != read.fields()
+        val edit = attachments?.takeUnless { it.keepsExactly(opened.attachments) }
+        val changed = normalized.fields() != read.fields() || edit != null
         val moved = groupId != opened.groupId
         if (!changed && !moved) return@exclusive
         if (changed) refuseProblems(EntryValidator.problems(normalized, read))
+        edit?.let(::refuseAttachments)
 
-        if (changed) entries.update(dbKey, entryId, normalized.fields())
+        if (changed) entries.update(dbKey, entryId, normalized.fields(), edit)
         if (moved) entries.move(dbKey, entryId, groupId)
         save(dbKey)
     }
@@ -84,6 +101,18 @@ class EntryEditor(
 
     private fun refuseProblems(problems: List<FieldProblem>) {
         if (problems.isNotEmpty()) throw EntryFailure.InvalidFields(problems)
+    }
+
+    // The form numbers names and refuses large files before this: one getting here is a bug of ours
+    private fun refuseAttachments(edit: AttachmentsEdit) {
+        val names = edit.names
+        val problem = when {
+            names.any { it.isEmpty() } -> "an attachment has no name"
+            names.size != names.toSet().size -> "two attachments with one name"
+            edit.added.any { it.size > ATTACHMENT_MAX_BYTES } -> "a file larger than an attachment may be"
+            else -> return
+        }
+        throw EntryFailure.Unexpected(IllegalArgumentException(problem))
     }
 
     private suspend fun protection(dbKey: String): FieldProtection = try {

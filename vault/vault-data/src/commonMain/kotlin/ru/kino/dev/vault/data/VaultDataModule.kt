@@ -12,8 +12,11 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.storage.AppDataDir
 import ru.kino.dev.storage.preferencesStore
 import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.attachment.AttachmentFiles
+import ru.kino.dev.vault.attachment.AttachmentRepository
 import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.credentials.DatabaseCredentials
+import ru.kino.dev.vault.data.attachment.AttachmentRepositoryImpl
 import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.data.credentials.DatabaseCredentialsImpl
 import ru.kino.dev.vault.data.entries.EntrySettingsRepositoryImpl
@@ -56,6 +59,7 @@ val vaultDataModule = module {
     singleOf(::GroupRepositoryImpl) { bind<GroupRepository>() }
     singleOf(::EntryRepositoryImpl) { bind<EntryRepository>() }
     singleOf(::EntryHistoryRepositoryImpl) { bind<EntryHistoryRepository>() }
+    factoryOf(::AttachmentRepositoryImpl) { bind<AttachmentRepository>() }
     factoryOf(::DatabaseCredentialsImpl) { bind<DatabaseCredentials>() }
     factoryOf(::DatabaseFileRepositoryImpl) { bind<DatabaseFileRepository>() }
     factoryOf(::EntrySettingsRepositoryImpl) { bind<EntrySettingsRepository>() }
@@ -74,6 +78,7 @@ val vaultDataModule = module {
     factory { SecurityEditor(get(), get(), get(), get(), get()) }
     factory { EntryEditor(get(), get(), get(), get(), get()) }
     factory { VaultSearch(get(), get()) }
+    factory { AttachmentFiles(get(), get()) }
 
     // One for the app: the editors and the lock wait for each other on it
     single { DatabaseGuard() }

@@ -11,6 +11,8 @@ import ru.kino.dev.core.FakeNativeCore
 import ru.kino.dev.core.GroupNode
 import ru.kino.dev.core.GroupTree
 import ru.kino.dev.core.expectFailure
+import ru.kino.dev.vault.attachment.AttachmentsEdit
+import ru.kino.dev.vault.attachment.NewAttachment
 import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
@@ -196,6 +198,38 @@ class EntryRepositoryImplTest {
 
         assertEquals(0, changes.current(DB))
     }
+
+    @Test
+    fun `files made with an entry come back with it, by name and size`() = runTest {
+        val id = repository.create(DB, GroupId(WORK), listOf(field("Title", "Mail")), listOf(NewAttachment("a.txt", byteArrayOf(1, 2))))
+
+        val attachments = repository.read(DB, id).attachments
+
+        assertEquals(listOf("a.txt" to 2L), attachments.map { it.name to it.size })
+        assertEquals(listOf(1, 2), core.attachmentBytes.getValue(attachments.single().id).map { it.toInt() })
+    }
+
+    @Test
+    fun `an update keeps the attachments named and adds the files after them`() = runTest {
+        val first = listOf(NewAttachment("a.txt", byteArrayOf(1)), NewAttachment("b.txt", byteArrayOf(2)))
+        val id = repository.create(DB, GroupId(WORK), listOf(field("Title", "Mail")), first)
+        val (_, b) = repository.read(DB, id).attachments
+
+        repository.update(DB, id, listOf(field("Title", "Mail")), AttachmentsEdit(listOf(b), listOf(NewAttachment("c.txt", byteArrayOf(3)))))
+
+        assertEquals(listOf("b.txt", "c.txt"), repository.read(DB, id).attachments.map { it.name })
+    }
+
+    @Test
+    fun `an update without an edit of the attachments keeps them`() = runTest {
+        val id = repository.create(DB, GroupId(WORK), listOf(field("Title", "Mail")), listOf(NewAttachment("a.txt", byteArrayOf(1))))
+
+        repository.update(DB, id, listOf(field("Title", "Post")))
+
+        assertEquals(listOf("a.txt"), repository.read(DB, id).attachments.map { it.name })
+    }
+
+    private fun field(key: String, value: String) = EntryField(key, value, protected = false)
 
     private fun data(key: String, value: String, protected: Boolean = false) = EntryFieldData(key, value, protected)
 

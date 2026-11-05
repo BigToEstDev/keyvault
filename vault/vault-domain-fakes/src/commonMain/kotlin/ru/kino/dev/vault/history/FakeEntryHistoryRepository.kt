@@ -27,14 +27,14 @@ class FakeEntryHistoryRepository(private val entries: FakeEntryRepository) : Ent
         failures["version"]?.let { throw it }
         val entry = entries.stored[entryId] ?: throw EntryFailure.EntryNotFound()
         val version = entry.history.getOrNull(index) ?: throw EntryFailure.EntryNotFound()
-        return EntryRecord(entry.groupId, version.fields, EntryTimes(entry.createdAt, version.savedAt))
+        return EntryRecord(entry.groupId, version.fields, EntryTimes(entry.createdAt, version.savedAt), version.attachments)
     }
 
     override suspend fun restore(dbKey: String, entryId: EntryId, index: Int) {
         failures["restore"]?.let { throw it }
         val entry = entries.stored[entryId] ?: throw EntryFailure.EntryNotFound()
         val version = entry.history.getOrNull(index) ?: throw EntryFailure.EntryNotFound()
-        entries.stored[entryId] = entry.updatedTo(version.fields, entries.tick())
+        entries.stored[entryId] = entry.updatedTo(version.fields, entries.tick(), version.attachments)
     }
 
     override suspend fun delete(dbKey: String, entryId: EntryId, index: Int) {
