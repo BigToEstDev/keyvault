@@ -33,6 +33,7 @@ import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.ui.components.BackHandler
 import ru.kino.dev.ui.components.Dropdown
 import ru.kino.dev.ui.components.FieldSection
+import ru.kino.dev.ui.components.GeneratePasswordButton
 import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.PaneCloseHandler
 import ru.kino.dev.ui.components.PasswordField
@@ -244,6 +245,13 @@ private fun EntryEditActions.EntryForm(state: EntryEditState, content: EntryCont
                 error = if (state.isMissing(field.key)) missing else null,
                 enabled = enabled,
                 imeAction = ImeAction.Next,
+                // The dice after the eye: a strong password in place of what is there (pass-docs, Step 104)
+                actions = {
+                    GeneratePasswordButton(
+                        onGenerate = { onGeneratePassword() },
+                        enabled = enabled && !state.generatingPassword,
+                    )
+                },
                 newPassword = true,
             )
         } else {

@@ -38,6 +38,7 @@ import ru.kino.dev.vault.entry.FakeEntryRepository
 import ru.kino.dev.vault.entry.FieldProblem
 import ru.kino.dev.vault.entry.NameProblem
 import ru.kino.dev.vault.entry.blank
+import ru.kino.dev.vault.generator.FakePasswordGenerator
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.FakeGroupRepository
 import ru.kino.dev.vault.group.GroupId
@@ -80,6 +81,52 @@ class EntryEditProcessorTest {
     private val phones = FakePhoneNumbers()
     private val phoneDefaults = PhoneDefaults { "RU" }
     private val files = FakeDatabaseFiles()
+    private val generator = FakePasswordGenerator(listOf("Gen-1!", "Gen-2!"))
+
+    // The generator (pass-docs, Step 104)
+
+    @Test
+    fun `the dice fills an empty password of a new entry and shows it`() = runTest {
+        val (state, _) = creating({ onGeneratePassword() })
+
+        assertEquals("Gen-1!", state.content?.value(StandardPreset.PASSWORD))
+        assertTrue(state.passwordVisible)
+        assertFalse(state.generatingPassword)
+        assertTrue(state.changed)
+    }
+
+    @Test
+    fun `the dice replaces the password of an entry unasked`() = runTest {
+        val (state, _) = editing({ onGeneratePassword() })
+
+        assertEquals("Gen-1!", state.content?.value(StandardPreset.PASSWORD))
+        assertNull(state.dialog)
+    }
+
+    @Test
+    fun `the dice again gives another password`() = runTest {
+        val (state, _) = editing({ onGeneratePassword() }, { onGeneratePassword() })
+
+        assertEquals("Gen-2!", state.content?.value(StandardPreset.PASSWORD))
+    }
+
+    @Test
+    fun `a password generated takes the mark of a required field away`() = runTest {
+        val (state, _) = creating({ onValueChange(StandardPreset.TITLE, "Bank") }, { onSave() }, { onGeneratePassword() })
+
+        assertFalse(state.isMissing(StandardPreset.PASSWORD))
+    }
+
+    @Test
+    fun `the generator refusing says so, the password as it was`() = runTest {
+        generator.failure = EntryFailure.Unexpected(IllegalStateException("no"))
+
+        val (state, _) = editing({ onGeneratePassword() })
+
+        assertEquals("secret", state.content?.value(StandardPreset.PASSWORD))
+        assertEquals(EntryEditMessage.Unexpected, state.message)
+        assertEquals(1, log.logged.size)
+    }
 
     // Attachments (pass-docs, Step 103)
 
@@ -1223,6 +1270,7 @@ class EntryEditProcessorTest {
             phones,
             phoneDefaults,
             AttachmentFiles(files, FakeAttachmentRepository(entries)),
+            generator,
             navigator,
             log,
         )

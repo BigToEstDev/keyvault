@@ -55,6 +55,7 @@ val vaultPresModule = module {
             entryId = args.entryId,
             get(), get(), get(), get(), get(), get(), get(), get(),
             attachmentFiles = get(),
+            passwordGenerator = get(),
             navigator = navigator,
             log = get(),
         )

@@ -433,8 +433,8 @@ data class MergeSummary(
 )
 
 /**
- * Options of the password generator. The defaults are the core's own defaults, repeated here so a caller
- * that wants a plain password does not have to know them.
+ * Options of the password generator. The defaults are a plain password of this app, not the core's own (8
+ * characters, no upper case there); what the form generates is `vault`'s (pass-docs, Step 104).
  */
 data class PasswordOptions(
     val length: Int = 16,

@@ -417,6 +417,7 @@
     <!-- Attachments of an entry (Step 103) -->
     <string name="entry_add_attachment">+ Add attachment</string>
     <string name="entry_attachment_download">Download</string>
+    <string name="password_generate">Generate password</string>
     <string name="entry_attachment_saved">File saved</string>
     <string name="entry_attachment_not_saved">Could not save the file</string>
     <string name="entry_attachment_too_large">The file is larger than %1$s</string>

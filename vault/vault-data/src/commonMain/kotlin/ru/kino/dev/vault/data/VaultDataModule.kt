@@ -23,6 +23,7 @@ import ru.kino.dev.vault.data.entries.EntrySettingsRepositoryImpl
 import ru.kino.dev.vault.data.entry.EntryRepositoryImpl
 import ru.kino.dev.vault.data.file.DatabaseFileRepositoryImpl
 import ru.kino.dev.vault.data.filter.DataStoreVaultFilterRepository
+import ru.kino.dev.vault.data.generator.PasswordGeneratorImpl
 import ru.kino.dev.vault.data.group.GroupRepositoryImpl
 import ru.kino.dev.vault.data.history.EntryHistoryRepositoryImpl
 import ru.kino.dev.vault.data.security.SecurityRepositoryImpl
@@ -35,6 +36,7 @@ import ru.kino.dev.vault.entry.EntryRepository
 import ru.kino.dev.vault.file.DatabaseFileEditor
 import ru.kino.dev.vault.file.DatabaseFileRepository
 import ru.kino.dev.vault.filter.VaultFilterRepository
+import ru.kino.dev.vault.generator.PasswordGenerator
 import ru.kino.dev.vault.group.GroupEditor
 import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.history.EntryHistoryEditor
@@ -60,6 +62,7 @@ val vaultDataModule = module {
     singleOf(::EntryRepositoryImpl) { bind<EntryRepository>() }
     singleOf(::EntryHistoryRepositoryImpl) { bind<EntryHistoryRepository>() }
     factoryOf(::AttachmentRepositoryImpl) { bind<AttachmentRepository>() }
+    factoryOf(::PasswordGeneratorImpl) { bind<PasswordGenerator>() }
     factoryOf(::DatabaseCredentialsImpl) { bind<DatabaseCredentials>() }
     factoryOf(::DatabaseFileRepositoryImpl) { bind<DatabaseFileRepository>() }
     factoryOf(::EntrySettingsRepositoryImpl) { bind<EntrySettingsRepository>() }

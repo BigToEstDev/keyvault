@@ -421,6 +421,7 @@
     <!-- Вложения записи (Step 103) -->
     <string name="entry_add_attachment">+ Добавить вложение</string>
     <string name="entry_attachment_download">Скачать</string>
+    <string name="password_generate">Создать пароль</string>
     <string name="entry_attachment_saved">Файл сохранён</string>
     <string name="entry_attachment_not_saved">Не удалось сохранить файл</string>
     <string name="entry_attachment_too_large">Файл больше %1$s</string>
