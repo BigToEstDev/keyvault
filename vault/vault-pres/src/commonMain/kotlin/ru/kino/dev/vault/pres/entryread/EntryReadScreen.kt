@@ -131,6 +131,8 @@ internal fun EntryReadScreen(
                             protection = state.protection,
                             shownKeys = state.shownKeys,
                             group = state.group,
+                            attachments = state.attachments,
+                            downloading = state.downloading,
                         )
                         EntryTimesText(state.times)
                     }

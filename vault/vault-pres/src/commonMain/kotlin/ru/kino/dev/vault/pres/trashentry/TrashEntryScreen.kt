@@ -133,6 +133,8 @@ internal fun TrashEntryScreen(
                             protection = state.protection,
                             shownKeys = state.shownKeys,
                             deletedAt = trashed?.deletedAt,
+                            attachments = entry.attachments,
+                            downloading = state.downloading,
                         )
                         EntryTimesText(entry.times)
                     }

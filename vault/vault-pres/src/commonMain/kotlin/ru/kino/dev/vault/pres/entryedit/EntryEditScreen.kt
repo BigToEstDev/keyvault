@@ -64,6 +64,7 @@ import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.hides
 import ru.kino.dev.vault.pres.common.option
 import ru.kino.dev.vault.pres.entryedit.components.EntryEditDialogs
+import ru.kino.dev.vault.pres.entryedit.components.FormAttachments
 import ru.kino.dev.vault.pres.entryedit.components.OwnFieldRow
 import ru.kino.dev.vault.pres.entryedit.components.nameProblemText
 
@@ -313,6 +314,9 @@ private fun EntryEditActions.EntryForm(state: EntryEditState, content: EntryCont
             )
         }
     }
+
+    // The last card: the files of the entry and those added (pass-docs, Step 103)
+    FormAttachments(attachments = state.attachments, adding = state.addingAttachment, enabled = enabled)
 }
 
 /**

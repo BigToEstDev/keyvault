@@ -93,7 +93,8 @@ internal fun EntryVersionScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 when {
-                    // No group - a version does not keep one; no "copy" - restore it to copy (owner, 17.10.26)
+                    // No group - a version does not keep one; no "copy", no "Download" - restore it (owner, 17.10.26;
+                    // pass-docs, Step 103): its attachments are listed
                     version != null -> processor.EntryReadFields(
                         content = version.content,
                         passwordVisible = state.passwordVisible,
@@ -101,6 +102,7 @@ internal fun EntryVersionScreen(
                         protection = state.protection,
                         shownKeys = state.shownKeys,
                         copyable = false,
+                        attachments = version.attachments,
                     )
                     skeleton != null -> EntryReadSkeleton(brush = skeleton)
                 }

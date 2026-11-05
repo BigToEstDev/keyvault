@@ -38,6 +38,7 @@ import ru.kino.dev.ui.components.rememberSensitiveClipboard
 import ru.kino.dev.ui.phone.phoneShown
 import ru.kino.dev.ui.preset.fieldLabel
 import ru.kino.dev.ui.res.stringResource
+import ru.kino.dev.vault.attachment.EntryAttachment
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryField
 
@@ -50,10 +51,13 @@ import ru.kino.dev.vault.entry.EntryField
  * @param group where the entry is - a chip under the title; null - none: a version does not keep its group
  * @param deletedAt an entry of the recycle bin - when it went there: a chip under the title, where the group's is -
  * it has none (pass-docs, Step 72, item 6)
- * @param copyable "copy" by the values; an old version has none - restore it to copy (owner, 17.10.26)
+ * @param copyable "copy" by the values and "Download" by the attachments; an old version has neither - restore it
+ * (owner, 17.10.26; pass-docs, Step 103)
  * @param shownOwn indexes of the protected own fields shown in clear
  * @param protection the fields private by the database - hidden, with the eye, whatever the preset (Step 65)
  * @param shownKeys keys of the fields of the preset private by the database shown in clear
+ * @param attachments the files of the entry - the last card (pass-docs, Step 103)
+ * @param downloading the one of [attachments] being written into its file
  */
 @Composable
 internal fun EntryReadFieldsActions.EntryReadFields(
@@ -65,6 +69,8 @@ internal fun EntryReadFieldsActions.EntryReadFields(
     group: GroupChoice? = null,
     deletedAt: Long? = null,
     copyable: Boolean = true,
+    attachments: List<EntryAttachment> = emptyList(),
+    downloading: EntryAttachment? = null,
 ) {
     val clipboard = rememberSensitiveClipboard().takeIf { copyable }
     val privacy = Privacy(protection, shownKeys, ::onToggleKey)
@@ -112,6 +118,8 @@ internal fun EntryReadFieldsActions.EntryReadFields(
             },
         )
     }
+
+    ReadAttachments(attachments, downloadable = copyable, downloading = downloading)
 }
 
 /**
