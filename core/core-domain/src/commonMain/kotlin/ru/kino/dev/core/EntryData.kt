@@ -29,6 +29,8 @@ data class EntryData(
     val createdAt: Long? = null,
     /** When the entry was last changed, in seconds since the epoch, UTC; null when it cannot be read */
     val modifiedAt: Long? = null,
+    /** Its attachments, in its order - names and sizes, the bytes only on "Download" */
+    val attachments: List<EntryAttachmentData> = emptyList(),
 )
 
 /**

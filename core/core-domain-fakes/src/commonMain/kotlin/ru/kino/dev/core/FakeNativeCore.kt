@@ -399,10 +399,24 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         val previousGroupId: String? = null,
         /** When the entry went to the bin */
         val deletedAt: Long? = null,
+        /** Its attachments, in order; their bytes - in [attachmentBytes] */
+        val attachments: List<EntryAttachmentData> = emptyList(),
     )
 
-    /** One old version of an entry: its strings, and when it was saved. */
-    data class FakeVersion(val fields: List<EntryFieldData>, val savedAt: Long)
+    /** One old version of an entry: its strings and attachments, and when it was saved. */
+    data class FakeVersion(
+        val fields: List<EntryFieldData>,
+        val savedAt: Long,
+        val attachments: List<EntryAttachmentData> = emptyList(),
+    )
+
+    /**
+     * The bytes of the attachments of every database, by id - as the core keeps them, apart from the entries. A
+     * test may put bytes here and link them with [FakeEntry.attachments]. Ids of the files added - `attachment-1`, …
+     */
+    val attachmentBytes = mutableMapOf<String, ByteArray>()
+
+    private var attachmentsAdded = 0
 
     /**
      * The entries of every database, by dbKey and then by id. The entry calls change them - and the
@@ -484,21 +498,61 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     override suspend fun entry(dbKey: String, entryId: String): EntryData {
         step("entry", dbKey)
         val entry = found(dbKey, entryId)
-        return EntryData(entry.groupId, entry.fields, entry.createdAt, entry.modifiedAt)
+        return EntryData(entry.groupId, entry.fields, entry.createdAt, entry.modifiedAt, entry.attachments)
     }
 
-    override suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String {
+    override suspend fun createEntry(
+        dbKey: String,
+        groupId: String,
+        fields: List<EntryFieldData>,
+        newAttachments: List<NewAttachmentData>,
+    ): String {
         step("createEntry", dbKey)
         tree(dbKey).groups[groupId] ?: throw notFound(groupId)
         refuseDuplicateKeys(fields)
-        return addEntry(dbKey, groupId, "entry-${++entriesCreated}", fields)
+        refuseAttachmentNames(newAttachments.map { it.name })
+        val id = addEntry(dbKey, groupId, "entry-${++entriesCreated}", fields)
+        stored(dbKey)[id] = found(dbKey, id).copy(attachments = newAttachments.map(::keep))
+        return id
     }
 
-    override suspend fun updateEntry(dbKey: String, entryId: String, fields: List<EntryFieldData>) {
+    override suspend fun updateEntry(
+        dbKey: String,
+        entryId: String,
+        fields: List<EntryFieldData>,
+        attachments: EntryAttachmentsEdit?,
+    ) {
         step("updateEntry", dbKey)
         val entry = found(dbKey, entryId)
         refuseDuplicateKeys(fields)
-        stored(dbKey)[entryId] = entry.updatedTo(fields)
+        val after = attachments?.let { edit ->
+            // As the core: every check before anything is kept
+            val kept = edit.keptIds.map { id ->
+                if (id !in attachmentBytes) throw CoreException("DataError", "no attachment $id")
+                entry.attachments.firstOrNull { it.id == id }
+                    ?: entry.history.flatMap { it.attachments }.first { it.id == id }
+            }
+            refuseAttachmentNames(kept.map { it.name } + edit.added.map { it.name })
+            kept + edit.added.map(::keep)
+        } ?: entry.attachments
+        stored(dbKey)[entryId] = entry.updatedTo(fields, after)
+    }
+
+    override suspend fun attachmentBytes(dbKey: String, attachmentId: String): ByteArray {
+        step("attachmentBytes", dbKey)
+        return attachmentBytes[attachmentId]?.copyOf() ?: throw CoreException("NotFound", "no attachment $attachmentId")
+    }
+
+    // A copy of the bytes, as the core makes its own: the caller wipes what it handed over
+    private fun keep(file: NewAttachmentData): EntryAttachmentData {
+        val id = "attachment-${++attachmentsAdded}"
+        attachmentBytes[id] = file.bytes.copyOf()
+        return EntryAttachmentData(id = id, name = file.name, size = file.bytes.size.toLong())
+    }
+
+    private fun refuseAttachmentNames(names: List<String>) {
+        if (names.any { it.isEmpty() }) throw CoreException("DataError", "an attachment has no name")
+        if (names.size != names.toSet().size) throw CoreException("DataError", "two attachments with one name")
     }
 
     // As the core: into the bin, or for good with the bin off
@@ -553,14 +607,14 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         step("historyVersion", dbKey)
         val entry = found(dbKey, entryId)
         val version = entry.history.getOrNull(index) ?: throw CoreException("NotFound", "no version $index")
-        return EntryData(entry.groupId, version.fields, entry.createdAt, version.savedAt)
+        return EntryData(entry.groupId, version.fields, entry.createdAt, version.savedAt, version.attachments)
     }
 
     override suspend fun restoreHistoryVersion(dbKey: String, entryId: String, index: Int) {
         step("restoreHistoryVersion", dbKey)
         val entry = found(dbKey, entryId)
         val version = entry.history.getOrNull(index) ?: throw CoreException("NotFound", "no version $index")
-        stored(dbKey)[entryId] = entry.updatedTo(version.fields)
+        stored(dbKey)[entryId] = entry.updatedTo(version.fields, version.attachments)
     }
 
     override suspend fun deleteHistoryVersion(dbKey: String, entryId: String, index: Int) {
@@ -576,8 +630,13 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     }
 
     // Like the core: the state before goes into the history, and the change is stamped
-    private fun FakeEntry.updatedTo(fields: List<EntryFieldData>) =
-        copy(fields = fields, modifiedAt = ++clock, history = history + FakeVersion(this.fields, modifiedAt))
+    private fun FakeEntry.updatedTo(fields: List<EntryFieldData>, attachments: List<EntryAttachmentData>) =
+        copy(
+            fields = fields,
+            attachments = attachments,
+            modifiedAt = ++clock,
+            history = history + FakeVersion(this.fields, modifiedAt, this.attachments),
+        )
 
     private fun stored(dbKey: String): MutableMap<String, FakeEntry> {
         tree(dbKey)

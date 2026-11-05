@@ -224,23 +224,44 @@ interface NativeCore {
      */
     suspend fun searchEntries(dbKey: String, term: String): EntrySearchData
 
-    /** The entry: the group it is directly in, and its strings in its order. */
+    /** The entry: the group it is directly in, its strings in its order, and its attachments. */
     suspend fun entry(dbKey: String, entryId: String): EntryData
 
     /**
-     * Creates an entry inside [groupId] holding exactly [fields], in that order, and returns its id. The
-     * rest of it - uuid, times, icon - is the core's default for a new entry. Two fields under one key are
-     * refused with kind `DuplicateFieldKey`. In memory only.
+     * Creates an entry inside [groupId] holding exactly [fields], in that order, with [newAttachments] - in one
+     * call, and returns its id. The rest of it - uuid, times, icon - is the core's default for a new entry. Two
+     * fields under one key are refused with kind `DuplicateFieldKey`; two attachments under one name, or one
+     * with no name, with kind `DataError` - nothing is created then. The size of a file is the app's to check
+     * before. In memory only.
      */
-    suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String
+    suspend fun createEntry(
+        dbKey: String,
+        groupId: String,
+        fields: List<EntryFieldData>,
+        newAttachments: List<NewAttachmentData> = emptyList(),
+    ): String
 
     /**
-     * Replaces the strings of the entry with [fields], in that order. The rest of it - icon, tags,
-     * attachments, times, the fields of another program the core keeps - goes back as it was read; the
-     * core puts the previous state into the history. Two fields under one key are refused with kind
-     * `DuplicateFieldKey`. In memory only.
+     * Replaces the strings of the entry with [fields], in that order, and - when [attachments] is given - its
+     * attachments with those kept and added, in one call; null keeps them as they are. The rest of it - icon,
+     * tags, times, the fields of another program the core keeps - goes back as it was read; the core puts the
+     * previous state into the history. Two fields under one key are refused with kind `DuplicateFieldKey`; two
+     * attachments under one name, one with no name, or a kept id the database has not, with kind `DataError` -
+     * the entry stays as it was. In memory only.
      */
-    suspend fun updateEntry(dbKey: String, entryId: String, fields: List<EntryFieldData>)
+    suspend fun updateEntry(
+        dbKey: String,
+        entryId: String,
+        fields: List<EntryFieldData>,
+        attachments: EntryAttachmentsEdit? = null,
+    )
+
+    /**
+     * The bytes of the attachment [attachmentId] of the open database - for "Download"; of an entry or of one of
+     * its versions alike. An id the database has not is refused with kind `NotFound`. The bytes are the
+     * caller's to wipe once written to the file.
+     */
+    suspend fun attachmentBytes(dbKey: String, attachmentId: String): ByteArray
 
     /**
      * Deletes the entry: into the recycle bin - the core creates the bin when the database has none - or for

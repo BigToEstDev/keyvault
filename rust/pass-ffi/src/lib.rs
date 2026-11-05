@@ -23,7 +23,7 @@ use std::panic;
 use jni::objects::{JByteArray, JClass, JString};
 use jni::sys::{jbyteArray, jstring};
 use jni::JNIEnv;
-use zeroize::Zeroize;
+use zeroize::{Zeroize, Zeroizing};
 
 mod frame;
 mod init;
@@ -82,24 +82,30 @@ pub extern "system" fn Java_ru_kino_dev_ffi_PassFfi_invokeBinary<'local>(
         let mut args_bytes = read_bytes(&mut env, &args, "args")?.unwrap_or_default();
         let input_bytes = read_bytes(&mut env, &input, "input")?;
 
+        // The text of the arguments is a copy of them too: wiped when it goes
         let args_json = match std::str::from_utf8(&args_bytes) {
-            Ok(text) => text.to_string(),
+            Ok(text) => Zeroizing::new(text.to_string()),
             Err(e) => {
                 wipe(&mut args_bytes);
                 return Err(format!("the arguments were not utf-8: {}", e));
             }
         };
 
-        let answer = pass_api::run_with_bytes(&command, &args_json, input_bytes);
+        let mut answer = pass_api::run_with_bytes(&command, &args_json, input_bytes);
 
         // The arguments may have carried a password, so neither copy outlives the call: this one here,
         // and the Java array on the Kotlin side
         wipe(&mut args_bytes);
 
-        Ok(frame::build(&answer.envelope, answer.payload.as_deref()))
+        let frame = frame::build(&answer.envelope, answer.payload.as_deref());
+        // The payload may be an attachment, plaintext (pass-docs, Step 102): the frame holds the only copy now
+        if let Some(payload) = answer.payload.as_mut() {
+            wipe(payload);
+        }
+        Ok(frame)
     }));
 
-    let frame = match outcome {
+    let mut frame = match outcome {
         Ok(Ok(frame)) => frame,
         Ok(Err(message)) => return throw_bytes(&mut env, &message),
         Err(payload) => {
@@ -110,7 +116,11 @@ pub extern "system" fn Java_ru_kino_dev_ffi_PassFfi_invokeBinary<'local>(
         }
     };
 
-    match env.byte_array_from_slice(&frame) {
+    // Copied into the Java array, which Kotlin wipes after reading it: this copy goes either way
+    let returned = env.byte_array_from_slice(&frame);
+    wipe(&mut frame);
+
+    match returned {
         Ok(array) => array.into_raw(),
         Err(e) => throw_bytes(
             &mut env,

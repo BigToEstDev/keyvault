@@ -343,7 +343,10 @@ internal data class KeyValueDataDto(
     @SerialName("current_opt_token") val currentOtpToken: JsonElement? = null,
 )
 
-/** An attachment of an entry. Attachments are not in v1; the field is carried so a form round trips. */
+/**
+ * An attachment of an entry: its name, and its bytes in the open database by [dataHash] - the id the domain
+ * knows it by (pass-docs, Step 102). [indexRef] is the core's, set when the file is written.
+ */
 @Serializable
 internal data class BinaryKeyValueDto(
     val key: String,
@@ -382,11 +385,35 @@ internal data class EntrySummaryDto(
     @SerialName("created_time") val createdTime: Long? = null,
 )
 
-/** Arguments of `insert_entry_from_form_data` and `update_entry_from_form_data`. */
+/**
+ * Arguments of `insert_entry_from_form_data` and `update_entry_from_form_data`: the form, and the files added
+ * with it - names and sizes here, their bytes one after another in the binary slot, in this order.
+ */
 @Serializable
 internal data class EntryFormArgsDto(
     @SerialName("db_key") val dbKey: String,
     @SerialName("form_data") val formData: EntryFormDataDto,
+    @SerialName("new_attachments") val newAttachments: List<NewAttachmentDto> = emptyList(),
+)
+
+/** A file added with a form: its name in the entry and the length of its bytes in the slot. */
+@Serializable
+internal data class NewAttachmentDto(
+    val name: String,
+    val size: Int,
+)
+
+/** Arguments of `entry_attachment_bytes`: the attachment by its hash, as the form spells it. */
+@Serializable
+internal data class AttachmentArgsDto(
+    @SerialName("db_key") val dbKey: String,
+    @SerialName("data_hash") val dataHash: String,
+)
+
+/** The answer of `entry_attachment_bytes`: the length of the bytes that follow in the slot. */
+@Serializable
+internal data class AttachmentBytesDto(
+    val size: Long,
 )
 
 /**
