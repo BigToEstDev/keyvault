@@ -301,8 +301,13 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         return mergeSummary
     }
 
+    /** The options the last password was generated with; null - none was. */
+    var passwordOptions: PasswordOptions? = null
+        private set
+
     override suspend fun generatePassword(options: PasswordOptions): String {
         step("generatePassword", "")
+        passwordOptions = options
         return "x".repeat(options.length)
     }
 
