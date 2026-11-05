@@ -43,6 +43,7 @@ val vaultPresModule = module {
             dbKey = args.dbKey,
             entryId = args.entryId,
             get(), get(), get(), get(), get(), get(), get(), get(),
+            attachmentFiles = get(),
             navigator = navigator,
             log = get(),
         )
@@ -53,6 +54,7 @@ val vaultPresModule = module {
             groupId = args.groupId,
             entryId = args.entryId,
             get(), get(), get(), get(), get(), get(), get(), get(),
+            attachmentFiles = get(),
             navigator = navigator,
             log = get(),
         )
@@ -86,6 +88,7 @@ val vaultPresModule = module {
             entryId = args.entryId,
             get(), get(), get(), get(), get(), get(),
             changes = get(),
+            attachmentFiles = get(),
             navigator = navigator,
             log = get(),
         )

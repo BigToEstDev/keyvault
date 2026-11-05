@@ -13,12 +13,15 @@ internal fun EntryFormDataDto.attachmentsToDomain(): List<EntryAttachmentData> =
     binaryKeyValues.map { EntryAttachmentData(id = it.dataHash, name = it.key, size = it.dataSize) }
 
 /**
- * The same form with only the attachments [keptIds], in that order - those left out are removed. An id the entry
- * has not is refused with kind `DataError`, before the core is asked: the edit names what the entry holds.
+ * The same form with only the attachments [keptNames], in that order - those left out are removed. A name the entry
+ * has not is refused with kind `DataError`, before the core is asked: the edit names what the entry holds. By name:
+ * the same bytes under two names are two attachments with one hash (pass-docs, Step 103).
  */
-internal fun EntryFormDataDto.withAttachmentsKept(keptIds: List<String>): EntryFormDataDto {
-    val byId = binaryKeyValues.associateBy { it.dataHash }
-    val kept = keptIds.map { id -> byId[id] ?: throw CoreException("DataError", "the entry has no attachment $id") }
+internal fun EntryFormDataDto.withAttachmentsKept(keptNames: List<String>): EntryFormDataDto {
+    val byName = binaryKeyValues.associateBy { it.key }
+    val kept = keptNames.map { name ->
+        byName[name] ?: throw CoreException("DataError", "the entry has no attachment $name")
+    }
     return copy(binaryKeyValues = kept)
 }
 

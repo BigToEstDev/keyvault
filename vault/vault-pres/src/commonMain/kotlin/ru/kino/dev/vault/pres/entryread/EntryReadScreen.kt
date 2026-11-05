@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.pane.koinProcessor
@@ -31,6 +32,8 @@ import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.files.DocumentKind
+import ru.kino.dev.ui.files.rememberCreateDocument
 import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.pres.common.EntryDeleteDialog
 import ru.kino.dev.vault.pres.common.EntryReadFields
@@ -54,12 +57,22 @@ internal fun EntryReadScreen(
     // Every time the screen is shown: back from the form, the entry may differ
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onLoad() }
 
+    // "Download": the file to save the attachment as, under its name (pass-docs, Step 103)
+    val saveAttachment = rememberCreateDocument(DocumentKind.Attachment) { processor.onDownloadPicked(it) }
+    processor.collectSideEffect { effect ->
+        when (effect) {
+            is EntryReadSideEffect.SaveAttachment -> saveAttachment(effect.name)
+        }
+    }
+
     val message = state.message?.let {
         stringResource(
             when (it) {
                 EntryReadMessage.LoadFailed -> Res.string.entry_message_load_failed
                 EntryReadMessage.NotSaved -> Res.string.message_file_not_saved
                 EntryReadMessage.Unexpected -> Res.string.error_unexpected
+                EntryReadMessage.AttachmentSaved -> Res.string.entry_attachment_saved
+                EntryReadMessage.AttachmentNotSaved -> Res.string.entry_attachment_not_saved
             },
         )
     }
@@ -118,6 +131,8 @@ internal fun EntryReadScreen(
                             protection = state.protection,
                             shownKeys = state.shownKeys,
                             group = state.group,
+                            attachments = state.attachments,
+                            downloading = state.downloading,
                         )
                         EntryTimesText(state.times)
                     }

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.core.preset.PresetField
@@ -44,6 +45,9 @@ import ru.kino.dev.ui.components.TextField
 import ru.kino.dev.ui.components.VisibilityToggle
 import ru.kino.dev.ui.components.deleteMenuItem
 import ru.kino.dev.ui.components.skeletonBrush
+import ru.kino.dev.ui.files.DocumentKind
+import ru.kino.dev.ui.files.fileSizeText
+import ru.kino.dev.ui.files.rememberOpenDocument
 import ru.kino.dev.ui.phone.LocalPhoneNumbers
 import ru.kino.dev.ui.phone.phoneHint
 import ru.kino.dev.ui.phone.phonePrefix
@@ -52,6 +56,7 @@ import ru.kino.dev.ui.preset.fieldLabel
 import ru.kino.dev.ui.preset.presetName
 import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.ui.theme.LocalAppDisplay
+import ru.kino.dev.vault.attachment.ATTACHMENT_MAX_BYTES
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.pres.common.EntrySkeleton
 import ru.kino.dev.vault.pres.common.EntryTitleSection
@@ -59,6 +64,7 @@ import ru.kino.dev.vault.pres.common.EntryTopBar
 import ru.kino.dev.vault.pres.common.hides
 import ru.kino.dev.vault.pres.common.option
 import ru.kino.dev.vault.pres.entryedit.components.EntryEditDialogs
+import ru.kino.dev.vault.pres.entryedit.components.FormAttachments
 import ru.kino.dev.vault.pres.entryedit.components.OwnFieldRow
 import ru.kino.dev.vault.pres.entryedit.components.nameProblemText
 
@@ -83,14 +89,23 @@ internal fun EntryEditScreen(
     // Back from the screen of a new preset: the form picks it
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { processor.onResumed() }
 
+    // "+ Add attachment": the file to attach (pass-docs, Step 103)
+    val pickAttachment = rememberOpenDocument(DocumentKind.Attachment) { processor.onAttachmentPicked(it) }
+    processor.collectSideEffect { effect ->
+        when (effect) {
+            EntryEditSideEffect.PickAttachment -> pickAttachment()
+        }
+    }
+
+    val limit = fileSizeText(ATTACHMENT_MAX_BYTES.toLong())
     val message = state.message?.let {
-        stringResource(
-            when (it) {
-                EntryEditMessage.LoadFailed -> Res.string.entry_message_load_failed
-                EntryEditMessage.NotSaved -> Res.string.message_file_not_saved
-                EntryEditMessage.Unexpected -> Res.string.error_unexpected
-            },
-        )
+        when (it) {
+            EntryEditMessage.LoadFailed -> stringResource(Res.string.entry_message_load_failed)
+            EntryEditMessage.NotSaved -> stringResource(Res.string.message_file_not_saved)
+            EntryEditMessage.Unexpected -> stringResource(Res.string.error_unexpected)
+            EntryEditMessage.AttachmentTooLarge -> stringResource(Res.string.entry_attachment_too_large, limit)
+            EntryEditMessage.AttachmentNotRead -> stringResource(Res.string.entry_attachment_not_read)
+        }
     }
     SnackbarMessage(message, snackbar) { processor.onMessageShown() }
 
@@ -299,6 +314,14 @@ private fun EntryEditActions.EntryForm(state: EntryEditState, content: EntryCont
             )
         }
     }
+
+    // The last card: the files of the entry and those added (pass-docs, Step 103)
+    FormAttachments(
+        attachments = state.attachments,
+        canAdd = state.canAddAttachment,
+        adding = state.addingAttachment,
+        enabled = enabled,
+    )
 }
 
 /**

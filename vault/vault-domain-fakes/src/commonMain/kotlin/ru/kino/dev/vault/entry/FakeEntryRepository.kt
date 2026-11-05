@@ -1,6 +1,9 @@
 package ru.kino.dev.vault.entry
 
 import ru.kino.dev.core.preset.StandardPreset
+import ru.kino.dev.vault.attachment.AttachmentsEdit
+import ru.kino.dev.vault.attachment.EntryAttachment
+import ru.kino.dev.vault.attachment.NewAttachment
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 
@@ -13,22 +16,44 @@ import ru.kino.dev.vault.group.GroupId
  */
 class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : EntryRepository {
 
-    /** An entry the fake holds: the group it is in, its fields in order, when it was made. */
-    /** @param history the old versions, oldest first */
+    /**
+     * An entry the fake holds: the group it is in, its fields in order, when it was made, its attachments - their
+     * bytes in [attachmentBytes].
+     *
+     * @param history the old versions, oldest first
+     */
     data class StoredEntry(
         val groupId: GroupId,
         val fields: List<EntryField>,
         val createdAt: Long,
         val modifiedAt: Long = createdAt,
         val history: List<StoredVersion> = emptyList(),
+        val attachments: List<EntryAttachment> = emptyList(),
     ) {
         // Like the core: the state before goes into the history, and the change is stamped at [now]
-        fun updatedTo(fields: List<EntryField>, now: Long) =
-            copy(fields = fields, modifiedAt = now, history = history + StoredVersion(this.fields, modifiedAt))
+        fun updatedTo(fields: List<EntryField>, now: Long, attachments: List<EntryAttachment> = this.attachments) =
+            copy(
+                fields = fields,
+                modifiedAt = now,
+                attachments = attachments,
+                history = history + StoredVersion(this.fields, modifiedAt, this.attachments),
+            )
     }
 
-    /** One old version of an entry: its fields, and when it was saved. */
-    data class StoredVersion(val fields: List<EntryField>, val savedAt: Long)
+    /** One old version of an entry: its fields, when it was saved, its attachments then. */
+    data class StoredVersion(
+        val fields: List<EntryField>,
+        val savedAt: Long,
+        val attachments: List<EntryAttachment> = emptyList(),
+    )
+
+    /**
+     * The bytes of the attachments, by id - as the core keeps them, apart from the entries. A test may put bytes here
+     * and link them with [StoredEntry.attachments]. Ids of the files added - `attachment-1`, ...
+     */
+    val attachmentBytes = mutableMapOf<String, ByteArray>()
+
+    private var attachmentsAdded = 0
 
     /** Gives the entry [id] old versions saved at [savedAt], oldest first - its fields as they are now. */
     fun putHistory(id: EntryId, vararg savedAt: Long) {
@@ -85,20 +110,51 @@ class FakeEntryRepository(val calls: MutableList<String> = mutableListOf()) : En
     override suspend fun read(dbKey: String, entryId: EntryId): EntryRecord {
         call("read")
         val entry = entry(entryId)
-        return EntryRecord(entry.groupId, entry.fields, EntryTimes(entry.createdAt, entry.modifiedAt))
+        return EntryRecord(entry.groupId, entry.fields, EntryTimes(entry.createdAt, entry.modifiedAt), entry.attachments)
     }
 
-    override suspend fun create(dbKey: String, groupId: GroupId, fields: List<EntryField>): EntryId {
+    override suspend fun create(
+        dbKey: String,
+        groupId: GroupId,
+        fields: List<EntryField>,
+        attachments: List<NewAttachment>,
+    ): EntryId {
         call("create")
         refuseDuplicateKeys(fields)
-        return add("entry-${++created}", groupId, fields)
+        refuseAttachmentNames(attachments.map { it.name })
+        val id = add("entry-${++created}", groupId, fields)
+        stored[id] = stored.getValue(id).copy(attachments = attachments.map(::keep))
+        return id
     }
 
-    override suspend fun update(dbKey: String, entryId: EntryId, fields: List<EntryField>) {
+    override suspend fun update(dbKey: String, entryId: EntryId, fields: List<EntryField>, attachments: AttachmentsEdit?) {
         call("update")
         val entry = entry(entryId)
         refuseDuplicateKeys(fields)
-        stored[entryId] = entry.updatedTo(fields, tick())
+        val after = attachments?.let { edit ->
+            // As the core: kept by name, every check before anything is kept
+            val kept = edit.kept.map { attachment ->
+                entry.attachments.firstOrNull { it.name == attachment.name }
+                    ?: throw EntryFailure.Unexpected(IllegalArgumentException("no attachment ${attachment.name}"))
+            }
+            refuseAttachmentNames(edit.names)
+            kept + edit.added.map(::keep)
+        } ?: entry.attachments
+        stored[entryId] = entry.updatedTo(fields, tick(), after)
+    }
+
+    // A copy of the bytes, as the core makes its own: the caller wipes what it handed over
+    private fun keep(file: NewAttachment): EntryAttachment {
+        val id = "attachment-${++attachmentsAdded}"
+        attachmentBytes[id] = file.bytes.copyOf()
+        return EntryAttachment(id = id, name = file.name, size = file.size)
+    }
+
+    // The core refuses a repeated or empty name, and the data layer reports that as a bug of ours
+    private fun refuseAttachmentNames(names: List<String>) {
+        if (names.any { it.isEmpty() } || names.toSet().size != names.size) {
+            throw EntryFailure.Unexpected(IllegalArgumentException("attachment names: $names"))
+        }
     }
 
     override suspend fun delete(dbKey: String, entryId: EntryId) {

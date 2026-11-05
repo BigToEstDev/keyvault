@@ -9,6 +9,7 @@ import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.vault.attachment.AttachmentFiles
 import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
@@ -22,6 +23,7 @@ import ru.kino.dev.vault.pres.common.ChangeGate
 import ru.kino.dev.vault.pres.common.groupChoice
 import ru.kino.dev.vault.pres.common.prepareFor
 import ru.kino.dev.vault.pres.common.protectionOrDefault
+import ru.kino.dev.vault.pres.common.saveAs
 import ru.kino.dev.vault.pres.common.toggled
 import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryHistoryRoute
@@ -40,6 +42,9 @@ import ru.kino.dev.vault.trash.deletesToBin
  * An entry in the recycle bin is not shown: the screen goes back. The form deleting the entry goes past this
  * screen itself; this is the guard for an entry put there otherwise (pass-docs, Step 50, item 2). Deleted
  * here, the screen goes back; deleted but not written, it stays and says so.
+ *
+ * "Download" asks the screen for the file to save the attachment as ([EntryReadSideEffect.SaveAttachment]), then
+ * writes it there (pass-docs, Step 103).
  */
 class EntryReadProcessor(
     private val dbKey: String,
@@ -52,13 +57,14 @@ class EntryReadProcessor(
     private val autoLock: AutoLock,
     private val phones: PhoneNumbers,
     private val changes: VaultChanges,
+    private val attachmentFiles: AttachmentFiles,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<EntryReadState, EntryReadState, Nothing>, EntryReadActions {
+) : ViewModel(), OrbitContainerHost<EntryReadState, EntryReadState, EntryReadSideEffect>, EntryReadActions {
 
     private val gate = ChangeGate(changes, dbKey)
 
-    override val container = orbitContainer<EntryReadState, Nothing>(EntryReadState()) {
+    override val container = orbitContainer<EntryReadState, EntryReadSideEffect>(EntryReadState()) {
         // While the screen is shown: a change made beside it is read again
         repeatOnSubscription { gate.elsewhere.collect { load() } }
     }
@@ -118,6 +124,21 @@ class EntryReadProcessor(
         intent { if (state.delete?.deleting == false) reduce { state.copy(delete = null) } }
     }
 
+    override fun onDownload(index: Int) {
+        intent {
+            if (state.downloading == null) {
+                state.attachments.getOrNull(index)?.let { attachment ->
+                    reduce { state.copy(saveAs = attachment) }
+                    postSideEffect(EntryReadSideEffect.SaveAttachment(attachment.name))
+                }
+            }
+        }
+    }
+
+    override fun onDownloadPicked(uri: String) {
+        intent { download(uri) }
+    }
+
     override fun onLock() {
         intent { lock() }
     }
@@ -126,7 +147,17 @@ class EntryReadProcessor(
         intent { reduce { state.copy(message = null) } }
     }
 
-    private suspend fun Syntax<EntryReadState, Nothing>.lock() {
+    private suspend fun Syntax<EntryReadState, EntryReadSideEffect>.download(uri: String) {
+        val attachment = state.saveAs ?: return
+        if (state.downloading != null) return
+
+        reduce { state.copy(saveAs = null, downloading = attachment) }
+        val saved = attachmentFiles.saveAs(dbKey, attachment, uri, log, TAG)
+        val message = if (saved) EntryReadMessage.AttachmentSaved else EntryReadMessage.AttachmentNotSaved
+        reduce { state.copy(downloading = null, message = message) }
+    }
+
+    private suspend fun Syntax<EntryReadState, EntryReadSideEffect>.lock() {
         if (state.locking) return
 
         reduce { state.copy(locking = true) }
@@ -136,7 +167,7 @@ class EntryReadProcessor(
         }
     }
 
-    private suspend fun Syntax<EntryReadState, Nothing>.delete() {
+    private suspend fun Syntax<EntryReadState, EntryReadSideEffect>.delete() {
         val dialog = state.delete ?: return
         if (dialog.deleting) return
 
@@ -152,7 +183,7 @@ class EntryReadProcessor(
         }
     }
 
-    private suspend fun Syntax<EntryReadState, Nothing>.deleteFailed(failure: EntryFailure) {
+    private suspend fun Syntax<EntryReadState, EntryReadSideEffect>.deleteFailed(failure: EntryFailure) {
         when (failure) {
             // In the recycle bin, but not in the file: the error is shown here (pass-docs, Step 50, item 2)
             is EntryFailure.NotSaved -> reduce { state.copy(delete = null, message = EntryReadMessage.NotSaved) }
@@ -168,7 +199,7 @@ class EntryReadProcessor(
         }
     }
 
-    private suspend fun Syntax<EntryReadState, Nothing>.load() {
+    private suspend fun Syntax<EntryReadState, EntryReadSideEffect>.load() {
         gate.reading()
         val opened = try {
             opener.open(dbKey, EntryId(entryId))
@@ -199,13 +230,14 @@ class EntryReadProcessor(
 
         reduce {
             if (content == state.content && protection == state.protection) {
-                state.copy(loading = false, group = group, times = opened.times)
+                state.copy(loading = false, group = group, times = opened.times, attachments = opened.attachments)
             } else {
                 state.copy(
                     loading = false,
                     content = content,
                     group = group,
                     times = opened.times,
+                    attachments = opened.attachments,
                     protection = protection,
                     passwordVisible = false,
                     shownOwn = emptySet(),
@@ -215,7 +247,7 @@ class EntryReadProcessor(
         }
     }
 
-    private suspend fun Syntax<EntryReadState, Nothing>.loadFailed(failure: Exception) {
+    private suspend fun Syntax<EntryReadState, EntryReadSideEffect>.loadFailed(failure: Exception) {
         log.unexpected(TAG, failure)
         reduce { state.copy(loading = false, message = EntryReadMessage.LoadFailed) }
     }

@@ -68,6 +68,15 @@ interface EntryEditActions {
     /** "Add outside the preset" in [EntryEditDialog.HiddenFields]: the hidden fields as own ones, then the save. */
     fun onKeepHidden()
 
+    /** "+ Add attachment": asks for the file to attach (pass-docs, Step 103). */
+    fun onAddAttachment()
+
+    /** The file to attach, picked - [uri]: read, within the limit, under a name the form has not. */
+    fun onAttachmentPicked(uri: String)
+
+    /** The cross by the attachment at [index]: off the form, unasked - nothing is lost until "Save". */
+    fun onRemoveAttachment(index: Int)
+
     /** The fab: checks, makes the change and writes the file. */
     fun onSave()
 

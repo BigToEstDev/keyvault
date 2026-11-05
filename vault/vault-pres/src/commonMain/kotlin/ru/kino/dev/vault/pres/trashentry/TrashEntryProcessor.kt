@@ -8,6 +8,7 @@ import ru.kino.dev.core.phone.PhoneNumbers
 import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.vault.attachment.AttachmentFiles
 import ru.kino.dev.vault.changes.VaultChanges
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryFailure
@@ -19,6 +20,7 @@ import ru.kino.dev.vault.group.GroupRepository
 import ru.kino.dev.vault.pres.common.ChangeGate
 import ru.kino.dev.vault.pres.common.prepareFor
 import ru.kino.dev.vault.pres.common.protectionOrDefault
+import ru.kino.dev.vault.pres.common.saveAs
 import ru.kino.dev.vault.pres.common.toggled
 import ru.kino.dev.vault.pres.trash.TrashDialog
 import ru.kino.dev.vault.pres.trash.restoreDialog
@@ -35,6 +37,8 @@ import ru.kino.dev.vault.trash.TrashRepository
  *
  * An entry no longer in the bin - restored or removed meanwhile - sends the screen back: when it is read, and while it
  * is shown, on a change made beside it - in the list of the bin, in a container (pass-docs, Step 100, item 2).
+ *
+ * Its attachments download as on reading ([TrashEntrySideEffect.SaveAttachment], pass-docs, Step 103).
  */
 class TrashEntryProcessor(
     private val dbKey: String,
@@ -46,13 +50,14 @@ class TrashEntryProcessor(
     private val groups: GroupRepository,
     private val phones: PhoneNumbers,
     changes: VaultChanges,
+    private val attachmentFiles: AttachmentFiles,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<TrashEntryState, TrashEntryState, Nothing>, TrashEntryActions {
+) : ViewModel(), OrbitContainerHost<TrashEntryState, TrashEntryState, TrashEntrySideEffect>, TrashEntryActions {
 
     private val gate = ChangeGate(changes, dbKey)
 
-    override val container = orbitContainer<TrashEntryState, Nothing>(TrashEntryState()) {
+    override val container = orbitContainer<TrashEntryState, TrashEntrySideEffect>(TrashEntryState()) {
         // While the screen is shown: gone from the bin beside it - back
         repeatOnSubscription { gate.elsewhere.collect { checkStillThere() } }
     }
@@ -107,6 +112,21 @@ class TrashEntryProcessor(
         intent { if (state.dialog?.saving == false) reduce { state.copy(dialog = null) } }
     }
 
+    override fun onDownload(index: Int) {
+        intent {
+            if (state.downloading == null) {
+                state.entry?.attachments?.getOrNull(index)?.let { attachment ->
+                    reduce { state.copy(saveAs = attachment) }
+                    postSideEffect(TrashEntrySideEffect.SaveAttachment(attachment.name))
+                }
+            }
+        }
+    }
+
+    override fun onDownloadPicked(uri: String) {
+        intent { download(uri) }
+    }
+
     override fun onNotSavedSeen() {
         intent { navigator.navigate(MviNavEvent.NavigateBack) }
     }
@@ -115,7 +135,17 @@ class TrashEntryProcessor(
         intent { reduce { state.copy(message = null) } }
     }
 
-    private suspend fun Syntax<TrashEntryState, Nothing>.load() {
+    private suspend fun Syntax<TrashEntryState, TrashEntrySideEffect>.download(uri: String) {
+        val attachment = state.saveAs ?: return
+        if (state.downloading != null) return
+
+        reduce { state.copy(saveAs = null, downloading = attachment) }
+        val saved = attachmentFiles.saveAs(dbKey, attachment, uri, log, TAG)
+        val message = if (saved) TrashEntryMessage.AttachmentSaved else TrashEntryMessage.AttachmentNotSaved
+        reduce { state.copy(downloading = null, message = message) }
+    }
+
+    private suspend fun Syntax<TrashEntryState, TrashEntrySideEffect>.load() {
         // Read once: shown in clear stays shown when the screen comes back
         if (state.entry != null) return
         gate.reading()
@@ -139,7 +169,7 @@ class TrashEntryProcessor(
     }
 
     /** A change made elsewhere: the entry gone from the bin - the screen goes back; still there - shown as it is. */
-    private suspend fun Syntax<TrashEntryState, Nothing>.checkStillThere() {
+    private suspend fun Syntax<TrashEntryState, TrashEntrySideEffect>.checkStillThere() {
         gate.reading()
         val there = try {
             trash.entries(dbKey).any { it.entry.id == id }
@@ -151,13 +181,13 @@ class TrashEntryProcessor(
         if (!there) navigator.navigate(MviNavEvent.NavigateBack)
     }
 
-    private suspend fun Syntax<TrashEntryState, Nothing>.loadFailed(failure: Exception) {
+    private suspend fun Syntax<TrashEntryState, TrashEntrySideEffect>.loadFailed(failure: Exception) {
         log.unexpected(TAG, failure)
         reduce { state.copy(message = TrashEntryMessage.LoadFailed) }
     }
 
     /** The groups to choose from, read now; the one the entry came from offered. */
-    private suspend fun Syntax<TrashEntryState, Nothing>.askRestore() {
+    private suspend fun Syntax<TrashEntryState, TrashEntrySideEffect>.askRestore() {
         val tree = try {
             groups.tree(dbKey)
         } catch (failure: GroupFailure) {
@@ -168,7 +198,7 @@ class TrashEntryProcessor(
         reduce { state.copy(dialog = tree.restoreDialog(listOf(state.trashed?.previousGroupId))) }
     }
 
-    private suspend fun Syntax<TrashEntryState, Nothing>.confirm() {
+    private suspend fun Syntax<TrashEntryState, TrashEntrySideEffect>.confirm() {
         val dialog = state.dialog ?: return
         if (dialog.saving) return
         val change: suspend () -> Unit = when (dialog) {
@@ -187,7 +217,7 @@ class TrashEntryProcessor(
     }
 
     /** [change] made: back to the bin - or what came of it said. */
-    private suspend fun Syntax<TrashEntryState, Nothing>.write(change: suspend () -> Unit) {
+    private suspend fun Syntax<TrashEntryState, TrashEntrySideEffect>.write(change: suspend () -> Unit) {
         try {
             change()
             navigator.navigate(MviNavEvent.NavigateBack)

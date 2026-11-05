@@ -28,6 +28,9 @@ interface TrashEntryActions : EntryReadFieldsActions {
 
     fun onDialogDismiss()
 
+    /** The file to save the attachment asked for as, picked - [uri]; it is written there. */
+    fun onDownloadPicked(uri: String)
+
     /** "OK" under "the file is not written": the change is made - back to the bin. */
     fun onNotSavedSeen()
 

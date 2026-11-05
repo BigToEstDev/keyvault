@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.FakeDatabaseFiles
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.FieldType
 import ru.kino.dev.core.phone.FakePhoneNumbers
@@ -22,6 +23,11 @@ import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.attachment.ATTACHMENTS_MAX_PER_ENTRY
+import ru.kino.dev.vault.attachment.ATTACHMENT_MAX_BYTES
+import ru.kino.dev.vault.attachment.AttachmentFiles
+import ru.kino.dev.vault.attachment.EntryAttachment
+import ru.kino.dev.vault.attachment.FakeAttachmentRepository
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
@@ -73,6 +79,159 @@ class EntryEditProcessorTest {
     private val trash = FakeTrashRepository()
     private val phones = FakePhoneNumbers()
     private val phoneDefaults = PhoneDefaults { "RU" }
+    private val files = FakeDatabaseFiles()
+
+    // Attachments (pass-docs, Step 103)
+
+    @Test
+    fun `the attachments of the entry open on the form, kept, no change yet`() = runTest {
+        withNotes()
+
+        val (state, _) = editing()
+
+        assertEquals(listOf("notes.txt"), state.attachments.map { it.name })
+        assertFalse(state.changed)
+    }
+
+    @Test
+    fun `add asks for the file - nothing is on the form before it is picked`() = runTest {
+        val (state, _) = editing({ onAddAttachment() })
+
+        assertTrue(state.attachments.isEmpty())
+        assertFalse(state.addingAttachment)
+    }
+
+    @Test
+    fun `a file picked goes after the attachments, a name taken numbered - a change`() = runTest {
+        withNotes()
+        picked("notes.txt", byteArrayOf(9))
+
+        val (state, _) = editing({ onAttachmentPicked(PICKED) })
+
+        assertEquals(listOf("notes.txt", "notes (2).txt"), state.attachments.map { it.name })
+        assertTrue(state.changed)
+    }
+
+    @Test
+    fun `a file larger than the limit is refused with the message`() = runTest {
+        picked("video.mp4", ByteArray(ATTACHMENT_MAX_BYTES + 1))
+
+        val (state, _) = editing({ onAttachmentPicked(PICKED) })
+
+        assertTrue(state.attachments.isEmpty())
+        assertEquals(EntryEditMessage.AttachmentTooLarge, state.message)
+    }
+
+    @Test
+    fun `a file that cannot be read says so`() = runTest {
+        files.unreachable += PICKED
+
+        val (state, _) = editing({ onAttachmentPicked(PICKED) })
+
+        assertEquals(EntryEditMessage.AttachmentNotRead, state.message)
+        assertTrue(log.logged.isEmpty())
+    }
+
+    @Test
+    fun `an attachment of the entry removed is off the form - a change`() = runTest {
+        withNotes()
+
+        val (state, _) = editing({ onRemoveAttachment(0) })
+
+        assertTrue(state.attachments.isEmpty())
+        assertTrue(state.changed)
+    }
+
+    @Test
+    fun `a file added and removed again leaves the form as it opened`() = runTest {
+        picked("a.txt", byteArrayOf(1, 2))
+
+        val (state, _) = editing({ onAttachmentPicked(PICKED) }, { onRemoveAttachment(0) })
+
+        assertTrue(state.attachments.isEmpty())
+        assertFalse(state.changed)
+    }
+
+    @Test
+    fun `saved, the entry has the attachments kept and the files added after them`() = runTest {
+        withNotes()
+        picked("photo.jpg", byteArrayOf(5))
+
+        editing({ onAttachmentPicked(PICKED) }, { onSave() })
+
+        assertEquals(listOf("notes.txt", "photo.jpg"), entries.stored.getValue(mail).attachments.map { it.name })
+        assertEquals(listOf("save"), database.calls)
+    }
+
+    @Test
+    fun `saved with an attachment removed, the entry is without it`() = runTest {
+        withNotes()
+
+        editing({ onRemoveAttachment(0) }, { onSave() })
+
+        assertTrue(entries.stored.getValue(mail).attachments.isEmpty())
+    }
+
+    @Test
+    fun `a new entry is made with the files added`() = runTest {
+        picked("a.txt", byteArrayOf(1))
+
+        creating(*filled(), { onAttachmentPicked(PICKED) }, { onSave() })
+
+        val created = entries.stored.values.last()
+        assertEquals(listOf("a.txt"), created.attachments.map { it.name })
+    }
+
+    @Test
+    fun `back with a file added asks before leaving`() = runTest {
+        picked("a.txt", byteArrayOf(1))
+
+        val (state, events) = editing({ onAttachmentPicked(PICKED) }, { onBack() })
+
+        assertEquals(EntryEditDialog.Leave(), state.dialog)
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `an entry with the most attachments takes no more - none can be added`() = runTest {
+        withAttachments(ATTACHMENTS_MAX_PER_ENTRY)
+        picked("one more.txt", byteArrayOf(1))
+
+        val (state, _) = editing({ onAttachmentPicked(PICKED) })
+
+        assertFalse(state.canAddAttachment)
+        assertEquals(ATTACHMENTS_MAX_PER_ENTRY, state.attachments.size)
+        assertTrue(files.journal.isEmpty())
+    }
+
+    @Test
+    fun `one removed from a full entry lets a file be added again`() = runTest {
+        withAttachments(ATTACHMENTS_MAX_PER_ENTRY)
+
+        val (state, _) = editing({ onRemoveAttachment(0) })
+
+        assertTrue(state.canAddAttachment)
+    }
+
+    /** The entry [mail] gets [count] attachments. */
+    private fun withAttachments(count: Int) {
+        val attachments = List(count) { EntryAttachment(id = "hash-$it", name = "file $it.txt", size = 1) }
+        attachments.forEach { entries.attachmentBytes[it.id] = byteArrayOf(1) }
+        entries.stored[mail] = entries.stored.getValue(mail).copy(attachments = attachments)
+    }
+
+    /** The entry [mail] gets the attachment `notes.txt`. */
+    private fun withNotes() {
+        val notes = EntryAttachment(id = "hash-notes", name = "notes.txt", size = 3)
+        entries.attachmentBytes[notes.id] = byteArrayOf(1, 2, 3)
+        entries.stored[mail] = entries.stored.getValue(mail).copy(attachments = listOf(notes))
+    }
+
+    /** The file the picker hands back is [name], holding [bytes]. */
+    private fun picked(name: String, bytes: ByteArray) {
+        files.contents[PICKED] = bytes
+        files.names[PICKED] = name
+    }
 
     // Groups
 
@@ -1063,6 +1222,7 @@ class EntryEditProcessorTest {
             presets,
             phones,
             phoneDefaults,
+            AttachmentFiles(files, FakeAttachmentRepository(entries)),
             navigator,
             log,
         )
@@ -1077,4 +1237,8 @@ class EntryEditProcessorTest {
 
     private fun field(key: String, value: String, protected: Boolean = false, type: String? = null) =
         EntryField(key, value, protected, type)
+
+    private companion object {
+        const val PICKED = "content://picked"
+    }
 }

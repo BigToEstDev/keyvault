@@ -74,7 +74,7 @@ private fun rememberDialogSettings(title: StringResource): FileKitDialogSettings
 private val DocumentKind.extension: String?
     get() = when (this) {
         DocumentKind.Database -> "kdbx"
-        DocumentKind.KeyFile -> null
+        DocumentKind.KeyFile, DocumentKind.Attachment -> null
     }
 
 private val DocumentKind.openFilter: FileKitType
@@ -84,12 +84,14 @@ private val DocumentKind.openTitle: StringResource
     get() = when (this) {
         DocumentKind.Database -> Res.string.picker_open_database
         DocumentKind.KeyFile -> Res.string.picker_open_key_file
+        DocumentKind.Attachment -> Res.string.picker_open_attachment
     }
 
 private val DocumentKind.saveTitle: StringResource
     get() = when (this) {
         DocumentKind.Database -> Res.string.picker_save_database
         DocumentKind.KeyFile -> Res.string.picker_save_key_file
+        DocumentKind.Attachment -> Res.string.picker_save_attachment
     }
 
 private fun PlatformFile.uri(): String = file.toURI().toString()

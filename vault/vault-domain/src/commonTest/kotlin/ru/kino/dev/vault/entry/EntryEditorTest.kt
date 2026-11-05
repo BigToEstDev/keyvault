@@ -18,6 +18,11 @@ import ru.kino.dev.core.preset.StandardPreset.PASSWORD
 import ru.kino.dev.core.preset.StandardPreset.TITLE
 import ru.kino.dev.core.preset.StandardPreset.USER_NAME
 import ru.kino.dev.vault.VaultDatabaseRepository
+import ru.kino.dev.vault.attachment.ATTACHMENTS_MAX_PER_ENTRY
+import ru.kino.dev.vault.attachment.ATTACHMENT_MAX_BYTES
+import ru.kino.dev.vault.attachment.AttachmentsEdit
+import ru.kino.dev.vault.attachment.EntryAttachment
+import ru.kino.dev.vault.attachment.NewAttachment
 import ru.kino.dev.vault.entries.EntrySettingsFailure
 import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.group.EntryId
@@ -219,6 +224,129 @@ class EntryEditorTest {
         assertSame(cause, failure.cause)
         assertEquals(listOf("create", "save"), journal)
     }
+
+    @Test
+    fun `a new entry takes the files added, in their order, with the same write`() = runTest {
+        val id = editor.create(DB, GROUP, filled, listOf(file("a.txt"), file("b.png")))
+
+        assertEquals(listOf("create", "save"), journal)
+        assertEquals(listOf("a.txt", "b.png"), entries.stored.getValue(id).attachments.map { it.name })
+    }
+
+    @Test
+    fun `two files under one name are refused before anything changes`() = runTest {
+        expectFailure<EntryFailure.Unexpected> { editor.create(DB, GROUP, filled, listOf(file("a.txt"), file("a.txt"))) }
+
+        assertEquals(emptyList<String>(), journal)
+    }
+
+    @Test
+    fun `a file larger than an attachment may be is refused before anything changes`() = runTest {
+        val large = NewAttachment("big.bin", ByteArray(ATTACHMENT_MAX_BYTES + 1))
+
+        expectFailure<EntryFailure.Unexpected> { editor.create(DB, GROUP, filled, listOf(large)) }
+
+        assertEquals(emptyList<String>(), journal)
+    }
+
+    @Test
+    fun `attachments alone changed are a change - written and saved, the fields as they were`() = runTest {
+        val id = withAttachments("a.txt", "b.png")
+        val (a, _) = entries.stored.getValue(id).attachments
+
+        editor.update(DB, id, filled, GROUP, AttachmentsEdit(kept = listOf(a), added = listOf(file("c.pdf"))))
+
+        assertEquals(listOf("read", "update", "save"), journal)
+        val entry = entries.stored.getValue(id)
+        assertEquals(listOf("a.txt", "c.pdf"), entry.attachments.map { it.name })
+        assertEquals(filled.fields(), entry.fields)
+    }
+
+    @Test
+    fun `the same attachments again are not a change and write nothing`() = runTest {
+        val id = withAttachments("a.txt", "b.png")
+        val kept = entries.stored.getValue(id).attachments
+
+        editor.update(DB, id, filled, GROUP, AttachmentsEdit(kept = kept, added = emptyList()))
+
+        assertEquals(listOf("read"), journal)
+    }
+
+    @Test
+    fun `the attachments kept in another order are a change`() = runTest {
+        val id = withAttachments("a.txt", "b.png")
+        val kept = entries.stored.getValue(id).attachments.reversed()
+
+        editor.update(DB, id, filled, GROUP, AttachmentsEdit(kept = kept, added = emptyList()))
+
+        assertEquals(listOf("b.png", "a.txt"), entries.stored.getValue(id).attachments.map { it.name })
+    }
+
+    @Test
+    fun `no edit of the attachments keeps them while the fields change`() = runTest {
+        val id = withAttachments("a.txt")
+
+        editor.update(DB, id, filled.withValue(PASSWORD, "new secret"), GROUP)
+
+        assertEquals(listOf("a.txt"), entries.stored.getValue(id).attachments.map { it.name })
+    }
+
+    @Test
+    fun `the same bytes under two names are kept apart`() = runTest {
+        val id = entries.add("e1", GROUP, filled.fields())
+        entries.attachmentBytes["h"] = byteArrayOf(1)
+        val twins = listOf(EntryAttachment("h", "a.txt", 1), EntryAttachment("h", "a (2).txt", 1))
+        entries.stored[id] = entries.stored.getValue(id).copy(attachments = twins)
+
+        editor.update(DB, id, filled, GROUP, AttachmentsEdit(kept = listOf(twins[1]), added = emptyList()))
+
+        assertEquals(listOf("a (2).txt"), entries.stored.getValue(id).attachments.map { it.name })
+    }
+
+    @Test
+    fun `a file added under a name the entry keeps is refused before anything changes`() = runTest {
+        val id = withAttachments("a.txt")
+        val kept = entries.stored.getValue(id).attachments
+
+        expectFailure<EntryFailure.Unexpected> {
+            editor.update(DB, id, filled, GROUP, AttachmentsEdit(kept = kept, added = listOf(file("a.txt"))))
+        }
+
+        assertEquals(listOf("read"), journal)
+    }
+
+    @Test
+    fun `a file added past the limit of attachments is refused before anything changes`() = runTest {
+        val id = withAttachments(*names(ATTACHMENTS_MAX_PER_ENTRY))
+        val kept = entries.stored.getValue(id).attachments
+
+        expectFailure<EntryFailure.Unexpected> {
+            editor.update(DB, id, filled, GROUP, AttachmentsEdit(kept = kept, added = listOf(file("one more.txt"))))
+        }
+
+        assertEquals(listOf("read"), journal)
+    }
+
+    @Test
+    fun `an entry of another program past the limit is saved as it is - one removed too`() = runTest {
+        val id = withAttachments(*names(ATTACHMENTS_MAX_PER_ENTRY + 2))
+        val kept = entries.stored.getValue(id).attachments.drop(1)
+
+        editor.update(DB, id, filled, GROUP, AttachmentsEdit(kept = kept, added = emptyList()))
+
+        assertEquals(ATTACHMENTS_MAX_PER_ENTRY + 1, entries.stored.getValue(id).attachments.size)
+    }
+
+    private fun names(count: Int) = Array(count) { "file $it.txt" }
+
+    /** An entry of [filled] with files of [names], made through the fake and the journal cleared. */
+    private suspend fun withAttachments(vararg names: String): EntryId {
+        val id = entries.create(DB, GROUP, filled.fields(), names.map { file(it) })
+        journal.clear()
+        return id
+    }
+
+    private fun file(name: String) = NewAttachment(name, byteArrayOf(1, 2))
 
     private fun field(key: String, value: String = "v") = EntryField(key, value, protected = false)
 

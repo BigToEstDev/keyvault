@@ -1,6 +1,7 @@
 package ru.kino.dev.vault.data.history
 
 import ru.kino.dev.core.NativeCore
+import ru.kino.dev.vault.data.attachment.toAttachment
 import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.data.entry.entryCall
 import ru.kino.dev.vault.entry.EntryField
@@ -27,6 +28,7 @@ internal class EntryHistoryRepositoryImpl(
             groupId = GroupId(version.groupId),
             fields = version.fields.map { EntryField(key = it.key, value = it.value, protected = it.protected, type = it.type) },
             times = EntryTimes(created = version.createdAt, modified = version.modifiedAt),
+            attachments = version.attachments.map { it.toAttachment() },
         )
     }
 

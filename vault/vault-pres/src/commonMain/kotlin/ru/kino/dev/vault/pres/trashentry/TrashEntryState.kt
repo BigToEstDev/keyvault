@@ -1,6 +1,7 @@
 package ru.kino.dev.vault.pres.trashentry
 
 import ru.kino.dev.core.FieldProtection
+import ru.kino.dev.vault.attachment.EntryAttachment
 import ru.kino.dev.vault.entry.OpenedEntry
 import ru.kino.dev.vault.pres.trash.TrashDialog
 import ru.kino.dev.vault.trash.TrashEntry
@@ -13,6 +14,8 @@ import ru.kino.dev.vault.trash.TrashEntry
  * @param shownKeys keys of the fields of the preset private by the database shown in clear
  * @param dialog "restore" or "delete for good?", if asked
  * @param notSaved the change is made, but the file was not written - said in a dialog, then back to the bin
+ * @param saveAs the attachment "Download" asked for - the file to save it as is being picked (pass-docs, Step 103)
+ * @param downloading the attachment being written into the file picked - its button waits
  * @param message for the snackbar, until it takes it
  */
 data class TrashEntryState(
@@ -24,10 +27,12 @@ data class TrashEntryState(
     val shownKeys: Set<String> = emptySet(),
     val dialog: TrashDialog? = null,
     val notSaved: Boolean = false,
+    val saveAs: EntryAttachment? = null,
+    val downloading: EntryAttachment? = null,
     val message: TrashEntryMessage? = null,
 ) {
     val loading: Boolean = entry == null
 }
 
 /** What the snackbar says. */
-enum class TrashEntryMessage { LoadFailed, Unexpected }
+enum class TrashEntryMessage { LoadFailed, Unexpected, AttachmentSaved, AttachmentNotSaved }

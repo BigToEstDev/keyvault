@@ -26,7 +26,7 @@ class EntryOpener(
      * then, which may not be the entry's now.
      */
     suspend fun layOut(record: EntryRecord): OpenedEntry =
-        OpenedEntry(record.groupId, presetOf(record.fields).layout(record.fields), record.times)
+        OpenedEntry(record.groupId, presetOf(record.fields).layout(record.fields), record.times, record.attachments)
 
     private suspend fun presetOf(fields: List<EntryField>): EntryPreset {
         val id = presetLink(fields) ?: return StandardPreset.preset

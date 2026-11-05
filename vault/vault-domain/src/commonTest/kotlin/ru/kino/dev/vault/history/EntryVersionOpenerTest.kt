@@ -10,6 +10,8 @@ import ru.kino.dev.core.preset.PresetId
 import ru.kino.dev.core.preset.PresetLink
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.core.preset.StandardPreset.TITLE
+import ru.kino.dev.vault.attachment.AttachmentsEdit
+import ru.kino.dev.vault.attachment.NewAttachment
 import ru.kino.dev.vault.entry.EntryFailure
 import ru.kino.dev.vault.entry.EntryField
 import ru.kino.dev.vault.entry.EntryOpener
@@ -37,6 +39,16 @@ class EntryVersionOpenerTest {
     }
 
     @Test
+    fun `a version opens with its attachments then, not the entry's now`() = runTest {
+        entries.update(DB, mail, listOf(field(TITLE, "Mail")), AttachmentsEdit(emptyList(), listOf(file("old.txt"))))
+        entries.update(DB, mail, listOf(field(TITLE, "Mail")), AttachmentsEdit(emptyList(), listOf(file("new.txt"))))
+
+        val version = opener.open(DB, mail, 1)
+
+        assertEquals(listOf("old.txt"), version.attachments.map { it.name })
+    }
+
+    @Test
     fun `a version is laid over the preset it linked to then, not the one of the entry now`() = runTest {
         val then = listOf(field(TITLE, "Visa"), field("PIN", "1"), field(PresetLink.KEY, "card"))
         entries.stored[mail] = entries.stored.getValue(mail).copy(
@@ -55,6 +67,8 @@ class EntryVersionOpenerTest {
     }
 
     private fun field(key: String, value: String) = EntryField(key, value, protected = false)
+
+    private fun file(name: String) = NewAttachment(name, byteArrayOf(1))
 
     private companion object {
         const val DB = "content://db"

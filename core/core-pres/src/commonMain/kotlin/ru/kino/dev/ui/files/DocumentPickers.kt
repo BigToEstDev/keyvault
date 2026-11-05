@@ -21,6 +21,9 @@ enum class DocumentKind {
 
     /** A key file - any file at all. */
     KeyFile,
+
+    /** A file attached to an entry, or one an attachment is saved as - any file at all (pass-docs, Step 103). */
+    Attachment,
 }
 
 /** Picks an existing file of [kind]. The returned function launches the picker. */
