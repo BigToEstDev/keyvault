@@ -15,6 +15,11 @@ interface EntryEditActions {
 
     fun onTogglePassword()
 
+    /**
+     * The dice in the field "Password": a strong password put there, whatever it held - shown (pass-docs, Step 104).
+     */
+    fun onGeneratePassword()
+
     /** Shows or hides the value of the protected own field at [index]. */
     fun onToggleOwn(index: Int)
 

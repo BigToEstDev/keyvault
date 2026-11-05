@@ -38,6 +38,7 @@ import ru.kino.dev.vault.pres.common.GroupChoice
  * @param attachments the attachments of the form: those of the entry kept, then the files added (pass-docs, Step 103)
  * @param initialAttachments those the entry opened with - none for a new one: others are a change
  * @param addingAttachment the file picked is being read - "+ Add attachment" waits
+ * @param generatingPassword a password is being generated for the field "Password" - the dice waits (Step 104)
  * @param message for the snackbar, until it takes it
  */
 data class EntryEditState(
@@ -61,6 +62,7 @@ data class EntryEditState(
     val attachments: List<FormAttachment> = emptyList(),
     val initialAttachments: List<EntryAttachment> = emptyList(),
     val addingAttachment: Boolean = false,
+    val generatingPassword: Boolean = false,
     val message: EntryEditMessage? = null,
 ) {
     /** The attachments differ from those the form opened with - a file added, one removed, the order. */

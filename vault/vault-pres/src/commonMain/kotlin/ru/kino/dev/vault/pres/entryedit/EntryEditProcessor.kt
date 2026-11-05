@@ -33,6 +33,7 @@ import ru.kino.dev.vault.entry.EntryValidator
 import ru.kino.dev.vault.entry.FieldProblem
 import ru.kino.dev.vault.entry.NameProblem
 import ru.kino.dev.vault.entry.blank
+import ru.kino.dev.vault.generator.PasswordGenerator
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupFailure
 import ru.kino.dev.vault.group.GroupId
@@ -77,6 +78,7 @@ class EntryEditProcessor(
     private val phones: PhoneNumbers,
     private val phoneDefaults: PhoneDefaults,
     private val attachmentFiles: AttachmentFiles,
+    private val passwordGenerator: PasswordGenerator,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<EntryEditState, EntryEditState, EntryEditSideEffect>, EntryEditActions {
@@ -148,6 +150,10 @@ class EntryEditProcessor(
 
     override fun onTogglePassword() {
         intent { reduce { state.copy(passwordVisible = !state.passwordVisible) } }
+    }
+
+    override fun onGeneratePassword() {
+        intent { generatePassword() }
     }
 
     override fun onToggleOwn(index: Int) {
@@ -317,6 +323,30 @@ class EntryEditProcessor(
 
     override fun onMessageShown() {
         intent { reduce { state.copy(message = null) } }
+    }
+
+    /**
+     * A strong password into the field "Password" - in place of what it held, unasked: nothing is lost until "Save",
+     * and the old one goes into the history then (pass-docs, Step 104). Shown, so the person sees what it is.
+     */
+    private suspend fun Syntax<EntryEditState, EntryEditSideEffect>.generatePassword() {
+        if (!state.editable || state.generatingPassword) return
+        if (state.content?.presetFields?.none { it.key == StandardPreset.PASSWORD } != false) return
+
+        reduce { state.copy(generatingPassword = true) }
+        try {
+            val password = passwordGenerator.generate()
+            reduce {
+                state.edited { withValue(StandardPreset.PASSWORD, password) }.copy(
+                    generatingPassword = false,
+                    passwordVisible = true,
+                    problems = state.problems.filterNot { it is FieldProblem.Required && it.key == StandardPreset.PASSWORD },
+                )
+            }
+        } catch (failure: EntryFailure) {
+            log.unexpected(TAG, failure)
+            reduce { state.copy(generatingPassword = false, message = EntryEditMessage.Unexpected) }
+        }
     }
 
     // The form is gone - saved, left, taken away by the lock: the files added were plaintext in memory
