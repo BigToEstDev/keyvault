@@ -39,6 +39,9 @@ import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.settings.pres.entries.components.EntriesSkeleton
 import ru.kino.dev.settings.pres.entries.components.PhonePrefixRow
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
+import ru.kino.dev.ui.files.fileSizeText
+import ru.kino.dev.vault.attachment.ATTACHMENTS_MAX_PER_ENTRY
+import ru.kino.dev.vault.attachment.ATTACHMENT_MAX_BYTES
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.GradientBackground
@@ -109,8 +112,9 @@ internal fun EntriesScreen(
                 } else {
                     protectionRows(entries.protection, state.saving, processor)
                     historyRows(entries, state.saving, processor)
-                    state.bin?.let { binRows(it, state.saving, processor) }
                     state.phone?.let { phoneRows(it, processor) }
+                    state.bin?.let { binRows(it, state.saving, processor) }
+                    attachmentRows()
                 }
             }
         }
@@ -248,6 +252,36 @@ private fun LazyListScope.phoneRows(phone: PhonePrefix, actions: EntriesActions)
                         onClick = { actions.onChoosePrefix() },
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * The limits on adding a file to an entry (pass-docs, Step 103, p2) - of the app, not of the database; read only, no
+ * choice yet. The same constants the form is held to: an attachment of another program past them reads as it is.
+ */
+private fun LazyListScope.attachmentRows() {
+    item(key = "attachments") {
+        SettingsSectionHeader(
+            title = stringResource(Res.string.settings_attachments_group),
+            hint = stringResource(Res.string.settings_attachments_hint),
+            top = 8.dp,
+        )
+    }
+    item(key = "attachment-limits") {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column {
+                ValueRow(
+                    title = stringResource(Res.string.settings_attachment_max_size),
+                    value = fileSizeText(ATTACHMENT_MAX_BYTES.toLong()),
+                    onClick = null,
+                )
+                ValueRow(
+                    title = stringResource(Res.string.settings_attachments_max_count),
+                    value = stringResource(Res.string.settings_attachments_up_to, ATTACHMENTS_MAX_PER_ENTRY),
+                    onClick = null,
+                )
             }
         }
     }

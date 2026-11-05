@@ -425,4 +425,9 @@
     <string name="entry_attachment_not_saved">Не удалось сохранить файл</string>
     <string name="entry_attachment_too_large">Файл больше %1$s</string>
     <string name="entry_attachment_not_read">Не удалось прочитать файл</string>
+    <string name="settings_attachments_group">Вложения</string>
+    <string name="settings_attachments_hint">Ограничения при добавлении файла</string>
+    <string name="settings_attachment_max_size">Максимальный размер вложения</string>
+    <string name="settings_attachments_max_count">Вложений в записи</string>
+    <string name="settings_attachments_up_to">до %1$d</string>
 </resources>
