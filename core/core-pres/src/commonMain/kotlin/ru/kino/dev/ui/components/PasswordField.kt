@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
@@ -124,6 +125,17 @@ private const val MEDIUM_SHARE = 2f / 3
 
 /** Thin - a little thicker than the line of the border above it. */
 private val BAR_HEIGHT = 3.dp
+
+/**
+ * The dice that puts a new password into its field (pass-docs, Step 104) - after the eye, in the actions of a
+ * [PasswordField].
+ */
+@Composable
+fun GeneratePasswordButton(onGenerate: () -> Unit, enabled: Boolean = true) {
+    IconButton(onClick = onGenerate, enabled = enabled) {
+        Icon(imageVector = Icons.Filled.Casino, contentDescription = stringResource(Res.string.password_generate))
+    }
+}
 
 /** The eye that shows or hides a secret. */
 @Composable
