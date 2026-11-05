@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CoreException
+import ru.kino.dev.core.FakeDatabaseFiles
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.phone.FakePhoneNumbers
 import ru.kino.dev.core.preset.FakePresetRepository
@@ -17,6 +18,9 @@ import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.settings.lock.FakeInactivityTimer
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.attachment.AttachmentFiles
+import ru.kino.dev.vault.attachment.EntryAttachment
+import ru.kino.dev.vault.attachment.FakeAttachmentRepository
 import ru.kino.dev.vault.changes.FakeVaultChanges
 import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryEditor
@@ -57,6 +61,65 @@ class EntryReadProcessorTest {
     private val settings = FakeEntrySettingsRepository()
     private val trash = FakeTrashRepository()
     private val changes = FakeVaultChanges()
+    private val files = FakeDatabaseFiles()
+    private val attachmentFiles = AttachmentFiles(files, FakeAttachmentRepository(entries))
+    private val notes = EntryAttachment(id = "hash-notes", name = "notes.txt", size = 3)
+
+    @Test
+    fun `the attachments of the entry are read with it`() = runTest {
+        withNotes()
+
+        val (state, _) = perform({ onLoad() })
+
+        assertEquals(listOf(notes), state.attachments)
+    }
+
+    @Test
+    fun `download asks where to save the attachment`() = runTest {
+        withNotes()
+
+        val (state, _) = perform({ onLoad() }, { onDownload(0) })
+
+        assertEquals(notes, state.saveAs)
+    }
+
+    @Test
+    fun `the file picked gets the attachment, and the screen says it is saved`() = runTest {
+        withNotes()
+
+        val (state, _) = perform({ onLoad() }, { onDownload(0) }, { onDownloadPicked(SAVED) })
+
+        assertEquals(listOf(1, 2, 3), files.contents.getValue(SAVED).map { it.toInt() })
+        assertEquals(EntryReadMessage.AttachmentSaved, state.message)
+        assertNull(state.saveAs)
+        assertNull(state.downloading)
+    }
+
+    @Test
+    fun `a file that cannot be written says so, nothing else changes`() = runTest {
+        withNotes()
+        files.unwritable += SAVED
+
+        val (state, _) = perform({ onLoad() }, { onDownload(0) }, { onDownloadPicked(SAVED) })
+
+        assertEquals(EntryReadMessage.AttachmentNotSaved, state.message)
+        assertTrue(log.logged.isEmpty())
+    }
+
+    @Test
+    fun `a file picked with no download asked writes nothing`() = runTest {
+        withNotes()
+
+        perform({ onLoad() }, { onDownloadPicked(SAVED) })
+
+        assertTrue(files.journal.isEmpty())
+    }
+
+    /** The entry gets the attachment [notes], its bytes 1, 2, 3. */
+    private fun withNotes() {
+        entries.attachmentBytes[notes.id] = byteArrayOf(1, 2, 3)
+        entries.stored[mail] = entries.stored.getValue(mail).copy(attachments = listOf(notes))
+    }
 
     @Test
     fun `the group of the entry is shown with the path down to it`() = runTest {
@@ -322,7 +385,7 @@ class EntryReadProcessorTest {
         val (navigator, _) = recordNavigation()
         val editor = EntryEditor(entries, opener, settings, database)
         val processor =
-            EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, trash, lock(), FakePhoneNumbers(), changes, navigator, log)
+            EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, trash, lock(), FakePhoneNumbers(), changes, attachmentFiles, navigator, log)
 
         processor.testWithInternalState(this) {
             // Listening, as while the screen is shown
@@ -347,12 +410,18 @@ class EntryReadProcessorTest {
     ): Pair<EntryReadState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
         val editor = EntryEditor(entries, opener, settings, database)
-        val processor = EntryReadProcessor(DB, mail.value, opener, settings, groups, editor, trash, autoLock, FakePhoneNumbers(), changes, navigator, log)
+        val processor = EntryReadProcessor(
+            DB, mail.value, opener, settings, groups, editor, trash, autoLock, FakePhoneNumbers(), changes, attachmentFiles, navigator, log,
+        )
 
         processor.testWithInternalState(this, initial) {
             containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events
+    }
+
+    private companion object {
+        const val SAVED = "content://saved"
     }
 }

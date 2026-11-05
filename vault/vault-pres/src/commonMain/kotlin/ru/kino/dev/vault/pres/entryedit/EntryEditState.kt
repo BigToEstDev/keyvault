@@ -4,6 +4,7 @@ import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.phone.PhoneCountry
 import ru.kino.dev.core.preset.EntryPreset
 import ru.kino.dev.core.preset.PresetId
+import ru.kino.dev.vault.attachment.EntryAttachment
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryDraft
 import ru.kino.dev.vault.entry.EntryField
@@ -33,6 +34,9 @@ import ru.kino.dev.vault.pres.common.GroupChoice
  *   (pass-docs, Step 77)
  * @param problems what the last save was refused for, until the field is edited
  * @param saving the change is being made and written - the fab waits, the fields take nothing
+ * @param attachments the attachments of the form: those of the entry kept, then the files added (pass-docs, Step 103)
+ * @param initialAttachments those the entry opened with - none for a new one: others are a change
+ * @param addingAttachment the file picked is being read - "+ Add attachment" waits
  * @param message for the snackbar, until it takes it
  */
 data class EntryEditState(
@@ -53,10 +57,18 @@ data class EntryEditState(
     val problems: List<FieldProblem> = emptyList(),
     val saving: Boolean = false,
     val dialog: EntryEditDialog? = null,
+    val attachments: List<FormAttachment> = emptyList(),
+    val initialAttachments: List<EntryAttachment> = emptyList(),
+    val addingAttachment: Boolean = false,
     val message: EntryEditMessage? = null,
 ) {
-    /** The form differs from what it opened with - the fields, or the group. */
-    val changed: Boolean = content != initial || group != initialGroup
+    /** The attachments differ from those the form opened with - a file added, one removed, the order. */
+    val attachmentsChanged: Boolean =
+        attachments.any { it is FormAttachment.Added } ||
+            attachments.map { (it as FormAttachment.Kept).attachment } != initialAttachments
+
+    /** The form differs from what it opened with - the fields, the group, or the attachments. */
+    val changed: Boolean = content != initial || group != initialGroup || attachmentsChanged
 
     /** One more own field can be added - the card of own fields has room (pass-docs, Step 40, fix 19.1). */
     val canAddField: Boolean = content?.let(EntryValidator::canAddField) == true
@@ -140,7 +152,7 @@ sealed interface EntryEditDialog {
 }
 
 /** What the snackbar says. */
-enum class EntryEditMessage { LoadFailed, NotSaved, Unexpected }
+enum class EntryEditMessage { LoadFailed, NotSaved, Unexpected, AttachmentTooLarge, AttachmentNotRead }
 
 /** A phone field of the form: of the preset - by its key, or own - by its index. */
 sealed interface PhoneTarget {

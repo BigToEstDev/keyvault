@@ -24,6 +24,9 @@ interface EntryReadActions : EntryReadFieldsActions {
 
     fun onDeleteDismiss()
 
+    /** The file to save the attachment asked for as, picked - [uri]; it is written there. */
+    fun onDownloadPicked(uri: String)
+
     /** Lock the database now, not waiting for the timer - the lock button (pass-docs, Step 59). */
     fun onLock()
 

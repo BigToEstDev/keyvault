@@ -1,6 +1,7 @@
 package ru.kino.dev.vault.pres.entryread
 
 import ru.kino.dev.core.FieldProtection
+import ru.kino.dev.vault.attachment.EntryAttachment
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryTimes
 import ru.kino.dev.vault.pres.common.GroupChoice
@@ -15,6 +16,9 @@ import ru.kino.dev.vault.pres.common.GroupChoice
  * @param shownKeys keys of the fields of the preset private by the database shown in clear
  * @param delete the dialog asking to delete the entry
  * @param locking the lock asked by the lock button is under way
+ * @param attachments the files of the entry, in its order; empty until it is read
+ * @param saveAs the attachment "Download" asked for - the file to save it as is being picked
+ * @param downloading the attachment being written into the file picked - its button waits
  * @param message for the snackbar, until it takes it
  */
 data class EntryReadState(
@@ -28,6 +32,9 @@ data class EntryReadState(
     val shownKeys: Set<String> = emptySet(),
     val delete: DeleteDialog? = null,
     val locking: Boolean = false,
+    val attachments: List<EntryAttachment> = emptyList(),
+    val saveAs: EntryAttachment? = null,
+    val downloading: EntryAttachment? = null,
     val message: EntryReadMessage? = null,
 )
 
@@ -40,4 +47,4 @@ data class EntryReadState(
 data class DeleteDialog(val title: String, val toBin: Boolean, val deleting: Boolean = false)
 
 /** What the snackbar says. */
-enum class EntryReadMessage { LoadFailed, NotSaved, Unexpected }
+enum class EntryReadMessage { LoadFailed, NotSaved, Unexpected, AttachmentSaved, AttachmentNotSaved }

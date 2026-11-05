@@ -9,11 +9,15 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
+import ru.kino.dev.core.FakeDatabaseFiles
 import ru.kino.dev.core.phone.FakePhoneNumbers
 import ru.kino.dev.core.preset.FakePresetRepository
 import ru.kino.dev.core.preset.StandardPreset
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.vault.FakeVaultDatabase
+import ru.kino.dev.vault.attachment.AttachmentFiles
+import ru.kino.dev.vault.attachment.EntryAttachment
+import ru.kino.dev.vault.attachment.FakeAttachmentRepository
 import ru.kino.dev.vault.changes.FakeVaultChanges
 import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryField
@@ -51,6 +55,19 @@ class TrashEntryProcessorTest {
     private val database = FakeVaultDatabase()
     private val log = RecordingLog()
     private val changes = FakeVaultChanges()
+    private val files = FakeDatabaseFiles()
+
+    @Test
+    fun `an attachment of the deleted entry downloads into the file picked`() = runTest {
+        val notes = EntryAttachment(id = "hash-notes", name = "notes.txt", size = 2)
+        entries.attachmentBytes[notes.id] = byteArrayOf(7, 8)
+        entries.stored[mail] = entries.stored.getValue(mail).copy(attachments = listOf(notes))
+
+        val (state, _) = perform({ onLoad() }, { onDownload(0) }, { onDownloadPicked(SAVED) })
+
+        assertEquals(listOf(7, 8), files.contents.getValue(SAVED).map { it.toInt() })
+        assertEquals(TrashEntryMessage.AttachmentSaved, state.message)
+    }
 
     @Test
     fun `the deleted entry is read with when it was deleted`() = runTest {
@@ -168,6 +185,7 @@ class TrashEntryProcessorTest {
             groups,
             FakePhoneNumbers(),
             changes,
+            AttachmentFiles(files, FakeAttachmentRepository(entries)),
             navigator,
             log,
         )
@@ -181,5 +199,6 @@ class TrashEntryProcessorTest {
 
     private companion object {
         val BIN = GroupId("bin")
+        const val SAVED = "content://saved"
     }
 }

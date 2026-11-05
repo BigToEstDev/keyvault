@@ -20,6 +20,8 @@ import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.PresetEditRoute
+import ru.kino.dev.vault.attachment.AttachmentFailure
+import ru.kino.dev.vault.attachment.AttachmentFiles
 import ru.kino.dev.vault.entries.EntrySettingsRepository
 import ru.kino.dev.vault.entry.EntryContent
 import ru.kino.dev.vault.entry.EntryDraft
@@ -55,6 +57,10 @@ import ru.kino.dev.vault.trash.deletesToBin
  * The entry is read once, when the screen opens: what the person types must not be lost when the screen is
  * shown again.
  *
+ * Files added are held here until "Save", which hands them to the core with the form (pass-docs, Step 103); their
+ * bytes - a file in plaintext - are wiped when one is removed and when the form is gone, saved or not
+ * ([onCleared]): back, leaving unsaved, the lock taking the screens away.
+ *
  * @param groupId where a new entry goes; null when editing
  * @param entryId the entry edited; null when creating
  */
@@ -70,15 +76,16 @@ class EntryEditProcessor(
     private val presets: PresetRepository,
     private val phones: PhoneNumbers,
     private val phoneDefaults: PhoneDefaults,
+    private val attachmentFiles: AttachmentFiles,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<EntryEditState, EntryEditState, Nothing>, EntryEditActions {
+) : ViewModel(), OrbitContainerHost<EntryEditState, EntryEditState, EntryEditSideEffect>, EntryEditActions {
 
     init {
         require((groupId == null) != (entryId == null)) { "either a group to create in or an entry to edit" }
     }
 
-    override val container = orbitContainer<EntryEditState, Nothing>(
+    override val container = orbitContainer<EntryEditState, EntryEditSideEffect>(
         if (entryId == null) {
             val blank = StandardPreset.preset.blank()
             val group = GroupId(checkNotNull(groupId))
@@ -238,6 +245,24 @@ class EntryEditProcessor(
         }
     }
 
+    override fun onAddAttachment() {
+        intent { if (state.editable && !state.addingAttachment) postSideEffect(EntryEditSideEffect.PickAttachment) }
+    }
+
+    override fun onAttachmentPicked(uri: String) {
+        intent { addAttachment(uri) }
+    }
+
+    override fun onRemoveAttachment(index: Int) {
+        intent {
+            state.attachments.getOrNull(index)?.takeIf { state.editable }?.let { removed ->
+                reduce { state.copy(attachments = state.attachments.filterIndexed { i, _ -> i != index }) }
+                // Off the form, its bytes are of no use: wiped now, not when the form goes
+                (removed as? FormAttachment.Added)?.file?.wipe()
+            }
+        }
+    }
+
     override fun onSave() {
         intent { save(dropHidden = false) }
     }
@@ -290,8 +315,35 @@ class EntryEditProcessor(
         intent { reduce { state.copy(message = null) } }
     }
 
+    // The form is gone - saved, left, taken away by the lock: the files added were plaintext in memory
+    override fun onCleared() {
+        container.stateFlow.value.attachments.added().forEach { it.wipe() }
+        super.onCleared()
+    }
+
+    /** The file [uri] read onto the form, after the attachments there: one larger than the limit is refused. */
+    private suspend fun Syntax<EntryEditState, EntryEditSideEffect>.addAttachment(uri: String) {
+        if (!state.editable || state.addingAttachment) return
+
+        reduce { state.copy(addingAttachment = true) }
+        try {
+            val file = attachmentFiles.read(uri, taken = state.attachments.map { it.name })
+            reduce { state.copy(addingAttachment = false, attachments = state.attachments + FormAttachment.Added(file)) }
+        } catch (failure: AttachmentFailure) {
+            val message = when (failure) {
+                is AttachmentFailure.TooLarge -> EntryEditMessage.AttachmentTooLarge
+                is AttachmentFailure.FileFailed, is AttachmentFailure.NotFound -> EntryEditMessage.AttachmentNotRead
+                is AttachmentFailure.Unexpected -> {
+                    log.unexpected(TAG, failure)
+                    EntryEditMessage.AttachmentNotRead
+                }
+            }
+            reduce { state.copy(addingAttachment = false, message = message) }
+        }
+    }
+
     /** Into the recycle bin and the file; done, the screen goes back - what was typed goes with the entry. */
-    private suspend fun Syntax<EntryEditState, Nothing>.delete(dialog: EntryEditDialog.Delete) {
+    private suspend fun Syntax<EntryEditState, EntryEditSideEffect>.delete(dialog: EntryEditDialog.Delete) {
         val id = entryId ?: return
         if (dialog.deleting) return
 
@@ -316,7 +368,7 @@ class EntryEditProcessor(
         }
     }
 
-    private suspend fun Syntax<EntryEditState, Nothing>.load(id: EntryId) {
+    private suspend fun Syntax<EntryEditState, EntryEditSideEffect>.load(id: EntryId) {
         try {
             val opened = opener.open(dbKey, id)
             val groups = groupRepository.tree(dbKey).groupChoices()
@@ -332,6 +384,8 @@ class EntryEditProcessor(
                     groups = groups,
                     group = opened.groupId,
                     initialGroup = opened.groupId,
+                    attachments = opened.attachments.map { FormAttachment.Kept(it) },
+                    initialAttachments = opened.attachments,
                 )
             }
         } catch (_: EntryFailure.EntryNotFound) {
@@ -344,7 +398,7 @@ class EntryEditProcessor(
     }
 
     /** A new entry: the groups to choose from - the one it goes into is known from the route already. */
-    private suspend fun Syntax<EntryEditState, Nothing>.loadGroups() {
+    private suspend fun Syntax<EntryEditState, EntryEditSideEffect>.loadGroups() {
         try {
             val groups = groupRepository.tree(dbKey).groupChoices()
             // Hidden while typed as it will be in the file (pass-docs, Step 65)
@@ -356,12 +410,12 @@ class EntryEditProcessor(
         }
     }
 
-    private suspend fun Syntax<EntryEditState, Nothing>.loadFailed(failure: Exception) {
+    private suspend fun Syntax<EntryEditState, EntryEditSideEffect>.loadFailed(failure: Exception) {
         log.unexpected(TAG, failure)
         reduce { state.copy(loading = false, message = EntryEditMessage.LoadFailed) }
     }
 
-    private suspend fun Syntax<EntryEditState, Nothing>.confirm() {
+    private suspend fun Syntax<EntryEditState, EntryEditSideEffect>.confirm() {
         val content = state.content ?: return
         when (val dialog = state.dialog) {
             null -> Unit
@@ -433,7 +487,7 @@ class EntryEditProcessor(
      * The form laid over [preset]: the values go by key, what the new preset lacks is hidden (see
      * [EntryDraft]). What was said about the fields - shown in clear, refused - goes: they may have moved.
      */
-    private suspend fun Syntax<EntryEditState, Nothing>.switchPreset(preset: EntryPreset) {
+    private suspend fun Syntax<EntryEditState, EntryEditSideEffect>.switchPreset(preset: EntryPreset) {
         val content = state.content ?: return
         if (!state.editable) return
         val draft = EntryDraft(content, state.hidden).withPreset(preset)
@@ -452,10 +506,11 @@ class EntryEditProcessor(
      * Checks, makes the change and writes. Fields hidden by the preset chosen are asked about first, unless
      * [dropHidden] - the person said "save as is"; they stay in the form until the save goes through.
      */
-    private suspend fun Syntax<EntryEditState, Nothing>.save(dropHidden: Boolean) {
+    private suspend fun Syntax<EntryEditState, EntryEditSideEffect>.save(dropHidden: Boolean) {
         val content = state.content ?: return
         val group = state.group ?: return
-        if (state.saving) return
+        // A file being read goes with the save it is read for: it waits
+        if (state.saving || state.addingAttachment) return
         if (!dropHidden && EntryDraft(content, state.hidden).losesHidden) {
             reduce { state.copy(dialog = EntryEditDialog.HiddenFields(state.hidden.map { it.key })) }
             return
@@ -464,10 +519,10 @@ class EntryEditProcessor(
         reduce { state.copy(saving = true, problems = emptyList()) }
         try {
             if (entryId == null) {
-                val created = editor.create(dbKey, group, content)
+                val created = editor.create(dbKey, group, content, state.attachments.added())
                 openCreated(created)
             } else {
-                editor.update(dbKey, EntryId(entryId), content, group)
+                editor.update(dbKey, EntryId(entryId), content, group, state.attachments.toEdit())
                 leave()
             }
         } catch (failure: EntryFailure) {
@@ -475,7 +530,7 @@ class EntryEditProcessor(
         }
     }
 
-    private suspend fun Syntax<EntryEditState, Nothing>.failed(failure: EntryFailure) {
+    private suspend fun Syntax<EntryEditState, EntryEditSideEffect>.failed(failure: EntryFailure) {
         when (failure) {
             is EntryFailure.InvalidFields -> reduce { state.copy(saving = false, problems = failure.problems) }
 
