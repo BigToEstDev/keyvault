@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -133,9 +134,16 @@ private val BAR_HEIGHT = 3.dp
 @Composable
 fun GeneratePasswordButton(onGenerate: () -> Unit, enabled: Boolean = true) {
     IconButton(onClick = onGenerate, enabled = enabled) {
-        Icon(imageVector = Icons.Filled.Casino, contentDescription = stringResource(Res.string.password_generate))
+        Icon(
+            imageVector = Icons.Filled.Casino,
+            contentDescription = stringResource(Res.string.password_generate),
+            // Turned a little, as a die thrown - the icon stands straight
+            modifier = Modifier.rotate(DICE_TILT_DEGREES),
+        )
     }
 }
+
+private const val DICE_TILT_DEGREES = 20f
 
 /** The eye that shows or hides a secret. */
 @Composable
