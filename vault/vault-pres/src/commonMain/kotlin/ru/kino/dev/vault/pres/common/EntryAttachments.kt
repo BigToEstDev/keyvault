@@ -22,7 +22,7 @@ import ru.kino.dev.vault.attachment.EntryAttachment
  * The attachments of an entry to read - the last card, under its fields (pass-docs, Step 103): the name and the size
  * of each, "Download" by it when [downloadable]; none - no card.
  *
- * @param downloading the attachment being written into its file - its button waits, the others take nothing
+ * @param downloading the attachment being written into its file - its button waits; every row is disabled meanwhile
  */
 @Composable
 internal fun AttachmentDownloadActions.ReadAttachments(
@@ -37,6 +37,7 @@ internal fun AttachmentDownloadActions.ReadAttachments(
                 FileRow(
                     name = attachment.name,
                     size = fileSizeText(attachment.size),
+                    enabled = downloading == null,
                     actions = if (downloadable) {
                         {
                             DownloadButton(

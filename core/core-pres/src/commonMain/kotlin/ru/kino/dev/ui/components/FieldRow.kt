@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.password
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import ru.kino.dev.ui.theme.DISABLED_ALPHA
 
 /**
  * A field to read, not to type into: its label, its value under it, buttons at the end - copy, the eye of a
@@ -67,14 +68,19 @@ fun FieldRow(
 /**
  * A file in a [FieldRowsSection] - an attachment of an entry (pass-docs, Step 103): the clip, the [name] - wrapped
  * whole - and the [size] under it, buttons at the end. In the room of a [FieldRow], so the cards look alike.
+ *
+ * Disabled - the text and the clip at 38%, as a disabled element of Material 3; the buttons disable themselves.
  */
 @Composable
 fun FileRow(
     name: String,
     size: String,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     actions: (@Composable RowScope.() -> Unit)? = null,
 ) {
+    val alpha = if (enabled) 1f else DISABLED_ALPHA
+    val colors = MaterialTheme.colorScheme
     Row(
         modifier = modifier.rowRoom(actions != null),
         verticalAlignment = Alignment.CenterVertically,
@@ -82,15 +88,15 @@ fun FileRow(
         Icon(
             Icons.Filled.AttachFile,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = colors.onSurfaceVariant.copy(alpha = alpha),
             modifier = Modifier.padding(end = 12.dp).size(FILE_ICON_SIZE),
         )
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = name, style = MaterialTheme.typography.bodyLarge)
+            Text(text = name, style = MaterialTheme.typography.bodyLarge, color = colors.onSurface.copy(alpha = alpha))
             Text(
                 text = size,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = colors.onSurfaceVariant.copy(alpha = alpha),
             )
         }
         actions?.let { Row(verticalAlignment = Alignment.CenterVertically, content = it) }

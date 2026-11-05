@@ -33,6 +33,7 @@ internal fun EntryEditActions.FormAttachments(
             FileRow(
                 name = attachment.name,
                 size = fileSizeText(attachment.size),
+                enabled = enabled,
                 actions = {
                     IconButton(onClick = { onRemoveAttachment(index) }, enabled = enabled) {
                         Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.action_remove))
