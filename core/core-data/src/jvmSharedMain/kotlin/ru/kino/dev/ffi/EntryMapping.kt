@@ -1,5 +1,6 @@
 package ru.kino.dev.ffi
 
+import ru.kino.dev.core.EntryData
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
 import ru.kino.dev.core.EntrySummaryData
@@ -9,6 +10,15 @@ import ru.kino.dev.core.TrashSearchData
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
+
+/** The entry, or a version of it, as its screens read it: group, strings, times and attachments. */
+internal fun EntryFormDataDto.toEntryData() = EntryData(
+    groupId = parentGroupUuid,
+    fields = fieldsToDomain(),
+    createdAt = coreTimeToEpochSeconds(creationTime),
+    modifiedAt = coreTimeToEpochSeconds(lastModificationTime),
+    attachments = attachmentsToDomain(),
+)
 
 /** The strings of the entry, in its order - all the rest of the form stays in this module. */
 internal fun EntryFormDataDto.fieldsToDomain(): List<EntryFieldData> =

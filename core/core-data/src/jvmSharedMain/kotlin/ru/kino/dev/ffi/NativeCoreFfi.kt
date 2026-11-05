@@ -16,6 +16,7 @@ import ru.kino.dev.core.DatabaseEntries
 import ru.kino.dev.core.DatabaseFile
 import ru.kino.dev.core.DatabaseSecurity
 import ru.kino.dev.core.Encryption
+import ru.kino.dev.core.EntryAttachmentsEdit
 import ru.kino.dev.core.EntryData
 import ru.kino.dev.core.EntryFieldData
 import ru.kino.dev.core.EntrySearchData
@@ -28,6 +29,7 @@ import ru.kino.dev.core.KdbxVersion
 import ru.kino.dev.core.KeyFile
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.NativeCore
+import ru.kino.dev.core.NewAttachmentData
 import ru.kino.dev.core.NewDatabase
 import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.PasswordOptions
@@ -436,16 +438,15 @@ internal class NativeCoreFfi : NativeCore {
 
     override suspend fun entry(dbKey: String, entryId: String): EntryData =
         withContext(dispatcher) {
-            val form = entryForm(dbKey, entryId)
-            EntryData(
-                groupId = form.parentGroupUuid,
-                fields = form.fieldsToDomain(),
-                createdAt = coreTimeToEpochSeconds(form.creationTime),
-                modifiedAt = coreTimeToEpochSeconds(form.lastModificationTime),
-            )
+            entryForm(dbKey, entryId).toEntryData()
         }
 
-    override suspend fun createEntry(dbKey: String, groupId: String, fields: List<EntryFieldData>): String =
+    override suspend fun createEntry(
+        dbKey: String,
+        groupId: String,
+        fields: List<EntryFieldData>,
+        newAttachments: List<NewAttachmentData>,
+    ): String =
         withContext(dispatcher) {
             // The core builds the blank entry - uuid, times, icon - so a new entry is the same shape as one
             // read from a file, and only the strings are ours
@@ -456,25 +457,51 @@ internal class NativeCoreFfi : NativeCore {
                 EntryFormDataDto.serializer(),
             )
             val entry = blank.withFields(fields)
-            call(
-                FfiCommands.INSERT_ENTRY_FROM_FORM_DATA,
-                EntryFormArgsDto.serializer(),
-                EntryFormArgsDto(dbKey, entry),
-                DoneDto.serializer(),
-            )
+            saveForm(FfiCommands.INSERT_ENTRY_FROM_FORM_DATA, dbKey, entry, newAttachments)
 
             entry.uuid
         }
 
-    override suspend fun updateEntry(dbKey: String, entryId: String, fields: List<EntryFieldData>) {
+    override suspend fun updateEntry(
+        dbKey: String,
+        entryId: String,
+        fields: List<EntryFieldData>,
+        attachments: EntryAttachmentsEdit?,
+    ) {
         withContext(dispatcher) {
-            val entry = entryForm(dbKey, entryId)
-            call(
-                FfiCommands.UPDATE_ENTRY_FROM_FORM_DATA,
-                EntryFormArgsDto.serializer(),
-                EntryFormArgsDto(dbKey, entry.withFields(fields)),
-                DoneDto.serializer(),
+            val read = entryForm(dbKey, entryId).withFields(fields)
+            val entry = attachments?.let { read.withAttachmentsKept(it.keptIds) } ?: read
+            saveForm(FfiCommands.UPDATE_ENTRY_FROM_FORM_DATA, dbKey, entry, attachments?.added.orEmpty())
+        }
+    }
+
+    override suspend fun attachmentBytes(dbKey: String, attachmentId: String): ByteArray =
+        withContext(dispatcher) {
+            val answer = FfiBinaryCall.call(
+                command = FfiCommands.ENTRY_ATTACHMENT_BYTES,
+                argsJson = encode(AttachmentArgsDto.serializer(), AttachmentArgsDto(dbKey, attachmentId)),
             )
+            // As on save: a refusal has no bytes behind it and travels as the failure it is
+            FfiEnvelope.unwrap(answer.envelope, AttachmentBytesDto.serializer())
+
+            answer.payload
+        }
+
+    /**
+     * Inserts or updates [form] with [added] files in one call - across the binary boundary: the form may hold
+     * passwords, and the arguments are wiped there; the slot with the files is wiped here, whatever the outcome.
+     */
+    private fun saveForm(command: String, dbKey: String, form: EntryFormDataDto, added: List<NewAttachmentData>) {
+        val slot = attachmentSlot(added)
+        try {
+            val answer = FfiBinaryCall.call(
+                command = command,
+                argsJson = encode(EntryFormArgsDto.serializer(), EntryFormArgsDto(dbKey, form, slot.list)),
+                input = slot.bytes,
+            )
+            FfiEnvelope.unwrap(answer.envelope, DoneDto.serializer())
+        } finally {
+            slot.wipe()
         }
     }
 
@@ -518,12 +545,7 @@ internal class NativeCoreFfi : NativeCore {
                 HistoryIndexDto(dbKey = dbKey, entryUuid = entryId, index = index),
                 EntryFormDataDto.serializer(),
             )
-            EntryData(
-                groupId = version.parentGroupUuid,
-                fields = version.fieldsToDomain(),
-                createdAt = coreTimeToEpochSeconds(version.creationTime),
-                modifiedAt = coreTimeToEpochSeconds(version.lastModificationTime),
-            )
+            version.toEntryData()
         }
 
     override suspend fun restoreHistoryVersion(dbKey: String, entryId: String, index: Int) {
@@ -536,12 +558,8 @@ internal class NativeCoreFfi : NativeCore {
                 HistoryIndexDto(dbKey = dbKey, entryUuid = entryId, index = index),
                 EntryFormDataDto.serializer(),
             )
-            call(
-                FfiCommands.UPDATE_ENTRY_FROM_FORM_DATA,
-                EntryFormArgsDto.serializer(),
-                EntryFormArgsDto(dbKey, version),
-                DoneDto.serializer(),
-            )
+            // Its attachments too: the bytes of a version are in the database while the version links them
+            saveForm(FfiCommands.UPDATE_ENTRY_FROM_FORM_DATA, dbKey, version, emptyList())
         }
     }
 

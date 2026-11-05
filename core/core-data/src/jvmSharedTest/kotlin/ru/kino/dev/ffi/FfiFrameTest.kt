@@ -86,6 +86,17 @@ class FfiFrameTest {
         assertContentEquals(ByteArray(seenByRust!!.size), seenByRust)
     }
 
+    @Test
+    fun `the frame is wiped after the payload is copied out of it`() {
+        val frame = frameOf("""{"ok":{"size":3}}""", byteArrayOf(7, 8, 9))
+
+        val parsed = FfiBinaryCall.call(command = "whatever", argsJson = "{}") { _, _, _ -> frame }
+
+        // The payload is the caller's copy; the frame, which held an attachment in plaintext, is gone
+        assertContentEquals(byteArrayOf(7, 8, 9), parsed.payload)
+        assertContentEquals(ByteArray(frame.size), frame)
+    }
+
     private fun frameOf(envelope: String, payload: ByteArray = ByteArray(0)): ByteArray {
         val envelopeBytes = envelope.toByteArray(Charsets.UTF_8)
         val length = envelopeBytes.size

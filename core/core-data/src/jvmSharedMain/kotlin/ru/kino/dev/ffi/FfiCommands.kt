@@ -55,6 +55,8 @@ internal object FfiCommands {
     const val CLONE_ENTRY = "clone_entry"
     // Into the recycle bin, or for good when the database does not use one
     const val DELETE_ENTRY = "delete_entry"
+    // The bytes of one attachment, for "Download": new ones come with the form, the rest live in it
+    const val ENTRY_ATTACHMENT_BYTES = "entry_attachment_bytes"
 
     // The history of an entry: kdbx keeps old versions inside the entry, addressed by index
     const val HISTORY_ENTRIES_SUMMARY = "history_entries_summary"
@@ -132,6 +134,7 @@ internal object FfiCommands {
         MOVE_ENTRY,
         CLONE_ENTRY,
         DELETE_ENTRY,
+        ENTRY_ATTACHMENT_BYTES,
         HISTORY_ENTRIES_SUMMARY,
         HISTORY_ENTRY_BY_INDEX,
         DELETE_HISTORY_ENTRY_BY_INDEX,

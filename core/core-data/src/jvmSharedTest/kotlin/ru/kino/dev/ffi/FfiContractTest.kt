@@ -156,6 +156,11 @@ class FfiContractTest {
     }
 
     @Test
+    fun `the bytes of an attachment are announced exactly as the bridge describes them`() {
+        assertKeysMatch(FfiCommands.ENTRY_ATTACHMENT_BYTES, AttachmentBytesDto.serializer())
+    }
+
+    @Test
     fun `a rated password is read exactly as the bridge describes it`() {
         assertKeysMatch(FfiCommands.ANALYZED_PASSWORD, AnalyzedPasswordDto.serializer())
     }

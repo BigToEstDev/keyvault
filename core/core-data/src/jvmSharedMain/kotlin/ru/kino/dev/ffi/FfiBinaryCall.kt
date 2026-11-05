@@ -24,10 +24,15 @@ internal object FfiBinaryCall {
         invoke: (String, ByteArray, ByteArray?) -> ByteArray = PassFfi::invokeBinary,
     ): FfiFrame.Parsed {
         val args = argsJson.toByteArray(Charsets.UTF_8)
+        var frame: ByteArray? = null
         try {
-            return FfiFrame.split(invoke(command, args, input))
+            frame = invoke(command, args, input)
+            return FfiFrame.split(frame)
         } finally {
             args.fill(0)
+            // The payload is copied out of the frame, and it may be an attachment in plaintext (pass-docs,
+            // Step 102): the frame goes, the copy is the caller's to wipe
+            frame?.fill(0)
         }
     }
 }
