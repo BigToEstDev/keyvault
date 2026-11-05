@@ -246,7 +246,7 @@ interface NativeCore {
      * attachments with those kept and added, in one call; null keeps them as they are. The rest of it - icon,
      * tags, times, the fields of another program the core keeps - goes back as it was read; the core puts the
      * previous state into the history. Two fields under one key are refused with kind `DuplicateFieldKey`; two
-     * attachments under one name, one with no name, or a kept id the database has not, with kind `DataError` -
+     * attachments under one name, one with no name, or a kept name the entry has not, with kind `DataError` -
      * the entry stays as it was. In memory only.
      */
     suspend fun updateEntry(

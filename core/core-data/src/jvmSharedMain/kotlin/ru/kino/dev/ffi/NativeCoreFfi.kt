@@ -470,7 +470,7 @@ internal class NativeCoreFfi : NativeCore {
     ) {
         withContext(dispatcher) {
             val read = entryForm(dbKey, entryId).withFields(fields)
-            val entry = attachments?.let { read.withAttachmentsKept(it.keptIds) } ?: read
+            val entry = attachments?.let { read.withAttachmentsKept(it.keptNames) } ?: read
             saveForm(FfiCommands.UPDATE_ENTRY_FROM_FORM_DATA, dbKey, entry, attachments?.added.orEmpty())
         }
     }

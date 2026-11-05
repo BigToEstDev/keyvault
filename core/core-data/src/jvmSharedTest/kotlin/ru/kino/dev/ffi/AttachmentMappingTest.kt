@@ -38,7 +38,7 @@ class AttachmentMappingTest {
 
     @Test
     fun `kept attachments go back in the order kept, the rest of each as read`() {
-        val kept = form.withAttachmentsKept(listOf("33", "11"))
+        val kept = form.withAttachmentsKept(listOf("c.pdf", "a.txt"))
 
         assertEquals(listOf("c.pdf", "a.txt"), kept.binaryKeyValues.map { it.key })
         assertEquals(form.binaryKeyValues[2], kept.binaryKeyValues[0])
@@ -51,9 +51,22 @@ class AttachmentMappingTest {
     }
 
     @Test
-    fun `an id the entry has not is refused before the core is asked`() {
+    fun `the same bytes under two names are kept apart by name`() {
+        val twins = form.copy(
+            binaryKeyValues = listOf(
+                form.binaryKeyValues[0],
+                form.binaryKeyValues[0].copy(key = "a (2).txt"),
+            ),
+        )
+
+        assertEquals(listOf("a (2).txt", "a.txt"), twins.withAttachmentsKept(listOf("a (2).txt", "a.txt")).binaryKeyValues.map { it.key })
+        assertEquals(listOf("a (2).txt"), twins.withAttachmentsKept(listOf("a (2).txt")).binaryKeyValues.map { it.key })
+    }
+
+    @Test
+    fun `a name the entry has not is refused before the core is asked`() {
         try {
-            form.withAttachmentsKept(listOf("11", "99"))
+            form.withAttachmentsKept(listOf("a.txt", "z.zip"))
             fail("an unknown attachment should not be kept")
         } catch (e: CoreException) {
             assertEquals("DataError", e.kind)

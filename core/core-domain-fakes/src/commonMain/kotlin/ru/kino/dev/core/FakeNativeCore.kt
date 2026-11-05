@@ -527,10 +527,8 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         refuseDuplicateKeys(fields)
         val after = attachments?.let { edit ->
             // As the core: every check before anything is kept
-            val kept = edit.keptIds.map { id ->
-                if (id !in attachmentBytes) throw CoreException("DataError", "no attachment $id")
-                entry.attachments.firstOrNull { it.id == id }
-                    ?: entry.history.flatMap { it.attachments }.first { it.id == id }
+            val kept = edit.keptNames.map { name ->
+                entry.attachments.firstOrNull { it.name == name } ?: throw CoreException("DataError", "no attachment $name")
             }
             refuseAttachmentNames(kept.map { it.name } + edit.added.map { it.name })
             kept + edit.added.map(::keep)

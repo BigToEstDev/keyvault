@@ -28,11 +28,14 @@ class NewAttachmentData(
 }
 
 /**
- * The attachments of an entry after an edit: those kept, by [EntryAttachmentData.id], in their order, and the
- * files [added] after them - the order the core saves in. What is left out of [keptIds] is removed; the history of
- * the entry keeps it in the version it was in.
+ * The attachments of an entry after an edit: those kept, by [EntryAttachmentData.name], in their order, and the
+ * files [added] after them - the order the core saves in. What is left out of [keptNames] is removed; the history
+ * of the entry keeps it in the version it was in.
+ *
+ * Kept by name, not by id: one name is one attachment of the entry, while the same bytes under two names share one
+ * id (pass-docs, Step 103).
  */
 data class EntryAttachmentsEdit(
-    val keptIds: List<String>,
+    val keptNames: List<String>,
     val added: List<NewAttachmentData>,
 )
