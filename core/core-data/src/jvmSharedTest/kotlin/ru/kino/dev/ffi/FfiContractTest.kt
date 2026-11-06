@@ -153,6 +153,8 @@ class FfiContractTest {
     fun `the checksum and the result of a merge are read exactly as the bridge describes them`() {
         assertKeysMatch(FfiCommands.DB_CHECKSUM_HASH, ChecksumDto.serializer())
         assertKeysMatch(FfiCommands.MERGE_DATABASE, MergeResultDto.serializer())
+        assertKeysMatch(FfiCommands.MERGE_COPY, MergeResultDto.serializer())
+        assertKeysMatch(FfiCommands.IMPORT_DATABASE, MergeResultDto.serializer())
     }
 
     @Test

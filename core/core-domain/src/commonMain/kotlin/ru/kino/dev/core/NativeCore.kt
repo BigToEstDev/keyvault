@@ -175,6 +175,38 @@ interface NativeCore {
      */
     suspend fun mergeDatabase(dbKey: String, bytes: ByteArray): MergeSummary
 
+    /**
+     * Merges another copy of the open database - the file from another device - and reports what changed
+     * (pass-docs, Step 106).
+     *
+     * The copy is opened with its own [password] and [keyFile]: they may differ from the open database's, and
+     * the merged database keeps the open one's. Changes are by the rules of KeePass: the newer edit wins, the
+     * histories are joined, a deletion wins over an older edit. In memory only - the caller saves; the
+     * checksum of the open file stays, the bytes are another file.
+     *
+     * Throws [CoreException] with kind `NotSameDatabase` for a different database - nothing changed, that is
+     * [importDatabase]; `InvalidCredentials` for wrong credentials of the copy; `DbLocked` for a locked database.
+     */
+    suspend fun mergeCopy(
+        dbKey: String,
+        bytes: ByteArray,
+        password: String?,
+        keyFile: KeyFile? = null,
+    ): MergeSummary
+
+    /**
+     * Brings a different database into the open one, whole - the same as [mergeCopy] otherwise.
+     *
+     * Throws [CoreException] with kind `SameDatabase` for a copy of the open database - nothing changed, that
+     * is [mergeCopy].
+     */
+    suspend fun importDatabase(
+        dbKey: String,
+        bytes: ByteArray,
+        password: String?,
+        keyFile: KeyFile? = null,
+    ): MergeSummary
+
     /** Generates a password with the core's generator. */
     suspend fun generatePassword(options: PasswordOptions = PasswordOptions()): String
 
@@ -415,8 +447,8 @@ data class OpenedDatabase(
  * what a screen shows, and carrying the contents of a database around in a result object is how they end
  * up in a log. A screen that lists the changes asks for them when it exists.
  *
- * [differentDatabases] is only known after the merge has happened, so a warning about having merged two
- * unrelated databases is shown as a fact - the way back is closing without saving.
+ * After [NativeCore.mergeDatabase] [differentDatabases] is only known once the merge has happened; a merge of
+ * a copy and an import check it before anything changes (pass-docs, Step 106).
  */
 data class MergeSummary(
     val addedGroups: Int,
