@@ -89,6 +89,11 @@ internal object FfiCommands {
     const val DB_CHECKSUM_HASH = "db_checksum_hash"
     const val MERGE_DATABASE = "merge_kdbx_with_reader"
 
+    // Another database file brought into the open one, with its own credentials: a copy of it merged, a
+    // different database imported - two buttons, the core refuses the wrong one (pass-docs, Step 106)
+    const val MERGE_COPY = "merge_kdbx_from_bytes"
+    const val IMPORT_DATABASE = "import_kdbx_from_bytes"
+
     // The recycle bin holds entries only (pass-docs, Step 69): its list and search, restoring to a group, and
     // the irreversible steps - removing picked entries and emptying it
     const val TRASH_ENTRIES = "trash_entries"
@@ -154,6 +159,8 @@ internal object FfiCommands {
         SET_DB_FILE_CHECKSUM,
         DB_CHECKSUM_HASH,
         MERGE_DATABASE,
+        MERGE_COPY,
+        IMPORT_DATABASE,
         TRASH_ENTRIES,
         SEARCH_TRASH,
         RESTORE_ENTRIES,

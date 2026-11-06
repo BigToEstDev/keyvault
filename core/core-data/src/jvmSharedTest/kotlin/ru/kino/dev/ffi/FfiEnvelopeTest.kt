@@ -113,4 +113,21 @@ class FfiEnvelopeTest {
         assertTrue(json.contains(""""password":"pw""""), json)
         assertTrue(json.contains(""""key_file":{"name":"my.keyx","content":"AAEC"}"""), json)
     }
+
+    // `MergeArgs` in src/handlers/merge.rs: the open database and the credentials of the other file (Step 106)
+    @Test
+    fun `a merge of a copy and an import send the credentials of the other file under the names the bridge reads`() {
+        val json = FfiEnvelope.json.encodeToString(
+            OtherDatabaseDto.serializer(),
+            OtherDatabaseDto(
+                dbKey = "content://db",
+                password = "other",
+                keyFile = KeyFileDto(name = "other.keyx", content = "AAEC"),
+            ),
+        )
+
+        assertTrue(json.contains(""""db_key":"content://db""""), json)
+        assertTrue(json.contains(""""password":"other""""), json)
+        assertTrue(json.contains(""""key_file":{"name":"other.keyx","content":"AAEC"}"""), json)
+    }
 }

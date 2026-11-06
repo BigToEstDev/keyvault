@@ -50,10 +50,13 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     /** The last [NewDatabase] asked for. */
     var created: NewDatabase? = null
 
-    /** The bytes handed to [openDatabase], [verifyFileChecksum] and [mergeDatabase], last one wins. */
+    /**
+     * The bytes handed to [openDatabase], [verifyFileChecksum], [mergeDatabase], [mergeCopy] and
+     * [importDatabase], last one wins.
+     */
     var bytesReceived: ByteArray? = null
 
-    /** The password of the last open, unlock or create. */
+    /** The password of the last open, unlock, create, merge of a copy or import. */
     var passwordReceived: String? = null
 
     /** The password [verifyPassword] takes, of every database here. */
@@ -298,6 +301,36 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     override suspend fun mergeDatabase(dbKey: String, bytes: ByteArray): MergeSummary {
         step("mergeDatabase", dbKey)
         bytesReceived = bytes.copyOf()
+        return mergeSummary
+    }
+
+    override suspend fun mergeCopy(
+        dbKey: String,
+        bytes: ByteArray,
+        password: String?,
+        keyFile: KeyFile?,
+    ): MergeSummary = mergeOther("mergeCopy", dbKey, bytes, password, keyFile)
+
+    override suspend fun importDatabase(
+        dbKey: String,
+        bytes: ByteArray,
+        password: String?,
+        keyFile: KeyFile?,
+    ): MergeSummary = mergeOther("importDatabase", dbKey, bytes, password, keyFile)
+
+    private fun mergeOther(
+        method: String,
+        dbKey: String,
+        bytes: ByteArray,
+        password: String?,
+        keyFile: KeyFile?,
+    ): MergeSummary {
+        bytesReceived = bytes.copyOf()
+        passwordReceived = password
+        keyFile?.let { keyFilesReceived += it }
+        step(method, dbKey)
+        if (dbKey !in opened) throw CoreException("DbKeyNotFound", "not open: $dbKey")
+        if (dbKey in locked) throw CoreException("DbLocked", "locked: $dbKey")
         return mergeSummary
     }
 

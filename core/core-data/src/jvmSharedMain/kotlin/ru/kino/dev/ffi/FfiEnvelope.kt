@@ -607,6 +607,17 @@ internal data class UnlockDto(
     @SerialName("key_file") val keyFile: KeyFileDto?,
 )
 
+/**
+ * Arguments of `merge_kdbx_from_bytes` and `import_kdbx_from_bytes`: the open database, and the credentials
+ * of the other file - its bytes travel beside them (pass-docs, Step 106).
+ */
+@Serializable
+internal data class OtherDatabaseDto(
+    @SerialName("db_key") val dbKey: String,
+    val password: String?,
+    @SerialName("key_file") val keyFile: KeyFileDto?,
+)
+
 /** Arguments of `rename_db_key`: the file moved, or "save as" wrote it somewhere else. */
 @Serializable
 internal data class RenameDbKeyDto(

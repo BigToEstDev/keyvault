@@ -341,6 +341,36 @@ internal class NativeCoreFfi : NativeCore {
             FfiEnvelope.unwrap(answer.envelope, MergeResultDto.serializer()).toDomain()
         }
 
+    override suspend fun mergeCopy(
+        dbKey: String,
+        bytes: ByteArray,
+        password: String?,
+        keyFile: KeyFile?,
+    ): MergeSummary = mergeOther(FfiCommands.MERGE_COPY, dbKey, bytes, password, keyFile)
+
+    override suspend fun importDatabase(
+        dbKey: String,
+        bytes: ByteArray,
+        password: String?,
+        keyFile: KeyFile?,
+    ): MergeSummary = mergeOther(FfiCommands.IMPORT_DATABASE, dbKey, bytes, password, keyFile)
+
+    private suspend fun mergeOther(
+        command: String,
+        dbKey: String,
+        bytes: ByteArray,
+        password: String?,
+        keyFile: KeyFile?,
+    ): MergeSummary = withContext(dispatcher) {
+        val args = OtherDatabaseDto(dbKey = dbKey, password = password, keyFile = keyFile?.toDto())
+        val answer = FfiBinaryCall.call(
+            command = command,
+            argsJson = encode(OtherDatabaseDto.serializer(), args),
+            input = bytes,
+        )
+        FfiEnvelope.unwrap(answer.envelope, MergeResultDto.serializer()).toDomain()
+    }
+
     override suspend fun generatePassword(options: PasswordOptions): String = withContext(dispatcher) {
         val args = FfiEnvelope.json.encodeToString(
             PasswordOptionsDto.serializer(),
