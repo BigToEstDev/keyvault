@@ -13,6 +13,7 @@ import ru.kino.dev.core.FakeNativeCore
 import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.data.changes.VaultChangesImpl
+import ru.kino.dev.vault.sync.MergeFailure
 
 class VaultDatabaseRepositoryImplTest {
 
@@ -105,6 +106,22 @@ class VaultDatabaseRepositoryImplTest {
 
         assertEquals(core.mergeSummary, summary)
         assertContentEquals(byteArrayOf(7), core.bytesReceived)
+    }
+
+    @Test
+    fun `a file saved elsewhere with other credentials cannot be merged - said by its own failure`() = runTest {
+        files.contents[DB] = byteArrayOf(7)
+        core.failures["mergeDatabase"] = CoreException("MergeFailedCredentialsChanged", "other key")
+
+        expectFailure<MergeFailure.CredentialsChanged> { repository.merge(DB) }
+    }
+
+    @Test
+    fun `another database in the file is not merged`() = runTest {
+        files.contents[DB] = byteArrayOf(7)
+        core.failures["mergeDatabase"] = CoreException("NotSameDatabase", "another")
+
+        expectFailure<MergeFailure.NotSameDatabase> { repository.merge(DB) }
     }
 
     private companion object {

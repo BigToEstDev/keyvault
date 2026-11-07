@@ -8,6 +8,7 @@ import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.NativeCore
 import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.data.changes.VaultChangesImpl
+import ru.kino.dev.vault.data.sync.mergeCall
 
 /**
  * [VaultDatabaseRepository] over the native core and the document the database lives in.
@@ -52,8 +53,9 @@ internal class VaultDatabaseRepositoryImpl(
             if (e.kind == FILE_CHANGED) true else throw e
         }
 
-    override suspend fun merge(dbKey: String): MergeSummary =
+    override suspend fun merge(dbKey: String): MergeSummary = mergeCall {
         core.mergeDatabase(dbKey, files.read(dbKey)).also { changes.changed(dbKey) }
+    }
 
     private companion object {
         /** The core's error variant for a file that no longer matches the checksum it was read with. */

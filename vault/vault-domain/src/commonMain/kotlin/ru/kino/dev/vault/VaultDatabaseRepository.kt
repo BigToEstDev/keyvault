@@ -37,6 +37,9 @@ interface VaultDatabaseRepository {
      *
      * In memory only: the merged database still has to be saved, and until it is, the file is the way the
      * other side left it. There is no undo, so the ui asks before calling this, not after.
+     *
+     * Throws [ru.kino.dev.vault.sync.MergeFailure] and nothing else: `CredentialsChanged` for a file saved
+     * elsewhere with other credentials, `NotSameDatabase` for another database in the file (pass-docs, Step 108).
      */
     suspend fun merge(dbKey: String): MergeSummary
 }

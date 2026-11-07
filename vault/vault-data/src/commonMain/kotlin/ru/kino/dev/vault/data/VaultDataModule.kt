@@ -27,6 +27,7 @@ import ru.kino.dev.vault.data.generator.PasswordGeneratorImpl
 import ru.kino.dev.vault.data.group.GroupRepositoryImpl
 import ru.kino.dev.vault.data.history.EntryHistoryRepositoryImpl
 import ru.kino.dev.vault.data.security.SecurityRepositoryImpl
+import ru.kino.dev.vault.data.sync.OtherDatabaseRepositoryImpl
 import ru.kino.dev.vault.data.trash.TrashRepositoryImpl
 import ru.kino.dev.vault.entries.EntrySettingsEditor
 import ru.kino.dev.vault.entries.EntrySettingsRepository
@@ -48,6 +49,7 @@ import ru.kino.dev.vault.lock.DatabaseGuard
 import ru.kino.dev.vault.search.VaultSearch
 import ru.kino.dev.vault.security.SecurityEditor
 import ru.kino.dev.vault.security.SecurityRepository
+import ru.kino.dev.vault.sync.OtherDatabaseRepository
 import ru.kino.dev.vault.trash.TrashEditor
 import ru.kino.dev.vault.trash.TrashRepository
 
@@ -68,6 +70,7 @@ val vaultDataModule = module {
     factoryOf(::EntrySettingsRepositoryImpl) { bind<EntrySettingsRepository>() }
     factoryOf(::SecurityRepositoryImpl) { bind<SecurityRepository>() }
     factoryOf(::TrashRepositoryImpl) { bind<TrashRepository>() }
+    factoryOf(::OtherDatabaseRepositoryImpl) { bind<OtherDatabaseRepository>() }
 
     // vault-domain is plain Kotlin and knows nothing of the graph, so its use cases are built here
     factory { GroupEditor(get(), get(), get()) }
