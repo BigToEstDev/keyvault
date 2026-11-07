@@ -11,7 +11,11 @@ import ru.kino.dev.core.MergeSummary
  */
 interface VaultDatabaseRepository {
 
-    /** Writes the open database back into its file. */
+    /**
+     * Writes the open database back into its file - unless the file was written elsewhere since: then nothing is
+     * written, the change waits in memory and [ru.kino.dev.vault.sync.SaveStatus] says
+     * [ru.kino.dev.vault.sync.SaveState.ChangedElsewhere] - the sync asks, not the caller (pass-docs, Step 108).
+     */
     suspend fun save(dbKey: String)
 
     /**

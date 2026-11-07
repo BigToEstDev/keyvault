@@ -5,6 +5,9 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.DatabaseFileException
@@ -14,6 +17,8 @@ import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.sync.MergeFailure
+import ru.kino.dev.vault.sync.SaveState
+import ru.kino.dev.vault.sync.SaveStatus
 
 class VaultDatabaseRepositoryImplTest {
 
@@ -21,24 +26,52 @@ class VaultDatabaseRepositoryImplTest {
     private val core = FakeNativeCore(journal)
     private val files = FakeDatabaseFiles(journal)
     private val changes = VaultChangesImpl()
-    private val repository = VaultDatabaseRepositoryImpl(core, files, changes)
+    private val status = SaveStatus()
+    private val repository = VaultDatabaseRepositoryImpl(core, files, changes, status)
 
     @Test
     fun `saving writes the bytes the core gave into the file, then takes them as the file`() = runTest {
+        files.contents[DB] = byteArrayOf(1)
+
         repository.save(DB)
 
         assertContentEquals(core.databaseBytes, files.contents[DB])
         assertContentEquals(core.databaseBytes, core.checksumBytes[DB])
-        assertEquals(listOf("saveDatabase $DB", "writeReplacing $DB", "setFileChecksum $DB"), journal)
+        assertEquals(
+            listOf("read $DB", "verifyFileChecksum $DB", "saveDatabase $DB", "writeReplacing $DB", "setFileChecksum $DB"),
+            journal,
+        )
+        assertEquals(SaveState.Saved, status.current(DB))
     }
 
     @Test
-    fun `after its own save the file has not changed elsewhere`() = runTest {
+    fun `a file written elsewhere is not written over - the change waits and the status says so`() = runTest {
+        files.contents[DB] = byteArrayOf(9)
         core.changedElsewhere += DB
+        val postponed = async(start = CoroutineStart.UNDISPATCHED) { status.postponed.first() }
 
         repository.save(DB)
 
-        assertFalse(repository.hasChangedElsewhere(DB))
+        assertContentEquals(byteArrayOf(9), files.contents[DB])
+        assertFalse("saveDatabase $DB" in journal)
+        assertEquals(SaveState.ChangedElsewhere, status.current(DB))
+        assertEquals(DB, postponed.await())
+    }
+
+    @Test
+    fun `a file that cannot be read for the check is written as always`() = runTest {
+        repository.save(DB)
+
+        assertContentEquals(core.databaseBytes, files.contents[DB])
+    }
+
+    @Test
+    fun `closing forgets what waited`() = runTest {
+        status.notSaved(DB)
+
+        repository.close(DB)
+
+        assertEquals(SaveState.Saved, status.current(DB))
     }
 
     @Test
@@ -48,6 +81,7 @@ class VaultDatabaseRepositoryImplTest {
         expectFailure<DatabaseFileException> { repository.save(DB) }
 
         assertFalse(DB in core.checksumBytes)
+        assertEquals(SaveState.NotSaved, status.current(DB))
     }
 
     @Test

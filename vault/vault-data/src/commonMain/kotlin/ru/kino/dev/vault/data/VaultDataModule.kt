@@ -50,6 +50,8 @@ import ru.kino.dev.vault.search.VaultSearch
 import ru.kino.dev.vault.security.SecurityEditor
 import ru.kino.dev.vault.security.SecurityRepository
 import ru.kino.dev.vault.sync.OtherDatabaseRepository
+import ru.kino.dev.vault.sync.SaveStatus
+import ru.kino.dev.vault.sync.VaultSync
 import ru.kino.dev.vault.trash.TrashEditor
 import ru.kino.dev.vault.trash.TrashRepository
 
@@ -88,6 +90,10 @@ val vaultDataModule = module {
 
     // One for the app: the editors and the lock wait for each other on it
     single { DatabaseGuard() }
+
+    // One for the app: the save sets it, the sync and the screens read it (pass-docs, Step 108)
+    single { SaveStatus() }
+    factory { VaultSync(get(), get(), get()) }
 
     single {
         val log = get<ErrorLog>()
