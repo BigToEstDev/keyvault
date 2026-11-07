@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
@@ -63,7 +64,8 @@ fun KeyFileChoice(
     ) { shown ->
         if (!shown) {
             if (attachable) {
-                TextButton(onClick = onAttach, enabled = enabled) {
+                // The height of the row with the file: the two fade into each other, nothing under them moves
+                TextButton(onClick = onAttach, enabled = enabled, modifier = Modifier.heightIn(min = ROW_HEIGHT)) {
                     Icon(imageVector = Icons.Outlined.Key, contentDescription = null)
                     Spacer(Modifier.size(8.dp))
                     Text(stringResource(Res.string.entry_key_file_add))
@@ -92,7 +94,7 @@ private fun AttachedKeyFile(
     }
     val textAlign = if (alignment == Alignment.CenterHorizontally) TextAlign.Center else TextAlign.Start
     Column(horizontalAlignment = alignment) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.heightIn(min = ROW_HEIGHT), verticalAlignment = Alignment.CenterVertically) {
             Icon(imageVector = Icons.Outlined.Key, contentDescription = null, tint = color)
             Spacer(Modifier.size(8.dp))
             Text(
@@ -105,7 +107,8 @@ private fun AttachedKeyFile(
             )
             // Unlinked by the small cross at its end - the name says what goes
             if (onRemove != null) {
-                IconButton(onClick = onRemove, enabled = enabled, modifier = Modifier.size(REMOVE_BUTTON)) {
+                // Of the standard size - the room a finger needs, and the height of the row
+                IconButton(onClick = onRemove, enabled = enabled) {
                     Icon(
                         imageVector = Icons.Filled.Cancel,
                         contentDescription = stringResource(Res.string.entry_key_file_remove),
@@ -133,5 +136,6 @@ private fun AttachedKeyFile(
     }
 }
 
-private val REMOVE_BUTTON = 32.dp
-private val REMOVE_ICON = 18.dp
+/** Both states - "Has a key file" and the file with its cross - the room of a tap: the switch does not jump. */
+private val ROW_HEIGHT = 48.dp
+private val REMOVE_ICON = 20.dp
