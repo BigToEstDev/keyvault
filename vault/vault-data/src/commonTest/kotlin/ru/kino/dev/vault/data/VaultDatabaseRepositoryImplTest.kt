@@ -23,18 +23,30 @@ class VaultDatabaseRepositoryImplTest {
     private val repository = VaultDatabaseRepositoryImpl(core, files, changes)
 
     @Test
-    fun `saving writes the bytes the core gave into the file`() = runTest {
+    fun `saving writes the bytes the core gave into the file, then takes them as the file`() = runTest {
         repository.save(DB)
 
         assertContentEquals(core.databaseBytes, files.contents[DB])
-        assertEquals(listOf("saveDatabase $DB", "writeReplacing $DB"), journal)
+        assertContentEquals(core.databaseBytes, core.checksumBytes[DB])
+        assertEquals(listOf("saveDatabase $DB", "writeReplacing $DB", "setFileChecksum $DB"), journal)
     }
 
     @Test
-    fun `a file that cannot be written fails the save`() = runTest {
+    fun `after its own save the file has not changed elsewhere`() = runTest {
+        core.changedElsewhere += DB
+
+        repository.save(DB)
+
+        assertFalse(repository.hasChangedElsewhere(DB))
+    }
+
+    @Test
+    fun `a file that cannot be written fails the save, its checksum left as it was`() = runTest {
         files.unreachable += DB
 
         expectFailure<DatabaseFileException> { repository.save(DB) }
+
+        assertFalse(DB in core.checksumBytes)
     }
 
     @Test

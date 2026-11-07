@@ -25,6 +25,9 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     /** Databases whose file no longer matches the checksum - written by somebody else. */
     val changedElsewhere = mutableSetOf<String>()
 
+    /** The bytes [setFileChecksum] took as the file, by dbKey. */
+    val checksumBytes = mutableMapOf<String, ByteArray>()
+
     /** The name a database opened or unlocked here reports from inside. */
     var databaseName = "Passwords"
 
@@ -296,6 +299,13 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         step("verifyFileChecksum", dbKey)
         bytesReceived = bytes.copyOf()
         if (dbKey in changedElsewhere) throw CoreException("DbFileContentChangeDetected", "changed: $dbKey")
+    }
+
+    override suspend fun setFileChecksum(dbKey: String, bytes: ByteArray) {
+        step("setFileChecksum", dbKey)
+        checksumBytes[dbKey] = bytes.copyOf()
+        // The file is what was written last - no longer somebody else's
+        changedElsewhere -= dbKey
     }
 
     override suspend fun mergeDatabase(dbKey: String, bytes: ByteArray): MergeSummary {
