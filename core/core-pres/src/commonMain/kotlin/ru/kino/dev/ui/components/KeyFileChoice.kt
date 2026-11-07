@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,7 +32,7 @@ import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.ui.theme.DISABLED_ALPHA
 
 /**
- * The key file next to a password: "Has a key file" while none is attached, then its name with a small cross to unlink.
+ * The key file next to a password: "Has a key file" while none is attached, then its name with a small cross in a circle to unlink.
  * The two fade into each other; a [problem] with the file opens out under its name, with the way to pick another
  * (pass-docs, Step 72, fix 4; Step 108).
  *
@@ -107,8 +107,10 @@ private fun AttachedKeyFile(
             if (onRemove != null) {
                 IconButton(onClick = onRemove, enabled = enabled, modifier = Modifier.size(REMOVE_BUTTON)) {
                     Icon(
-                        imageVector = Icons.Filled.Close,
+                        imageVector = Icons.Filled.Cancel,
                         contentDescription = stringResource(Res.string.entry_key_file_remove),
+                        // The accent, as the name of the database: it is what a tap does here; greyed out with the rest
+                        tint = if (enabled) MaterialTheme.colorScheme.primary else color,
                         modifier = Modifier.size(REMOVE_ICON),
                     )
                 }
