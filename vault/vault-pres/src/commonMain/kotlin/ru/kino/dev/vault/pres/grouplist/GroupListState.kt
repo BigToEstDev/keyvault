@@ -24,6 +24,8 @@ import ru.kino.dev.vault.group.GroupId
  * @param userNameHidden the database hides user names (pass-docs, Step 65): none in the list, whatever the
  * appearance says (pass-docs, Step 56, item 5)
  * @param message for the snackbar, until it takes it
+ * @param unsavedChangedElsewhere the root only: a change waits in memory after "Cancel" - the file was written
+ * elsewhere (pass-docs, Step 108)
  */
 data class GroupListState(
     val isRoot: Boolean = true,
@@ -42,6 +44,7 @@ data class GroupListState(
     val locking: Boolean = false,
     val userNameHidden: Boolean = false,
     val message: GroupListMessage? = null,
+    val unsavedChangedElsewhere: Boolean = false,
 ) {
     // Worked out once for every state, not on every read
     private val shown = (found ?: listed).let { filter.applyTo(it.groups, it.entries) }

@@ -37,8 +37,11 @@ class VaultSync(
      *
      * Throws [MergeFailure] when the file was written elsewhere and cannot be merged - `CredentialsChanged` above
      * all; the ui says so.
+     *
+     * @param onMerging told once the file is known to be written elsewhere, before the merge - seconds of key
+     * derivation; the check alone is quick and shows nothing
      */
-    suspend fun check(dbKey: String): MergeSummary? = guard.exclusive {
+    suspend fun check(dbKey: String, onMerging: suspend () -> Unit = {}): MergeSummary? = guard.exclusive {
         if (status.current(dbKey) != SaveState.Saved) return@exclusive null
         val changed = try {
             database.hasChangedElsewhere(dbKey)
@@ -47,7 +50,9 @@ class VaultSync(
         } catch (_: Exception) {
             false
         }
-        if (changed) mergeAndSave(dbKey) else null
+        if (!changed) return@exclusive null
+        onMerging()
+        mergeAndSave(dbKey)
     }
 
     // The save too, not the merge alone: what is ours and was not in their file is in memory only until written
