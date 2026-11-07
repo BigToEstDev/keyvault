@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,14 +32,14 @@ import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.ui.theme.DISABLED_ALPHA
 
 /**
- * The key file next to a password: "Has a key file" while none is attached, then its name with "Unlink" under it.
+ * The key file next to a password: "Has a key file" while none is attached, then its name with a small cross to unlink.
  * The two fade into each other; a [problem] with the file opens out under its name, with the way to pick another
  * (pass-docs, Step 72, fix 4; Step 108).
  *
  * @param keyFileName as the provider tells it; null - an attached file with no name to show
  * @param attachable "Has a key file" is offered - not on the locked screen, which opens with what was used
  * @param onAttach picks a key file - the first one, or another after a [problem]
- * @param onRemove unlinks it; null - it is not unlinked here
+ * @param onRemove unlinks it - the cross after the name; null - it is not unlinked here, no cross
  * @param enabled false while the database opens or a merge runs: the name and the buttons grey out
  * @param alignment centred on the sign-in screen, at the start in a dialog
  */
@@ -101,6 +103,16 @@ private fun AttachedKeyFile(
                 style = MaterialTheme.typography.bodyMedium,
                 color = color,
             )
+            // Unlinked by the small cross at its end - the name says what goes
+            if (onRemove != null) {
+                IconButton(onClick = onRemove, enabled = enabled, modifier = Modifier.size(REMOVE_BUTTON)) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(Res.string.entry_key_file_remove),
+                        modifier = Modifier.size(REMOVE_ICON),
+                    )
+                }
+            }
         }
         Reveal(problem) { text ->
             Column(horizontalAlignment = alignment) {
@@ -116,10 +128,8 @@ private fun AttachedKeyFile(
                 }
             }
         }
-        if (onRemove != null) {
-            TextButton(onClick = onRemove, enabled = enabled) {
-                Text(stringResource(Res.string.entry_key_file_remove))
-            }
-        }
     }
 }
+
+private val REMOVE_BUTTON = 32.dp
+private val REMOVE_ICON = 18.dp
