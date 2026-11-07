@@ -14,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import org.jetbrains.compose.resources.stringResource
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.MergeSummary
@@ -28,6 +27,7 @@ import ru.kino.dev.ui.components.GradientBackground
 import ru.kino.dev.ui.components.MessageDialog
 import ru.kino.dev.ui.files.DocumentKind
 import ru.kino.dev.ui.files.rememberOpenDocument
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.sync.OtherDatabaseKind
 import ru.kino.dev.vault.sync.counts
 
@@ -93,7 +93,10 @@ internal fun MergeScreen(
 
     // What was said comes first: the dialog of the credentials waits under it, to try again
     when (val message = state.message) {
-        null -> state.credentials?.let { processor.CredentialsDialog(it, pickKeyFile) }
+        null -> state.credentials?.let { dialog ->
+            val pickDatabase = if (dialog.kind == OtherDatabaseKind.Copy) pickCopy else pickImport
+            processor.CredentialsDialog(dialog, pickDatabase = pickDatabase, pickKeyFile = pickKeyFile)
+        }
         is MergeMessage.Done -> MessageDialog(
             title = stringResource(Res.string.sync_done_title),
             text = doneText(message.summary),

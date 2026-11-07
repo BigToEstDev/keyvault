@@ -41,7 +41,11 @@ class MergeProcessor(
         intent {
             if (state.credentials?.merging == true) return@intent
             val name = other.name(uri)
-            reduce { state.copy(credentials = CredentialsDialog(kind, uri, name), message = null) }
+            // Another file picked from the open dialog - its name tapped: what was typed stays, only the file changes
+            val dialog = state.credentials?.takeIf { it.kind == kind }
+                ?.copy(uri = uri, fileName = name, wrongCredentials = false)
+                ?: CredentialsDialog(kind, uri, name)
+            reduce { state.copy(credentials = dialog, message = null) }
         }
     }
 

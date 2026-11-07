@@ -454,9 +454,7 @@
     <string name="settings_sync_import_text">Все её группы и записи добавятся сюда</string>
     <string name="settings_sync_merge_confirm">Объединить</string>
     <string name="settings_sync_import_confirm">Импортировать</string>
-    <string name="settings_sync_password">Пароль той базы</string>
     <string name="settings_sync_credentials_hint">Её собственные пароль и key-файл: они могут отличаться от этой базы</string>
-    <string name="settings_sync_key_file_none">Нет</string>
     <string name="settings_sync_failed_not_same">Это другая база. Чтобы добавить её, используйте «Импорт из другой базы».</string>
     <string name="settings_sync_failed_same">Это копия этой базы. Используйте «Объединить с копией».</string>
 </resources>

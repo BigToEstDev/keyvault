@@ -41,6 +41,15 @@ class MergeProcessorTest {
     }
 
     @Test
+    fun `another file picked from the open dialog keeps what was typed`() = runTest {
+        val typed = copyDialog.copy(password = "pw", keyFileUri = KEY, keyFileName = "key.keyx", wrongCredentials = true)
+
+        val (state, _) = perform({ onDatabasePicked(OtherDatabaseKind.Copy, OTHER) }, initial = MergeState(credentials = typed))
+
+        assertEquals(typed.copy(uri = OTHER, fileName = null, wrongCredentials = false), state.credentials)
+    }
+
+    @Test
     fun `nothing typed - nothing to try`() = runTest {
         val (state, _) = perform({ onDatabasePicked(OtherDatabaseKind.Copy, FILE) }, { onConfirm() })
 
@@ -195,5 +204,6 @@ class MergeProcessorTest {
         const val DB = "content://docs/passwords.kdbx"
         const val FILE = "content://downloads/passwords-phone.kdbx"
         const val KEY = "content://downloads/key.keyx"
+        const val OTHER = "content://downloads/passwords-old.kdbx"
     }
 }

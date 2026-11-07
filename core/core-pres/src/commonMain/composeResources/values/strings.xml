@@ -450,9 +450,7 @@
     <string name="settings_sync_import_text">All its groups and entries are added here</string>
     <string name="settings_sync_merge_confirm">Merge</string>
     <string name="settings_sync_import_confirm">Import</string>
-    <string name="settings_sync_password">Password of that database</string>
     <string name="settings_sync_credentials_hint">Its own password and key file: they may differ from those of this database</string>
-    <string name="settings_sync_key_file_none">None</string>
     <string name="settings_sync_failed_not_same">This is another database. To bring it in, use Import another database.</string>
     <string name="settings_sync_failed_same">This is a copy of this database. Use Merge with a copy.</string>
 </resources>

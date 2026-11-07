@@ -13,43 +13,50 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
-import org.jetbrains.compose.resources.pluralStringResource
-import org.jetbrains.compose.resources.stringResource
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.pres.Res
 import ru.kino.dev.core.pres.action_cancel
-import ru.kino.dev.core.pres.action_remove
 import ru.kino.dev.core.pres.create_password_too_long
+import ru.kino.dev.core.pres.entry_database_fallback
+import ru.kino.dev.core.pres.entry_password
 import ru.kino.dev.core.pres.error_invalid_credentials
-import ru.kino.dev.core.pres.key_file_title
 import ru.kino.dev.core.pres.settings_sync_credentials_hint
 import ru.kino.dev.core.pres.settings_sync_import
 import ru.kino.dev.core.pres.settings_sync_import_confirm
-import ru.kino.dev.core.pres.settings_sync_key_file_none
 import ru.kino.dev.core.pres.settings_sync_merge
 import ru.kino.dev.core.pres.settings_sync_merge_confirm
-import ru.kino.dev.core.pres.settings_sync_password
 import ru.kino.dev.settings.pres.merge.CredentialsDialog
 import ru.kino.dev.settings.pres.merge.MergeActions
+import ru.kino.dev.ui.components.DatabaseNameLink
+import ru.kino.dev.ui.components.KeyFileChoice
 import ru.kino.dev.ui.components.PasswordField
-import ru.kino.dev.ui.components.PickerField
+import ru.kino.dev.ui.res.pluralStringResource
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.sync.OtherDatabaseKind
 
 /**
- * The password and the key file of the other database - its own, they may differ from those of this one (pass-docs,
- * Step 108). The file picked is named in the title's place under it. Wrong credentials are said under the field.
+ * The master password and the key file of the other database - its own, they may differ from those of this one
+ * (pass-docs, Step 108). As on the sign-in screen: the name of the file picked is a link - a tap picks another, what
+ * was typed stays; "Has a key file", then its name with "Unlink". Wrong credentials are said under the field.
  *
  * While [CredentialsDialog.merging] - the file read, the key derived, merged, written - the button shows progress and
  * nothing takes input; the dialog does not close.
  *
+ * @param pickDatabase launches the picker of a database for the same card; what is picked comes to
+ * [MergeActions.onDatabasePicked]
  * @param pickKeyFile launches the picker of a key file; what is picked comes to [MergeActions.onKeyFilePicked]
  */
 @Composable
-internal fun MergeActions.CredentialsDialog(dialog: CredentialsDialog, pickKeyFile: () -> Unit) {
+internal fun MergeActions.CredentialsDialog(
+    dialog: CredentialsDialog,
+    pickDatabase: () -> Unit,
+    pickKeyFile: () -> Unit,
+) {
     val focus = remember { FocusRequester() }
     val enabled = !dialog.merging
     val copy = dialog.kind == OtherDatabaseKind.Copy
@@ -59,17 +66,26 @@ internal fun MergeActions.CredentialsDialog(dialog: CredentialsDialog, pickKeyFi
         title = { Text(stringResource(if (copy) Res.string.settings_sync_merge else Res.string.settings_sync_import)) },
         text = {
             LaunchedEffect(Unit) { focus.requestFocus() }
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                dialog.fileName?.let { Text(it, style = MaterialTheme.typography.titleSmall) }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                DatabaseNameLink(
+                    name = dialog.fileName ?: stringResource(Res.string.entry_database_fallback),
+                    onChange = pickDatabase,
+                    enabled = enabled,
+                    style = MaterialTheme.typography.titleMedium,
+                )
                 Text(
                     stringResource(Res.string.settings_sync_credentials_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 PasswordField(
                     value = dialog.password,
                     onValueChange = { onPasswordChange(it) },
-                    label = stringResource(Res.string.settings_sync_password),
+                    label = stringResource(Res.string.entry_password),
                     visible = dialog.passwordVisible,
                     onToggleVisible = { onTogglePasswordVisible() },
                     error = when {
@@ -84,20 +100,13 @@ internal fun MergeActions.CredentialsDialog(dialog: CredentialsDialog, pickKeyFi
                     onImeAction = { if (dialog.canConfirm) onConfirm() },
                     modifier = Modifier.fillMaxWidth().focusRequester(focus),
                 )
-                PickerField(
-                    value = dialog.keyFileName
-                        ?: dialog.keyFileUri?.substringAfterLast('/')
-                        ?: stringResource(Res.string.settings_sync_key_file_none),
-                    label = stringResource(Res.string.key_file_title),
-                    onClick = pickKeyFile,
+                KeyFileChoice(
+                    attached = dialog.keyFileUri != null,
+                    keyFileName = dialog.keyFileName,
+                    onAttach = pickKeyFile,
+                    onRemove = { onRemoveKeyFile() },
                     enabled = enabled,
-                    modifier = Modifier.fillMaxWidth(),
                 )
-                if (dialog.keyFileUri != null) {
-                    TextButton(onClick = { onRemoveKeyFile() }, enabled = enabled) {
-                        Text(stringResource(Res.string.action_remove))
-                    }
-                }
             }
         },
         confirmButton = {
