@@ -39,6 +39,7 @@ import ru.kino.dev.ui.theme.DISABLED_ALPHA
  * @param onAttach picks a key file - the first one, or another after a [problem]
  * @param onRemove unlinks it; null - it is not unlinked here
  * @param enabled false while the database opens or a merge runs: the name and the buttons grey out
+ * @param alignment centred on the sign-in screen, at the start in a dialog
  */
 @Composable
 fun KeyFileChoice(
@@ -50,6 +51,7 @@ fun KeyFileChoice(
     attachable: Boolean = true,
     enabled: Boolean = true,
     problem: String? = null,
+    alignment: Alignment.Horizontal = Alignment.CenterHorizontally,
 ) {
     AnimatedContent(
         targetState = attached,
@@ -66,7 +68,7 @@ fun KeyFileChoice(
                 }
             }
         } else {
-            AttachedKeyFile(keyFileName, onAttach, onRemove, enabled, problem)
+            AttachedKeyFile(keyFileName, onAttach, onRemove, enabled, problem, alignment)
         }
     }
 }
@@ -78,6 +80,7 @@ private fun AttachedKeyFile(
     onRemove: (() -> Unit)?,
     enabled: Boolean,
     problem: String?,
+    alignment: Alignment.Horizontal,
 ) {
     // Greys out with the buttons under it while the database opens (pass-docs, Step 72, fix 3)
     val color = if (enabled) {
@@ -85,7 +88,8 @@ private fun AttachedKeyFile(
     } else {
         MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA)
     }
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    val textAlign = if (alignment == Alignment.CenterHorizontally) TextAlign.Center else TextAlign.Start
+    Column(horizontalAlignment = alignment) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(imageVector = Icons.Outlined.Key, contentDescription = null, tint = color)
             Spacer(Modifier.size(8.dp))
@@ -99,13 +103,13 @@ private fun AttachedKeyFile(
             )
         }
         Reveal(problem) { text ->
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(horizontalAlignment = alignment) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
-                    textAlign = TextAlign.Center,
+                    textAlign = textAlign,
                 )
                 TextButton(onClick = onAttach, enabled = enabled) {
                     Text(stringResource(Res.string.action_pick_another_key_file))

@@ -37,6 +37,8 @@ import ru.kino.dev.ui.components.KeyFileChoice
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.res.pluralStringResource
 import ru.kino.dev.ui.res.stringResource
+import ru.kino.dev.ui.theme.LayoutType
+import ru.kino.dev.ui.theme.LocalLayoutType
 import ru.kino.dev.vault.sync.OtherDatabaseKind
 
 /**
@@ -66,15 +68,16 @@ internal fun MergeActions.CredentialsDialog(
         title = { Text(stringResource(if (copy) Res.string.settings_sync_merge else Res.string.settings_sync_import)) },
         text = {
             LaunchedEffect(Unit) { focus.requestFocus() }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            // At the start, as a dialog reads; the sign-in screen is centred
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 DatabaseNameLink(
                     name = dialog.fileName ?: stringResource(Res.string.entry_database_fallback),
                     onChange = pickDatabase,
                     enabled = enabled,
                     style = MaterialTheme.typography.titleMedium,
+                    alignment = Alignment.Start,
+                    // A phone has no room to spare in a dialog, and the link says it is one
+                    hint = LocalLayoutType.current == LayoutType.Tablet,
                 )
                 Text(
                     stringResource(Res.string.settings_sync_credentials_hint),
@@ -106,6 +109,7 @@ internal fun MergeActions.CredentialsDialog(
                     onAttach = pickKeyFile,
                     onRemove = { onRemoveKeyFile() },
                     enabled = enabled,
+                    alignment = Alignment.Start,
                 )
             }
         },

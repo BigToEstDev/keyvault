@@ -22,6 +22,9 @@ import ru.kino.dev.ui.theme.DISABLED_ALPHA
  * The name of a database file: a link in the accent when a tap picks another file ([onChange]), with the hint under
  * it; otherwise in the accent, not a link. While [enabled] is false - the database opens, a merge runs - the link and
  * its hint grey out rather than go: what is under them does not jump (pass-docs, Step 72, fix 4; Step 108).
+ *
+ * @param alignment centred on the sign-in screen, at the start in a dialog
+ * @param hint the hint under a link - "tap the name to pick another file"; off where the link says enough
  */
 @Composable
 fun DatabaseNameLink(
@@ -30,26 +33,29 @@ fun DatabaseNameLink(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     style: TextStyle = MaterialTheme.typography.headlineSmall,
+    alignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    hint: Boolean = true,
 ) {
     val colors = MaterialTheme.colorScheme
     val disabled = colors.onSurface.copy(alpha = DISABLED_ALPHA)
     val changeable = onChange != null
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    val textAlign = if (alignment == Alignment.CenterHorizontally) TextAlign.Center else TextAlign.Start
+    Column(modifier = modifier, horizontalAlignment = alignment) {
         Text(
             text = name,
             style = style,
             color = if (changeable && !enabled) disabled else colors.primary,
             textDecoration = if (changeable) TextDecoration.Underline else null,
-            textAlign = TextAlign.Center,
+            textAlign = textAlign,
             modifier = if (onChange != null) Modifier.clickable(enabled = enabled, onClick = onChange) else Modifier,
         )
-        if (changeable) {
+        if (changeable && hint) {
             Spacer(Modifier.height(4.dp))
             Text(
                 text = stringResource(Res.string.entry_change_database_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = if (enabled) colors.onSurfaceVariant else disabled,
-                textAlign = TextAlign.Center,
+                textAlign = textAlign,
             )
         }
     }
