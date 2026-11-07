@@ -1,0 +1,131 @@
+package ru.kino.dev.vault.pres.sync
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
+import org.orbitmvi.orbit.compose.collectAsState
+import ru.kino.dev.core.MergeSummary
+import ru.kino.dev.core.pres.Res
+import ru.kino.dev.core.pres.action_cancel
+import ru.kino.dev.core.pres.action_synchronize
+import ru.kino.dev.core.pres.error_unexpected
+import ru.kino.dev.core.pres.sync_ask_text
+import ru.kino.dev.core.pres.sync_ask_title
+import ru.kino.dev.core.pres.sync_done_settings
+import ru.kino.dev.core.pres.sync_done_text
+import ru.kino.dev.core.pres.sync_done_title
+import ru.kino.dev.core.pres.sync_failed_credentials
+import ru.kino.dev.core.pres.sync_failed_damaged
+import ru.kino.dev.core.pres.sync_failed_not_same
+import ru.kino.dev.core.pres.sync_failed_not_saved
+import ru.kino.dev.core.pres.sync_failed_title
+import ru.kino.dev.core.pres.sync_failed_unreachable
+import ru.kino.dev.core.pres.sync_syncing
+import ru.kino.dev.ui.components.ConfirmDialog
+import ru.kino.dev.ui.components.MessageDialog
+
+/**
+ * The sync of the open database over the screens of `vault` (pass-docs, Step 108): its dialogs and, while a merge is
+ * under way, a quiet sign on top - the screens under it work on.
+ *
+ * Put by the app over `vault` for as long as it is shown; the processor is of the graph of `vault` - the caller gives
+ * that owner - so it lives from opening or unlocking to locking.
+ */
+@Composable
+fun VaultSyncHost(dbKey: String) {
+    val processor: SyncProcessor = koinViewModel { parametersOf(dbKey) }
+    val state by processor.collectAsState()
+
+    processor.SyncContent(state)
+}
+
+@Composable
+private fun SyncActions.SyncContent(state: SyncState) {
+    if (state.syncing) {
+        Box(modifier = Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
+            SyncingSign(modifier = Modifier.padding(top = 8.dp))
+        }
+    }
+
+    when (val dialog = state.dialog) {
+        null -> Unit
+        SyncDialog.Ask -> ConfirmDialog(
+            title = stringResource(Res.string.sync_ask_title),
+            text = stringResource(Res.string.sync_ask_text),
+            confirmText = stringResource(Res.string.action_synchronize),
+            dismissText = stringResource(Res.string.action_cancel),
+            onConfirm = ::onSynchronize,
+            onDismiss = ::onCancel,
+        )
+        is SyncDialog.Done -> MessageDialog(
+            title = stringResource(Res.string.sync_done_title),
+            text = doneText(dialog.summary),
+            onDismiss = ::onDismiss,
+        )
+        is SyncDialog.Failed -> MessageDialog(
+            title = stringResource(Res.string.sync_failed_title),
+            text = stringResource(dialog.problem.text),
+            onDismiss = ::onDismiss,
+        )
+    }
+}
+
+@Composable
+private fun SyncingSign(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 2.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+            Text(stringResource(Res.string.sync_syncing), style = MaterialTheme.typography.labelLarge)
+        }
+    }
+}
+
+/** Groups and entries together - what a person sees changed, not how the core counts it. */
+@Composable
+private fun doneText(summary: MergeSummary): String {
+    val added = summary.addedGroups + summary.addedEntries
+    val changed = summary.updatedGroups + summary.updatedEntries + summary.movedGroups + summary.movedEntries
+    val deleted = summary.deletedGroups + summary.deletedEntries
+    return if (added + changed + deleted == 0) {
+        stringResource(Res.string.sync_done_settings)
+    } else {
+        stringResource(Res.string.sync_done_text, added, changed, deleted)
+    }
+}
+
+private val SyncProblem.text: StringResource
+    get() = when (this) {
+        SyncProblem.CredentialsChanged -> Res.string.sync_failed_credentials
+        SyncProblem.NotSameDatabase -> Res.string.sync_failed_not_same
+        SyncProblem.Damaged -> Res.string.sync_failed_damaged
+        SyncProblem.Unreachable -> Res.string.sync_failed_unreachable
+        SyncProblem.NotSaved -> Res.string.sync_failed_not_saved
+        SyncProblem.Unexpected -> Res.string.error_unexpected
+    }
