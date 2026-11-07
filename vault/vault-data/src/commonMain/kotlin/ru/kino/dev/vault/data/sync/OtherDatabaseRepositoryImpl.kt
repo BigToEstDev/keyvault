@@ -1,5 +1,6 @@
 package ru.kino.dev.vault.data.sync
 
+import kotlinx.coroutines.CancellationException
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.DatabaseFileException
 import ru.kino.dev.core.DatabaseFiles
@@ -33,6 +34,14 @@ internal class OtherDatabaseRepositoryImpl(
         merge(dbKey, uri, credentials) { bytes, password, keyFile ->
             core.importDatabase(dbKey, bytes, password, keyFile)
         }
+
+    override suspend fun name(uri: String): String? = try {
+        documents.displayName(uri)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
+    }
 
     private suspend fun merge(
         dbKey: String,

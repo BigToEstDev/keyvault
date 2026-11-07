@@ -19,6 +19,18 @@ interface OtherDatabaseRepository {
 
     /** Brings the different database at [uri], opened with its own [credentials], into the open one, whole. */
     suspend fun importDatabase(dbKey: String, uri: String, credentials: OtherDatabaseCredentials): MergeSummary
+
+    /** The name of the file at [uri] to show, as the provider tells it; null when it does not. Never fails. */
+    suspend fun name(uri: String): String?
+}
+
+/** What the other file is to the open database - the person says it with the button they press. */
+enum class OtherDatabaseKind {
+    /** A copy of this very database, from another device - merged. */
+    Copy,
+
+    /** A different database - brought in whole. */
+    Import,
 }
 
 /**

@@ -38,10 +38,23 @@ class AppReturns {
     }
 }
 
+/**
+ * What came in, as a person sees it - groups and entries together; moved is changed (pass-docs, Step 108).
+ */
+data class MergeCounts(val added: Int, val changed: Int, val deleted: Int) {
+    val none: Boolean = added + changed + deleted == 0
+}
+
+val MergeSummary.counts: MergeCounts
+    get() = MergeCounts(
+        added = addedGroups + addedEntries,
+        changed = updatedGroups + updatedEntries + movedGroups + movedEntries,
+        deleted = deletedGroups + deletedEntries,
+    )
+
 /** Nothing came in from the file: no group, no entry, no setting of the database. */
 val MergeSummary.nothingChanged: Boolean
-    get() = addedGroups + updatedGroups + movedGroups + deletedGroups +
-        addedEntries + updatedEntries + movedEntries + deletedEntries == 0 && !metaDataChanged
+    get() = counts.none && !metaDataChanged
 
 // Never suspends the one who tells: nobody listening, the signal is gone - there was nobody to answer it
 private fun <T> signal() = MutableSharedFlow<T>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)

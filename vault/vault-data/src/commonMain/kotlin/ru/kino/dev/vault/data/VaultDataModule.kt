@@ -51,6 +51,7 @@ import ru.kino.dev.vault.security.SecurityEditor
 import ru.kino.dev.vault.security.SecurityRepository
 import ru.kino.dev.vault.sync.OtherDatabaseRepository
 import ru.kino.dev.vault.sync.AppReturns
+import ru.kino.dev.vault.sync.OtherDatabaseEditor
 import ru.kino.dev.vault.sync.SaveStatus
 import ru.kino.dev.vault.sync.SyncRequests
 import ru.kino.dev.vault.sync.VaultSync
@@ -99,6 +100,7 @@ val vaultDataModule = module {
     // The app tells it it came back; the quiet check of the sync listens
     single { AppReturns() }
     factory { VaultSync(get(), get(), get()) }
+    factory { OtherDatabaseEditor(get(), get(), get()) }
 
     single {
         val log = get<ErrorLog>()

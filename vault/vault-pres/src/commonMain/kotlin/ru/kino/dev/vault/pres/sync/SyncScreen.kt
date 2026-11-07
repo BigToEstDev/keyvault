@@ -41,6 +41,7 @@ import ru.kino.dev.core.pres.sync_failed_unreachable
 import ru.kino.dev.core.pres.sync_syncing
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.MessageDialog
+import ru.kino.dev.vault.sync.counts
 
 /**
  * The sync of the open database over the screens of `vault` (pass-docs, Step 108): its dialogs and, while a merge is
@@ -107,16 +108,14 @@ private fun SyncingSign(modifier: Modifier = Modifier) {
     }
 }
 
-/** Groups and entries together - what a person sees changed, not how the core counts it. */
+/** What came in, as a person sees it ([counts]); only the settings of the database - said so. */
 @Composable
 private fun doneText(summary: MergeSummary): String {
-    val added = summary.addedGroups + summary.addedEntries
-    val changed = summary.updatedGroups + summary.updatedEntries + summary.movedGroups + summary.movedEntries
-    val deleted = summary.deletedGroups + summary.deletedEntries
-    return if (added + changed + deleted == 0) {
+    val counts = summary.counts
+    return if (counts.none) {
         stringResource(Res.string.sync_done_settings)
     } else {
-        stringResource(Res.string.sync_done_text, added, changed, deleted)
+        stringResource(Res.string.sync_done_text, counts.added, counts.changed, counts.deleted)
     }
 }
 

@@ -14,6 +14,7 @@ import ru.kino.dev.settings.pres.presetread.PresetReadProcessor
 import ru.kino.dev.settings.pres.presets.PresetsProcessor
 import ru.kino.dev.settings.pres.presetscontainer.PresetsContainerProcessor
 import ru.kino.dev.settings.pres.privacy.PrivacyProcessor
+import ru.kino.dev.settings.pres.merge.MergeProcessor
 import ru.kino.dev.settings.pres.security.SecurityProcessor
 import ru.kino.dev.settings.pres.settings.SettingsProcessor
 import ru.kino.dev.settings.pres.settingscontainer.SettingsContainerProcessor
@@ -43,6 +44,7 @@ val settingsPresModule = module {
     viewModel { (dbKey: String, navigator: Navigator) ->
         SecurityProcessor(dbKey, get(), get(), get(), navigator, get())
     }
+    viewModel { (dbKey: String, navigator: Navigator) -> MergeProcessor(dbKey, get(), get(), navigator, get()) }
     viewModel { (presetId: String?, readSaved: Boolean, navigator: Navigator) ->
         PresetEditProcessor(presetId, readSaved, get(), get(), navigator, get())
     }
