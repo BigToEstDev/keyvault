@@ -331,6 +331,17 @@ internal class NativeCoreFfi : NativeCore {
         }
     }
 
+    override suspend fun setFileChecksum(dbKey: String, bytes: ByteArray) {
+        withContext(dispatcher) {
+            val answer = FfiBinaryCall.call(
+                command = FfiCommands.SET_DB_FILE_CHECKSUM,
+                argsJson = encode(DbKeyDto.serializer(), DbKeyDto(dbKey)),
+                input = bytes,
+            )
+            FfiEnvelope.unwrap(answer.envelope, DoneDto.serializer())
+        }
+    }
+
     override suspend fun mergeDatabase(dbKey: String, bytes: ByteArray): MergeSummary =
         withContext(dispatcher) {
             val answer = FfiBinaryCall.call(

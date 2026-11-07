@@ -28,6 +28,9 @@ internal class VaultDatabaseRepositoryImpl(
         // database, and the user cancelled a screen, not their data
         withContext(NonCancellable) {
             files.writeReplacing(dbKey, bytes)
+            // Only once the bytes are in the file are they the file: otherwise the next check would take our
+            // own save for somebody else's (pass-docs, Step 107)
+            core.setFileChecksum(dbKey, bytes)
         }
     }
 

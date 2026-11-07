@@ -166,12 +166,23 @@ interface NativeCore {
     suspend fun verifyFileChecksum(dbKey: String, bytes: ByteArray)
 
     /**
-     * Merges the database in [bytes] into the open one and reports what changed.
+     * Takes [bytes] - what was just written into the file - as the file now: [verifyFileChecksum] compares
+     * with them from here on (pass-docs, Step 107).
+     *
+     * The caller does it after the write succeeded, never before: a write that failed leaves the file as it
+     * was, and so its checksum. Without it the next check takes our own save for somebody else's.
+     */
+    suspend fun setFileChecksum(dbKey: String, bytes: ByteArray)
+
+    /**
+     * Merges [bytes] - a newer version of the open file, written elsewhere - into the open database and
+     * reports what changed; the checksum becomes the one of [bytes].
      *
      * Works on the stored composite key, so no password is asked for - which is also why a file
      * re-encrypted elsewhere comes back as `MergeFailedCredentialsChanged` rather than as a wrong
-     * password. There is no undo: the database in memory changes at once, and the file is only touched
-     * when the caller saves afterwards.
+     * password. Another database in the file is `NotSameDatabase`, nothing changed (pass-docs, Step 107).
+     * There is no undo: the database in memory changes at once, and the file is only touched when the
+     * caller saves afterwards.
      */
     suspend fun mergeDatabase(dbKey: String, bytes: ByteArray): MergeSummary
 
