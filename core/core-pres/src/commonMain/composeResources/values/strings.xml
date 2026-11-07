@@ -441,4 +441,18 @@
     <string name="sync_failed_not_saved">Synchronized, but the file was not written. The changes wait in memory until the next save.</string>
     <string name="sync_syncing">Synchronizing…</string>
     <string name="sync_unsaved_bar">Changes not saved: the file was changed elsewhere</string>
+    <string name="settings_sync">Synchronization</string>
+    <string name="settings_sync_text">Merge a copy, import another database</string>
+    <string name="settings_sync_hint">A file of the database from another device, or a copy the cloud left. The file is read once and not remembered.</string>
+    <string name="settings_sync_merge">Merge with a copy</string>
+    <string name="settings_sync_merge_text">The same database from another device: the changes of both stay</string>
+    <string name="settings_sync_import">Import another database</string>
+    <string name="settings_sync_import_text">All its groups and entries are added here</string>
+    <string name="settings_sync_merge_confirm">Merge</string>
+    <string name="settings_sync_import_confirm">Import</string>
+    <string name="settings_sync_password">Password of that database</string>
+    <string name="settings_sync_credentials_hint">Its own password and key file: they may differ from those of this database</string>
+    <string name="settings_sync_key_file_none">None</string>
+    <string name="settings_sync_failed_not_same">This is another database. To bring it in, use Import another database.</string>
+    <string name="settings_sync_failed_same">This is a copy of this database. Use Merge with a copy.</string>
 </resources>

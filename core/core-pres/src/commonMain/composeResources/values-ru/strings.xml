@@ -445,4 +445,18 @@
     <string name="sync_failed_not_saved">Синхронизировано, но файл не записан. Изменения ждут в памяти до следующего сохранения.</string>
     <string name="sync_syncing">Синхронизация…</string>
     <string name="sync_unsaved_bar">Изменения не сохранены: файл изменён снаружи</string>
+    <string name="settings_sync">Синхронизация</string>
+    <string name="settings_sync_text">Объединить копию, импорт другой базы</string>
+    <string name="settings_sync_hint">Файл базы с другого устройства или копия, оставленная облаком. Файл читается один раз и не запоминается.</string>
+    <string name="settings_sync_merge">Объединить с копией</string>
+    <string name="settings_sync_merge_text">Та же база с другого устройства: останутся изменения обеих</string>
+    <string name="settings_sync_import">Импорт из другой базы</string>
+    <string name="settings_sync_import_text">Все её группы и записи добавятся сюда</string>
+    <string name="settings_sync_merge_confirm">Объединить</string>
+    <string name="settings_sync_import_confirm">Импортировать</string>
+    <string name="settings_sync_password">Пароль той базы</string>
+    <string name="settings_sync_credentials_hint">Её собственные пароль и key-файл: они могут отличаться от этой базы</string>
+    <string name="settings_sync_key_file_none">Нет</string>
+    <string name="settings_sync_failed_not_same">Это другая база. Чтобы добавить её, используйте «Импорт из другой базы».</string>
+    <string name="settings_sync_failed_same">Это копия этой базы. Используйте «Объединить с копией».</string>
 </resources>

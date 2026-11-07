@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.ui.graphics.vector.ImageVector
 import org.jetbrains.compose.resources.StringResource
 import ru.kino.dev.core.pres.*
@@ -32,4 +33,5 @@ enum class SettingsItem(
     File(SettingsSection.Database, Icons.Filled.Description, Res.string.settings_file, Res.string.settings_file_text),
     Entries(SettingsSection.Database, Icons.AutoMirrored.Filled.ListAlt, Res.string.settings_entries, Res.string.settings_entries_text),
     Security(SettingsSection.Database, Icons.Filled.Key, Res.string.settings_security, Res.string.settings_security_text),
+    Sync(SettingsSection.Database, Icons.Filled.Sync, Res.string.settings_sync, Res.string.settings_sync_text),
 }

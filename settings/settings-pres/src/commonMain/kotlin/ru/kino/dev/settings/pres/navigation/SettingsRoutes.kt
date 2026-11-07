@@ -30,6 +30,10 @@ internal data class EntriesRoute(val dbKey: String)
 @Serializable
 internal data class SecurityRoute(val dbKey: String)
 
+/** Another database file brought into [dbKey]: a copy merged, a different database imported (pass-docs, Step 108). */
+@Serializable
+internal data class MergeRoute(val dbKey: String)
+
 /** The presets: whether they are used, the list of those of one's own (pass-docs, Step 62). */
 @Serializable
 internal data object PresetsRoute
@@ -50,4 +54,5 @@ internal fun SettingsItem.route(dbKey: String): Any = when (this) {
     SettingsItem.File -> FileRoute(dbKey)
     SettingsItem.Entries -> EntriesRoute(dbKey)
     SettingsItem.Security -> SecurityRoute(dbKey)
+    SettingsItem.Sync -> MergeRoute(dbKey)
 }
