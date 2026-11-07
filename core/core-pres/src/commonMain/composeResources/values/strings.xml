@@ -422,6 +422,7 @@
     <string name="entry_attachment_not_saved">Could not save the file</string>
     <string name="entry_attachment_too_large">The file is larger than %1$s</string>
     <string name="entry_attachment_not_read">Could not read the file</string>
+    <string name="entry_attachment_not_added">File not added</string>
     <string name="settings_attachments_group">Attachments</string>
     <string name="settings_attachments_hint">Limits on adding a file</string>
     <string name="settings_attachment_max_size">Largest attachment</string>

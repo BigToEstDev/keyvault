@@ -41,6 +41,7 @@ import ru.kino.dev.ui.components.PhoneField
 import ru.kino.dev.ui.components.PickerField
 import ru.kino.dev.ui.components.SaveFab
 import ru.kino.dev.ui.components.SecondaryButton
+import ru.kino.dev.ui.components.MessageDialog
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.components.TextField
 import ru.kino.dev.ui.components.VisibilityToggle
@@ -99,16 +100,29 @@ internal fun EntryEditScreen(
     }
 
     val limit = fileSizeText(ATTACHMENT_MAX_BYTES.toLong())
+    // A file not added is a dialog with "OK", not a snackbar (pass-docs, `CLAUDE.md`); the rest - snackbars for now
+    // (`plan/todo/app/other/snackbars-to-dialogs.md`)
     val message = state.message?.let {
         when (it) {
             EntryEditMessage.LoadFailed -> stringResource(Res.string.entry_message_load_failed)
             EntryEditMessage.NotSaved -> stringResource(Res.string.message_file_not_saved)
             EntryEditMessage.Unexpected -> stringResource(Res.string.error_unexpected)
-            EntryEditMessage.AttachmentTooLarge -> stringResource(Res.string.entry_attachment_too_large, limit)
-            EntryEditMessage.AttachmentNotRead -> stringResource(Res.string.entry_attachment_not_read)
+            EntryEditMessage.AttachmentTooLarge, EntryEditMessage.AttachmentNotRead -> null
         }
     }
     SnackbarMessage(message, snackbar) { processor.onMessageShown() }
+    val attachmentProblem = when (state.message) {
+        EntryEditMessage.AttachmentTooLarge -> stringResource(Res.string.entry_attachment_too_large, limit)
+        EntryEditMessage.AttachmentNotRead -> stringResource(Res.string.entry_attachment_not_read)
+        else -> null
+    }
+    attachmentProblem?.let { text ->
+        MessageDialog(
+            title = stringResource(Res.string.entry_attachment_not_added),
+            text = text,
+            onDismiss = processor::onMessageShown,
+        )
+    }
 
     GradientBackground {
         Scaffold(
