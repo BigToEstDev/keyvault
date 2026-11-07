@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.orbitmvi.orbit.compose.collectAsState
@@ -41,6 +40,7 @@ import ru.kino.dev.core.pres.sync_failed_unreachable
 import ru.kino.dev.core.pres.sync_syncing
 import ru.kino.dev.ui.components.ConfirmDialog
 import ru.kino.dev.ui.components.MessageDialog
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.sync.counts
 
 /**

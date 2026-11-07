@@ -4,19 +4,12 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Key
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -25,15 +18,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.ui.components.DatabaseNameLink
+import ru.kino.dev.ui.components.KeyFileChoice
 import ru.kino.dev.ui.components.PasswordField
 import ru.kino.dev.ui.components.PrimaryButton
 import ru.kino.dev.ui.components.Reveal
 import ru.kino.dev.ui.components.SecondaryButton
 import ru.kino.dev.ui.res.stringResource
-import ru.kino.dev.ui.theme.DISABLED_ALPHA
 import ru.kino.dev.welcome.pres.common.BiometricNotice
 import ru.kino.dev.welcome.pres.common.EntryProblem
 import ru.kino.dev.welcome.pres.common.PasswordEntry
@@ -106,25 +99,7 @@ internal fun PasswordEntryActions.EntryForm(entry: PasswordEntry, submitText: St
  */
 @Composable
 internal fun PasswordEntryActions.DatabaseName(name: String, changeable: Boolean, enabled: Boolean) {
-    val colors = MaterialTheme.colorScheme
-    val disabled = colors.onSurface.copy(alpha = DISABLED_ALPHA)
-    Text(
-        text = name,
-        style = MaterialTheme.typography.headlineSmall,
-        color = if (changeable && !enabled) disabled else colors.primary,
-        textDecoration = if (changeable) TextDecoration.Underline else null,
-        textAlign = TextAlign.Center,
-        modifier = if (changeable) Modifier.clickable(enabled = enabled, onClick = ::onChangeDatabase) else Modifier,
-    )
-    if (changeable) {
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = stringResource(Res.string.entry_change_database_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = if (enabled) colors.onSurfaceVariant else disabled,
-            textAlign = TextAlign.Center,
-        )
-    }
+    DatabaseNameLink(name = name, onChange = if (changeable) ::onChangeDatabase else null, enabled = enabled)
 }
 
 @Composable
@@ -200,72 +175,19 @@ internal fun PasswordEntryActions.BiometricSignInRow(entry: PasswordEntry) {
  */
 @Composable
 internal fun PasswordEntryActions.KeyFileRow(entry: PasswordEntry, changeable: Boolean) {
-    AnimatedContent(
-        targetState = entry,
-        contentKey = { it.keyFileUri != null },
-        transitionSpec = { fadeIn() togetherWith fadeOut() },
-        label = "key file",
-    ) { shown ->
-        if (shown.keyFileUri == null) {
-            if (changeable) {
-                TextButton(onClick = ::onAttachKeyFile, enabled = !shown.busy) {
-                    Icon(imageVector = Icons.Outlined.Key, contentDescription = null)
-                    Spacer(Modifier.size(8.dp))
-                    Text(stringResource(Res.string.entry_key_file_add))
-                }
-            }
-        } else {
-            AttachedKeyFile(entry = shown, changeable = changeable)
-        }
-    }
-}
-
-@Composable
-private fun PasswordEntryActions.AttachedKeyFile(entry: PasswordEntry, changeable: Boolean) {
-    // Greys out with the buttons under it while the database opens (pass-docs, Step 72, fix 3)
-    val color = if (entry.busy) {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA)
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Outlined.Key,
-                contentDescription = null,
-                tint = color,
-            )
-            Spacer(Modifier.size(8.dp))
-            Text(
-                text = stringResource(
-                    Res.string.entry_key_file_name,
-                    entry.keyFileName ?: stringResource(Res.string.entry_key_file_unnamed),
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = color,
-            )
-        }
-        Reveal(entry.problem.takeIf { it.isAboutKeyFile }) { problem ->
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Spacer(Modifier.height(4.dp))
-                ErrorText(
-                    when (problem) {
-                        is EntryProblem.KeyFileTooLarge ->
-                            stringResource(Res.string.error_key_file_too_large, problem.maxMebibytes.toInt())
-                        else -> stringResource(Res.string.error_key_file_unreachable)
-                    },
-                )
-                TextButton(onClick = ::onAttachKeyFile, enabled = !entry.busy) {
-                    Text(stringResource(Res.string.action_pick_another_key_file))
-                }
-            }
-        }
-        if (changeable) {
-            TextButton(onClick = ::onRemoveKeyFile, enabled = !entry.busy) {
-                Text(stringResource(Res.string.entry_key_file_remove))
-            }
-        }
-    }
+    KeyFileChoice(
+        attached = entry.keyFileUri != null,
+        keyFileName = entry.keyFileName,
+        onAttach = ::onAttachKeyFile,
+        onRemove = if (changeable) ::onRemoveKeyFile else null,
+        attachable = changeable,
+        enabled = !entry.busy,
+        problem = when (val problem = entry.problem.takeIf { it.isAboutKeyFile }) {
+            null -> null
+            is EntryProblem.KeyFileTooLarge -> stringResource(Res.string.error_key_file_too_large, problem.maxMebibytes.toInt())
+            else -> stringResource(Res.string.error_key_file_unreachable)
+        },
+    )
 }
 
 /** A button, not a link: it is the way out when the remembered database is gone. */

@@ -4,9 +4,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import org.jetbrains.compose.resources.stringResource
 import ru.kino.dev.core.pres.Res
 import ru.kino.dev.core.pres.action_ok
+import ru.kino.dev.ui.res.stringResource
 
 /**
  * Something said to the person - what came out, what failed - closed by "OK" (pass-docs, `CLAUDE.md`: no snackbars,
