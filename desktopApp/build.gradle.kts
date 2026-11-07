@@ -20,6 +20,8 @@ dependencies {
     implementation(projects.core.coreData)
     implementation(projects.core.corePres)
     implementation(projects.settings.settingsDomain)
+    // Told the window is shown again - the quiet check of the sync listens (pass-docs, Step 108)
+    implementation(projects.vault.vaultDomain)
     implementation(libs.koin.core)
 
     implementation(compose.desktop.currentOs)

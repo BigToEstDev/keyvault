@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -21,10 +24,12 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import ru.kino.dev.pane.LayoutChangeEffect
 import ru.kino.dev.settings.pres.navigation.settingsGraph
 import ru.kino.dev.vault.lock.AutoLock
 import ru.kino.dev.vault.pres.navigation.vaultGraph
+import ru.kino.dev.vault.pres.sync.VaultSyncHost
 import ru.kino.dev.welcome.pres.navigation.welcomeGraph
 import ru.kino.dev.welcome.pres.start.WelcomeStart
 
@@ -84,6 +89,15 @@ fun AppNavHost(navigator: AppNavigator, autoLock: AutoLock, start: WelcomeStart)
         ) {
             welcomeGraph(navController, start)
             vaultGraph { settingsGraph() }
+        }
+        // The sync of the open database over all the screens of `vault`, its processor of the graph: from opening or
+        // unlocking to locking (pass-docs, Step 108). Not under the lock
+        if (!covering && current?.isInVault() == true) {
+            val graph = remember(current) { navController.getBackStackEntry<VaultGraph>() }
+            val dbKey = remember(graph) { navController.getBackStackEntry<VaultRootRoute>().toRoute<VaultRootRoute>().dbKey }
+            CompositionLocalProvider(LocalViewModelStoreOwner provides graph) {
+                VaultSyncHost(dbKey)
+            }
         }
         // While the lock is on its way `vault` is not to be seen - the locked screen is, once it is up
         if (covering && current?.isInVault() == true) {

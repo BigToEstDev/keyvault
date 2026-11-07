@@ -78,4 +78,10 @@ interface GroupListActions {
 
     /** Lock the database now, not waiting for the timer - the lock button (pass-docs, Step 59). */
     fun onLock()
+
+    /**
+     * "Synchronize" on the bar of the root - a change waits in memory after "Cancel", the file was written elsewhere
+     * (pass-docs, Step 108).
+     */
+    fun onSynchronize()
 }

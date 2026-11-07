@@ -14,6 +14,7 @@ import ru.kino.dev.vault.pres.entryversion.EntryVersionArgs
 import ru.kino.dev.vault.pres.entryversion.EntryVersionProcessor
 import ru.kino.dev.vault.pres.grouplist.GroupListArgs
 import ru.kino.dev.vault.pres.grouplist.GroupListProcessor
+import ru.kino.dev.vault.pres.sync.SyncProcessor
 import ru.kino.dev.vault.pres.trash.TrashProcessor
 import ru.kino.dev.vault.pres.trashcontainer.TrashContainerProcessor
 import ru.kino.dev.vault.pres.trashentry.TrashEntryArgs
@@ -29,11 +30,16 @@ val vaultPresModule = module {
     viewModel { (dbKey: String) -> VaultContainerProcessor(dbKey, get(), get(), get()) }
     viewModel { (dbKey: String) -> TrashContainerProcessor(dbKey, get(), get()) }
 
+    // Over all the screens of `vault`, for as long as it is shown (pass-docs, Step 108)
+    viewModel { (dbKey: String) -> SyncProcessor(dbKey, get(), get(), get(), get(), get()) }
+
     viewModel { (args: GroupListArgs, navigator: Navigator) ->
         GroupListProcessor(
             dbKey = args.dbKey,
             groupId = args.groupId,
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            saveStatus = get(),
+            syncRequests = get(),
             navigator = navigator,
             log = get(),
         )

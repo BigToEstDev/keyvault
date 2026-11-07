@@ -7,6 +7,7 @@ import ru.kino.dev.settings.pres.appearance.AppearanceScreen
 import ru.kino.dev.settings.pres.entries.EntriesScreen
 import ru.kino.dev.settings.pres.file.FileScreen
 import ru.kino.dev.settings.pres.lock.LockScreen
+import ru.kino.dev.settings.pres.merge.MergeScreen
 import ru.kino.dev.settings.pres.privacy.PrivacyScreen
 import ru.kino.dev.settings.pres.security.SecurityScreen
 import ru.kino.dev.settings.pres.settings.SettingsItem
@@ -56,6 +57,7 @@ private fun SettingsPage(dbKey: String, item: SettingsItem) {
         SettingsItem.File -> FileScreen(dbKey = dbKey, canGoBack = false)
         SettingsItem.Entries -> EntriesScreen(dbKey = dbKey, canGoBack = false)
         SettingsItem.Security -> SecurityScreen(dbKey = dbKey, canGoBack = false)
+        SettingsItem.Sync -> MergeScreen(dbKey = dbKey, canGoBack = false)
         // Their own container, over this one: never a page here
         SettingsItem.Presets -> Unit
     }

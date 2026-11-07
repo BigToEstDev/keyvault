@@ -22,6 +22,7 @@ import ru.kino.dev.app.App
 import ru.kino.dev.di.appModules
 import ru.kino.dev.di.coreDataModule
 import ru.kino.dev.settings.lock.InactivityTimer
+import ru.kino.dev.vault.sync.AppReturns
 import ru.kino.dev.ui.components.appIcon
 import ru.kino.dev.ui.files.LocalPickerParent
 
@@ -34,6 +35,8 @@ fun main() {
     val koin = startKoin { modules(appModules + coreDataModule) }.koin
     // Told what the app sees; `vault` listens to it (pass-docs, Step 59, Step 89)
     val timer = koin.get<InactivityTimer>()
+    // Coming back - a file written elsewhere meanwhile is merged quietly (pass-docs, Step 108)
+    val returns = koin.get<AppReturns>()
 
     application {
         val windowState = rememberWindowState(
@@ -45,7 +48,12 @@ fun main() {
         // leaving: the secret copied is taken to another window
         LaunchedEffect(windowState) {
             snapshotFlow { windowState.isMinimized }.collect { minimized ->
-                if (minimized) timer.wentAway() else timer.cameBack()
+                if (minimized) {
+                    timer.wentAway()
+                } else {
+                    timer.cameBack()
+                    returns.cameBack()
+                }
             }
         }
         LaunchedEffect(timer) { SleepWatch(timer).watch() }

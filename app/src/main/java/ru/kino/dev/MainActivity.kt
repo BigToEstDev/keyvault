@@ -20,6 +20,7 @@ import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.settings.pres.theme.AppThemeHolder
 import ru.kino.dev.settings.privacy.PrivacySettingsRepository
 import ru.kino.dev.ui.theme.LocaleResources
+import ru.kino.dev.vault.sync.AppReturns
 import ru.kino.dev.welcome.pres.start.WelcomeStartResolver
 
 /**
@@ -30,6 +31,7 @@ class MainActivity : FragmentActivity() {
 
     // Told what the app sees; `vault` listens to it (pass-docs, Step 59)
     private val timer: InactivityTimer by inject()
+    private val returns: AppReturns by inject()
 
     private val privacy: PrivacySettingsRepository by inject()
 
@@ -94,6 +96,8 @@ class MainActivity : FragmentActivity() {
     override fun onStart() {
         super.onStart()
         timer.cameBack()
+        // After the lock had its say: a file written elsewhere meanwhile is merged quietly (pass-docs, Step 108)
+        returns.cameBack()
     }
 
     // Put away or the screen off - leaving, which may lock at once (pass-docs, Step 59). Not a turn of the

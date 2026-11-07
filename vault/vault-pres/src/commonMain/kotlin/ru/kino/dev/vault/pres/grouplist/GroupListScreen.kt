@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -13,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.SyncProblem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -29,6 +31,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import org.jetbrains.compose.resources.StringResource
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.core.pres.action_synchronize
+import ru.kino.dev.core.pres.sync_unsaved_bar
 import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.ui.components.BackHandler
 import ru.kino.dev.ui.components.EmptySearchIllustration
@@ -36,6 +40,7 @@ import ru.kino.dev.ui.components.EmptyState
 import ru.kino.dev.ui.components.ExpandableFab
 import ru.kino.dev.ui.components.FabItem
 import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.components.NoticeBar
 import ru.kino.dev.ui.components.SnackbarMessage
 import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.pres.common.LockFab
@@ -90,7 +95,19 @@ internal fun GroupListScreen(
             // The fab is not in the scaffold (see below), so the snackbar is lifted over it here
             snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = FAB_CLEARANCE)) },
         ) { padding ->
-            processor.GroupListContent(state = state, padding = padding)
+            // The root says a change waits in memory after "Cancel" - over the list, for as long as it waits
+            // (pass-docs, Step 108)
+            Column(modifier = Modifier.padding(padding)) {
+                if (state.unsavedChangedElsewhere) {
+                    NoticeBar(
+                        text = stringResource(Res.string.sync_unsaved_bar),
+                        actionText = stringResource(Res.string.action_synchronize),
+                        onAction = processor::onSynchronize,
+                        icon = Icons.Filled.SyncProblem,
+                    )
+                }
+                processor.GroupListContent(state = state, padding = PaddingValues())
+            }
         }
 
         // In the opposite corner from "add" (pass-docs, Step 59)

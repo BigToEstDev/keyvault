@@ -11,7 +11,11 @@ import ru.kino.dev.core.MergeSummary
  */
 interface VaultDatabaseRepository {
 
-    /** Writes the open database back into its file. */
+    /**
+     * Writes the open database back into its file - unless the file was written elsewhere since: then nothing is
+     * written, the change waits in memory and [ru.kino.dev.vault.sync.SaveStatus] says
+     * [ru.kino.dev.vault.sync.SaveState.ChangedElsewhere] - the sync asks, not the caller (pass-docs, Step 108).
+     */
     suspend fun save(dbKey: String)
 
     /**
@@ -37,6 +41,9 @@ interface VaultDatabaseRepository {
      *
      * In memory only: the merged database still has to be saved, and until it is, the file is the way the
      * other side left it. There is no undo, so the ui asks before calling this, not after.
+     *
+     * Throws [ru.kino.dev.vault.sync.MergeFailure] and nothing else: `CredentialsChanged` for a file saved
+     * elsewhere with other credentials, `NotSameDatabase` for another database in the file (pass-docs, Step 108).
      */
     suspend fun merge(dbKey: String): MergeSummary
 }

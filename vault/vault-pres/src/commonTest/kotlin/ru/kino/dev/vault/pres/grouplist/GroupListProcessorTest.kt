@@ -5,6 +5,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -49,6 +51,8 @@ import ru.kino.dev.vault.pres.testing.RecordingLog
 import ru.kino.dev.vault.pres.testing.recordNavigation
 import ru.kino.dev.vault.pres.testing.runEach
 import ru.kino.dev.vault.search.VaultSearch
+import ru.kino.dev.vault.sync.SaveStatus
+import ru.kino.dev.vault.sync.SyncRequests
 import ru.kino.dev.vault.trash.FakeTrashRepository
 import ru.kino.dev.vault.trash.TrashFailure
 
@@ -110,6 +114,8 @@ class GroupListProcessorTest {
     private val entrySettings = FakeEntrySettingsRepository()
     private val trash = FakeTrashRepository()
     private val changes = FakeVaultChanges()
+    private val saveStatus = SaveStatus()
+    private val syncRequests = SyncRequests()
     private lateinit var autoLock: AutoLock
 
     @Test
@@ -885,6 +891,32 @@ class GroupListProcessorTest {
         }
     }
 
+    @Test
+    fun `a change waiting after Cancel is said on the root, and Synchronize asks the sync`() = runTest {
+        val (navigator, _) = recordNavigation()
+        val processor = processor(groupId = null, navigator)
+        val asked = async(start = CoroutineStart.UNDISPATCHED) { syncRequests.requests.first() }
+
+        processor.testWithInternalState(this) {
+            runOnCreate()
+            saveStatus.changedElsewhere(DB)
+            assertTrue(awaitInternalState().unsavedChangedElsewhere)
+
+            containerHost.onSynchronize()
+            assertEquals(DB, asked.await())
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
+    @Test
+    fun `a group below the root says nothing of what waits`() = runTest {
+        saveStatus.changedElsewhere(DB)
+
+        val (state, _) = perform(groupId = "work", { onLoad() })
+
+        assertFalse(state.unsavedChangedElsewhere)
+    }
+
     private suspend fun TestScope.perform(
         groupId: String?,
         vararg actions: GroupListActions.() -> Unit,
@@ -914,6 +946,8 @@ class GroupListProcessorTest {
         entrySettings,
         trash,
         changes,
+        saveStatus,
+        syncRequests,
         navigator,
         log,
     )

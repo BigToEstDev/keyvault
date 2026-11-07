@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import java.io.IOException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.syntax.Syntax
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -41,6 +44,9 @@ import ru.kino.dev.vault.pres.navigation.EntryEditRoute
 import ru.kino.dev.vault.pres.navigation.EntryReadRoute
 import ru.kino.dev.vault.pres.navigation.GroupRoute
 import ru.kino.dev.vault.search.VaultSearch
+import ru.kino.dev.vault.sync.SaveState
+import ru.kino.dev.vault.sync.SaveStatus
+import ru.kino.dev.vault.sync.SyncRequests
 import ru.kino.dev.vault.trash.TrashRepository
 import ru.kino.dev.vault.trash.deletesToBin
 
@@ -77,6 +83,8 @@ class GroupListProcessor(
     private val entrySettings: EntrySettingsRepository,
     private val trash: TrashRepository,
     private val changes: VaultChanges,
+    private val saveStatus: SaveStatus,
+    private val syncRequests: SyncRequests,
     private val navigator: Navigator,
     private val log: ErrorLog,
 ) : ViewModel(), OrbitContainerHost<GroupListState, GroupListState, Nothing>, GroupListActions {
@@ -84,8 +92,20 @@ class GroupListProcessor(
     private val gate = ChangeGate(changes, dbKey)
 
     override val container = orbitContainer<GroupListState, Nothing>(GroupListState(isRoot = groupId == null)) {
-        // While the screen is shown: a change made beside it is read again
-        repeatOnSubscription { gate.elsewhere.collect { load() } }
+        // While the screen is shown: a change made beside it is read again; the root says what waits in memory
+        repeatOnSubscription {
+            merge(
+                gate.elsewhere.map { Shown.Changed },
+                saveStatus.state(dbKey).filter { groupId == null }.map { Shown.Status(it) },
+            ).collect { shown ->
+                when (shown) {
+                    Shown.Changed -> load()
+                    is Shown.Status -> reduce {
+                        state.copy(unsavedChangedElsewhere = shown.state == SaveState.ChangedElsewhere)
+                    }
+                }
+            }
+        }
     }
 
     /** The search waiting for the typing to stop, or for its answer; the next letter cancels it. */
@@ -254,6 +274,10 @@ class GroupListProcessor(
 
     override fun onLock() {
         intent { lock() }
+    }
+
+    override fun onSynchronize() {
+        intent { if (state.unsavedChangedElsewhere) syncRequests.synchronize(dbKey) }
     }
 
     private suspend fun Syntax<GroupListState, Nothing>.askDelete(id: GroupId, name: String) {
@@ -507,4 +531,11 @@ private fun GroupDialog.refused(problem: NameProblem): GroupDialog = when (this)
     is GroupDialog.Rename -> copy(saving = false, problem = problem)
     is GroupDialog.Delete -> copy(saving = false)
     is GroupDialog.DeleteEntry -> copy(saving = false)
+}
+
+/** What the screen hears while shown. */
+private sealed interface Shown {
+    data object Changed : Shown
+
+    data class Status(val state: SaveState) : Shown
 }
