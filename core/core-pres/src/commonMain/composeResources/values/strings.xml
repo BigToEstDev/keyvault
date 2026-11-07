@@ -431,7 +431,7 @@
     <string name="sync_ask_title">File changed elsewhere</string>
     <string name="sync_ask_text">The database file was saved elsewhere — on another device or in another app. Synchronize to keep both their changes and yours. Your change is not saved yet.</string>
     <string name="sync_done_title">Synchronized</string>
-    <string name="sync_done_text">Added: %1$d, changed: %2$d, deleted: %3$d</string>
+    <string name="sync_done_text">Added: %1$d\nChanged: %2$d\nDeleted: %3$d</string>
     <string name="sync_done_settings">The settings of the database were updated</string>
     <string name="sync_failed_title">Not synchronized</string>
     <string name="sync_failed_credentials">The file was saved with another password or key file. Merge it in Settings, Synchronization, with its password.</string>

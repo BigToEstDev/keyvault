@@ -435,7 +435,7 @@
     <string name="sync_ask_title">Файл изменён снаружи</string>
     <string name="sync_ask_text">Файл базы сохранили в другом месте — на другом устройстве или в другом приложении. Синхронизируйте, чтобы остались и чужие изменения, и ваши. Ваше изменение пока не записано.</string>
     <string name="sync_done_title">Синхронизировано</string>
-    <string name="sync_done_text">Добавлено: %1$d, изменено: %2$d, удалено: %3$d</string>
+    <string name="sync_done_text">Добавлено: %1$d\nИзменено: %2$d\nУдалено: %3$d</string>
     <string name="sync_done_settings">Обновлены настройки базы</string>
     <string name="sync_failed_title">Синхронизация не выполнена</string>
     <string name="sync_failed_credentials">Файл сохранили с другим паролем или key-файлом. Объедините его в Настройки, Синхронизация, указав его пароль.</string>
