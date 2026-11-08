@@ -93,6 +93,8 @@ internal object FfiCommands {
     // different database imported - two buttons, the core refuses the wrong one (pass-docs, Step 106)
     const val MERGE_COPY = "merge_kdbx_from_bytes"
     const val IMPORT_DATABASE = "import_kdbx_from_bytes"
+    // A copy merged both ways: the bytes of the copy's file come back, encrypted for it (pass-docs, Step 109)
+    const val MERGE_COPY_BOTH_WAYS = "merge_kdbx_both_ways"
 
     // The recycle bin holds entries only (pass-docs, Step 69): its list and search, restoring to a group, and
     // the irreversible steps - removing picked entries and emptying it
@@ -161,6 +163,7 @@ internal object FfiCommands {
         MERGE_DATABASE,
         MERGE_COPY,
         IMPORT_DATABASE,
+        MERGE_COPY_BOTH_WAYS,
         TRASH_ENTRIES,
         SEARCH_TRASH,
         RESTORE_ENTRIES,

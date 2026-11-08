@@ -206,6 +206,22 @@ interface NativeCore {
     ): MergeSummary
 
     /**
+     * Merges another copy of the open database both ways (pass-docs, Step 109): into the open one, as [mergeCopy]
+     * does, and back - [MergedBothWays.copy] is the merged database encrypted for the copy's file, with its own
+     * credentials, cipher and KDF, for the caller to write over that file. Comes even when nothing changed here:
+     * the copy may still lack what the open database has.
+     *
+     * The checksum of the open file stays; the caller saves the open database as usual, then writes the copy.
+     * Throws as [mergeCopy] does - `NotSameDatabase`, `InvalidCredentials`, `DbLocked`; no bytes then.
+     */
+    suspend fun mergeCopyBothWays(
+        dbKey: String,
+        bytes: ByteArray,
+        password: String?,
+        keyFile: KeyFile? = null,
+    ): MergedBothWays
+
+    /**
      * Brings a different database into the open one, whole - the same as [mergeCopy] otherwise.
      *
      * Throws [CoreException] with kind `SameDatabase` for a copy of the open database - nothing changed, that
@@ -473,6 +489,15 @@ data class MergeSummary(
     val metaDataChanged: Boolean,
     val mergeDone: Boolean,
     val differentDatabases: Boolean,
+)
+
+/**
+ * A copy merged both ways ([NativeCore.mergeCopyBothWays]): what changed in the open database, and the bytes of
+ * the copy's file - encrypted, nothing to wipe. Not a data class: an array has no value equality.
+ */
+class MergedBothWays(
+    val summary: MergeSummary,
+    val copy: ByteArray,
 )
 
 /**

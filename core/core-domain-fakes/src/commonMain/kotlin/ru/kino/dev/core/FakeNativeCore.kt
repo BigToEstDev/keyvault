@@ -54,8 +54,8 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
     var created: NewDatabase? = null
 
     /**
-     * The bytes handed to [openDatabase], [verifyFileChecksum], [mergeDatabase], [mergeCopy] and
-     * [importDatabase], last one wins.
+     * The bytes handed to [openDatabase], [verifyFileChecksum], [mergeDatabase], [mergeCopy],
+     * [mergeCopyBothWays] and [importDatabase], last one wins.
      */
     var bytesReceived: ByteArray? = null
 
@@ -327,6 +327,17 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         password: String?,
         keyFile: KeyFile?,
     ): MergeSummary = mergeOther("importDatabase", dbKey, bytes, password, keyFile)
+
+    /** The bytes of the copy's file [mergeCopyBothWays] hands back. */
+    var mergedCopyBytes: ByteArray = byteArrayOf(9, 9, 9)
+
+    override suspend fun mergeCopyBothWays(
+        dbKey: String,
+        bytes: ByteArray,
+        password: String?,
+        keyFile: KeyFile?,
+    ): MergedBothWays =
+        MergedBothWays(mergeOther("mergeCopyBothWays", dbKey, bytes, password, keyFile), mergedCopyBytes.copyOf())
 
     private fun mergeOther(
         method: String,
