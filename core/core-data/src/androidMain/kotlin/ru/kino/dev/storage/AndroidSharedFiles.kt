@@ -50,6 +50,6 @@ internal class AndroidSharedFiles(
         /** After the package name - `android:authorities` of the provider in the manifest of `:app`. */
         const val AUTHORITY_SUFFIX = ".files"
 
-        const val FALLBACK_NAME = "database.kdbx"
+        const val FALLBACK_NAME = "keyvault.kdbx"
     }
 }

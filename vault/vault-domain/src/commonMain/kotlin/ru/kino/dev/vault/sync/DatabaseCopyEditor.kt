@@ -65,6 +65,6 @@ class DatabaseCopyEditor(
 
     companion object {
         /** The name of a copy whose file the provider gives no name. */
-        const val FALLBACK_NAME = "database.kdbx"
+        const val FALLBACK_NAME = "keyvault.kdbx"
     }
 }
