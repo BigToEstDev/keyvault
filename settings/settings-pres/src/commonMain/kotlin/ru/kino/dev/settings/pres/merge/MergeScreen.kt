@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.SaveAlt
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material3.Scaffold
@@ -16,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.pres.*
@@ -25,9 +28,12 @@ import ru.kino.dev.settings.pres.settings.components.SettingsCard
 import ru.kino.dev.settings.pres.settings.components.SettingsSectionHeader
 import ru.kino.dev.ui.components.BackTopBar
 import ru.kino.dev.ui.components.GradientBackground
+import ru.kino.dev.ui.components.LoadingDialog
 import ru.kino.dev.ui.components.MessageDialog
 import ru.kino.dev.ui.files.DocumentKind
+import ru.kino.dev.ui.files.rememberCreateDocument
 import ru.kino.dev.ui.files.rememberOpenDocument
+import ru.kino.dev.ui.files.rememberShareFile
 import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.vault.sync.OtherDatabaseKind
 import ru.kino.dev.vault.sync.counts
@@ -35,7 +41,8 @@ import ru.kino.dev.vault.sync.counts
 /**
  * The page `Синхронизация` of the database (pass-docs, Step 108, 110): "Merge with a copy", "Synchronize with a copy"
  * (both ways - the copy's file written too) and "Import another database" - each picks a `.kdbx`, asks its
- * credentials, merges and writes. The same on a phone and in the container of a wide window - a list of three cards.
+ * credentials, merges and writes. Below them "Save a copy" and "Send" - android only - the file of the database as it is
+ * (Step 111). The same on a phone and in the container of a wide window - a list of cards.
  *
  * @param canGoBack false - a page of the container of a wide window: its tab closes it, not "back" (Step 101)
  */
@@ -52,6 +59,14 @@ internal fun MergeScreen(
         rememberOpenDocument(DocumentKind.Database) { processor.onDatabasePicked(OtherDatabaseKind.CopyBothWays, it) }
     val pickImport = rememberOpenDocument(DocumentKind.Database) { processor.onDatabasePicked(OtherDatabaseKind.Import, it) }
     val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.onKeyFilePicked(it) }
+    val pickCopyTarget = rememberCreateDocument(DocumentKind.Database) { processor.onCopyTargetPicked(it) }
+    val share = rememberShareFile()
+    processor.collectSideEffect { effect ->
+        when (effect) {
+            is MergeSideEffect.PickCopyTarget -> pickCopyTarget(effect.name)
+            is MergeSideEffect.Share -> share(effect.uri)
+        }
+    }
 
     GradientBackground {
         Scaffold(
@@ -98,9 +113,29 @@ internal fun MergeScreen(
                         onClick = pickImport,
                     )
                 }
+                item(key = "save-copy") {
+                    SettingsCard(
+                        icon = Icons.Filled.SaveAlt,
+                        title = stringResource(Res.string.settings_sync_save_copy),
+                        text = stringResource(Res.string.settings_sync_save_copy_text),
+                        onClick = processor::onSaveCopy,
+                    )
+                }
+                if (state.shareAvailable) {
+                    item(key = "share") {
+                        SettingsCard(
+                            icon = Icons.Filled.Share,
+                            title = stringResource(Res.string.settings_sync_share),
+                            text = stringResource(Res.string.settings_sync_share_text),
+                            onClick = processor::onShare,
+                        )
+                    }
+                }
             }
         }
     }
+
+    if (state.copying) LoadingDialog(stringResource(Res.string.settings_sync_copying))
 
     // What was said comes first: the dialog of the credentials waits under it, to try again
     when (val message = state.message) {
@@ -120,6 +155,16 @@ internal fun MergeScreen(
         is MergeMessage.Failed -> MessageDialog(
             title = stringResource(Res.string.sync_failed_title),
             text = failedText(message.problem),
+            onDismiss = processor::onDismissMessage,
+        )
+        MergeMessage.CopySaved -> MessageDialog(
+            title = stringResource(Res.string.settings_sync_copy_saved_title),
+            text = stringResource(Res.string.settings_sync_copy_saved_text),
+            onDismiss = processor::onDismissMessage,
+        )
+        is MergeMessage.CopyFailed -> MessageDialog(
+            title = stringResource(Res.string.settings_sync_copy_failed_title),
+            text = copyFailedText(message.problem),
             onDismiss = processor::onDismissMessage,
         )
     }
@@ -150,6 +195,15 @@ private fun failedText(problem: MergeProblem): String = when (problem) {
     MergeProblem.CopyNotWrittenChangedElsewhere ->
         stringResource(Res.string.settings_sync_failed_copy_changed_elsewhere)
     MergeProblem.Unexpected -> stringResource(Res.string.error_unexpected)
+}
+
+@Composable
+private fun copyFailedText(problem: CopyProblem): String = when (problem) {
+    CopyProblem.OwnFile -> stringResource(Res.string.settings_sync_failed_own_file)
+    CopyProblem.NotSaved -> stringResource(Res.string.settings_sync_copy_failed_not_saved)
+    CopyProblem.ChangedElsewhere -> stringResource(Res.string.settings_sync_copy_failed_changed_elsewhere)
+    CopyProblem.Unreadable -> stringResource(Res.string.error_database_unreachable)
+    CopyProblem.NotWritten -> stringResource(Res.string.settings_sync_copy_failed_not_written)
 }
 
 private const val MEBIBYTE = 1024L * 1024

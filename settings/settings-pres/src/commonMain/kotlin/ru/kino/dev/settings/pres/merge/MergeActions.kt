@@ -2,7 +2,7 @@ package ru.kino.dev.settings.pres.merge
 
 import ru.kino.dev.vault.sync.OtherDatabaseKind
 
-/** What the page `Синхронизация` asks of its processor (pass-docs, Step 108). */
+/** What the page `Синхронизация` asks of its processor (pass-docs, Step 108, 111). */
 interface MergeActions {
 
     fun onBack()
@@ -31,4 +31,13 @@ interface MergeActions {
 
     /** "OK" in the dialog of what came in, or of what failed. */
     fun onDismissMessage()
+
+    /** "Save a copy": the file to save the copy into is asked, the name of this database's file suggested (Step 111). */
+    fun onSaveCopy()
+
+    /** The file picked to save the copy into. */
+    fun onCopyTargetPicked(uri: String)
+
+    /** "Send": the file of this database handed to the share menu of the system - android only (Step 111). */
+    fun onShare()
 }

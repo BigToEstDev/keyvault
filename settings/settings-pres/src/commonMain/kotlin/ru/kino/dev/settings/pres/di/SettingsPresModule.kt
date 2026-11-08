@@ -44,7 +44,7 @@ val settingsPresModule = module {
     viewModel { (dbKey: String, navigator: Navigator) ->
         SecurityProcessor(dbKey, get(), get(), get(), navigator, get())
     }
-    viewModel { (dbKey: String, navigator: Navigator) -> MergeProcessor(dbKey, get(), get(), navigator, get()) }
+    viewModel { (dbKey: String, navigator: Navigator) -> MergeProcessor(dbKey, get(), get(), get(), navigator, get()) }
     viewModel { (presetId: String?, readSaved: Boolean, navigator: Navigator) ->
         PresetEditProcessor(presetId, readSaved, get(), get(), navigator, get())
     }
