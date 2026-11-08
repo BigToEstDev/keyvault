@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.SyncAlt
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -32,9 +33,9 @@ import ru.kino.dev.vault.sync.OtherDatabaseKind
 import ru.kino.dev.vault.sync.counts
 
 /**
- * The page `Синхронизация` of the database (pass-docs, Step 108): "Merge with a copy" and "Import another database" -
- * each picks a `.kdbx`, asks its credentials, merges and writes. The same on a phone and in the container of a wide
- * window - a list of two cards.
+ * The page `Синхронизация` of the database (pass-docs, Step 108, 110): "Merge with a copy", "Synchronize with a copy"
+ * (both ways - the copy's file written too) and "Import another database" - each picks a `.kdbx`, asks its
+ * credentials, merges and writes. The same on a phone and in the container of a wide window - a list of three cards.
  *
  * @param canGoBack false - a page of the container of a wide window: its tab closes it, not "back" (Step 101)
  */
@@ -47,6 +48,8 @@ internal fun MergeScreen(
     val state by processor.collectAsState()
 
     val pickCopy = rememberOpenDocument(DocumentKind.Database) { processor.onDatabasePicked(OtherDatabaseKind.Copy, it) }
+    val pickBothWays =
+        rememberOpenDocument(DocumentKind.Database) { processor.onDatabasePicked(OtherDatabaseKind.CopyBothWays, it) }
     val pickImport = rememberOpenDocument(DocumentKind.Database) { processor.onDatabasePicked(OtherDatabaseKind.Import, it) }
     val pickKeyFile = rememberOpenDocument(DocumentKind.KeyFile) { processor.onKeyFilePicked(it) }
 
@@ -79,6 +82,14 @@ internal fun MergeScreen(
                         onClick = pickCopy,
                     )
                 }
+                item(key = "both-ways") {
+                    SettingsCard(
+                        icon = Icons.Filled.Sync,
+                        title = stringResource(Res.string.settings_sync_both_ways),
+                        text = stringResource(Res.string.settings_sync_both_ways_text),
+                        onClick = pickBothWays,
+                    )
+                }
                 item(key = "import") {
                     SettingsCard(
                         icon = Icons.Filled.FileDownload,
@@ -94,7 +105,11 @@ internal fun MergeScreen(
     // What was said comes first: the dialog of the credentials waits under it, to try again
     when (val message = state.message) {
         null -> state.credentials?.let { dialog ->
-            val pickDatabase = if (dialog.kind == OtherDatabaseKind.Copy) pickCopy else pickImport
+            val pickDatabase = when (dialog.kind) {
+                OtherDatabaseKind.Copy -> pickCopy
+                OtherDatabaseKind.CopyBothWays -> pickBothWays
+                OtherDatabaseKind.Import -> pickImport
+            }
             processor.CredentialsDialog(dialog, pickDatabase = pickDatabase, pickKeyFile = pickKeyFile)
         }
         is MergeMessage.Done -> MessageDialog(

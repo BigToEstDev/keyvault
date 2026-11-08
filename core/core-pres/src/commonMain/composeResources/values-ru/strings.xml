@@ -451,6 +451,8 @@
     <string name="settings_sync_hint">Файл базы с другого устройства или копия, оставленная облаком. Файл читается один раз и не запоминается.</string>
     <string name="settings_sync_merge">Объединить с копией</string>
     <string name="settings_sync_merge_text">Та же база с другого устройства: останутся изменения обеих</string>
+    <string name="settings_sync_both_ways">Синхронизировать с копией</string>
+    <string name="settings_sync_both_ways_text">Объединяет с копией и записывает итог в оба файла — у копии остаётся её пароль</string>
     <string name="settings_sync_import">Импорт из другой базы</string>
     <string name="settings_sync_import_text">Все её группы и записи добавятся сюда</string>
     <string name="settings_sync_merge_confirm">Объединить</string>

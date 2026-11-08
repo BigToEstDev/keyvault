@@ -447,6 +447,8 @@
     <string name="settings_sync_hint">A file of the database from another device, or a copy the cloud left. The file is read once and not remembered.</string>
     <string name="settings_sync_merge">Merge with a copy</string>
     <string name="settings_sync_merge_text">The same database from another device: the changes of both stay</string>
+    <string name="settings_sync_both_ways">Synchronize with a copy</string>
+    <string name="settings_sync_both_ways_text">Merges with the copy and writes the result into both files — the copy keeps its own password</string>
     <string name="settings_sync_import">Import another database</string>
     <string name="settings_sync_import_text">All its groups and entries are added here</string>
     <string name="settings_sync_merge_confirm">Merge</string>
