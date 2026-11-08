@@ -454,4 +454,7 @@
     <string name="settings_sync_credentials_hint">Its own password and key file: they may differ from those of this database</string>
     <string name="settings_sync_failed_not_same">This is another database. To bring it in, use Import another database.</string>
     <string name="settings_sync_failed_same">This is a copy of this database. Use Merge with a copy.</string>
+    <string name="settings_sync_failed_own_file">This is the file of the open database.</string>
+    <string name="settings_sync_failed_copy_not_written">The copy is not written: the result is saved in this database only.</string>
+    <string name="settings_sync_failed_copy_changed_elsewhere">The copy is not written: the file of this database was changed elsewhere. Synchronize and try again.</string>
 </resources>

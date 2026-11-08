@@ -130,6 +130,10 @@ private fun failedText(problem: MergeProblem): String = when (problem) {
         stringResource(Res.string.error_key_file_too_large, (CredentialLimits.KEY_FILE_MAX_SIZE / MEBIBYTE).toInt())
     MergeProblem.KeyFileUnreachable -> stringResource(Res.string.error_key_file_unreachable)
     MergeProblem.NotSaved -> stringResource(Res.string.sync_failed_not_saved)
+    MergeProblem.OwnFile -> stringResource(Res.string.settings_sync_failed_own_file)
+    MergeProblem.CopyNotWritten -> stringResource(Res.string.settings_sync_failed_copy_not_written)
+    MergeProblem.CopyNotWrittenChangedElsewhere ->
+        stringResource(Res.string.settings_sync_failed_copy_changed_elsewhere)
     MergeProblem.Unexpected -> stringResource(Res.string.error_unexpected)
 }
 

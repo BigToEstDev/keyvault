@@ -43,6 +43,22 @@ sealed class MergeFailure(message: String, cause: Throwable? = null) : Exception
     /** Merged in memory, but writing the file failed: the merge waits there for the next save. */
     class NotSaved(cause: Throwable? = null) : MergeFailure("Merged but not written to the file", cause)
 
+    /** The file picked is the file of the open database itself - refused before anything changes (Step 110). */
+    class OwnFile : MergeFailure("The file is the one of the open database")
+
+    /**
+     * Both ways (Step 110): merged and written into this database's file, but the copy's file could not be written -
+     * no access to write, gone, the provider failed. The result is in this database only.
+     */
+    class CopyNotWritten(cause: Throwable? = null) : MergeFailure("The copy is not written", cause)
+
+    /**
+     * Both ways (Step 110): merged, but the file of this database was written elsewhere meanwhile - the save did not
+     * write it, the sync of `vault` asks. The copy is left as it was: it is written after this database, never before.
+     */
+    class CopyNotWrittenChangedElsewhere :
+        MergeFailure("The copy is not written: the file of this database was changed elsewhere")
+
     /** The core refused for another reason - the database closed meanwhile, or a bug. The cause to the log. */
     class Unexpected(cause: Throwable? = null) : MergeFailure("Something went wrong", cause)
 }

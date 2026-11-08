@@ -458,4 +458,7 @@
     <string name="settings_sync_credentials_hint">Её собственные пароль и key-файл: они могут отличаться от этой базы</string>
     <string name="settings_sync_failed_not_same">Это другая база. Чтобы добавить её, используйте «Импорт из другой базы».</string>
     <string name="settings_sync_failed_same">Это копия этой базы. Используйте «Объединить с копией».</string>
+    <string name="settings_sync_failed_own_file">Это файл открытой базы.</string>
+    <string name="settings_sync_failed_copy_not_written">Копия не записана — итог сохранён только в этой базе.</string>
+    <string name="settings_sync_failed_copy_changed_elsewhere">Копия не записана: файл этой базы изменён снаружи — синхронизируйте и повторите.</string>
 </resources>

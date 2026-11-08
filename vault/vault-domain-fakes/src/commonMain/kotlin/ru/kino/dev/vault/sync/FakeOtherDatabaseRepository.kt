@@ -1,11 +1,12 @@
 package ru.kino.dev.vault.sync
 
 import ru.kino.dev.core.MergeSummary
+import ru.kino.dev.core.MergedBothWays
 
 /** Another database file: what was asked of it, and a failure to throw instead. */
 class FakeOtherDatabaseRepository : OtherDatabaseRepository {
 
-    /** `"<mergeCopy|importDatabase> <uri>"` for every merge asked. */
+    /** `"<mergeCopy|mergeCopyBothWays|importDatabase|writeCopy> <uri>"` for every merge and write asked. */
     val calls = mutableListOf<String>()
 
     /** The credentials of the last merge. */
@@ -33,6 +34,27 @@ class FakeOtherDatabaseRepository : OtherDatabaseRepository {
 
     override suspend fun mergeCopy(dbKey: String, uri: String, credentials: OtherDatabaseCredentials): MergeSummary =
         merge("mergeCopy", uri, credentials)
+
+    /** The bytes of the copy's file [mergeCopyBothWays] hands back. */
+    var copyBytes = byteArrayOf(7, 7, 7)
+
+    /** The bytes the last [writeCopy] wrote. */
+    var copyWritten: ByteArray? = null
+
+    /** Thrown by [writeCopy] instead of writing. */
+    var writeFailure: MergeFailure? = null
+
+    override suspend fun mergeCopyBothWays(
+        dbKey: String,
+        uri: String,
+        credentials: OtherDatabaseCredentials,
+    ): MergedBothWays = MergedBothWays(merge("mergeCopyBothWays", uri, credentials), copyBytes.copyOf())
+
+    override suspend fun writeCopy(uri: String, bytes: ByteArray) {
+        calls += "writeCopy $uri"
+        writeFailure?.let { throw it }
+        copyWritten = bytes.copyOf()
+    }
 
     override suspend fun importDatabase(dbKey: String, uri: String, credentials: OtherDatabaseCredentials): MergeSummary =
         merge("importDatabase", uri, credentials)

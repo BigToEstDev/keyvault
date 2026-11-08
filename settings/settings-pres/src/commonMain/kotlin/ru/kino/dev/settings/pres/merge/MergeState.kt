@@ -4,7 +4,7 @@ import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.vault.sync.OtherDatabaseKind
 
 /**
- * The page `Синхронизация` (pass-docs, Step 108): two cards, then for the file picked - the dialog of its credentials,
+ * The page `Синхронизация` (pass-docs, Step 108, 110): three cards, then for the file picked - the dialog of its credentials,
  * then what came in or what failed.
  */
 data class MergeState(
@@ -70,6 +70,15 @@ enum class MergeProblem {
 
     /** Merged, but the file of this database is not written: the merge waits in memory. */
     NotSaved,
+
+    /** The file picked is the file of this database (Step 110). */
+    OwnFile,
+
+    /** Both ways: merged and written here, the copy's file not written. */
+    CopyNotWritten,
+
+    /** Both ways: the file of this database was changed elsewhere - not written, the copy left as it was. */
+    CopyNotWrittenChangedElsewhere,
 
     Unexpected,
 }

@@ -137,6 +137,43 @@ class OtherDatabaseRepositoryImplTest {
         }
     }
 
+    @Test
+    fun `both ways the copy is merged with its own password and its bytes come back`() = runTest {
+        core.mergedCopyBytes = byteArrayOf(5, 5)
+
+        val merged = repository.mergeCopyBothWays(DB, COPY, OtherDatabaseCredentials("copy password", null))
+
+        assertEquals(core.mergeSummary, merged.summary)
+        assertContentEquals(byteArrayOf(5, 5), merged.copy)
+        assertContentEquals(byteArrayOf(4, 2), core.bytesReceived)
+        assertEquals("copy password", core.passwordReceived)
+        assertTrue("mergeCopyBothWays $DB" in journal)
+    }
+
+    @Test
+    fun `both ways a refusal of the core is a merge failure`() = runTest {
+        core.failures["mergeCopyBothWays"] = CoreException("NotSameDatabase", "another")
+
+        expectFailure<MergeFailure.NotSameDatabase> {
+            repository.mergeCopyBothWays(DB, COPY, OtherDatabaseCredentials("pw", null))
+        }
+    }
+
+    @Test
+    fun `the copy is written over the file picked, whole`() = runTest {
+        repository.writeCopy(COPY, byteArrayOf(1, 2, 3))
+
+        assertContentEquals(byteArrayOf(1, 2, 3), files.contents[COPY])
+    }
+
+    @Test
+    fun `a copy that cannot be written is not written`() = runTest {
+        files.unwritable += COPY
+
+        expectFailure<MergeFailure.CopyNotWritten> { repository.writeCopy(COPY, byteArrayOf(1)) }
+        assertContentEquals(byteArrayOf(4, 2), files.contents[COPY])
+    }
+
     private companion object {
         const val DB = "content://docs/passwords.kdbx"
         const val COPY = "content://downloads/passwords-phone.kdbx"

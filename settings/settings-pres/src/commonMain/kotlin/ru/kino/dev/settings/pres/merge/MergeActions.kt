@@ -7,7 +7,10 @@ interface MergeActions {
 
     fun onBack()
 
-    /** The file picked on the card of [kind] - "Merge with a copy" or "Import another database". */
+    /**
+     * The file picked on the card of [kind] - "Merge with a copy", "Synchronize with a copy" (both ways) or "Import
+     * another database".
+     */
     fun onDatabasePicked(kind: OtherDatabaseKind, uri: String)
 
     /** Typed into the password of the other database. */
