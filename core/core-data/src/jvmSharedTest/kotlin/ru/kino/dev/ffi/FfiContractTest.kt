@@ -155,6 +155,7 @@ class FfiContractTest {
         assertKeysMatch(FfiCommands.MERGE_DATABASE, MergeResultDto.serializer())
         assertKeysMatch(FfiCommands.MERGE_COPY, MergeResultDto.serializer())
         assertKeysMatch(FfiCommands.IMPORT_DATABASE, MergeResultDto.serializer())
+        assertKeysMatch(FfiCommands.MERGE_COPY_BOTH_WAYS, MergeResultDto.serializer())
     }
 
     @Test

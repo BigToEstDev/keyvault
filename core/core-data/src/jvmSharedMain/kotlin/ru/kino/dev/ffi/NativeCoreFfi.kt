@@ -28,6 +28,7 @@ import ru.kino.dev.core.HistoryVersionData
 import ru.kino.dev.core.KdbxVersion
 import ru.kino.dev.core.KeyFile
 import ru.kino.dev.core.MergeSummary
+import ru.kino.dev.core.MergedBothWays
 import ru.kino.dev.core.NativeCore
 import ru.kino.dev.core.NewAttachmentData
 import ru.kino.dev.core.NewDatabase
@@ -357,29 +358,38 @@ internal class NativeCoreFfi : NativeCore {
         bytes: ByteArray,
         password: String?,
         keyFile: KeyFile?,
-    ): MergeSummary = mergeOther(FfiCommands.MERGE_COPY, dbKey, bytes, password, keyFile)
+    ): MergeSummary = mergeOther(FfiCommands.MERGE_COPY, dbKey, bytes, password, keyFile).summary
 
     override suspend fun importDatabase(
         dbKey: String,
         bytes: ByteArray,
         password: String?,
         keyFile: KeyFile?,
-    ): MergeSummary = mergeOther(FfiCommands.IMPORT_DATABASE, dbKey, bytes, password, keyFile)
+    ): MergeSummary = mergeOther(FfiCommands.IMPORT_DATABASE, dbKey, bytes, password, keyFile).summary
 
+    override suspend fun mergeCopyBothWays(
+        dbKey: String,
+        bytes: ByteArray,
+        password: String?,
+        keyFile: KeyFile?,
+    ): MergedBothWays = mergeOther(FfiCommands.MERGE_COPY_BOTH_WAYS, dbKey, bytes, password, keyFile)
+
+    /** The merge [command] of another file; the bytes the core hands back - only both ways - come beside it. */
     private suspend fun mergeOther(
         command: String,
         dbKey: String,
         bytes: ByteArray,
         password: String?,
         keyFile: KeyFile?,
-    ): MergeSummary = withContext(dispatcher) {
+    ): MergedBothWays = withContext(dispatcher) {
         val args = OtherDatabaseDto(dbKey = dbKey, password = password, keyFile = keyFile?.toDto())
         val answer = FfiBinaryCall.call(
             command = command,
             argsJson = encode(OtherDatabaseDto.serializer(), args),
             input = bytes,
         )
-        FfiEnvelope.unwrap(answer.envelope, MergeResultDto.serializer()).toDomain()
+        val summary = FfiEnvelope.unwrap(answer.envelope, MergeResultDto.serializer()).toDomain()
+        MergedBothWays(summary, answer.payload)
     }
 
     override suspend fun generatePassword(options: PasswordOptions): String = withContext(dispatcher) {
