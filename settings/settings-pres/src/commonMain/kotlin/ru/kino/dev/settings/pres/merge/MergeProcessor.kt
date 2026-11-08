@@ -17,7 +17,8 @@ import ru.kino.dev.vault.sync.OtherDatabaseRepository
 
 /**
  * The page `Синхронизация` of the database [dbKey] (pass-docs, Step 108): another file brought in - a copy of this
- * database merged, a different database imported, each on its own card. The file is picked, its credentials typed -
+ * database merged, merged both ways (Step 110 - the result written into the copy's file too), a different database
+ * imported, each on its own card. The file of this database itself is refused when picked. The file is picked, its credentials typed -
  * its own, they may differ - and [OtherDatabaseEditor] merges and writes; what came in is said in a dialog.
  *
  * The core checks the file is what the card says before anything changes: the wrong card is said, and the way to
@@ -40,6 +41,8 @@ class MergeProcessor(
     override fun onDatabasePicked(kind: OtherDatabaseKind, uri: String) {
         intent {
             if (state.credentials?.merging == true) return@intent
+            // The file of this database itself: said at once, before its credentials are typed (Step 110)
+            if (uri == dbKey) return@intent reduce { state.copy(message = MergeMessage.Failed(MergeProblem.OwnFile)) }
             val name = other.name(uri)
             // Another file picked from the open dialog - its name tapped: what was typed stays, only the file changes
             val dialog = state.credentials?.takeIf { it.kind == kind }
@@ -122,13 +125,16 @@ class MergeProcessor(
             is MergeFailure.KeyFileTooLarge -> MergeProblem.KeyFileTooLarge
             is MergeFailure.KeyFileUnreadable -> MergeProblem.KeyFileUnreachable
             is MergeFailure.NotSaved -> MergeProblem.NotSaved
+            is MergeFailure.OwnFile -> MergeProblem.OwnFile
+            is MergeFailure.CopyNotWritten -> MergeProblem.CopyNotWritten
+            is MergeFailure.CopyNotWrittenChangedElsewhere -> MergeProblem.CopyNotWrittenChangedElsewhere
             is MergeFailure.CredentialsChanged, is MergeFailure.Unexpected -> {
                 log.unexpected(TAG, failure)
                 MergeProblem.Unexpected
             }
         }
-        // Merged and not written - done all the same, the dialog goes; else it stays to try another file or key
-        val keep = problem != MergeProblem.NotSaved
+        // Merged, not written all the way - done all the same, the dialog goes; else it stays to try another file or key
+        val keep = problem !in MERGED
         reduce {
             state.copy(
                 credentials = if (keep) dialog.copy(merging = false) else null,
@@ -142,5 +148,12 @@ class MergeProcessor(
 
     private companion object {
         const val TAG = "Merge"
+
+        /** The merge is made, only a write failed: nothing to try again in the dialog. */
+        val MERGED = setOf(
+            MergeProblem.NotSaved,
+            MergeProblem.CopyNotWritten,
+            MergeProblem.CopyNotWrittenChangedElsewhere,
+        )
     }
 }

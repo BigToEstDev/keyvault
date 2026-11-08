@@ -1,6 +1,7 @@
 package ru.kino.dev.vault.sync
 
 import ru.kino.dev.core.MergeSummary
+import ru.kino.dev.core.MergedBothWays
 
 /**
  * Another database file brought into the open one from the settings (pass-docs, Step 108): a copy of this database
@@ -17,6 +18,19 @@ interface OtherDatabaseRepository {
     /** Merges the copy of the open database at [uri], opened with its own [credentials], and reports what changed. */
     suspend fun mergeCopy(dbKey: String, uri: String, credentials: OtherDatabaseCredentials): MergeSummary
 
+    /**
+     * Merges the copy at [uri] both ways (Step 110): into the open database, as [mergeCopy] does, and the bytes of the
+     * copy's file back - encrypted with its own credentials, for [writeCopy] once the open database is written.
+     */
+    suspend fun mergeCopyBothWays(dbKey: String, uri: String, credentials: OtherDatabaseCredentials): MergedBothWays
+
+    /**
+     * Writes [bytes] - from [mergeCopyBothWays] - over the copy's file at [uri].
+     *
+     * @throws MergeFailure.CopyNotWritten the file could not be written
+     */
+    suspend fun writeCopy(uri: String, bytes: ByteArray)
+
     /** Brings the different database at [uri], opened with its own [credentials], into the open one, whole. */
     suspend fun importDatabase(dbKey: String, uri: String, credentials: OtherDatabaseCredentials): MergeSummary
 
@@ -28,6 +42,9 @@ interface OtherDatabaseRepository {
 enum class OtherDatabaseKind {
     /** A copy of this very database, from another device - merged. */
     Copy,
+
+    /** A copy merged both ways: the result is written into this database and into the copy's file (Step 110). */
+    CopyBothWays,
 
     /** A different database - brought in whole. */
     Import,

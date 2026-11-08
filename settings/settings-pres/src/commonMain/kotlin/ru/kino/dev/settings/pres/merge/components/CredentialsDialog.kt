@@ -18,13 +18,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.StringResource
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.pres.Res
 import ru.kino.dev.core.pres.action_cancel
+import ru.kino.dev.core.pres.action_synchronize
 import ru.kino.dev.core.pres.create_password_too_long
 import ru.kino.dev.core.pres.entry_database_fallback
 import ru.kino.dev.core.pres.entry_password
 import ru.kino.dev.core.pres.error_invalid_credentials
+import ru.kino.dev.core.pres.settings_sync_both_ways
 import ru.kino.dev.core.pres.settings_sync_credentials_hint
 import ru.kino.dev.core.pres.settings_sync_import
 import ru.kino.dev.core.pres.settings_sync_import_confirm
@@ -61,11 +64,10 @@ internal fun MergeActions.CredentialsDialog(
 ) {
     val focus = remember { FocusRequester() }
     val enabled = !dialog.merging
-    val copy = dialog.kind == OtherDatabaseKind.Copy
 
     AlertDialog(
         onDismissRequest = { onDismissCredentials() },
-        title = { Text(stringResource(if (copy) Res.string.settings_sync_merge else Res.string.settings_sync_import)) },
+        title = { Text(stringResource(dialog.kind.title)) },
         text = {
             LaunchedEffect(Unit) { focus.requestFocus() }
             // At the start, as a dialog reads; the sign-in screen is centred
@@ -122,11 +124,7 @@ internal fun MergeActions.CredentialsDialog(
                         color = LocalContentColor.current,
                     )
                 } else {
-                    Text(
-                        stringResource(
-                            if (copy) Res.string.settings_sync_merge_confirm else Res.string.settings_sync_import_confirm,
-                        ),
-                    )
+                    Text(stringResource(dialog.kind.confirm))
                 }
             }
         },
@@ -137,3 +135,19 @@ internal fun MergeActions.CredentialsDialog(
         },
     )
 }
+
+/** The title of the dialog - the card it came from. */
+private val OtherDatabaseKind.title: StringResource
+    get() = when (this) {
+        OtherDatabaseKind.Copy -> Res.string.settings_sync_merge
+        OtherDatabaseKind.CopyBothWays -> Res.string.settings_sync_both_ways
+        OtherDatabaseKind.Import -> Res.string.settings_sync_import
+    }
+
+/** What its button does. */
+private val OtherDatabaseKind.confirm: StringResource
+    get() = when (this) {
+        OtherDatabaseKind.Copy -> Res.string.settings_sync_merge_confirm
+        OtherDatabaseKind.CopyBothWays -> Res.string.action_synchronize
+        OtherDatabaseKind.Import -> Res.string.settings_sync_import_confirm
+    }

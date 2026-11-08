@@ -100,7 +100,7 @@ val vaultDataModule = module {
     // The app tells it it came back; the quiet check of the sync listens
     single { AppReturns() }
     factory { VaultSync(get(), get(), get()) }
-    factory { OtherDatabaseEditor(get(), get(), get()) }
+    factory { OtherDatabaseEditor(get(), get(), get(), get()) }
 
     single {
         val log = get<ErrorLog>()

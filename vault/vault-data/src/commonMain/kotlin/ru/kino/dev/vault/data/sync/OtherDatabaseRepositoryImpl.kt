@@ -6,6 +6,7 @@ import ru.kino.dev.core.DatabaseFileException
 import ru.kino.dev.core.DatabaseFiles
 import ru.kino.dev.core.KeyFile
 import ru.kino.dev.core.MergeSummary
+import ru.kino.dev.core.MergedBothWays
 import ru.kino.dev.core.NativeCore
 import ru.kino.dev.core.readKeyFile
 import ru.kino.dev.vault.data.changes.VaultChangesImpl
@@ -14,8 +15,9 @@ import ru.kino.dev.vault.sync.OtherDatabaseCredentials
 import ru.kino.dev.vault.sync.OtherDatabaseRepository
 
 /**
- * [OtherDatabaseRepository] on the core - `merge_kdbx_from_bytes` / `import_kdbx_from_bytes` (Step 106) - and on the
- * documents for the files picked. Neither file is kept: read once, the key file wiped after.
+ * [OtherDatabaseRepository] on the core - `merge_kdbx_from_bytes` / `import_kdbx_from_bytes` (Step 106),
+ * `merge_kdbx_both_ways` (Step 109) - and on the documents for the files picked. Neither file is kept: read once - and
+ * both ways written once - the key file wiped after.
  */
 internal class OtherDatabaseRepositoryImpl(
     private val core: NativeCore,
@@ -25,6 +27,25 @@ internal class OtherDatabaseRepositoryImpl(
 
     override suspend fun mergeCopy(dbKey: String, uri: String, credentials: OtherDatabaseCredentials): MergeSummary =
         merge(dbKey, uri, credentials) { bytes, password, keyFile -> core.mergeCopy(dbKey, bytes, password, keyFile) }
+
+    override suspend fun mergeCopyBothWays(
+        dbKey: String,
+        uri: String,
+        credentials: OtherDatabaseCredentials,
+    ): MergedBothWays =
+        merge(dbKey, uri, credentials) { bytes, password, keyFile ->
+            core.mergeCopyBothWays(dbKey, bytes, password, keyFile)
+        }
+
+    override suspend fun writeCopy(uri: String, bytes: ByteArray) {
+        try {
+            documents.writeReplacing(uri, bytes)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            throw MergeFailure.CopyNotWritten(e)
+        }
+    }
 
     override suspend fun importDatabase(
         dbKey: String,
@@ -43,12 +64,12 @@ internal class OtherDatabaseRepositoryImpl(
         null
     }
 
-    private suspend fun merge(
+    private suspend fun <T> merge(
         dbKey: String,
         uri: String,
         credentials: OtherDatabaseCredentials,
-        call: suspend (ByteArray, String?, KeyFile?) -> MergeSummary,
-    ): MergeSummary = mergeCall {
+        call: suspend (ByteArray, String?, KeyFile?) -> T,
+    ): T = mergeCall {
         val keyFile = credentials.keyFileUri?.let { keyFile(it) }
         try {
             val bytes = documents.read(uri)

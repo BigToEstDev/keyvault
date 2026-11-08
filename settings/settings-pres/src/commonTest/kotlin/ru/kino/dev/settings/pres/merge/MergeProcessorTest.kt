@@ -21,6 +21,7 @@ import ru.kino.dev.vault.sync.MergeFailure
 import ru.kino.dev.vault.sync.OtherDatabaseCredentials
 import ru.kino.dev.vault.sync.OtherDatabaseEditor
 import ru.kino.dev.vault.sync.OtherDatabaseKind
+import ru.kino.dev.vault.sync.SaveStatus
 
 class MergeProcessorTest {
 
@@ -29,9 +30,12 @@ class MergeProcessorTest {
         names[KEY] = "key.keyx"
     }
     private val database = FakeVaultDatabase()
+    private val status = SaveStatus()
     private val log = RecordingLog()
 
     private val copyDialog = CredentialsDialog(OtherDatabaseKind.Copy, FILE, "passwords-phone.kdbx")
+    private val bothWaysDialog =
+        CredentialsDialog(OtherDatabaseKind.CopyBothWays, FILE, "passwords-phone.kdbx", password = "pw")
 
     @Test
     fun `a file picked on a card asks its credentials, its name shown`() = runTest {
@@ -180,6 +184,50 @@ class MergeProcessorTest {
     }
 
     @Test
+    fun `the file of this database is said when picked, no credentials asked`() = runTest {
+        val (state, _) = perform({ onDatabasePicked(OtherDatabaseKind.CopyBothWays, DB) })
+
+        assertEquals(MergeMessage.Failed(MergeProblem.OwnFile), state.message)
+        assertNull(state.credentials)
+        assertTrue(other.calls.isEmpty())
+    }
+
+    @Test
+    fun `both ways the copy is merged, this database written, then the copy, what came in said`() = runTest {
+        val (state, _) = perform(
+            { onDatabasePicked(OtherDatabaseKind.CopyBothWays, FILE) },
+            { onPasswordChange("copy password") },
+            { onConfirm() },
+        )
+
+        assertEquals(listOf("mergeCopyBothWays $FILE", "writeCopy $FILE"), other.calls)
+        assertEquals(listOf("save"), database.calls)
+        assertNull(state.credentials)
+        assertEquals(MergeMessage.Done(other.summary), state.message)
+    }
+
+    @Test
+    fun `both ways a copy not written is said, the dialog goes`() = runTest {
+        other.writeFailure = MergeFailure.CopyNotWritten()
+
+        val (state, _) = perform({ onConfirm() }, initial = MergeState(credentials = bothWaysDialog))
+
+        assertEquals(MergeMessage.Failed(MergeProblem.CopyNotWritten), state.message)
+        assertNull(state.credentials)
+    }
+
+    @Test
+    fun `both ways this file changed elsewhere is said, the copy not written`() = runTest {
+        status.changedElsewhere(DB)
+
+        val (state, _) = perform({ onConfirm() }, initial = MergeState(credentials = bothWaysDialog))
+
+        assertEquals(MergeMessage.Failed(MergeProblem.CopyNotWrittenChangedElsewhere), state.message)
+        assertEquals(listOf("mergeCopyBothWays $FILE"), other.calls)
+        assertNull(state.credentials)
+    }
+
+    @Test
     fun `back goes back`() = runTest {
         val (_, events) = perform({ onBack() })
 
@@ -191,7 +239,7 @@ class MergeProcessorTest {
         initial: MergeState = MergeState(),
     ): Pair<MergeState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = MergeProcessor(DB, other, OtherDatabaseEditor(other, database, DatabaseGuard()), navigator, log)
+        val processor = MergeProcessor(DB, other, OtherDatabaseEditor(other, database, status, DatabaseGuard()), navigator, log)
 
         processor.testWithInternalState(this, initial) {
             containerHost.runEach(actions)
