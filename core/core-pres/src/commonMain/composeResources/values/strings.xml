@@ -459,4 +459,15 @@
     <string name="settings_sync_failed_own_file">This is the file of the open database.</string>
     <string name="settings_sync_failed_copy_not_written">The copy is not written: the result is saved in this database only.</string>
     <string name="settings_sync_failed_copy_changed_elsewhere">The copy is not written: the file of this database was changed elsewhere. Synchronize and try again.</string>
+    <string name="settings_sync_save_copy">Save a copy</string>
+    <string name="settings_sync_save_copy_text">Saves the database file to the folder you pick</string>
+    <string name="settings_sync_share">Send</string>
+    <string name="settings_sync_share_text">Sends the database file to another app</string>
+    <string name="settings_sync_copying">Copying…</string>
+    <string name="settings_sync_copy_saved_title">Copy saved</string>
+    <string name="settings_sync_copy_saved_text">The database file is copied to the folder you picked.</string>
+    <string name="settings_sync_copy_failed_title">Copy not made</string>
+    <string name="settings_sync_copy_failed_not_saved">The database file is not written — no copy made.</string>
+    <string name="settings_sync_copy_failed_changed_elsewhere">The file of this database was changed elsewhere — synchronize and try again.</string>
+    <string name="settings_sync_copy_failed_not_written">The copy file is not written.</string>
 </resources>

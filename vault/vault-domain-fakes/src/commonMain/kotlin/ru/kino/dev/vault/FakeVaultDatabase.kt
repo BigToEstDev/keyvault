@@ -9,6 +9,9 @@ class FakeVaultDatabase : VaultDatabaseRepository {
     var saveFailure: Exception? = null
     var lockFailure: CoreException? = null
 
+    /** Run by a [save] that did not throw - what the real one leaves in `SaveStatus`, say. */
+    var onSave: () -> Unit = {}
+
     /** What [hasChangedElsewhere] answers. */
     var changedElsewhere = false
 
@@ -36,6 +39,7 @@ class FakeVaultDatabase : VaultDatabaseRepository {
     override suspend fun save(dbKey: String) {
         calls += "save"
         saveFailure?.let { throw it }
+        onSave()
     }
 
     override suspend fun lock(dbKey: String) {

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the FileProvider of the manifest hands out: only `cache/shared` - files sent to other apps (pass-docs,
+     Step 111, AndroidSharedFiles in core-data) -->
+<paths>
+    <cache-path
+        name="shared"
+        path="shared/" />
+</paths>

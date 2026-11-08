@@ -463,4 +463,15 @@
     <string name="settings_sync_failed_own_file">Это файл открытой базы.</string>
     <string name="settings_sync_failed_copy_not_written">Копия не записана — итог сохранён только в этой базе.</string>
     <string name="settings_sync_failed_copy_changed_elsewhere">Копия не записана: файл этой базы изменён снаружи — синхронизируйте и повторите.</string>
+    <string name="settings_sync_save_copy">Сохранить копию</string>
+    <string name="settings_sync_save_copy_text">Сохраняет файл базы в выбранную папку</string>
+    <string name="settings_sync_share">Отправить</string>
+    <string name="settings_sync_share_text">Отправляет файл базы в другое приложение</string>
+    <string name="settings_sync_copying">Копирование…</string>
+    <string name="settings_sync_copy_saved_title">Копия сохранена</string>
+    <string name="settings_sync_copy_saved_text">Файл базы скопирован в выбранную папку.</string>
+    <string name="settings_sync_copy_failed_title">Копия не сделана</string>
+    <string name="settings_sync_copy_failed_not_saved">Файл базы не записан — копия не сделана.</string>
+    <string name="settings_sync_copy_failed_changed_elsewhere">Файл этой базы изменён снаружи — синхронизируйте и повторите.</string>
+    <string name="settings_sync_copy_failed_not_written">Файл копии не записан.</string>
 </resources>

@@ -1,16 +1,26 @@
 package ru.kino.dev.settings.pres.merge
 
 import ru.kino.dev.core.MergeSummary
+import ru.kino.dev.vault.sync.DatabaseCopyFailure
 import ru.kino.dev.vault.sync.OtherDatabaseKind
 
 /**
  * The page `Синхронизация` (pass-docs, Step 108, 110): three cards, then for the file picked - the dialog of its credentials,
- * then what came in or what failed.
+ * then what came in or what failed. Below them the file of this database copied as it is (Step 111) - "Save a copy",
+ * and "Send" where the platform hands files to other apps.
+ *
+ * @property shareAvailable "Send" is shown - android, not the desktop
+ * @property copying the file of this database is being copied: the loading dialog, nothing takes input
  */
 data class MergeState(
     val credentials: CredentialsDialog? = null,
     val message: MergeMessage? = null,
-)
+    val shareAvailable: Boolean = false,
+    val copying: Boolean = false,
+) {
+    /** A merge or a copy runs: another is not started. */
+    val busy: Boolean = copying || credentials?.merging == true
+}
 
 /**
  * The credentials of the other database, for the file [uri] picked on the card of [kind].
@@ -48,7 +58,41 @@ sealed interface MergeMessage {
     data class Done(val summary: MergeSummary) : MergeMessage
 
     data class Failed(val problem: MergeProblem) : MergeMessage
+
+    /** "Save a copy" wrote the file picked (Step 111). */
+    data object CopySaved : MergeMessage
+
+    /** "Save a copy" or "Send" made no copy (Step 111). */
+    data class CopyFailed(val problem: CopyProblem) : MergeMessage
 }
+
+/** Every failure of a copy the page says (Step 111) - one for each [DatabaseCopyFailure]. */
+enum class CopyProblem {
+    /** The file picked to save into is the file of this database. */
+    OwnFile,
+
+    /** A change waited for its save, and the save failed. */
+    NotSaved,
+
+    /** The file of this database was written elsewhere - synced first. */
+    ChangedElsewhere,
+
+    /** The file of this database cannot be read. */
+    Unreadable,
+
+    /** The copy cannot be written. */
+    NotWritten,
+}
+
+/** What the page says for the failure. */
+val DatabaseCopyFailure.problem: CopyProblem
+    get() = when (this) {
+        is DatabaseCopyFailure.OwnFile -> CopyProblem.OwnFile
+        is DatabaseCopyFailure.NotSaved -> CopyProblem.NotSaved
+        is DatabaseCopyFailure.ChangedElsewhere -> CopyProblem.ChangedElsewhere
+        is DatabaseCopyFailure.Unreadable -> CopyProblem.Unreadable
+        is DatabaseCopyFailure.NotWritten -> CopyProblem.NotWritten
+    }
 
 /** Every failure the page says - wrong credentials are said in the dialog itself. */
 enum class MergeProblem {

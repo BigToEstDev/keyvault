@@ -11,11 +11,15 @@ import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.core.CredentialLimits
 import ru.kino.dev.core.DatabaseFileException
 import ru.kino.dev.navigation.MviNavEvent
+import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
 import ru.kino.dev.settings.pres.testing.runEach
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.lock.DatabaseGuard
+import ru.kino.dev.vault.sync.DatabaseCopyEditor
+import ru.kino.dev.vault.sync.DatabaseCopyFailure
+import ru.kino.dev.vault.sync.FakeDatabaseCopyRepository
 import ru.kino.dev.vault.sync.FakeOtherDatabaseRepository
 import ru.kino.dev.vault.sync.MergeFailure
 import ru.kino.dev.vault.sync.OtherDatabaseCredentials
@@ -30,6 +34,7 @@ class MergeProcessorTest {
         names[KEY] = "key.keyx"
     }
     private val database = FakeVaultDatabase()
+    private val copies = FakeDatabaseCopyRepository()
     private val status = SaveStatus()
     private val log = RecordingLog()
 
@@ -239,13 +244,96 @@ class MergeProcessorTest {
         initial: MergeState = MergeState(),
     ): Pair<MergeState, List<MviNavEvent>> {
         val (navigator, events) = recordNavigation()
-        val processor = MergeProcessor(DB, other, OtherDatabaseEditor(other, database, status, DatabaseGuard()), navigator, log)
+        val processor = processor(navigator)
 
         processor.testWithInternalState(this, initial) {
             containerHost.runEach(actions)
             cancelAndIgnoreRemainingItems()
         }
         return processor.container.stateFlow.value to events
+    }
+
+    private fun TestScope.processor(navigator: Navigator = recordNavigation().first): MergeProcessor {
+        val guard = DatabaseGuard()
+        return MergeProcessor(
+            DB,
+            other,
+            OtherDatabaseEditor(other, database, status, guard),
+            DatabaseCopyEditor(copies, database, status, guard),
+            navigator,
+            log,
+        )
+    }
+
+    @Test
+    fun `send is shown as the platform says`() = runTest {
+        copies.shareAvailable = false
+
+        assertFalse(processor().container.stateFlow.value.shareAvailable)
+    }
+
+    @Test
+    fun `save a copy asks the file, the name of this database suggested`() = runTest {
+        processor().testWithInternalState(this) {
+            containerHost.onSaveCopy()
+
+            expectSideEffect(MergeSideEffect.PickCopyTarget("base.kdbx"))
+        }
+    }
+
+    @Test
+    fun `the copy is saved into the file picked and said`() = runTest {
+        val (state, _) = perform({ onCopyTargetPicked(FILE) })
+
+        assertEquals(listOf("read $DB", "write $FILE"), copies.calls)
+        assertEquals(MergeMessage.CopySaved, state.message)
+        assertFalse(state.copying)
+    }
+
+    @Test
+    fun `the file of this database picked to save into is refused`() = runTest {
+        val (state, _) = perform({ onCopyTargetPicked(DB) })
+
+        assertEquals(MergeMessage.CopyFailed(CopyProblem.OwnFile), state.message)
+        assertTrue(copies.calls.isEmpty())
+    }
+
+    @Test
+    fun `a file written elsewhere is not copied`() = runTest {
+        status.changedElsewhere(DB)
+
+        val (state, _) = perform({ onCopyTargetPicked(FILE) })
+
+        assertEquals(MergeMessage.CopyFailed(CopyProblem.ChangedElsewhere), state.message)
+        assertFalse(state.copying)
+    }
+
+    @Test
+    fun `a copy not written is said`() = runTest {
+        copies.writeFailure = DatabaseCopyFailure.NotWritten()
+
+        val (state, _) = perform({ onCopyTargetPicked(FILE) })
+
+        assertEquals(MergeMessage.CopyFailed(CopyProblem.NotWritten), state.message)
+    }
+
+    @Test
+    fun `send hands the file to the share menu`() = runTest {
+        processor().testWithInternalState(this) {
+            containerHost.onShare()
+
+            assertTrue(awaitInternalState().copying)
+            assertFalse(awaitInternalState().copying)
+            expectSideEffect(MergeSideEffect.Share(copies.shareUri))
+        }
+    }
+
+    @Test
+    fun `a copy running takes no other`() = runTest {
+        val (state, _) = perform({ onShare() }, initial = MergeState(copying = true))
+
+        assertTrue(copies.calls.isEmpty())
+        assertTrue(state.copying)
     }
 
     private companion object {

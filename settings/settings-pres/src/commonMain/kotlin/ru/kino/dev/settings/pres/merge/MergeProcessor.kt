@@ -9,6 +9,8 @@ import ru.kino.dev.log.ErrorLog
 import ru.kino.dev.mvi.textIntent
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
+import ru.kino.dev.vault.sync.DatabaseCopyEditor
+import ru.kino.dev.vault.sync.DatabaseCopyFailure
 import ru.kino.dev.vault.sync.MergeFailure
 import ru.kino.dev.vault.sync.OtherDatabaseCredentials
 import ru.kino.dev.vault.sync.OtherDatabaseEditor
@@ -23,16 +25,22 @@ import ru.kino.dev.vault.sync.OtherDatabaseRepository
  *
  * The core checks the file is what the card says before anything changes: the wrong card is said, and the way to
  * the right one. Neither file is kept: picked again next time.
+ *
+ * Below the three, the file of this database copied as it is by [copier] (Step 111): "Save a copy" into a file picked,
+ * "Send" to the share menu of the system where there is one. One thing at a time: a merge or a copy that runs takes
+ * no other.
  */
 class MergeProcessor(
     private val dbKey: String,
     private val other: OtherDatabaseRepository,
     private val editor: OtherDatabaseEditor,
+    private val copier: DatabaseCopyEditor,
     private val navigator: Navigator,
     private val log: ErrorLog,
-) : ViewModel(), OrbitContainerHost<MergeState, MergeState, Nothing>, MergeActions {
+) : ViewModel(), OrbitContainerHost<MergeState, MergeState, MergeSideEffect>, MergeActions {
 
-    override val container = orbitContainer<MergeState, Nothing>(MergeState())
+    override val container =
+        orbitContainer<MergeState, MergeSideEffect>(MergeState(shareAvailable = copier.isShareAvailable()))
 
     override fun onBack() {
         intent { navigator.navigate(MviNavEvent.NavigateBack) }
@@ -40,7 +48,7 @@ class MergeProcessor(
 
     override fun onDatabasePicked(kind: OtherDatabaseKind, uri: String) {
         intent {
-            if (state.credentials?.merging == true) return@intent
+            if (state.busy) return@intent
             // The file of this database itself: said at once, before its credentials are typed (Step 110)
             if (uri == dbKey) return@intent reduce { state.copy(message = MergeMessage.Failed(MergeProblem.OwnFile)) }
             val name = other.name(uri)
@@ -97,7 +105,46 @@ class MergeProcessor(
         intent { reduce { state.copy(message = null) } }
     }
 
-    private suspend fun Syntax<MergeState, Nothing>.bringIn(dialog: CredentialsDialog) {
+    override fun onSaveCopy() {
+        intent {
+            if (state.busy) return@intent
+            postSideEffect(MergeSideEffect.PickCopyTarget(copier.name(dbKey)))
+        }
+    }
+
+    override fun onCopyTargetPicked(uri: String) {
+        intent {
+            copying {
+                copier.saveCopy(dbKey, uri)
+                reduce { state.copy(copying = false, message = MergeMessage.CopySaved) }
+            }
+        }
+    }
+
+    override fun onShare() {
+        intent {
+            copying {
+                val uri = copier.share(dbKey)
+                reduce { state.copy(copying = false) }
+                postSideEffect(MergeSideEffect.Share(uri))
+            }
+        }
+    }
+
+    // The loading dialog while the copy runs; a copy not made is said
+    private suspend fun Syntax<MergeState, MergeSideEffect>.copying(
+        copy: suspend Syntax<MergeState, MergeSideEffect>.() -> Unit,
+    ) {
+        if (state.busy) return
+        reduce { state.copy(copying = true, message = null) }
+        try {
+            copy()
+        } catch (failure: DatabaseCopyFailure) {
+            reduce { state.copy(copying = false, message = MergeMessage.CopyFailed(failure.problem)) }
+        }
+    }
+
+    private suspend fun Syntax<MergeState, MergeSideEffect>.bringIn(dialog: CredentialsDialog) {
         reduce { state.copy(credentials = dialog.copy(merging = true)) }
         val credentials = OtherDatabaseCredentials(
             password = dialog.password.ifEmpty { null },
@@ -111,7 +158,7 @@ class MergeProcessor(
         }
     }
 
-    private suspend fun Syntax<MergeState, Nothing>.failed(dialog: CredentialsDialog, failure: MergeFailure) {
+    private suspend fun Syntax<MergeState, MergeSideEffect>.failed(dialog: CredentialsDialog, failure: MergeFailure) {
         val problem = when (failure) {
             // Typed again in the same dialog: said under the field
             is MergeFailure.WrongCredentials ->
