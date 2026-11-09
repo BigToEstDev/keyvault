@@ -101,7 +101,7 @@ class VaultDatabaseRepositoryImplTest {
         files.contents[DB] = byteArrayOf(9)
         core.changedElsewhere += DB
 
-        assertFalse(repository.hasChangedElsewhere(DB))
+        assertFalse(repository.hasChangedElsewhere(DB, repository.read(DB)))
     }
 
     @Test
@@ -151,10 +151,17 @@ class VaultDatabaseRepositoryImplTest {
     }
 
     @Test
+    fun `a file that cannot be read now is said by the failure of the merge`() = runTest {
+        files.unreachable += DB
+
+        expectFailure<MergeFailure.FileUnreachable> { repository.read(DB) }
+    }
+
+    @Test
     fun `a file the checksum still matches has not changed`() = runTest {
         files.contents[DB] = byteArrayOf(1, 2)
 
-        assertFalse(repository.hasChangedElsewhere(DB))
+        assertFalse(repository.hasChangedElsewhere(DB, repository.read(DB)))
         assertContentEquals(byteArrayOf(1, 2), core.bytesReceived)
     }
 
@@ -163,7 +170,7 @@ class VaultDatabaseRepositoryImplTest {
         files.contents[DB] = byteArrayOf(1, 2)
         core.changedElsewhere += DB
 
-        assertTrue(repository.hasChangedElsewhere(DB))
+        assertTrue(repository.hasChangedElsewhere(DB, repository.read(DB)))
     }
 
     @Test
@@ -171,7 +178,7 @@ class VaultDatabaseRepositoryImplTest {
         files.contents[DB] = byteArrayOf(1, 2)
         core.failures["verifyFileChecksum"] = CoreException("DbKeyNotFound", "not open")
 
-        val error = expectFailure<CoreException> { repository.hasChangedElsewhere(DB) }
+        val error = expectFailure<CoreException> { repository.hasChangedElsewhere(DB, repository.read(DB)) }
         assertEquals("DbKeyNotFound", error.kind)
     }
 
@@ -179,7 +186,7 @@ class VaultDatabaseRepositoryImplTest {
     fun `merging hands the current file to the core and reports its summary`() = runTest {
         files.contents[DB] = byteArrayOf(7)
 
-        val summary = repository.merge(DB)
+        val summary = repository.merge(DB, repository.read(DB))
 
         assertEquals(core.mergeSummary, summary)
         assertContentEquals(byteArrayOf(7), core.bytesReceived)
@@ -190,7 +197,7 @@ class VaultDatabaseRepositoryImplTest {
         files.contents[DB] = byteArrayOf(7)
         core.failures["mergeDatabase"] = CoreException("MergeFailedCredentialsChanged", "other key")
 
-        expectFailure<MergeFailure.CredentialsChanged> { repository.merge(DB) }
+        expectFailure<MergeFailure.CredentialsChanged> { repository.merge(DB, repository.read(DB)) }
     }
 
     @Test
@@ -198,7 +205,7 @@ class VaultDatabaseRepositoryImplTest {
         files.contents[DB] = byteArrayOf(7)
         core.failures["mergeDatabase"] = CoreException("NotSameDatabase", "another")
 
-        expectFailure<MergeFailure.NotSameDatabase> { repository.merge(DB) }
+        expectFailure<MergeFailure.NotSameDatabase> { repository.merge(DB, repository.read(DB)) }
     }
 
     private companion object {

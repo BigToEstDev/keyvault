@@ -13,9 +13,9 @@ import ru.kino.dev.vault.lock.unstoppable
  * [SaveState.ChangedElsewhere]; [synchronize] is the answer "Synchronize" to that. [check] is the quiet one, on
  * coming back to the app and on unlocking.
  *
- * Both run inside [guard], so a lock waits for the merge and its write, and an edit waits for them too. The quiet
- * check of the file goes with its screen; the merge, once begun, runs to its write (pass-docs, Step 114). The read
- * of the file inside the merge does not go with the screen yet - Step 114 p2.
+ * Both run inside [guard], so a lock waits for the merge and its write, and an edit waits for them too. The read of
+ * the file goes with its screen - read once, then checked and merged; the merge, once begun, runs to its write
+ * (pass-docs, Step 114).
  */
 class VaultSync(
     private val database: VaultDatabaseRepository,
@@ -30,7 +30,7 @@ class VaultSync(
      * through the settings then; `NotSaved` for a merge made but not written. Nothing changed otherwise.
      */
     suspend fun synchronize(dbKey: String): MergeSummary = guard.exclusive {
-        mergeAndSave(dbKey)
+        mergeAndSave(dbKey, database.read(dbKey))
     }
 
     /**
@@ -46,16 +46,15 @@ class VaultSync(
      */
     suspend fun check(dbKey: String, onMerging: suspend () -> Unit = {}): MergeSummary? = guard.exclusive {
         if (status.current(dbKey) != SaveState.Saved) return@exclusive null
-        val changed = try {
-            database.hasChangedElsewhere(dbKey)
+        val bytes = try {
+            database.read(dbKey).takeIf { database.hasChangedElsewhere(dbKey, it) }
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            false
-        }
-        if (!changed) return@exclusive null
+            null
+        } ?: return@exclusive null
         onMerging()
-        mergeAndSave(dbKey)
+        mergeAndSave(dbKey, bytes)
     }
 
     /**
@@ -75,8 +74,8 @@ class VaultSync(
     }
 
     // The save too, not the merge alone: what is ours and was not in their file is in memory only until written
-    private suspend fun mergeAndSave(dbKey: String): MergeSummary = unstoppable {
-        val summary = database.merge(dbKey)
+    private suspend fun mergeAndSave(dbKey: String, bytes: ByteArray): MergeSummary = unstoppable {
+        val summary = database.merge(dbKey, bytes)
         try {
             database.save(dbKey)
         } catch (e: CancellationException) {

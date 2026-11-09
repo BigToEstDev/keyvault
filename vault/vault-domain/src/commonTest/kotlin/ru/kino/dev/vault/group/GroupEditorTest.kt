@@ -153,9 +153,11 @@ class GroupEditorTest {
 
         override suspend fun close(dbKey: String) = error("not used")
 
-        override suspend fun hasChangedElsewhere(dbKey: String): Boolean = error("not used")
+        override suspend fun read(dbKey: String): ByteArray = error("not used")
 
-        override suspend fun merge(dbKey: String): MergeSummary = error("not used")
+        override suspend fun hasChangedElsewhere(dbKey: String, bytes: ByteArray): Boolean = error("not used")
+
+        override suspend fun merge(dbKey: String, bytes: ByteArray): MergeSummary = error("not used")
     }
 
     private companion object {

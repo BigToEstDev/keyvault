@@ -15,13 +15,22 @@ class FakeVaultDatabase : VaultDatabaseRepository {
     /** Run first by [save] - a test holds the write here to cancel the change between its steps. */
     var beforeSave: suspend () -> Unit = {}
 
-    /** Run first by [hasChangedElsewhere] - a test holds the read of the file here. */
-    var beforeCheck: suspend () -> Unit = {}
+    /** Run first by [read] - a test holds the read of the file here. */
+    var beforeRead: suspend () -> Unit = {}
+
+    /** Thrown by [read] instead of the bytes - the file cannot be read now, say. */
+    var readFailure: Exception? = null
+
+    /** What [read] answers: the file as it is now. */
+    var fileBytes = byteArrayOf(1, 2, 3)
+
+    /** The bytes the last [merge] was given. */
+    var mergedBytes: ByteArray? = null
 
     /** What [hasChangedElsewhere] answers. */
     var changedElsewhere = false
 
-    /** Thrown by [hasChangedElsewhere] instead of the answer - the file cannot be read now, say. */
+    /** Thrown by [hasChangedElsewhere] instead of the answer - the bytes are not a database, say. */
     var checkFailure: Exception? = null
 
     /** Thrown by [merge] instead of [mergeSummary]. */
@@ -56,15 +65,22 @@ class FakeVaultDatabase : VaultDatabaseRepository {
 
     override suspend fun close(dbKey: String) = error("not here")
 
-    override suspend fun hasChangedElsewhere(dbKey: String): Boolean {
-        beforeCheck()
+    override suspend fun read(dbKey: String): ByteArray {
+        beforeRead()
+        calls += "read"
+        readFailure?.let { throw it }
+        return fileBytes.copyOf()
+    }
+
+    override suspend fun hasChangedElsewhere(dbKey: String, bytes: ByteArray): Boolean {
         calls += "hasChangedElsewhere"
         checkFailure?.let { throw it }
         return changedElsewhere
     }
 
-    override suspend fun merge(dbKey: String): MergeSummary {
+    override suspend fun merge(dbKey: String, bytes: ByteArray): MergeSummary {
         calls += "merge"
+        mergedBytes = bytes.copyOf()
         mergeFailure?.let { throw it }
         changedElsewhere = false
         return mergeSummary

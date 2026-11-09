@@ -28,16 +28,24 @@ interface VaultDatabaseRepository {
     suspend fun close(dbKey: String)
 
     /**
-     * Whether the file holds something other than what this app last read or wrote.
+     * The file of the database as it is now. A read and nothing else: it goes with its caller when cancelled,
+     * apart from the change made of it - [merge] (pass-docs, Step 114).
+     *
+     * Throws [ru.kino.dev.vault.sync.MergeFailure] - `FileUnreachable` for a file that cannot be read now.
+     */
+    suspend fun read(dbKey: String): ByteArray
+
+    /**
+     * Whether [bytes] - the file, [read] - hold something other than what this app last read or wrote.
      *
      * True means somebody else saved over it - another device through the same cloud folder, the desktop
      * KeePass. Saving on top would throw their work away, so this is the question asked before a save and
      * answered with [merge].
      */
-    suspend fun hasChangedElsewhere(dbKey: String): Boolean
+    suspend fun hasChangedElsewhere(dbKey: String, bytes: ByteArray): Boolean
 
     /**
-     * Merges what the file holds now into the open database and reports what changed.
+     * Merges [bytes] - the file as it is now, [read] - into the open database and reports what changed.
      *
      * In memory only: the merged database still has to be saved, and until it is, the file is the way the
      * other side left it. There is no undo, so the ui asks before calling this, not after.
@@ -45,5 +53,5 @@ interface VaultDatabaseRepository {
      * Throws [ru.kino.dev.vault.sync.MergeFailure] and nothing else: `CredentialsChanged` for a file saved
      * elsewhere with other credentials, `NotSameDatabase` for another database in the file (pass-docs, Step 108).
      */
-    suspend fun merge(dbKey: String): MergeSummary
+    suspend fun merge(dbKey: String, bytes: ByteArray): MergeSummary
 }

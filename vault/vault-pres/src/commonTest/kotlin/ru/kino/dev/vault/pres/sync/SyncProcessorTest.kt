@@ -44,7 +44,7 @@ class SyncProcessorTest {
             assertEquals(false, done.syncing)
             cancelAndIgnoreRemainingItems()
         }
-        assertEquals(listOf("hasChangedElsewhere", "merge", "save"), database.calls)
+        assertEquals(listOf("read", "hasChangedElsewhere", "merge", "save"), database.calls)
     }
 
     @Test
@@ -59,7 +59,7 @@ class SyncProcessorTest {
         val state = processor.container.stateFlow.value
 
         assertNull(state.dialog)
-        assertEquals(listOf("hasChangedElsewhere"), database.calls)
+        assertEquals(listOf("read", "hasChangedElsewhere"), database.calls)
     }
 
     @Test
@@ -109,7 +109,7 @@ class SyncProcessorTest {
         val state = perform({ onSynchronize() }, initial = SyncState(dialog = SyncDialog.Ask))
 
         assertEquals(SyncDialog.Done(database.mergeSummary), state.dialog)
-        assertEquals(listOf("merge", "save"), database.calls)
+        assertEquals(listOf("read", "merge", "save"), database.calls)
     }
 
     @Test
@@ -127,7 +127,7 @@ class SyncProcessorTest {
         val state = perform({ onSynchronize() }, initial = SyncState(dialog = SyncDialog.Ask))
 
         assertEquals(SyncDialog.Failed(SyncProblem.CredentialsChanged), state.dialog)
-        assertEquals(listOf("merge"), database.calls)
+        assertEquals(listOf("read", "merge"), database.calls)
     }
 
     @Test
