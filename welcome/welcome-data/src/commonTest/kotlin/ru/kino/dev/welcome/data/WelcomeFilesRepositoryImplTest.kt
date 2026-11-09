@@ -22,6 +22,37 @@ class WelcomeFilesRepositoryImplTest {
     private val repository = WelcomeFilesRepositoryImpl(core, files)
 
     @Test
+    fun `an empty file left by save as is deleted`() = runTest {
+        files.contents[KEY] = byteArrayOf()
+
+        repository.discardEmpty(KEY)
+
+        assertFalse(KEY in files.contents)
+    }
+
+    @Test
+    fun `a picked file with content is not deleted`() = runTest {
+        files.contents[KEY] = byteArrayOf(1)
+
+        repository.discardEmpty(KEY)
+
+        assertContentEquals(byteArrayOf(1), files.contents[KEY])
+        assertFalse("delete $KEY" in journal)
+    }
+
+    @Test
+    fun `an empty file the provider will not delete, or one out of reach, is left without a failure`() = runTest {
+        files.contents[KEY] = byteArrayOf()
+        files.undeletable += KEY
+        files.unreachable += "content://keys/gone.keyx"
+
+        repository.discardEmpty(KEY)
+        repository.discardEmpty("content://keys/gone.keyx")
+
+        assertTrue(KEY in files.contents)
+    }
+
+    @Test
     fun `a picked file shows the name the provider tells`() = runTest {
         files.names[KEY] = "my.keyx"
 

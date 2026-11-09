@@ -90,6 +90,10 @@ internal class FakeWelcomeFiles(private val journal: Journal = mutableListOf()) 
             throw it
         }
     }
+
+    override suspend fun discardEmpty(uri: String) {
+        journal += "discardEmpty $uri"
+    }
 }
 
 internal class FakeCurrentDatabase(database: CurrentDatabase? = null) : CurrentDatabaseRepository {
