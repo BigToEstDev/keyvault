@@ -4,6 +4,7 @@ import kotlinx.coroutines.CancellationException
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.lock.DatabaseGuard
+import ru.kino.dev.vault.lock.unstoppable
 
 /**
  * Bringing a file written elsewhere into the open database, and writing the result (pass-docs, Step 108).
@@ -12,7 +13,9 @@ import ru.kino.dev.vault.lock.DatabaseGuard
  * [SaveState.ChangedElsewhere]; [synchronize] is the answer "Synchronize" to that. [check] is the quiet one, on
  * coming back to the app and on unlocking.
  *
- * Both run inside [guard], so a lock waits for the merge and its write, and an edit waits for them too.
+ * Both run inside [guard], so a lock waits for the merge and its write, and an edit waits for them too. The quiet
+ * check of the file goes with its screen; the merge, once begun, runs to its write (pass-docs, Step 114). The read
+ * of the file inside the merge does not go with the screen yet - Step 114 p2.
  */
 class VaultSync(
     private val database: VaultDatabaseRepository,
@@ -72,7 +75,7 @@ class VaultSync(
     }
 
     // The save too, not the merge alone: what is ours and was not in their file is in memory only until written
-    private suspend fun mergeAndSave(dbKey: String): MergeSummary {
+    private suspend fun mergeAndSave(dbKey: String): MergeSummary = unstoppable {
         val summary = database.merge(dbKey)
         try {
             database.save(dbKey)
@@ -81,6 +84,6 @@ class VaultSync(
         } catch (e: Exception) {
             throw MergeFailure.NotSaved(e)
         }
-        return summary
+        summary
     }
 }

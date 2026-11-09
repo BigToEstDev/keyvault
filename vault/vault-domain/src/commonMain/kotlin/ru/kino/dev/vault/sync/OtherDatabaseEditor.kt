@@ -34,7 +34,8 @@ class OtherDatabaseEditor(
     ): MergeSummary {
         // The same uri only: one file may come under different uris on android, not caught (pass-docs, Step 110)
         if (uri == dbKey) throw MergeFailure.OwnFile()
-        return guard.exclusive {
+        // The merge reads the other file too, so all of it runs to its write - the read apart: Step 114 p2
+        return guard.exclusiveChange {
             when (kind) {
                 OtherDatabaseKind.Copy -> other.mergeCopy(dbKey, uri, credentials).also { save(dbKey) }
                 OtherDatabaseKind.Import -> other.importDatabase(dbKey, uri, credentials).also { save(dbKey) }
