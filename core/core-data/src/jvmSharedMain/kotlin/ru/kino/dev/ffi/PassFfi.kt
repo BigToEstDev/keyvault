@@ -1,7 +1,7 @@
 package ru.kino.dev.ffi
 
 /**
- * The raw jni surface of `libpass_ffi.so`.
+ * The raw jni surface of the native library ([NATIVE_LIBRARY]).
  *
  * Nothing but declarations: no threading, no parsing, no error handling. The names and the signatures
  * here are matched by hand in `rust/pass-ffi/src/lib.rs`, where the exported symbol carries this

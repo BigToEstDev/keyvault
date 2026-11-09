@@ -12,5 +12,5 @@ private const val RESOURCES_DIR_PROPERTY = "compose.application.resources.dir"
 internal actual fun loadPassFfiLibrary() {
     val resourcesDir = System.getProperty(RESOURCES_DIR_PROPERTY)
         ?: throw UnsatisfiedLinkError("$RESOURCES_DIR_PROPERTY is not set: the app was not started by compose desktop")
-    System.load(File(resourcesDir, System.mapLibraryName("pass_ffi")).absolutePath)
+    System.load(File(resourcesDir, System.mapLibraryName(NATIVE_LIBRARY)).absolutePath)
 }

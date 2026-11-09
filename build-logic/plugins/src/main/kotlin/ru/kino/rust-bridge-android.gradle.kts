@@ -81,7 +81,9 @@ fun registerCargoTask(buildType: String, release: Boolean) = tasks.register<Exec
     // configuration cache
     environment("ANDROID_NDK_HOME", resolveNdkDir().absolutePath)
     doFirst {
-        // cargo-ndk lays the .so out per abi under the output directory
+        // cargo-ndk lays the .so out per abi under the output directory. Emptied first: a .so of an older
+        // name would otherwise stay there and be packaged into the apk beside the new one
+        jniLibsDir.deleteRecursively()
         jniLibsDir.mkdirs()
     }
 

@@ -32,7 +32,8 @@ val cargoBuildHost = tasks.register<Exec>("cargoBuildHost") {
     val targetDir = rootProject.layout.buildDirectory.dir("cargo-host").get().asFile
     val outDir = nativeResourcesDir.get().dir(hostDir).asFile
     // Locals only below: a task action that touches the script object breaks the configuration cache
-    val libraryName = System.mapLibraryName("pass_ffi")
+    // `[lib] name` of the crate, the same as NATIVE_LIBRARY in core-data
+    val libraryName = System.mapLibraryName("keyvault")
     val builtLibrary = targetDir.resolve("release/$libraryName")
     val copiedLibrary = outDir.resolve(libraryName)
 
@@ -49,6 +50,8 @@ val cargoBuildHost = tasks.register<Exec>("cargoBuildHost") {
     commandLine("cargo", "build", "--release", "--target-dir", targetDir.absolutePath)
 
     doLast {
+        // Only this library in the resources: a file of an older name would otherwise ship in the installer
+        outDir.deleteRecursively()
         outDir.mkdirs()
         builtLibrary.copyTo(copiedLibrary, overwrite = true)
     }
