@@ -132,8 +132,7 @@ internal class WelcomeDatabaseRepositoryImpl(
             writer.remember(
                 CurrentDatabase(
                     uri = opened.dbKey,
-                    // The name the app resolved, not the one the core derives from the uri - see the note
-                    // about fileName in OpenedDatabase
+                    // The name the app resolved: the core has none for a uri - see OpenedDatabase
                     fileName = fileName,
                     databaseName = opened.databaseName,
                     keyFileUri = keyFileUri,

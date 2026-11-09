@@ -14,7 +14,7 @@ import ru.kino.dev.core.expectFailure
 class DatabaseCredentialsImplTest {
 
     private val core = FakeNativeCore().apply {
-        opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null)
+        opened[DB] = OpenedDatabase(DB, "Passwords", null)
         password = "pw"
     }
     private val credentials = DatabaseCredentialsImpl(core)

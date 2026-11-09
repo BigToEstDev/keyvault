@@ -453,16 +453,13 @@ enum class KdbxVersion { V40, V41 }
 /** How the content of a file is packed before it is encrypted. GZip is what a new database and KeePass write. */
 enum class Compression { None, GZip }
 
-/** An open database, as the core describes it. */
+/**
+ * An open database, as the core describes it. No file name: the core derives it from [dbKey], and a SAF uri
+ * has no readable name in it - the app keeps the one it resolved itself (pass-docs, docs/app/decisions.md).
+ */
 data class OpenedDatabase(
     val dbKey: String,
     val databaseName: String,
-    /**
-     * Name of the file. Unreliable after unlocking: the core derives it from [dbKey] there, and a SAF uri
-     * has no readable name in it - so the app keeps its own and ignores this one. See the note in
-     * pass-docs, plan/todo/core/rust-core-bugs.md.
-     */
-    val fileName: String?,
     /** Name of the key file it was opened with, as it was passed in - to show, never to open */
     val keyFileName: String?,
 )

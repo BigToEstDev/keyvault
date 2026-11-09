@@ -103,7 +103,6 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         val opened = OpenedDatabase(
             dbKey = database.dbKey,
             databaseName = database.databaseName,
-            fileName = database.fileName,
             keyFileName = database.keyFile?.name,
         )
         this.opened[database.dbKey] = opened
@@ -122,7 +121,7 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
         keyFile?.let { keyFilesReceived += it }
         step("openDatabase", dbKey)
 
-        return OpenedDatabase(dbKey, databaseName, fileName, keyFile?.name).also { opened[dbKey] = it }
+        return OpenedDatabase(dbKey, databaseName, keyFile?.name).also { opened[dbKey] = it }
     }
 
     override suspend fun verifyPassword(dbKey: String, password: String): Boolean {

@@ -17,7 +17,7 @@ import ru.kino.dev.vault.file.DatabaseFileInfo
 class DatabaseFileRepositoryImplTest {
 
     private val core = FakeNativeCore().apply {
-        opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null)
+        opened[DB] = OpenedDatabase(DB, "Passwords", null)
         databaseFile = DatabaseFile(name = "Passwords", version = KdbxVersion.V40, compression = Compression.GZip)
     }
     private val documents = FakeDatabaseFiles().apply { names[DB] = "Мои пароли.kdbx" }

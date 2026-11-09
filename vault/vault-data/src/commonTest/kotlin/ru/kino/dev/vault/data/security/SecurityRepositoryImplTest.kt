@@ -16,7 +16,7 @@ import ru.kino.dev.vault.security.SecurityFailure
 
 class SecurityRepositoryImplTest {
 
-    private val core = FakeNativeCore().apply { opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null) }
+    private val core = FakeNativeCore().apply { opened[DB] = OpenedDatabase(DB, "Passwords", null) }
     private val documents = FakeDatabaseFiles()
     private val changes = VaultChangesImpl()
     private val repository = SecurityRepositoryImpl(core, documents, changes)

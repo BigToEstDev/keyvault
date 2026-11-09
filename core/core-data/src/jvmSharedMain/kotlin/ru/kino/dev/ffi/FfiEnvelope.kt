@@ -130,6 +130,7 @@ internal data class KdfDto(
 internal data class KdbxLoadedDto(
     @SerialName("db_key") val dbKey: String,
     @SerialName("database_name") val databaseName: String,
+    // In the contract, not mapped: derived from db_key, no readable name in a SAF uri - see OpenedDatabase
     @SerialName("file_name") val fileName: String? = null,
     @SerialName("key_file_name") val keyFileName: String? = null,
 )

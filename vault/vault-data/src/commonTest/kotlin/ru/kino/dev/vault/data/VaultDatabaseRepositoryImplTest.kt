@@ -129,7 +129,7 @@ class VaultDatabaseRepositoryImplTest {
 
     @Test
     fun `locking locks the open database in the core, without saving it`() = runTest {
-        core.opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null)
+        core.opened[DB] = OpenedDatabase(DB, "Passwords", null)
 
         repository.lock(DB)
 

@@ -26,7 +26,7 @@ class GroupRepositoryImplTest {
     private val repository = GroupRepositoryImpl(core, changes)
 
     init {
-        core.opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null)
+        core.opened[DB] = OpenedDatabase(DB, "Passwords", null)
         core.databaseFile = DatabaseFile(name = "Passwords", version = KdbxVersion.V41, compression = Compression.GZip)
         core.groupTrees[DB] = GroupTree(
             rootId = ROOT,

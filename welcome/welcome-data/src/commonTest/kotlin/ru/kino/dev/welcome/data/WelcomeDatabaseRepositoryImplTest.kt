@@ -492,7 +492,7 @@ class WelcomeDatabaseRepositoryImplTest {
     }
 
     private fun givenOpen() {
-        core.opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null)
+        core.opened[DB] = OpenedDatabase(DB, "Passwords", null)
     }
 
     private fun remembered(): CurrentDatabase =
