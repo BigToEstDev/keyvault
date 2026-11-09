@@ -46,7 +46,7 @@ class DatabaseCopyEditor(
         when (status.current(dbKey)) {
             SaveState.Saved -> Unit
             SaveState.ChangedElsewhere -> throw DatabaseCopyFailure.ChangedElsewhere()
-            SaveState.NotSaved -> save(dbKey)
+            SaveState.NotSaved, SaveState.Damaged -> save(dbKey)
         }
         return copies.read(dbKey)
     }

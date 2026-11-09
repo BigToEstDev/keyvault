@@ -24,6 +24,9 @@ class FakeDatabaseFiles(val journal: MutableList<String> = mutableListOf()) : Da
     /** Files that can be read but not written - a provider that went read-only, a full disk. */
     val unwritable = mutableSetOf<String>()
 
+    /** Files a write goes through to, and they then do not hold it: a provider that ignored the truncate. */
+    val notAsWritten = mutableSetOf<String>()
+
     /** Files the picker granted no access to keep. */
     val notKeepable = mutableSetOf<String>()
 
@@ -41,6 +44,10 @@ class FakeDatabaseFiles(val journal: MutableList<String> = mutableListOf()) : Da
     override suspend fun writeReplacing(uri: String, bytes: ByteArray) {
         log("writeReplacing", uri)
         if (uri in unreachable || uri in unwritable) throw DatabaseFileException("cannot write: $uri")
+        if (uri in notAsWritten) {
+            contents[uri] = bytes + (contents[uri] ?: ByteArray(0))
+            throw NotAsWrittenException("not as written: $uri")
+        }
         contents[uri] = bytes.copyOf()
     }
 

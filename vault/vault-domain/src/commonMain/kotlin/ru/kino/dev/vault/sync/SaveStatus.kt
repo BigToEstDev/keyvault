@@ -23,6 +23,12 @@ enum class SaveState {
 
     /** A write failed: the change waits in memory for the next save. */
     NotSaved,
+
+    /**
+     * A write went through, and the file does not hold it - broken by this app, not changed by anybody else: the
+     * next save writes it again without asking, and the main screen says so with "Save" (pass-docs, Step 112).
+     */
+    Damaged,
 }
 
 /**
@@ -59,6 +65,9 @@ class SaveStatus {
 
     /** The write failed. */
     fun notSaved(dbKey: String) = set(dbKey, SaveState.NotSaved)
+
+    /** The write went through, and the file does not hold it. */
+    fun damaged(dbKey: String) = set(dbKey, SaveState.Damaged)
 
     /** The database is closed: nothing of it waits any more. */
     fun forget(dbKey: String) = states.update { it - dbKey }
