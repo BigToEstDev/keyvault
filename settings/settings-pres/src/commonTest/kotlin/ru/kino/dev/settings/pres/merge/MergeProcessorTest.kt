@@ -74,7 +74,7 @@ class MergeProcessorTest {
             { onConfirm() },
         )
 
-        assertEquals(listOf("mergeCopy $FILE"), other.calls)
+        assertEquals(listOf("read $FILE", "mergeCopy $FILE"), other.calls)
         assertEquals(OtherDatabaseCredentials("copy password", null), other.credentialsReceived)
         assertEquals(listOf("save"), database.calls)
         assertNull(state.credentials)
@@ -89,7 +89,7 @@ class MergeProcessorTest {
             { onConfirm() },
         )
 
-        assertEquals(listOf("importDatabase $FILE"), other.calls)
+        assertEquals(listOf("read $FILE", "importDatabase $FILE"), other.calls)
         assertEquals(OtherDatabaseCredentials(null, KEY), other.credentialsReceived)
     }
 
@@ -205,7 +205,7 @@ class MergeProcessorTest {
             { onConfirm() },
         )
 
-        assertEquals(listOf("mergeCopyBothWays $FILE", "writeCopy $FILE"), other.calls)
+        assertEquals(listOf("read $FILE", "mergeCopyBothWays $FILE", "writeCopy $FILE"), other.calls)
         assertEquals(listOf("save"), database.calls)
         assertNull(state.credentials)
         assertEquals(MergeMessage.Done(other.summary), state.message)
@@ -228,7 +228,7 @@ class MergeProcessorTest {
         val (state, _) = perform({ onConfirm() }, initial = MergeState(credentials = bothWaysDialog))
 
         assertEquals(MergeMessage.Failed(MergeProblem.CopyNotWrittenChangedElsewhere), state.message)
-        assertEquals(listOf("mergeCopyBothWays $FILE"), other.calls)
+        assertEquals(listOf("read $FILE", "mergeCopyBothWays $FILE"), other.calls)
         assertNull(state.credentials)
     }
 

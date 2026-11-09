@@ -31,7 +31,7 @@ class OtherDatabaseRepositoryImplTest {
 
     @Test
     fun `a copy is merged from the bytes of the file picked, with its own password`() = runTest {
-        val summary = repository.mergeCopy(DB, COPY, OtherDatabaseCredentials("copy password", null))
+        val summary = repository.mergeCopy(DB, repository.read(COPY, OtherDatabaseCredentials("copy password", null)))
 
         assertEquals(core.mergeSummary, summary)
         assertContentEquals(byteArrayOf(4, 2), core.bytesReceived)
@@ -41,37 +41,37 @@ class OtherDatabaseRepositoryImplTest {
 
     @Test
     fun `an import goes to its own command`() = runTest {
-        repository.importDatabase(DB, COPY, OtherDatabaseCredentials("other password", null))
+        repository.importDatabase(DB, repository.read(COPY, OtherDatabaseCredentials("other password", null)))
 
         assertTrue("importDatabase $DB" in journal)
         assertTrue("mergeCopy $DB" !in journal)
     }
 
     @Test
-    fun `the key file is read once, not kept, and wiped after`() = runTest {
-        repository.mergeCopy(DB, COPY, OtherDatabaseCredentials(null, KEY))
+    fun `the key file is read once and not kept - the file read hands it to the core and wipes it`() = runTest {
+        val file = repository.read(COPY, OtherDatabaseCredentials(null, KEY))
+        repository.mergeCopy(DB, file)
+        file.wipe()
 
-        val keyFile = core.keyFilesReceived.single()
-        assertContentEquals(byteArrayOf(0, 0, 0), keyFile.content)
+        assertContentEquals(byteArrayOf(0, 0, 0), core.keyFilesReceived.single().content)
         assertTrue(files.kept.isEmpty())
     }
 
     @Test
-    fun `the key file is wiped when the merge fails too`() = runTest {
-        core.failures["mergeCopy"] = CoreException("InvalidCredentials", "no")
+    fun `a file that cannot be read leaves no key file open`() = runTest {
+        files.unreachable += COPY
+        files.contents[KEY] = byteArrayOf(9, 9, 9)
 
-        expectFailure<MergeFailure.WrongCredentials> {
-            repository.mergeCopy(DB, COPY, OtherDatabaseCredentials("pw", KEY))
-        }
+        expectFailure<MergeFailure.FileUnreachable> { repository.read(COPY, OtherDatabaseCredentials(null, KEY)) }
 
-        assertContentEquals(byteArrayOf(0, 0, 0), core.keyFilesReceived.single().content)
+        assertTrue(core.keyFilesReceived.isEmpty())
     }
 
     @Test
     fun `a merge tells the screens the database changed`() = runTest {
         val before = changes.current(DB)
 
-        repository.mergeCopy(DB, COPY, OtherDatabaseCredentials("pw", null))
+        repository.mergeCopy(DB, repository.read(COPY, OtherDatabaseCredentials("pw", null)))
 
         assertTrue(changes.current(DB) > before)
     }
@@ -80,7 +80,7 @@ class OtherDatabaseRepositoryImplTest {
     fun `the core refusing the operation is said by its own failure`() = runTest {
         core.failures["mergeCopy"] = CoreException("NotSameDatabase", "another")
         expectFailure<MergeFailure.NotSameDatabase> {
-            repository.mergeCopy(DB, COPY, OtherDatabaseCredentials("pw", null))
+            repository.mergeCopy(DB, repository.read(COPY, OtherDatabaseCredentials("pw", null)))
         }
     }
 
@@ -88,7 +88,7 @@ class OtherDatabaseRepositoryImplTest {
     fun `an import of a copy is said by its own failure`() = runTest {
         core.failures["importDatabase"] = CoreException("SameDatabase", "a copy")
         expectFailure<MergeFailure.SameDatabase> {
-            repository.importDatabase(DB, COPY, OtherDatabaseCredentials("pw", null))
+            repository.importDatabase(DB, repository.read(COPY, OtherDatabaseCredentials("pw", null)))
         }
     }
 
@@ -96,7 +96,7 @@ class OtherDatabaseRepositoryImplTest {
     fun `a damaged file is said to be damaged`() = runTest {
         core.failures["mergeCopy"] = CoreException("HeaderCorrupted", "cut short")
         expectFailure<MergeFailure.CorruptedFile> {
-            repository.mergeCopy(DB, COPY, OtherDatabaseCredentials("pw", null))
+            repository.mergeCopy(DB, repository.read(COPY, OtherDatabaseCredentials("pw", null)))
         }
     }
 
@@ -105,7 +105,7 @@ class OtherDatabaseRepositoryImplTest {
         files.unreachable += COPY
 
         expectFailure<MergeFailure.FileUnreachable> {
-            repository.mergeCopy(DB, COPY, OtherDatabaseCredentials("pw", null))
+            repository.mergeCopy(DB, repository.read(COPY, OtherDatabaseCredentials("pw", null)))
         }
         assertTrue("mergeCopy $DB" !in journal)
     }
@@ -115,7 +115,7 @@ class OtherDatabaseRepositoryImplTest {
         files.unreachable += KEY
 
         expectFailure<MergeFailure.KeyFileUnreadable> {
-            repository.mergeCopy(DB, COPY, OtherDatabaseCredentials(null, KEY))
+            repository.mergeCopy(DB, repository.read(COPY, OtherDatabaseCredentials(null, KEY)))
         }
     }
 
@@ -124,7 +124,7 @@ class OtherDatabaseRepositoryImplTest {
         files.reportedSizes[KEY] = CredentialLimits.KEY_FILE_MAX_SIZE + 1
 
         expectFailure<MergeFailure.KeyFileTooLarge> {
-            repository.mergeCopy(DB, COPY, OtherDatabaseCredentials(null, KEY))
+            repository.mergeCopy(DB, repository.read(COPY, OtherDatabaseCredentials(null, KEY)))
         }
     }
 
@@ -133,7 +133,7 @@ class OtherDatabaseRepositoryImplTest {
         core.locked += DB
 
         expectFailure<MergeFailure.Locked> {
-            repository.mergeCopy(DB, COPY, OtherDatabaseCredentials("pw", null))
+            repository.mergeCopy(DB, repository.read(COPY, OtherDatabaseCredentials("pw", null)))
         }
     }
 
@@ -141,7 +141,7 @@ class OtherDatabaseRepositoryImplTest {
     fun `both ways the copy is merged with its own password and its bytes come back`() = runTest {
         core.mergedCopyBytes = byteArrayOf(5, 5)
 
-        val merged = repository.mergeCopyBothWays(DB, COPY, OtherDatabaseCredentials("copy password", null))
+        val merged = repository.mergeCopyBothWays(DB, repository.read(COPY, OtherDatabaseCredentials("copy password", null)))
 
         assertEquals(core.mergeSummary, merged.summary)
         assertContentEquals(byteArrayOf(5, 5), merged.copy)
@@ -155,7 +155,7 @@ class OtherDatabaseRepositoryImplTest {
         core.failures["mergeCopyBothWays"] = CoreException("NotSameDatabase", "another")
 
         expectFailure<MergeFailure.NotSameDatabase> {
-            repository.mergeCopyBothWays(DB, COPY, OtherDatabaseCredentials("pw", null))
+            repository.mergeCopyBothWays(DB, repository.read(COPY, OtherDatabaseCredentials("pw", null)))
         }
     }
 
