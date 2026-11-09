@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CreateNewFolder
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.SyncProblem
 import androidx.compose.material3.Scaffold
@@ -31,7 +32,9 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import org.jetbrains.compose.resources.StringResource
 import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.pres.*
+import ru.kino.dev.core.pres.action_save
 import ru.kino.dev.core.pres.action_synchronize
+import ru.kino.dev.core.pres.save_damaged_bar
 import ru.kino.dev.core.pres.sync_unsaved_bar
 import ru.kino.dev.pane.koinProcessor
 import ru.kino.dev.ui.components.BackHandler
@@ -104,6 +107,15 @@ internal fun GroupListScreen(
                         actionText = stringResource(Res.string.action_synchronize),
                         onAction = processor::onSynchronize,
                         icon = Icons.Filled.SyncProblem,
+                    )
+                }
+                // A write the file did not hold: "Save" here, not looked for elsewhere (pass-docs, Step 112)
+                if (state.unsavedDamaged) {
+                    NoticeBar(
+                        text = stringResource(Res.string.save_damaged_bar),
+                        actionText = stringResource(Res.string.action_save),
+                        onAction = processor::onSaveAgain,
+                        icon = Icons.Filled.ErrorOutline,
                     )
                 }
                 processor.GroupListContent(state = state, padding = PaddingValues())

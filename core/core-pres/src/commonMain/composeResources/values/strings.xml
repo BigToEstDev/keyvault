@@ -12,6 +12,7 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_close">Close</string>
     <string name="action_save">Save</string>
+    <string name="action_later">Later</string>
     <string name="action_ok">OK</string>
     <string name="action_next">Next</string>
     <string name="action_back">Back</string>
@@ -442,6 +443,11 @@
     <string name="sync_failed_not_saved">Synchronized, but the file was not written. The changes wait in memory until the next save.</string>
     <string name="sync_syncing">Synchronizing…</string>
     <string name="sync_unsaved_bar">Changes not saved: the file was changed elsewhere</string>
+    <!-- A write the file did not hold (pass-docs, Step 112) -->
+    <string name="save_damaged_title">The database file was not written</string>
+    <string name="save_damaged_text">The file may be damaged. Your changes are kept in the app — save again and do not close the database until it works. If it keeps failing, save a copy: Settings → Synchronization</string>
+    <string name="save_damaged_bar">The database is not saved, the file may be damaged — save again</string>
+    <string name="save_saving">Saving…</string>
     <string name="settings_sync">Synchronization</string>
     <string name="settings_sync_text">Merge a copy, import another database</string>
     <string name="settings_sync_hint">A file of the database from another device, or a copy the cloud left. The file is read once and not remembered.</string>

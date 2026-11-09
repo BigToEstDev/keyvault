@@ -2,6 +2,7 @@ package ru.kino.dev.vault.sync
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -43,6 +44,23 @@ class VaultSyncTest {
         database.saveFailure = DatabaseFileException("disk full")
 
         expectFailure<MergeFailure.NotSaved> { sync.synchronize(DB) }
+    }
+
+    @Test
+    fun `saving again after a damaged write says it is written`() = runTest {
+        status.damaged(DB)
+        database.onSave = { status.saved(DB) }
+
+        assertTrue(sync.saveAgain(DB))
+        assertEquals(listOf("save"), database.calls)
+    }
+
+    @Test
+    fun `saving again that fails says it is not written`() = runTest {
+        status.damaged(DB)
+        database.saveFailure = DatabaseFileException("offline")
+
+        assertFalse(sync.saveAgain(DB))
     }
 
     @Test

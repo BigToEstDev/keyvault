@@ -50,6 +50,17 @@ class SaveStatus {
      */
     val postponed: SharedFlow<String> = postponedSaves.asSharedFlow()
 
+    private val damagingSaves = MutableSharedFlow<String>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    /**
+     * The dbKey of each save that left the file not holding what was written - every one of them, so the dialog is
+     * shown anew after each, not only the first (pass-docs, Step 112).
+     */
+    val damaged: SharedFlow<String> = damagingSaves.asSharedFlow()
+
     fun state(dbKey: String): Flow<SaveState> = states.map { it[dbKey] ?: SaveState.Saved }.distinctUntilChanged()
 
     fun current(dbKey: String): SaveState = states.value[dbKey] ?: SaveState.Saved
@@ -67,7 +78,10 @@ class SaveStatus {
     fun notSaved(dbKey: String) = set(dbKey, SaveState.NotSaved)
 
     /** The write went through, and the file does not hold it. */
-    fun damaged(dbKey: String) = set(dbKey, SaveState.Damaged)
+    fun damaged(dbKey: String) {
+        set(dbKey, SaveState.Damaged)
+        damagingSaves.tryEmit(dbKey)
+    }
 
     /** The database is closed: nothing of it waits any more. */
     fun forget(dbKey: String) = states.update { it - dbKey }

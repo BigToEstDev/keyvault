@@ -26,6 +26,8 @@ import ru.kino.dev.vault.group.GroupId
  * @param message for the snackbar, until it takes it
  * @param unsavedChangedElsewhere the root only: a change waits in memory after "Cancel" - the file was written
  * elsewhere (pass-docs, Step 108)
+ * @param unsavedDamaged the root only: a write the file did not hold - the file may be damaged, the change waits in
+ * memory (pass-docs, Step 112)
  */
 data class GroupListState(
     val isRoot: Boolean = true,
@@ -45,6 +47,7 @@ data class GroupListState(
     val userNameHidden: Boolean = false,
     val message: GroupListMessage? = null,
     val unsavedChangedElsewhere: Boolean = false,
+    val unsavedDamaged: Boolean = false,
 ) {
     // Worked out once for every state, not on every read
     private val shown = (found ?: listed).let { filter.applyTo(it.groups, it.entries) }
