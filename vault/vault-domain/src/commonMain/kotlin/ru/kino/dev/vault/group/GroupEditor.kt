@@ -22,7 +22,7 @@ class GroupEditor(
 ) {
 
     /** Creates a group called [name] inside [parentId], saves, and returns its id. */
-    suspend fun create(dbKey: String, parentId: GroupId, name: String): GroupId = guard.exclusive {
+    suspend fun create(dbKey: String, parentId: GroupId, name: String): GroupId = guard.exclusiveChange {
         val tree = groups.tree(dbKey)
         tree.group(parentId) ?: throw GroupFailure.GroupNotFound()
         GroupNameValidator.problem(tree, parentId, name)?.let { throw it }
@@ -33,11 +33,11 @@ class GroupEditor(
     }
 
     /** Renames the group and saves. The same name again is not a change: nothing is written. */
-    suspend fun rename(dbKey: String, groupId: GroupId, name: String): Unit = guard.exclusive {
+    suspend fun rename(dbKey: String, groupId: GroupId, name: String): Unit = guard.exclusiveChange {
         val tree = groups.tree(dbKey)
         val group = editable(tree, groupId)
         val normalized = GroupNameValidator.normalize(name)
-        if (normalized == group.name) return@exclusive
+        if (normalized == group.name) return@exclusiveChange
         GroupNameValidator.problem(tree, checkNotNull(group.parentId), normalized, renamedId = groupId)
             ?.let { throw it }
 
@@ -49,7 +49,7 @@ class GroupEditor(
      * Deletes the group with its subtree and saves: the entries go to the recycle bin - or for good when the database
      * does not use one - and the groups go for good.
      */
-    suspend fun delete(dbKey: String, groupId: GroupId): Unit = guard.exclusive {
+    suspend fun delete(dbKey: String, groupId: GroupId): Unit = guard.exclusiveChange {
         editable(groups.tree(dbKey), groupId)
 
         groups.delete(dbKey, groupId)

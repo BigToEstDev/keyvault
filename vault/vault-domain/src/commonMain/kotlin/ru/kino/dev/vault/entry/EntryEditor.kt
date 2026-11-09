@@ -44,7 +44,7 @@ class EntryEditor(
         groupId: GroupId,
         content: EntryContent,
         attachments: List<NewAttachment> = emptyList(),
-    ): EntryId = guard.exclusive {
+    ): EntryId = guard.exclusiveChange {
         val normalized = content.withNamesNormalized(keptNames = emptySet())
         refuseProblems(EntryValidator.problems(normalized, read = null))
         refuseAttachments(AttachmentsEdit(kept = emptyList(), added = attachments))
@@ -69,14 +69,14 @@ class EntryEditor(
         content: EntryContent,
         groupId: GroupId,
         attachments: AttachmentsEdit? = null,
-    ): Unit = guard.exclusive {
+    ): Unit = guard.exclusiveChange {
         val opened = opener.open(dbKey, entryId)
         val read = opened.content
         val normalized = content.withNamesNormalized(keptNames = read.ownFields.map { it.key }.toSet())
         val edit = attachments?.takeUnless { it.keepsExactly(opened.attachments) }
         val changed = normalized.fields() != read.fields() || edit != null
         val moved = groupId != opened.groupId
-        if (!changed && !moved) return@exclusive
+        if (!changed && !moved) return@exclusiveChange
         if (changed) refuseProblems(EntryValidator.problems(normalized, read))
         edit?.let(::refuseAttachments)
 
@@ -86,7 +86,7 @@ class EntryEditor(
     }
 
     /** Deletes the entry - into the recycle bin, or for good when the database does not use one - and saves. */
-    suspend fun delete(dbKey: String, entryId: EntryId): Unit = guard.exclusive {
+    suspend fun delete(dbKey: String, entryId: EntryId): Unit = guard.exclusiveChange {
         entries.delete(dbKey, entryId)
         save(dbKey)
     }

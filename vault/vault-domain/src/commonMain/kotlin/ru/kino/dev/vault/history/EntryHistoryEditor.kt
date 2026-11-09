@@ -20,19 +20,19 @@ class EntryHistoryEditor(
 ) {
 
     /** Makes the version at [index] the entry again - the current state goes into the history - and saves. */
-    suspend fun restore(dbKey: String, entryId: EntryId, index: Int): Unit = guard.exclusive {
+    suspend fun restore(dbKey: String, entryId: EntryId, index: Int): Unit = guard.exclusiveChange {
         history.restore(dbKey, entryId, index)
         database.saveChange(dbKey)
     }
 
     /** Deletes the version at [index] and saves. */
-    suspend fun delete(dbKey: String, entryId: EntryId, index: Int): Unit = guard.exclusive {
+    suspend fun delete(dbKey: String, entryId: EntryId, index: Int): Unit = guard.exclusiveChange {
         history.delete(dbKey, entryId, index)
         database.saveChange(dbKey)
     }
 
     /** Deletes every old version and saves; when the entry was made stays (pass-docs, Step 51, item 5). */
-    suspend fun deleteAll(dbKey: String, entryId: EntryId): Unit = guard.exclusive {
+    suspend fun deleteAll(dbKey: String, entryId: EntryId): Unit = guard.exclusiveChange {
         history.deleteAll(dbKey, entryId)
         database.saveChange(dbKey)
     }

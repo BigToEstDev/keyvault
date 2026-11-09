@@ -60,7 +60,7 @@ class VaultSync(
      * whether the file was written elsewhere then - the difference is ours (pass-docs, Step 112). Whether it is
      * written now; a write that fails again leaves [SaveState.Damaged] or says why in [status].
      */
-    suspend fun saveAgain(dbKey: String): Boolean = guard.exclusive {
+    suspend fun saveAgain(dbKey: String): Boolean = guard.exclusiveChange {
         try {
             database.save(dbKey)
             status.current(dbKey) == SaveState.Saved

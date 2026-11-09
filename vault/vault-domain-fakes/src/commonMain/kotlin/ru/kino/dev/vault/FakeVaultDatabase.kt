@@ -12,6 +12,12 @@ class FakeVaultDatabase : VaultDatabaseRepository {
     /** Run by a [save] that did not throw - what the real one leaves in `SaveStatus`, say. */
     var onSave: () -> Unit = {}
 
+    /** Run first by [save] - a test holds the write here to cancel the change between its steps. */
+    var beforeSave: suspend () -> Unit = {}
+
+    /** Run first by [hasChangedElsewhere] - a test holds the read of the file here. */
+    var beforeCheck: suspend () -> Unit = {}
+
     /** What [hasChangedElsewhere] answers. */
     var changedElsewhere = false
 
@@ -37,6 +43,7 @@ class FakeVaultDatabase : VaultDatabaseRepository {
     )
 
     override suspend fun save(dbKey: String) {
+        beforeSave()
         calls += "save"
         saveFailure?.let { throw it }
         onSave()
@@ -50,6 +57,7 @@ class FakeVaultDatabase : VaultDatabaseRepository {
     override suspend fun close(dbKey: String) = error("not here")
 
     override suspend fun hasChangedElsewhere(dbKey: String): Boolean {
+        beforeCheck()
         calls += "hasChangedElsewhere"
         checkFailure?.let { throw it }
         return changedElsewhere

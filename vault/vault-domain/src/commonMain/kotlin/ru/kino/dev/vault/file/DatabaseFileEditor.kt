@@ -23,7 +23,7 @@ class DatabaseFileEditor(
      * Renames the database - its name inside the file, not the file - and saves; returns the name kept, without
      * the spaces around it.
      */
-    suspend fun rename(dbKey: String, name: String): String = guard.exclusive {
+    suspend fun rename(dbKey: String, name: String): String = guard.exclusiveChange {
         val normalized = name.trim()
         if (normalized.isEmpty()) throw DatabaseFileFailure.EmptyName()
         val current = files.read(dbKey)
@@ -35,9 +35,9 @@ class DatabaseFileEditor(
     }
 
     /** Packs the database with [compression] and saves - the file is written with it at once. */
-    suspend fun setCompression(dbKey: String, compression: Compression): Unit = guard.exclusive {
+    suspend fun setCompression(dbKey: String, compression: Compression): Unit = guard.exclusiveChange {
         val current = files.read(dbKey)
-        if (compression == current.compression) return@exclusive
+        if (compression == current.compression) return@exclusiveChange
         files.change(dbKey, current.name, compression)
         save(dbKey)
     }

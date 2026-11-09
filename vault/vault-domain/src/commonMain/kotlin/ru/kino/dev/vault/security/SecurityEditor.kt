@@ -6,6 +6,7 @@ import ru.kino.dev.settings.biometric.BiometricRepository
 import ru.kino.dev.settings.signin.RememberedKeyFile
 import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.lock.DatabaseGuard
+import ru.kino.dev.vault.lock.unstoppable
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
@@ -29,8 +30,8 @@ class SecurityEditor(
 ) {
 
     /** Encrypts with [encryption] and saves. The same encryption again is not a change: nothing is written. */
-    suspend fun setEncryption(dbKey: String, encryption: Encryption): Unit = guard.exclusive {
-        if (encryption == security.read(dbKey).encryption) return@exclusive
+    suspend fun setEncryption(dbKey: String, encryption: Encryption): Unit = guard.exclusiveChange {
+        if (encryption == security.read(dbKey).encryption) return@exclusiveChange
         security.changeEncryption(dbKey, encryption)
         save(dbKey)
     }
@@ -39,7 +40,7 @@ class SecurityEditor(
      * Gives the database the password [new] and saves. A database with a password needs it as [current] first;
      * one with only a key file gets its first password without it.
      */
-    suspend fun setPassword(dbKey: String, current: String?, new: String): Unit = guard.exclusive {
+    suspend fun setPassword(dbKey: String, current: String?, new: String): Unit = guard.exclusiveChange {
         if (security.read(dbKey).credentials.password) {
             if (current == null || !security.verifyPassword(dbKey, current)) throw SecurityFailure.WrongPassword()
         }
@@ -53,18 +54,21 @@ class SecurityEditor(
 
     /** Gives the database the key file at [uri] - a first one, or another - and saves. */
     suspend fun setKeyFile(dbKey: String, uri: String): Unit = guard.exclusive {
+        // Reading the file picked goes with the screen; the change, once begun, does not (Step 114)
         val keyFile = security.readKeyFile(uri)
         val name = keyFile.name
-        try {
-            security.changeCredentials(dbKey, CredentialsChange.SetKeyFile(keyFile))
-        } finally {
-            keyFile.wipe()
+        unstoppable {
+            try {
+                security.changeCredentials(dbKey, CredentialsChange.SetKeyFile(keyFile))
+            } finally {
+                keyFile.wipe()
+            }
+            saveAndRemember(dbKey, keyFileUri = uri, keyFileName = name)
         }
-        saveAndRemember(dbKey, keyFileUri = uri, keyFileName = name)
     }
 
     /** Takes the key file away and saves - only from a database with a password. */
-    suspend fun removeKeyFile(dbKey: String): Unit = guard.exclusive {
+    suspend fun removeKeyFile(dbKey: String): Unit = guard.exclusiveChange {
         if (!security.read(dbKey).credentials.password) throw SecurityFailure.LastFactor()
         security.changeCredentials(dbKey, CredentialsChange.RemoveKeyFile)
         saveAndRemember(dbKey, keyFileUri = null, keyFileName = null)

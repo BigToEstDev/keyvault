@@ -21,9 +21,9 @@ class EntrySettingsEditor(
 ) {
 
     /** Makes the fields of [protection] private on every entry and saves. */
-    suspend fun setProtection(dbKey: String, protection: FieldProtection): Unit = guard.exclusive {
+    suspend fun setProtection(dbKey: String, protection: FieldProtection): Unit = guard.exclusiveChange {
         val current = settings.read(dbKey)
-        if (protection == current.protection) return@exclusive
+        if (protection == current.protection) return@exclusiveChange
         settings.change(dbKey, current.copy(protection = protection))
         save(dbKey)
     }
@@ -32,9 +32,9 @@ class EntrySettingsEditor(
      * Keeps the history to [history] and saves. A lower limit trims the history of every entry at once and for
      * good - the screen asks first ([HistoryLimits.trims]).
      */
-    suspend fun setHistory(dbKey: String, history: HistoryLimits): Unit = guard.exclusive {
+    suspend fun setHistory(dbKey: String, history: HistoryLimits): Unit = guard.exclusiveChange {
         val current = settings.read(dbKey)
-        if (history == current.history) return@exclusive
+        if (history == current.history) return@exclusiveChange
         settings.change(dbKey, current.copy(history = history))
         save(dbKey)
     }

@@ -3,11 +3,15 @@ package ru.kino.dev.vault.entry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertSame
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.FieldProtection
 import ru.kino.dev.core.MergeSummary
+import ru.kino.dev.core.assertCausedBy
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.core.preset.CustomPreset
 import ru.kino.dev.core.preset.FakePresetRepository
@@ -28,6 +32,7 @@ import ru.kino.dev.vault.entries.FakeEntrySettingsRepository
 import ru.kino.dev.vault.group.EntryId
 import ru.kino.dev.vault.group.GroupId
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class EntryEditorTest {
 
     private val journal = mutableListOf<String>()
@@ -102,6 +107,22 @@ class EntryEditorTest {
 
         assertEquals(listOf("read", "update", "save"), journal)
         assertEquals("new secret", entries.stored.getValue(id).fields.first { it.key == PASSWORD }.value)
+    }
+
+    // The screen gone between the change in memory and the write - the file still follows (pass-docs, Step 114)
+    @Test
+    fun `a changed entry whose screen is gone before the write is still saved`() = runTest {
+        val id = entries.add("e1", GROUP, filled.fields())
+        val before = CompletableDeferred<Unit>()
+        database.beforeSave = { before.await() }
+        val job = launch { editor.update(DB, id, filled.withValue(PASSWORD, "new secret"), GROUP) }
+        runCurrent()
+
+        job.cancel()
+        before.complete(Unit)
+        job.join()
+
+        assertEquals(listOf("read", "update", "save"), journal)
     }
 
     @Test
@@ -221,7 +242,7 @@ class EntryEditorTest {
 
         val failure = expectFailure<EntryFailure.NotSaved> { editor.create(DB, GROUP, filled) }
 
-        assertSame(cause, failure.cause)
+        assertCausedBy(cause, failure)
         assertEquals(listOf("create", "save"), journal)
     }
 
@@ -353,8 +374,10 @@ class EntryEditorTest {
     private class RecordingDatabase(private val journal: MutableList<String>) : VaultDatabaseRepository {
 
         var saveFailure: Exception? = null
+        var beforeSave: suspend () -> Unit = {}
 
         override suspend fun save(dbKey: String) {
+            beforeSave()
             journal += "save"
             saveFailure?.let { throw it }
         }
