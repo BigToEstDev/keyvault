@@ -154,16 +154,68 @@ class KeyFileBackupProcessorTest {
     }
 
     @Test
-    fun `after the process was killed the draft is empty - back to the master password`() = runTest {
-        val empty = CreateDraft()
-        val (navigator, events) = recordNavigation()
-        val steps = CreateSteps(database, files, biometrics, navigator, FakeErrorLog())
-        val processor = KeyFileBackupProcessor(empty, steps, navigator)
+    fun `after the process was killed the draft is empty - said, not left at once`() = runTest {
+        val (processor, events) = killed()
 
-        processor.testWithInternalState(this) { runOnCreate().join() }
+        processor.testWithInternalState(this) {
+            runOnCreate().join()
+            expectInternalState { copy(stage = CreateStage(interrupted = true)) }
+        }
+
+        assertEquals(emptyList(), events)
+    }
+
+    @Test
+    fun `a new key file picked after the process was killed is discarded if empty`() = runTest {
+        val (processor, _) = killed()
+
+        processor.testWithInternalState(this) {
+            containerHost.onKeyFilePicked(KEY)
+            expectInternalState { copy(stage = CreateStage(interrupted = true)) }
+        }
+
+        assertEquals(listOf("discardEmpty $KEY"), journal)
+    }
+
+    @Test
+    fun `a database file picked after the process was killed is discarded if empty`() = runTest {
+        val (processor, _) = killed()
+
+        processor.testWithInternalState(this) {
+            containerHost.onDatabasePicked(DB)
+            expectInternalState { copy(stage = CreateStage(interrupted = true)) }
+        }
+
+        assertEquals(listOf("discardEmpty $DB"), journal)
+    }
+
+    @Test
+    fun `an existing key file picked after the process was killed is never touched`() = runTest {
+        val (processor, _) = killed()
+
+        processor.testWithInternalState(this) {
+            containerHost.onExistingPicked(EXISTING)
+        }
+
+        assertEquals(emptyList(), journal)
+    }
+
+    @Test
+    fun `OK on an interrupted creation goes back to the master password`() = runTest {
+        val (processor, events) = killed()
+
+        processor.testWithInternalState(this, KeyFileBackupState(stage = CreateStage(interrupted = true))) {
+            containerHost.onInterruptedDismissed()
+        }
 
         assertEquals(listOf(MviNavEvent.NavigateBackTo(MasterPasswordRoute)), events)
     }
+
+    private fun TestScope.killed() =
+        recordNavigation().let { (navigator, events) ->
+            val steps = CreateSteps(database, files, biometrics, navigator, FakeErrorLog())
+            KeyFileBackupProcessor(CreateDraft(), steps, navigator) to events
+        }
 
     private companion object {
         const val KEY = "content://keys/kdbxvault.keyx"
