@@ -41,6 +41,15 @@ class SafDatabaseFilesTest {
         assertArrayEquals(SHORTER, provider.file.readBytes())
     }
 
+    @Test
+    fun `a provider that ignores the truncate of wt keeps only the new bytes`() = runTest {
+        provider.behaviour = Behaviour.IgnoresTruncate
+
+        files.writeReplacing(URI, SHORTER)
+
+        assertArrayEquals(SHORTER, provider.file.readBytes())
+    }
+
     private companion object {
         const val AUTHORITY = "ru.kino.dev.test.documents"
         const val URI = "content://$AUTHORITY/document/base.kdbx"
