@@ -51,6 +51,9 @@ interface DatabaseFiles {
      *
      * Truncating, always: the core does not cut a writer short, so a database that got smaller would
      * otherwise keep the tail of the older one after its end.
+     *
+     * @throws NotAsWrittenException the file does not hold the bytes written
+     * @throws DatabaseFileException the file could not be written
      */
     suspend fun writeReplacing(uri: String, bytes: ByteArray)
 
@@ -86,4 +89,10 @@ interface DatabaseFiles {
 }
 
 /** A file could not be read or written: no permission any more, the document is gone, the provider failed. */
-class DatabaseFileException(message: String, cause: Throwable? = null) : Exception(message, cause)
+open class DatabaseFileException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
+/**
+ * The write went through, and the file does not hold what was written - a provider that ignored the truncate, say.
+ * The file is broken by this write, not changed by anybody else: the next save writes it again (pass-docs, Step 112).
+ */
+class NotAsWrittenException(message: String) : DatabaseFileException(message)

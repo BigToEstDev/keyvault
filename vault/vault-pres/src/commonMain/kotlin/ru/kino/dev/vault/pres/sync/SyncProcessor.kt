@@ -27,6 +27,9 @@ import ru.kino.dev.vault.sync.nothingChanged
  *   shown again on the desktop ([AppReturns]): a file written elsewhere is merged and saved ([VaultSync.check]) -
  *   unless something of ours waits in memory.
  *
+ * - A write the file did not hold ([SaveStatus.damaged]): "Save" or "Later" - every such write asks anew; "Save" writes
+ *   again ([VaultSync.saveAgain]), as the bar of the main screen does through [SyncRequests] (pass-docs, Step 112).
+ *
  * What came in, and what failed, is a dialog closed by "OK", never a snackbar; nothing came in - nothing is shown. A
  * failure of the quiet check is said once for each kind: coming back again would say it again and again.
  */
@@ -51,11 +54,15 @@ class SyncProcessor(
                 status.postponed.filter { it == dbKey }.map { Signal.Ask },
                 requests.requests.filter { it == dbKey }.map { Signal.Synchronize },
                 returns.returns.map { Signal.Check },
+                status.damaged.filter { it == dbKey }.map { Signal.Damaged },
+                requests.saves.filter { it == dbKey }.map { Signal.Save },
             ).collect { signal ->
                 when (signal) {
                     Signal.Ask -> ask()
                     Signal.Synchronize -> synchronize()
                     Signal.Check -> check()
+                    Signal.Damaged -> reduce { state.copy(dialog = SyncDialog.Damaged) }
+                    Signal.Save -> saveAgain()
                 }
             }
         }
@@ -71,6 +78,27 @@ class SyncProcessor(
 
     override fun onDismiss() {
         intent { reduce { state.copy(dialog = null) } }
+    }
+
+    override fun onSave() {
+        intent { saveAgain() }
+    }
+
+    override fun onLater() {
+        intent { if (state.dialog == SyncDialog.Damaged && !state.saving) reduce { state.copy(dialog = null) } }
+    }
+
+    // Not written again - the same question again: the file is still what our write left
+    private suspend fun Syntax<SyncState, Nothing>.saveAgain() {
+        if (state.saving) return
+        reduce { state.copy(saving = true) }
+        val written = sync.saveAgain(dbKey)
+        reduce {
+            state.copy(
+                saving = false,
+                dialog = if (written) state.dialog.takeIf { it != SyncDialog.Damaged } else SyncDialog.Damaged,
+            )
+        }
     }
 
     // A dialog already up stays: what it says is not taken away by the next question
@@ -116,7 +144,7 @@ class SyncProcessor(
         }
     }
 
-    private enum class Signal { Ask, Synchronize, Check }
+    private enum class Signal { Ask, Synchronize, Check, Damaged, Save }
 
     private companion object {
         const val TAG = "Sync"

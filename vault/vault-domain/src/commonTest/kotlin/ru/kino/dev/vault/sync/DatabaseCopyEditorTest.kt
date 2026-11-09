@@ -37,6 +37,16 @@ class DatabaseCopyEditorTest {
     }
 
     @Test
+    fun `a file damaged by a write is saved again first`() = runTest {
+        status.damaged(DB)
+
+        editor.saveCopy(DB, FILE)
+
+        assertEquals(listOf("save"), database.calls)
+        assertEquals(listOf("read $DB", "write $FILE"), copies.calls)
+    }
+
+    @Test
     fun `a save that fails copies nothing`() = runTest {
         status.notSaved(DB)
         database.saveFailure = DatabaseFileException("disk full")

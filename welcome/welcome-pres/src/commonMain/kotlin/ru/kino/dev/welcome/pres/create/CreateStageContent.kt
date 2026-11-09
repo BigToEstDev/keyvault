@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.style.TextAlign
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.ui.components.ConfirmDialog
+import ru.kino.dev.ui.components.MessageDialog
 import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.welcome.PickedFile
 import ru.kino.dev.welcome.pres.common.EntryProblem
@@ -26,6 +27,16 @@ internal fun OverwriteDialog(overwrite: Overwrite, onConfirm: () -> Unit, onDism
         onConfirm = onConfirm,
         onDismiss = onDismiss,
         destructive = true,
+    )
+}
+
+/** Creating was cut off by the killed process: what was typed is gone, start over (pass-docs, Step 112). */
+@Composable
+internal fun InterruptedDialog(onDismiss: () -> Unit) {
+    MessageDialog(
+        title = stringResource(Res.string.create_interrupted_title),
+        text = stringResource(Res.string.create_interrupted_text),
+        onDismiss = onDismiss,
     )
 }
 

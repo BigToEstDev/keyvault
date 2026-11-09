@@ -1,5 +1,6 @@
 package ru.kino.dev.welcome.data
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import ru.kino.dev.core.CredentialLimits
@@ -40,6 +41,16 @@ internal class WelcomeFilesRepositoryImpl(
         } finally {
             // The content is a secret on par with the password; from here on it lives in the file only
             content.fill(0)
+        }
+    }
+
+    override suspend fun discardEmpty(uri: String) {
+        try {
+            if (files.isEmpty(uri)) files.delete(uri)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Out of reach: the file stays, and there is nothing in it to lose
         }
     }
 }

@@ -11,6 +11,7 @@
     <string name="action_cancel">Отмена</string>
     <string name="action_close">Закрыть</string>
     <string name="action_save">Сохранить</string>
+    <string name="action_later">Позже</string>
     <string name="action_ok">ОК</string>
     <string name="action_next">Далее</string>
     <string name="action_back">Назад</string>
@@ -80,6 +81,9 @@
     <string name="create_sync_hint">Дальше вы выберете, куда сохранить базу. В синхронизируемой папке — Google Drive, Dropbox и подобных — она будет и на других ваших устройствах.</string>
 
     <!-- Creating: writing over an existing file -->
+    <!-- The process was killed while "save as" was open (pass-docs, Step 112) -->
+    <string name="create_interrupted_title">Создание прервано</string>
+    <string name="create_interrupted_text">Пока был открыт выбор файла, система закрыла приложение. Введите пароль и начните заново.</string>
     <string name="overwrite_title">Заменить существующий файл?</string>
     <string name="overwrite_database_text">Выбранный файл не пустой. Новая база заменит его безвозвратно.</string>
     <string name="overwrite_key_file_text">Выбранный файл не пустой — это может быть ключ другой базы. Если заменить его, ту базу будет не открыть никогда.</string>
@@ -446,6 +450,11 @@
     <string name="sync_failed_not_saved">Синхронизировано, но файл не записан. Изменения ждут в памяти до следующего сохранения.</string>
     <string name="sync_syncing">Синхронизация…</string>
     <string name="sync_unsaved_bar">Изменения не сохранены: файл изменён снаружи</string>
+    <!-- A write the file did not hold (pass-docs, Step 112) -->
+    <string name="save_damaged_title">Файл базы не записан</string>
+    <string name="save_damaged_text">Файл может быть повреждён. Изменения в приложении сохранены — сохраните ещё раз и не закрывайте базу, пока не получится. Если не выходит — сохраните копию: Настройки → Синхронизация</string>
+    <string name="save_damaged_bar">База не записана, файл может быть повреждён — сохраните ещё раз</string>
+    <string name="save_saving">Сохранение…</string>
     <string name="settings_sync">Синхронизация</string>
     <string name="settings_sync_text">Объединить копию, импорт другой базы</string>
     <string name="settings_sync_hint">Файл базы с другого устройства или копия, оставленная облаком. Файл читается один раз и не запоминается.</string>

@@ -182,6 +182,79 @@ class SyncProcessorTest {
         assertEquals(2, database.calls.count { it == "merge" })
     }
 
+    @Test
+    fun `a write the file did not hold asks Save or Later`() = runTest {
+        processor().testWithInternalState(this) {
+            runOnCreate()
+            // Up to its listening: the signals come to nobody before it
+            testScheduler.runCurrent()
+            status.damaged(DB)
+
+            assertEquals(SyncDialog.Damaged, awaitInternalState().dialog)
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
+    @Test
+    fun `a damaged write of another database asks nothing here`() = runTest {
+        val processor = processor()
+        processor.testWithInternalState(this) {
+            runOnCreate()
+            // Up to its listening: the signals come to nobody before it
+            testScheduler.runCurrent()
+            status.damaged("content://docs/other.kdbx")
+            cancelAndIgnoreRemainingItems()
+        }
+
+        assertNull(processor.container.stateFlow.value.dialog)
+    }
+
+    @Test
+    fun `Save writes again and closes the question`() = runTest {
+        status.damaged(DB)
+        database.onSave = { status.saved(DB) }
+
+        val state = perform({ onSave() }, initial = SyncState(dialog = SyncDialog.Damaged))
+
+        assertEquals(SyncState(), state)
+        assertEquals(listOf("save"), database.calls)
+    }
+
+    @Test
+    fun `Save that fails again asks again`() = runTest {
+        status.damaged(DB)
+        database.saveFailure = DatabaseFileException("offline")
+
+        val state = perform({ onSave() }, initial = SyncState(dialog = SyncDialog.Damaged))
+
+        assertEquals(SyncState(dialog = SyncDialog.Damaged), state)
+    }
+
+    @Test
+    fun `Later closes the question, the change stays in memory`() = runTest {
+        val state = perform({ onLater() }, initial = SyncState(dialog = SyncDialog.Damaged))
+
+        assertNull(state.dialog)
+        assertTrue(database.calls.isEmpty())
+    }
+
+    @Test
+    fun `the bar of the main screen asks to save - written again at once`() = runTest {
+        status.damaged(DB)
+        database.onSave = { status.saved(DB) }
+
+        processor().testWithInternalState(this) {
+            runOnCreate()
+            // Up to its listening: the signals come to nobody before it
+            testScheduler.runCurrent()
+            requests.save(DB)
+
+            assertTrue(awaitInternalState().saving)
+            assertEquals(SyncState(), awaitInternalState())
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
     private fun processor() = SyncProcessor(DB, VaultSync(database, status, DatabaseGuard()), status, requests, returns, log)
 
     private suspend fun TestScope.perform(vararg actions: SyncActions.() -> Unit, initial: SyncState): SyncState =

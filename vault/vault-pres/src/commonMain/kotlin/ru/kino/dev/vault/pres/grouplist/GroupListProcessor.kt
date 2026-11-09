@@ -101,7 +101,10 @@ class GroupListProcessor(
                 when (shown) {
                     Shown.Changed -> load()
                     is Shown.Status -> reduce {
-                        state.copy(unsavedChangedElsewhere = shown.state == SaveState.ChangedElsewhere)
+                        state.copy(
+                            unsavedChangedElsewhere = shown.state == SaveState.ChangedElsewhere,
+                            unsavedDamaged = shown.state == SaveState.Damaged,
+                        )
                     }
                 }
             }
@@ -278,6 +281,10 @@ class GroupListProcessor(
 
     override fun onSynchronize() {
         intent { if (state.unsavedChangedElsewhere) syncRequests.synchronize(dbKey) }
+    }
+
+    override fun onSaveAgain() {
+        intent { if (state.unsavedDamaged) syncRequests.save(dbKey) }
     }
 
     private suspend fun Syntax<GroupListState, Nothing>.askDelete(id: GroupId, name: String) {

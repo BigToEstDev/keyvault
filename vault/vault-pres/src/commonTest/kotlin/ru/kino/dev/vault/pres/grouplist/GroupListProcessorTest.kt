@@ -909,6 +909,23 @@ class GroupListProcessorTest {
     }
 
     @Test
+    fun `a write the file did not hold is said on the root, and Save asks the sync`() = runTest {
+        val (navigator, _) = recordNavigation()
+        val processor = processor(groupId = null, navigator)
+        val asked = async(start = CoroutineStart.UNDISPATCHED) { syncRequests.saves.first() }
+
+        processor.testWithInternalState(this) {
+            runOnCreate()
+            saveStatus.damaged(DB)
+            assertTrue(awaitInternalState().unsavedDamaged)
+
+            containerHost.onSaveAgain()
+            assertEquals(DB, asked.await())
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
+    @Test
     fun `a group below the root says nothing of what waits`() = runTest {
         saveStatus.changedElsewhere(DB)
 

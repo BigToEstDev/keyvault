@@ -50,4 +50,13 @@ interface WelcomeFilesRepository {
      * database reads it back from there.
      */
     suspend fun writeNewKeyFile(uri: String)
+
+    /**
+     * Deletes a file "save as" made and nothing was written into - the process was killed while the picker was open,
+     * and what was typed is gone (pass-docs, Step 112). Only an empty one: a file picked that has content is the
+     * user's, and stays.
+     *
+     * Best effort, never fails: a provider that cannot delete, or a file out of reach, leaves it - nothing is lost.
+     */
+    suspend fun discardEmpty(uri: String)
 }

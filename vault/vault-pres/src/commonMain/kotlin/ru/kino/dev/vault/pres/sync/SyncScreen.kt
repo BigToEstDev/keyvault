@@ -24,8 +24,13 @@ import org.orbitmvi.orbit.compose.collectAsState
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.pres.Res
 import ru.kino.dev.core.pres.action_cancel
+import ru.kino.dev.core.pres.action_later
+import ru.kino.dev.core.pres.action_save
 import ru.kino.dev.core.pres.action_synchronize
 import ru.kino.dev.core.pres.error_unexpected
+import ru.kino.dev.core.pres.save_damaged_text
+import ru.kino.dev.core.pres.save_damaged_title
+import ru.kino.dev.core.pres.save_saving
 import ru.kino.dev.core.pres.sync_ask_text
 import ru.kino.dev.core.pres.sync_ask_title
 import ru.kino.dev.core.pres.sync_done_settings
@@ -60,9 +65,15 @@ fun VaultSyncHost(dbKey: String) {
 
 @Composable
 private fun SyncActions.SyncContent(state: SyncState) {
-    if (state.syncing) {
+    // Saving from the dialog shows on its button; from the bar of the main screen - here (pass-docs, Step 112)
+    val sign = when {
+        state.syncing -> Res.string.sync_syncing
+        state.saving && state.dialog != SyncDialog.Damaged -> Res.string.save_saving
+        else -> null
+    }
+    if (sign != null) {
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopCenter) {
-            SyncingSign(modifier = Modifier.padding(top = 8.dp))
+            SyncingSign(text = stringResource(sign), modifier = Modifier.padding(top = 8.dp))
         }
     }
 
@@ -86,11 +97,22 @@ private fun SyncActions.SyncContent(state: SyncState) {
             text = stringResource(dialog.problem.text),
             onDismiss = ::onDismiss,
         )
+        // Only its buttons close it: closed by a tap past it, the database may be closed before it is written
+        SyncDialog.Damaged -> ConfirmDialog(
+            title = stringResource(Res.string.save_damaged_title),
+            text = stringResource(Res.string.save_damaged_text),
+            confirmText = stringResource(Res.string.action_save),
+            dismissText = stringResource(Res.string.action_later),
+            onConfirm = ::onSave,
+            onDismiss = ::onLater,
+            loading = state.saving,
+            dismissOnOutside = false,
+        )
     }
 }
 
 @Composable
-private fun SyncingSign(modifier: Modifier = Modifier) {
+private fun SyncingSign(text: String, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(50),
@@ -103,7 +125,7 @@ private fun SyncingSign(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-            Text(stringResource(Res.string.sync_syncing), style = MaterialTheme.typography.labelLarge)
+            Text(text, style = MaterialTheme.typography.labelLarge)
         }
     }
 }

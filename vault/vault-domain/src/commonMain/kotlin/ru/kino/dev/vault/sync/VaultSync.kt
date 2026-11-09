@@ -55,6 +55,22 @@ class VaultSync(
         mergeAndSave(dbKey)
     }
 
+    /**
+     * Writes the database again after a write the file did not hold ([SaveState.Damaged]): the save does not ask
+     * whether the file was written elsewhere then - the difference is ours (pass-docs, Step 112). Whether it is
+     * written now; a write that fails again leaves [SaveState.Damaged] or says why in [status].
+     */
+    suspend fun saveAgain(dbKey: String): Boolean = guard.exclusive {
+        try {
+            database.save(dbKey)
+            status.current(dbKey) == SaveState.Saved
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     // The save too, not the merge alone: what is ours and was not in their file is in memory only until written
     private suspend fun mergeAndSave(dbKey: String): MergeSummary {
         val summary = database.merge(dbKey)

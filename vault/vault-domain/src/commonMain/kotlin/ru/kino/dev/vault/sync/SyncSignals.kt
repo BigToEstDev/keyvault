@@ -7,18 +7,27 @@ import kotlinx.coroutines.flow.asSharedFlow
 import ru.kino.dev.core.MergeSummary
 
 /**
- * "Synchronize" asked for outside the sync's own dialog - from the bar on the main screen after "Cancel" (pass-docs,
- * Step 108). One for the app: the screen asks, the sync of `vault` answers.
+ * "Synchronize" and "Save" asked for outside the sync's own dialogs - from the bars on the main screen: after "Cancel"
+ * (pass-docs, Step 108), and after a write the file does not hold (Step 112). One for the app: the screen asks, the
+ * sync of `vault` answers.
  */
 class SyncRequests {
 
     private val asked = signal<String>()
+    private val askedToSave = signal<String>()
 
     /** The dbKey of each database asked to be synchronized now. */
     val requests: SharedFlow<String> = asked.asSharedFlow()
 
+    /** The dbKey of each database asked to be written again now. */
+    val saves: SharedFlow<String> = askedToSave.asSharedFlow()
+
     fun synchronize(dbKey: String) {
         asked.tryEmit(dbKey)
+    }
+
+    fun save(dbKey: String) {
+        askedToSave.tryEmit(dbKey)
     }
 }
 

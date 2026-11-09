@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.database.Cursor
+import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import androidx.core.net.toUri
@@ -13,6 +14,7 @@ import kotlinx.coroutines.withContext
 import ru.kino.dev.core.DatabaseFileException
 import ru.kino.dev.core.DatabaseFiles
 import java.io.ByteArrayOutputStream
+import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 
@@ -67,19 +69,33 @@ internal class SafDatabaseFiles(
 
     override suspend fun writeReplacing(uri: String, bytes: ByteArray) {
         withContext(dispatcher) {
-            try {
-                // "wt" means truncate: without it a shorter database leaves the tail of the longer one
-                // behind, and the file stops being a valid kdbx as soon as it grows shorter once
-                resolver.openOutputStream(uri.toUri(), "wt")
-                    ?.use { it.write(bytes) }
+            val sizeAfterWrite = try {
+                // "wt" asks for truncation, and not every provider does it: the file is cut to the bytes
+                // written here as well, on the same descriptor (pass-docs, Step 112)
+                val descriptor = resolver.openFileDescriptor(uri.toUri(), "wt")
                     ?: throw DatabaseFileException("The file could not be opened for writing: $uri")
+                ParcelFileDescriptor.AutoCloseOutputStream(descriptor).use { out ->
+                    out.write(bytes)
+                    cutToWritten(descriptor, out, bytes.size.toLong())
+                }
             } catch (e: IOException) {
                 throw DatabaseFileException("The file could not be written: $uri", e)
             } catch (e: SecurityException) {
                 throw DatabaseFileException("There is no permission to write the file any more: $uri", e)
             }
+            // Read back only after the descriptor is closed: a pipe hands its bytes to the provider on close
+            ReplacedContent.verify(uri, bytes, sizeAfterWrite) { read(uri) }
         }
     }
+
+    // The size of the file once cut, or null for a descriptor that is not a file - a pipe has no size to cut
+    private fun cutToWritten(descriptor: ParcelFileDescriptor, out: FileOutputStream, size: Long): Long? =
+        if (descriptor.statSize < 0) {
+            null
+        } else {
+            out.channel.truncate(size)
+            out.channel.size()
+        }
 
     override suspend fun exists(uri: String): Boolean = withContext(dispatcher) {
         try {

@@ -11,4 +11,10 @@ interface SyncActions {
 
     /** "OK" in the dialog of what came in, or of what failed. */
     fun onDismiss()
+
+    /** "Save" in the dialog of a write the file did not hold (pass-docs, Step 112). */
+    fun onSave()
+
+    /** "Later" there: the dialog closes, the main screen says so with a bar of its own. */
+    fun onLater()
 }

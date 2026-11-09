@@ -25,4 +25,7 @@ interface MasterPasswordActions {
     fun onOverwriteConfirmed()
 
     fun onOverwriteDismissed()
+
+    /** "OK" in the dialog of a creation cut off by the killed process. */
+    fun onInterruptedDismissed()
 }

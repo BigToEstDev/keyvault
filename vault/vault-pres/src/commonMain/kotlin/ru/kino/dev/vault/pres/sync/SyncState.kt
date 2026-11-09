@@ -6,10 +6,12 @@ import ru.kino.dev.core.MergeSummary
  * The sync of `vault` over its screens (pass-docs, Step 108).
  *
  * @property syncing a merge is under way - seconds of key derivation; the screens work meanwhile
+ * @property saving the database is written again after a write the file did not hold (pass-docs, Step 112)
  */
 data class SyncState(
     val dialog: SyncDialog? = null,
     val syncing: Boolean = false,
+    val saving: Boolean = false,
 )
 
 /** The one dialog of the sync shown, if any. */
@@ -23,6 +25,12 @@ sealed interface SyncDialog {
 
     /** What failed - closed by "OK". */
     data class Failed(val problem: SyncProblem) : SyncDialog
+
+    /**
+     * A write the file did not hold - the file may be damaged, the change is in memory: "Save" or "Later", nothing
+     * else closes it (pass-docs, Step 112).
+     */
+    data object Damaged : SyncDialog
 }
 
 /** Every failure of a sync as the dialog says it. */

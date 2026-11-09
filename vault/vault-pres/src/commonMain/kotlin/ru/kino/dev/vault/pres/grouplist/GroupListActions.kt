@@ -84,4 +84,9 @@ interface GroupListActions {
      * (pass-docs, Step 108).
      */
     fun onSynchronize()
+
+    /**
+     * "Save" on the bar of the root - a write the file did not hold, the file may be damaged (pass-docs, Step 112).
+     */
+    fun onSaveAgain()
 }

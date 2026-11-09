@@ -50,5 +50,11 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(projects.core.coreDomainFakes)
         }
+        getByName("androidHostTest").dependencies {
+            // A provider of documents of the test's own behind a real ContentResolver - Android on the JVM, no
+            // device (pass-docs, Step 112)
+            implementation(libs.junit)
+            implementation(libs.robolectric)
+        }
     }
 }

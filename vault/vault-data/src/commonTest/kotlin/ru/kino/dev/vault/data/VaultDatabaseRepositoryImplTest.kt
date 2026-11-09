@@ -13,6 +13,7 @@ import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.DatabaseFileException
 import ru.kino.dev.core.FakeDatabaseFiles
 import ru.kino.dev.core.FakeNativeCore
+import ru.kino.dev.core.NotAsWrittenException
 import ru.kino.dev.core.OpenedDatabase
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.data.changes.VaultChangesImpl
@@ -82,6 +83,48 @@ class VaultDatabaseRepositoryImplTest {
 
         assertFalse(DB in core.checksumBytes)
         assertEquals(SaveState.NotSaved, status.current(DB))
+    }
+
+    @Test
+    fun `a file that does not hold the write is damaged, its checksum left as it was`() = runTest {
+        files.notAsWritten += DB
+
+        expectFailure<NotAsWrittenException> { repository.save(DB) }
+
+        assertFalse(DB in core.checksumBytes)
+        assertEquals(SaveState.Damaged, status.current(DB))
+    }
+
+    @Test
+    fun `a damaged file is not taken for written elsewhere`() = runTest {
+        status.damaged(DB)
+        files.contents[DB] = byteArrayOf(9)
+        core.changedElsewhere += DB
+
+        assertFalse(repository.hasChangedElsewhere(DB))
+    }
+
+    @Test
+    fun `the save after a damaged one writes the file again without asking`() = runTest {
+        status.damaged(DB)
+        files.contents[DB] = byteArrayOf(9)
+        core.changedElsewhere += DB
+
+        repository.save(DB)
+
+        assertContentEquals(core.databaseBytes, files.contents[DB])
+        assertContentEquals(core.databaseBytes, core.checksumBytes[DB])
+        assertEquals(SaveState.Saved, status.current(DB))
+    }
+
+    @Test
+    fun `a damaged file that cannot be written either stays damaged`() = runTest {
+        status.damaged(DB)
+        files.unwritable += DB
+
+        expectFailure<DatabaseFileException> { repository.save(DB) }
+
+        assertEquals(SaveState.Damaged, status.current(DB))
     }
 
     @Test

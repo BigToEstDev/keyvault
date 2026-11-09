@@ -39,8 +39,10 @@ class KeyFileBackupProcessor(
 
     override val container =
         orbitContainer<KeyFileBackupState, KeyFileBackupSideEffect>(KeyFileBackupState()) {
-            // After the process was killed the draft is empty - there is no password to create with
-            if (draft.password == null) navigator.navigate(MviNavEvent.NavigateBackTo(MasterPasswordRoute))
+            // After the process was killed the draft is empty - there is no password to create with. Said first, and
+            // back to the master password on "OK": leaving at once would lose what the picker hands back, and the
+            // file "save as" made would stay (pass-docs, Step 112)
+            if (draft.password == null) reduce { state.copy(stage = CreateStage(interrupted = true)) }
         }
 
     /** The main button: create a new key file, or - once there is one - "next", where the database goes. */
@@ -84,8 +86,13 @@ class KeyFileBackupProcessor(
         intent { reduce { state.copy(stage = state.stage.copy(overwrite = null)) } }
     }
 
+    override fun onInterruptedDismissed() {
+        intent { navigator.navigate(MviNavEvent.NavigateBackTo(MasterPasswordRoute)) }
+    }
+
     /** An existing file as the key file: checked, not written; then straight on to the database. */
     private suspend fun Syntax<KeyFileBackupState, KeyFileBackupSideEffect>.existingPicked(uri: String) {
+        // An existing file is the user's whatever is in it: never deleted
         if (draft.password == null || state.stage.busy) return
 
         reduce { state.copy(stage = CreateStage(busy = true)) }
@@ -101,7 +108,13 @@ class KeyFileBackupProcessor(
 
     /** A file picked in "save as": asked about first when it is not empty, written otherwise. */
     private suspend fun Syntax<KeyFileBackupState, KeyFileBackupSideEffect>.picked(file: Overwrite) {
-        if (draft.password == null || state.stage.busy) return
+        if (state.stage.busy) return
+        // The killed process took the draft with it: the file "save as" made is deleted if empty
+        if (draft.password == null) {
+            steps.discardAbandoned(file.uri)
+            reduce { state.copy(stage = CreateStage(interrupted = true)) }
+            return
+        }
 
         reduce { state.copy(stage = CreateStage(busy = true)) }
         try {

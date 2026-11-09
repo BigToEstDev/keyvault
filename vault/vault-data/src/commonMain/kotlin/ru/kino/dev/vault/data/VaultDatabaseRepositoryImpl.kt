@@ -7,9 +7,11 @@ import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.DatabaseFiles
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.NativeCore
+import ru.kino.dev.core.NotAsWrittenException
 import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.data.sync.mergeCall
+import ru.kino.dev.vault.sync.SaveState
 import ru.kino.dev.vault.sync.SaveStatus
 
 /**
@@ -38,8 +40,12 @@ internal class VaultDatabaseRepositoryImpl(
             write(dbKey)
         } catch (e: CancellationException) {
             throw e
+        } catch (e: NotAsWrittenException) {
+            status.damaged(dbKey)
+            throw e
         } catch (e: Exception) {
-            status.notSaved(dbKey)
+            // A file broken by an earlier write stays broken until a write goes through
+            if (status.current(dbKey) != SaveState.Damaged) status.notSaved(dbKey)
             throw e
         }
         status.saved(dbKey)
@@ -76,8 +82,11 @@ internal class VaultDatabaseRepositoryImpl(
         status.forget(dbKey)
     }
 
-    override suspend fun hasChangedElsewhere(dbKey: String): Boolean =
-        try {
+    // A file broken by our own write is not somebody else's: its checksum is not ours, and a sync with it would
+    // only fail - the next save writes it again (pass-docs, Step 112)
+    override suspend fun hasChangedElsewhere(dbKey: String): Boolean {
+        if (status.current(dbKey) == SaveState.Damaged) return false
+        return try {
             core.verifyFileChecksum(dbKey, files.read(dbKey))
             false
         } catch (e: CoreException) {
@@ -85,6 +94,7 @@ internal class VaultDatabaseRepositoryImpl(
             // any more. Anything else - the database is not open, the bytes are not a kdbx - is a failure
             if (e.kind == FILE_CHANGED) true else throw e
         }
+    }
 
     override suspend fun merge(dbKey: String): MergeSummary = mergeCall {
         core.mergeDatabase(dbKey, files.read(dbKey)).also { changes.changed(dbKey) }
