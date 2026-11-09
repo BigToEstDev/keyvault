@@ -2,7 +2,7 @@ package ru.kino.dev.storage
 
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import ru.kino.dev.core.DatabaseFileException
+import ru.kino.dev.core.NotAsWrittenException
 import kotlin.test.assertFailsWith
 
 // The decision behind writeReplacing: a pipe cannot be shown in Robolectric, so its branch is tested here
@@ -16,7 +16,7 @@ class ReplacedContentTest {
 
     @Test
     fun `a file of another size is not written`() = runTest {
-        assertFailsWith<DatabaseFileException> {
+        assertFailsWith<NotAsWrittenException> {
             ReplacedContent.verify(URI, BYTES, sizeAfterWrite = 64L) { BYTES }
         }
     }
@@ -28,7 +28,7 @@ class ReplacedContentTest {
 
     @Test
     fun `a pipe that read back something else is not written`() = runTest {
-        assertFailsWith<DatabaseFileException> {
+        assertFailsWith<NotAsWrittenException> {
             ReplacedContent.verify(URI, BYTES, sizeAfterWrite = null) { BYTES + ByteArray(48) }
         }
     }

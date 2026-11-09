@@ -1,6 +1,6 @@
 package ru.kino.dev.storage
 
-import ru.kino.dev.core.DatabaseFileException
+import ru.kino.dev.core.NotAsWrittenException
 
 /**
  * Whether a write that replaced a file left exactly the bytes written in it.
@@ -21,6 +21,6 @@ internal object ReplacedContent {
         } else {
             readBack().contentEquals(bytes)
         }
-        if (!written) throw DatabaseFileException("The file does not hold what was written to it: $uri")
+        if (!written) throw NotAsWrittenException("The file does not hold what was written to it: $uri")
     }
 }
