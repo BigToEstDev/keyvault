@@ -9,6 +9,9 @@ publish = false
 license = "GPL-3.0-only"
 
 [lib]
+## The file the jvm loads: libkeyvault.so on android, keyvault.dll / libkeyvault.so / libkeyvault.dylib on
+## the desktop. Kept in step with NATIVE_LIBRARY (core-data, PassFfiLibrary.kt) and rust-bridge-desktop.
+name = "keyvault"
 ## The jni bridge is loaded by the jvm as a shared library. "lib" is kept alongside so the crate can
 ## also be built and unit tested on the host, where there is no Android at all.
 crate-type = ["cdylib", "lib"]
