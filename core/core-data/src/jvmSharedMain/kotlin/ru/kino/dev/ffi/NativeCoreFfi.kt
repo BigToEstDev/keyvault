@@ -675,7 +675,6 @@ internal class NativeCoreFfi : NativeCore {
     private fun KdbxLoadedDto.toDomain() = OpenedDatabase(
         dbKey = dbKey,
         databaseName = databaseName,
-        fileName = fileName,
         keyFileName = keyFileName,
     )
 

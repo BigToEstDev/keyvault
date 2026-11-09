@@ -15,7 +15,7 @@ import ru.kino.dev.vault.entries.EntrySettingsFailure
 class EntrySettingsRepositoryImplTest {
 
     private val core = FakeNativeCore().apply {
-        opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null)
+        opened[DB] = OpenedDatabase(DB, "Passwords", null)
     }
     private val changes = VaultChangesImpl()
     private val repository = EntrySettingsRepositoryImpl(core, changes)

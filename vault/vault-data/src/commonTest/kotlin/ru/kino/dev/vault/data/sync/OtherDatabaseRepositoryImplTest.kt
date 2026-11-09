@@ -19,7 +19,7 @@ class OtherDatabaseRepositoryImplTest {
 
     private val journal = mutableListOf<String>()
     private val core = FakeNativeCore(journal).apply {
-        opened[DB] = OpenedDatabase(DB, "Passwords", "passwords.kdbx", null)
+        opened[DB] = OpenedDatabase(DB, "Passwords", null)
     }
     private val files = FakeDatabaseFiles(journal).apply {
         contents[COPY] = byteArrayOf(4, 2)
