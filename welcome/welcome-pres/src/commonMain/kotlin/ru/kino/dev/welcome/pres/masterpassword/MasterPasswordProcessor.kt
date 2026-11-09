@@ -91,6 +91,10 @@ class MasterPasswordProcessor(
         intent { reduce { state.copy(stage = state.stage.copy(overwrite = null)) } }
     }
 
+    override fun onInterruptedDismissed() {
+        intent { reduce { state.copy(stage = state.stage.copy(interrupted = false)) } }
+    }
+
     private suspend fun Syntax<MasterPasswordState, MasterPasswordSideEffect>.next() {
         if (!state.canGoOn) return
 
@@ -103,9 +107,14 @@ class MasterPasswordProcessor(
     }
 
     private suspend fun Syntax<MasterPasswordState, MasterPasswordSideEffect>.databasePicked(uri: String) {
-        // The draft is gone when the process was killed while the picker was open: what was typed is gone
-        // with it, and the picked file is left alone - the user types again and picks again
-        if (draft.password == null || state.stage.busy) return
+        if (state.stage.busy) return
+        // The draft is gone when the process was killed while the picker was open: what was typed is gone with it.
+        // The file "save as" made is deleted if empty, and the user is told to start over (pass-docs, Step 112)
+        if (draft.password == null) {
+            steps.discardAbandoned(uri)
+            reduce { state.copy(stage = CreateStage(interrupted = true)) }
+            return
+        }
 
         reduce { state.copy(stage = CreateStage(busy = true)) }
         try {

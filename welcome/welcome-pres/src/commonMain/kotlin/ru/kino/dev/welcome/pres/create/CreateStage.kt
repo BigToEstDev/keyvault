@@ -20,11 +20,14 @@ import ru.kino.dev.welcome.pres.navigation.MasterPasswordRoute
  * over an existing file, and what went wrong.
  *
  * @param overwrite a picked file that is not empty, waiting for the user to say whether to write over it
+ * @param interrupted the process was killed while "save as" was open: what was typed is gone, the file it made is
+ * deleted - said with "OK", and creating starts over (pass-docs, Step 112)
  */
 data class CreateStage(
     val busy: Boolean = false,
     val overwrite: Overwrite? = null,
     val problem: EntryProblem? = null,
+    val interrupted: Boolean = false,
 )
 
 /** A picked file that already has content. */
@@ -48,6 +51,9 @@ class CreateSteps(
     suspend fun wouldOverwrite(uri: String, file: PickedFile): Boolean = files.wouldOverwrite(uri, file)
 
     suspend fun writeNewKeyFile(uri: String) = files.writeNewKeyFile(uri)
+
+    /** Deletes the file "save as" made for a creation the killed process took with it - if nothing is in it. */
+    suspend fun discardAbandoned(uri: String) = files.discardEmpty(uri)
 
     /** Checks an existing file picked as the key file: there, and not over the size limit. */
     suspend fun checkKeyFile(uri: String) = files.checkKeyFile(uri)

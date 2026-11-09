@@ -81,6 +81,9 @@
     <string name="create_sync_hint">Дальше вы выберете, куда сохранить базу. В синхронизируемой папке — Google Drive, Dropbox и подобных — она будет и на других ваших устройствах.</string>
 
     <!-- Creating: writing over an existing file -->
+    <!-- The process was killed while "save as" was open (pass-docs, Step 112) -->
+    <string name="create_interrupted_title">Создание прервано</string>
+    <string name="create_interrupted_text">Пока был открыт выбор файла, система закрыла приложение. Введите пароль и начните заново.</string>
     <string name="overwrite_title">Заменить существующий файл?</string>
     <string name="overwrite_database_text">Выбранный файл не пустой. Новая база заменит его безвозвратно.</string>
     <string name="overwrite_key_file_text">Выбранный файл не пустой — это может быть ключ другой базы. Если заменить его, ту базу будет не открыть никогда.</string>

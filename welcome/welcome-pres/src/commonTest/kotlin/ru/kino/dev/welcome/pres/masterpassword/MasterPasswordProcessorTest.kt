@@ -227,14 +227,27 @@ class MasterPasswordProcessorTest {
     }
 
     @Test
-    fun `a file picked after the process was killed is left alone - the draft is empty`() = runTest {
-        val (processor, _) = processor()
+    fun `a file picked after the process was killed is discarded if empty, and the user told to start over`() =
+        runTest {
+            val (processor, events) = processor()
 
-        processor.testWithInternalState(this, ready()) {
-            containerHost.onDatabasePicked(DB)
+            processor.testWithInternalState(this, ready()) {
+                containerHost.onDatabasePicked(DB)
+                expectInternalState { copy(stage = CreateStage(interrupted = true)) }
+            }
+
+            assertEquals(listOf("discardEmpty $DB"), journal)
+            assertTrue(events.isEmpty())
         }
 
-        assertTrue(journal.isEmpty())
+    @Test
+    fun `OK closes the word of an interrupted creation`() = runTest {
+        val (processor, _) = processor()
+
+        processor.testWithInternalState(this, ready().copy(stage = CreateStage(interrupted = true))) {
+            containerHost.onInterruptedDismissed()
+            expectInternalState { copy(stage = CreateStage()) }
+        }
     }
 
     private fun ready() = MasterPasswordState(password = PW, confirm = PW)

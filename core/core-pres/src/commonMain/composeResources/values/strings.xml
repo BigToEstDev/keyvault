@@ -78,6 +78,9 @@
     <string name="create_sync_hint">Next you choose where to save the database. In a synced folder - Google Drive, Dropbox and the like - it is there on your other devices too.</string>
 
     <!-- Creating: writing over an existing file -->
+    <!-- The process was killed while "save as" was open (pass-docs, Step 112) -->
+    <string name="create_interrupted_title">Creation interrupted</string>
+    <string name="create_interrupted_text">The system closed the app while the file picker was open. Enter the password and start again.</string>
     <string name="overwrite_title">Replace the existing file?</string>
     <string name="overwrite_database_text">The file you chose is not empty. The new database replaces it for good.</string>
     <string name="overwrite_key_file_text">The file you chose is not empty - it may be the key of another database. Replacing it locks that database for good.</string>
