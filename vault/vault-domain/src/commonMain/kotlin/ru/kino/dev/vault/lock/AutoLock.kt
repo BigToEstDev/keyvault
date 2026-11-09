@@ -84,7 +84,7 @@ class AutoLock(
         }
         timer.stop()
         return try {
-            guard.exclusive { database.lock(key) }
+            guard.exclusiveChange { database.lock(key) }
             _locked.send(key)
             true
         } catch (e: CoreException) {

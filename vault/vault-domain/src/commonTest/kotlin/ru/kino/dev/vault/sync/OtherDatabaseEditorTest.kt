@@ -5,26 +5,80 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import ru.kino.dev.core.DatabaseFileException
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.lock.DatabaseGuard
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class OtherDatabaseEditorTest {
 
     private val other = FakeOtherDatabaseRepository()
     private val database = FakeVaultDatabase()
     private val status = SaveStatus()
-    private val editor = OtherDatabaseEditor(other, database, status, DatabaseGuard())
+    private val guard = DatabaseGuard()
+    private val editor = OtherDatabaseEditor(other, database, status, guard)
     private val credentials = OtherDatabaseCredentials("pw", null)
+
+    // Step 114: the other file is read outside the guard and goes with its screen
+    @Test
+    fun `the other file is read before the guard is taken`() = runTest {
+        val held = CompletableDeferred<Unit>()
+        val holder = launch { guard.exclusiveChange { held.await() } }
+        runCurrent()
+        val bringing = launch { editor.bringIn(DB, OtherDatabaseKind.Copy, FILE, credentials) }
+        runCurrent()
+
+        assertEquals(listOf("read $FILE"), other.calls)
+        held.complete(Unit)
+        holder.join()
+        bringing.join()
+        assertEquals(listOf("read $FILE", "mergeCopy $FILE"), other.calls)
+    }
+
+    @Test
+    fun `a bringing in whose screen is gone while it reads changes nothing`() = runTest {
+        val reading = CompletableDeferred<Unit>()
+        other.beforeRead = { reading.await() }
+        val job = launch { editor.bringIn(DB, OtherDatabaseKind.Copy, FILE, credentials) }
+        runCurrent()
+
+        job.cancel()
+        job.join()
+
+        assertTrue(other.calls.isEmpty())
+        assertTrue(database.calls.isEmpty())
+    }
+
+    @Test
+    fun `the key file is wiped once the merge is done`() = runTest {
+        editor.bringIn(DB, OtherDatabaseKind.Copy, FILE, OtherDatabaseCredentials(null, KEY))
+
+        assertContentEquals(byteArrayOf(0, 0, 0), other.filesRead.single().keyFile?.content)
+    }
+
+    @Test
+    fun `the key file is wiped when the merge is refused too`() = runTest {
+        other.failure = MergeFailure.WrongCredentials()
+
+        expectFailure<MergeFailure.WrongCredentials> {
+            editor.bringIn(DB, OtherDatabaseKind.Copy, FILE, OtherDatabaseCredentials(null, KEY))
+        }
+
+        assertContentEquals(byteArrayOf(0, 0, 0), other.filesRead.single().keyFile?.content)
+    }
 
     @Test
     fun `a copy is merged, then written`() = runTest {
         val summary = editor.bringIn(DB, OtherDatabaseKind.Copy, FILE, credentials)
 
         assertSame(other.summary, summary)
-        assertEquals(listOf("mergeCopy $FILE"), other.calls)
+        assertEquals(listOf("read $FILE", "mergeCopy $FILE"), other.calls)
         assertEquals(listOf("save"), database.calls)
     }
 
@@ -32,7 +86,7 @@ class OtherDatabaseEditorTest {
     fun `another database is imported, then written`() = runTest {
         editor.bringIn(DB, OtherDatabaseKind.Import, FILE, credentials)
 
-        assertEquals(listOf("importDatabase $FILE"), other.calls)
+        assertEquals(listOf("read $FILE", "importDatabase $FILE"), other.calls)
         assertEquals(listOf("save"), database.calls)
     }
 
@@ -65,7 +119,7 @@ class OtherDatabaseEditorTest {
         val summary = editor.bringIn(DB, OtherDatabaseKind.CopyBothWays, FILE, credentials)
 
         assertSame(other.summary, summary)
-        assertEquals(listOf("mergeCopyBothWays $FILE", "writeCopy $FILE"), other.calls)
+        assertEquals(listOf("read $FILE", "mergeCopyBothWays $FILE", "writeCopy $FILE"), other.calls)
         assertEquals(listOf("save"), database.calls)
         assertContentEquals(other.copyBytes, other.copyWritten)
     }
@@ -76,7 +130,7 @@ class OtherDatabaseEditorTest {
 
         expectFailure<MergeFailure.NotSaved> { editor.bringIn(DB, OtherDatabaseKind.CopyBothWays, FILE, credentials) }
 
-        assertEquals(listOf("mergeCopyBothWays $FILE"), other.calls)
+        assertEquals(listOf("read $FILE", "mergeCopyBothWays $FILE"), other.calls)
     }
 
     @Test
@@ -88,7 +142,7 @@ class OtherDatabaseEditorTest {
             editor.bringIn(DB, OtherDatabaseKind.CopyBothWays, FILE, credentials)
         }
 
-        assertEquals(listOf("mergeCopyBothWays $FILE"), other.calls)
+        assertEquals(listOf("read $FILE", "mergeCopyBothWays $FILE"), other.calls)
     }
 
     @Test
@@ -104,6 +158,7 @@ class OtherDatabaseEditorTest {
 
     private companion object {
         const val DB = "content://docs/passwords.kdbx"
+        const val KEY = "content://docs/key.keyx"
         const val FILE = "content://downloads/passwords-phone.kdbx"
     }
 }

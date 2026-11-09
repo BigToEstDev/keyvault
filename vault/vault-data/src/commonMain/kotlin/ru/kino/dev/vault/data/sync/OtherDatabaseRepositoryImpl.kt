@@ -12,12 +12,13 @@ import ru.kino.dev.core.readKeyFile
 import ru.kino.dev.vault.data.changes.VaultChangesImpl
 import ru.kino.dev.vault.sync.MergeFailure
 import ru.kino.dev.vault.sync.OtherDatabaseCredentials
+import ru.kino.dev.vault.sync.OtherDatabaseFile
 import ru.kino.dev.vault.sync.OtherDatabaseRepository
 
 /**
  * [OtherDatabaseRepository] on the core - `merge_kdbx_from_bytes` / `import_kdbx_from_bytes` (Step 106),
  * `merge_kdbx_both_ways` (Step 109) - and on the documents for the files picked. Neither file is kept: read once - and
- * both ways written once - the key file wiped after.
+ * both ways written once; the key file is wiped by the caller, once the merge is over.
  */
 internal class OtherDatabaseRepositoryImpl(
     private val core: NativeCore,
@@ -25,17 +26,22 @@ internal class OtherDatabaseRepositoryImpl(
     private val changes: VaultChangesImpl,
 ) : OtherDatabaseRepository {
 
-    override suspend fun mergeCopy(dbKey: String, uri: String, credentials: OtherDatabaseCredentials): MergeSummary =
-        merge(dbKey, uri, credentials) { bytes, password, keyFile -> core.mergeCopy(dbKey, bytes, password, keyFile) }
-
-    override suspend fun mergeCopyBothWays(
-        dbKey: String,
-        uri: String,
-        credentials: OtherDatabaseCredentials,
-    ): MergedBothWays =
-        merge(dbKey, uri, credentials) { bytes, password, keyFile ->
-            core.mergeCopyBothWays(dbKey, bytes, password, keyFile)
+    override suspend fun read(uri: String, credentials: OtherDatabaseCredentials): OtherDatabaseFile = mergeCall {
+        val keyFile = credentials.keyFileUri?.let { keyFile(it) }
+        val bytes = try {
+            documents.read(uri)
+        } catch (e: Throwable) {
+            keyFile?.wipe()
+            throw e
         }
+        OtherDatabaseFile(bytes, credentials.password, keyFile)
+    }
+
+    override suspend fun mergeCopy(dbKey: String, file: OtherDatabaseFile): MergeSummary =
+        merge(dbKey) { core.mergeCopy(dbKey, file.bytes, file.password, file.keyFile) }
+
+    override suspend fun mergeCopyBothWays(dbKey: String, file: OtherDatabaseFile): MergedBothWays =
+        merge(dbKey) { core.mergeCopyBothWays(dbKey, file.bytes, file.password, file.keyFile) }
 
     override suspend fun writeCopy(uri: String, bytes: ByteArray) {
         try {
@@ -47,14 +53,8 @@ internal class OtherDatabaseRepositoryImpl(
         }
     }
 
-    override suspend fun importDatabase(
-        dbKey: String,
-        uri: String,
-        credentials: OtherDatabaseCredentials,
-    ): MergeSummary =
-        merge(dbKey, uri, credentials) { bytes, password, keyFile ->
-            core.importDatabase(dbKey, bytes, password, keyFile)
-        }
+    override suspend fun importDatabase(dbKey: String, file: OtherDatabaseFile): MergeSummary =
+        merge(dbKey) { core.importDatabase(dbKey, file.bytes, file.password, file.keyFile) }
 
     override suspend fun name(uri: String): String? = try {
         documents.displayName(uri)
@@ -64,19 +64,8 @@ internal class OtherDatabaseRepositoryImpl(
         null
     }
 
-    private suspend fun <T> merge(
-        dbKey: String,
-        uri: String,
-        credentials: OtherDatabaseCredentials,
-        call: suspend (ByteArray, String?, KeyFile?) -> T,
-    ): T = mergeCall {
-        val keyFile = credentials.keyFileUri?.let { keyFile(it) }
-        try {
-            val bytes = documents.read(uri)
-            call(bytes, credentials.password, keyFile).also { changes.changed(dbKey) }
-        } finally {
-            keyFile?.wipe()
-        }
+    private suspend fun <T> merge(dbKey: String, call: suspend () -> T): T = mergeCall {
+        call().also { changes.changed(dbKey) }
     }
 
     // Its own failures: a key file that cannot be read is not the database file that cannot be read

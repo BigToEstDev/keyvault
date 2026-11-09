@@ -1,5 +1,6 @@
 package ru.kino.dev.vault.sync
 
+import ru.kino.dev.core.KeyFile
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.core.MergedBothWays
 
@@ -8,21 +9,29 @@ import ru.kino.dev.core.MergedBothWays
  * from another device - merged - or a different database - imported. Two operations on two buttons; the core
  * checks the file is what the button says before anything changes.
  *
- * The file and the key file are read once, as picked: no access is kept, nothing is remembered. In memory only -
- * the caller saves.
+ * The file and the key file are read once, as picked - [read], apart from the merge: the read goes with its caller
+ * when cancelled, the merge does not (pass-docs, Step 114). No access is kept, nothing is remembered. In memory
+ * only - the caller saves.
  *
  * Throws [MergeFailure] and nothing else.
  */
 interface OtherDatabaseRepository {
 
-    /** Merges the copy of the open database at [uri], opened with its own [credentials], and reports what changed. */
-    suspend fun mergeCopy(dbKey: String, uri: String, credentials: OtherDatabaseCredentials): MergeSummary
+    /**
+     * Reads the file at [uri] and the key file of [credentials] - for one merge; the caller wipes it after.
+     *
+     * Throws `FileUnreachable`, `KeyFileUnreadable`, `KeyFileTooLarge`.
+     */
+    suspend fun read(uri: String, credentials: OtherDatabaseCredentials): OtherDatabaseFile
+
+    /** Merges [file] - a copy of the open database, opened with its own credentials - and reports what changed. */
+    suspend fun mergeCopy(dbKey: String, file: OtherDatabaseFile): MergeSummary
 
     /**
-     * Merges the copy at [uri] both ways (Step 110): into the open database, as [mergeCopy] does, and the bytes of the
+     * Merges the copy [file] both ways (Step 110): into the open database, as [mergeCopy] does, and the bytes of the
      * copy's file back - encrypted with its own credentials, for [writeCopy] once the open database is written.
      */
-    suspend fun mergeCopyBothWays(dbKey: String, uri: String, credentials: OtherDatabaseCredentials): MergedBothWays
+    suspend fun mergeCopyBothWays(dbKey: String, file: OtherDatabaseFile): MergedBothWays
 
     /**
      * Writes [bytes] - from [mergeCopyBothWays] - over the copy's file at [uri].
@@ -31,8 +40,8 @@ interface OtherDatabaseRepository {
      */
     suspend fun writeCopy(uri: String, bytes: ByteArray)
 
-    /** Brings the different database at [uri], opened with its own [credentials], into the open one, whole. */
-    suspend fun importDatabase(dbKey: String, uri: String, credentials: OtherDatabaseCredentials): MergeSummary
+    /** Brings the different database [file], opened with its own credentials, into the open one, whole. */
+    suspend fun importDatabase(dbKey: String, file: OtherDatabaseFile): MergeSummary
 
     /** The name of the file at [uri] to show, as the provider tells it; null when it does not. Never fails. */
     suspend fun name(uri: String): String?
@@ -66,4 +75,21 @@ data class OtherDatabaseCredentials(
     // The password stays out of logs and crash reports
     override fun toString(): String =
         "OtherDatabaseCredentials(password=${if (password == null) "none" else "***"}, keyFile=${keyFileUri != null})"
+}
+
+/**
+ * Another database file as read for one merge ([OtherDatabaseRepository.read]): its bytes and what opens it. The key
+ * file is open bytes - [wipe] once the merge is over, done or not.
+ */
+class OtherDatabaseFile(
+    val bytes: ByteArray,
+    val password: String?,
+    val keyFile: KeyFile?,
+) {
+    fun wipe() {
+        keyFile?.wipe()
+    }
+
+    // The password stays out of logs and crash reports
+    override fun toString(): String = "OtherDatabaseFile(${bytes.size} bytes, keyFile=${keyFile != null})"
 }

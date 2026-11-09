@@ -2,10 +2,10 @@ package ru.kino.dev.vault.group
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertSame
 import kotlinx.coroutines.test.runTest
 import ru.kino.dev.core.CoreException
 import ru.kino.dev.core.MergeSummary
+import ru.kino.dev.core.assertCausedBy
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.VaultDatabaseRepository
 
@@ -99,7 +99,7 @@ class GroupEditorTest {
 
         val failure = expectFailure<GroupFailure.NotSaved> { editor.delete(DB, WORK) }
 
-        assertSame(cause, failure.cause)
+        assertCausedBy(cause, failure)
         assertEquals(listOf("tree", "recycle work", "save"), journal)
     }
 
@@ -153,9 +153,11 @@ class GroupEditorTest {
 
         override suspend fun close(dbKey: String) = error("not used")
 
-        override suspend fun hasChangedElsewhere(dbKey: String): Boolean = error("not used")
+        override suspend fun read(dbKey: String): ByteArray = error("not used")
 
-        override suspend fun merge(dbKey: String): MergeSummary = error("not used")
+        override suspend fun hasChangedElsewhere(dbKey: String, bytes: ByteArray): Boolean = error("not used")
+
+        override suspend fun merge(dbKey: String, bytes: ByteArray): MergeSummary = error("not used")
     }
 
     private companion object {

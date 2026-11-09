@@ -31,13 +31,13 @@ class DatabaseCopyEditor(
     suspend fun saveCopy(dbKey: String, uri: String) {
         // The same uri only: one file may come under different uris on android, not caught (as Step 110)
         if (uri == dbKey) throw DatabaseCopyFailure.OwnFile()
-        val bytes = guard.exclusive { written(dbKey) }
+        val bytes = guard.exclusiveChange { written(dbKey) }
         copies.write(uri, bytes)
     }
 
     /** Puts the file of [dbKey] where another app can read it, and returns the uri to hand it. */
     suspend fun share(dbKey: String): String {
-        val bytes = guard.exclusive { written(dbKey) }
+        val bytes = guard.exclusiveChange { written(dbKey) }
         return copies.prepareShare(name(dbKey), bytes)
     }
 

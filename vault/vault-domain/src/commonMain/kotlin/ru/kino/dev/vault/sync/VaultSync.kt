@@ -4,6 +4,7 @@ import kotlinx.coroutines.CancellationException
 import ru.kino.dev.core.MergeSummary
 import ru.kino.dev.vault.VaultDatabaseRepository
 import ru.kino.dev.vault.lock.DatabaseGuard
+import ru.kino.dev.vault.lock.unstoppable
 
 /**
  * Bringing a file written elsewhere into the open database, and writing the result (pass-docs, Step 108).
@@ -12,7 +13,9 @@ import ru.kino.dev.vault.lock.DatabaseGuard
  * [SaveState.ChangedElsewhere]; [synchronize] is the answer "Synchronize" to that. [check] is the quiet one, on
  * coming back to the app and on unlocking.
  *
- * Both run inside [guard], so a lock waits for the merge and its write, and an edit waits for them too.
+ * Both run inside [guard], so a lock waits for the merge and its write, and an edit waits for them too. The read of
+ * the file goes with its screen - read once, then checked and merged; the merge, once begun, runs to its write
+ * (pass-docs, Step 114).
  */
 class VaultSync(
     private val database: VaultDatabaseRepository,
@@ -27,7 +30,7 @@ class VaultSync(
      * through the settings then; `NotSaved` for a merge made but not written. Nothing changed otherwise.
      */
     suspend fun synchronize(dbKey: String): MergeSummary = guard.exclusive {
-        mergeAndSave(dbKey)
+        mergeAndSave(dbKey, database.read(dbKey))
     }
 
     /**
@@ -43,16 +46,15 @@ class VaultSync(
      */
     suspend fun check(dbKey: String, onMerging: suspend () -> Unit = {}): MergeSummary? = guard.exclusive {
         if (status.current(dbKey) != SaveState.Saved) return@exclusive null
-        val changed = try {
-            database.hasChangedElsewhere(dbKey)
+        val bytes = try {
+            database.read(dbKey).takeIf { database.hasChangedElsewhere(dbKey, it) }
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            false
-        }
-        if (!changed) return@exclusive null
+            null
+        } ?: return@exclusive null
         onMerging()
-        mergeAndSave(dbKey)
+        mergeAndSave(dbKey, bytes)
     }
 
     /**
@@ -60,7 +62,7 @@ class VaultSync(
      * whether the file was written elsewhere then - the difference is ours (pass-docs, Step 112). Whether it is
      * written now; a write that fails again leaves [SaveState.Damaged] or says why in [status].
      */
-    suspend fun saveAgain(dbKey: String): Boolean = guard.exclusive {
+    suspend fun saveAgain(dbKey: String): Boolean = guard.exclusiveChange {
         try {
             database.save(dbKey)
             status.current(dbKey) == SaveState.Saved
@@ -72,8 +74,8 @@ class VaultSync(
     }
 
     // The save too, not the merge alone: what is ours and was not in their file is in memory only until written
-    private suspend fun mergeAndSave(dbKey: String): MergeSummary {
-        val summary = database.merge(dbKey)
+    private suspend fun mergeAndSave(dbKey: String, bytes: ByteArray): MergeSummary = unstoppable {
+        val summary = database.merge(dbKey, bytes)
         try {
             database.save(dbKey)
         } catch (e: CancellationException) {
@@ -81,6 +83,6 @@ class VaultSync(
         } catch (e: Exception) {
             throw MergeFailure.NotSaved(e)
         }
-        return summary
+        summary
     }
 }

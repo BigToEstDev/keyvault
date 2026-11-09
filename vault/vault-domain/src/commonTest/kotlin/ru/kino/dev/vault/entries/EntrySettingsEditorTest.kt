@@ -1,5 +1,9 @@
 package ru.kino.dev.vault.entries
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -11,6 +15,7 @@ import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.FakeVaultDatabase
 import java.io.IOException
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class EntrySettingsEditorTest {
 
     private val settings = FakeEntrySettingsRepository()
@@ -26,6 +31,21 @@ class EntrySettingsEditorTest {
         assertEquals(listOf(settings.entries), settings.changes)
         assertEquals(protection, settings.entries.protection)
         assertEquals(HistoryLimits(10, SIX_MB), settings.entries.history)
+        assertEquals(listOf("save"), database.calls)
+    }
+
+    // The screen gone between the change in memory and the write - the file still follows (pass-docs, Step 114)
+    @Test
+    fun `a change whose screen is gone before the write is still saved`() = runTest {
+        val before = CompletableDeferred<Unit>()
+        database.beforeSave = { before.await() }
+        val job = launch { editor.setProtection(DB, FieldProtection.DEFAULT.copy(title = true)) }
+        runCurrent()
+
+        job.cancel()
+        before.complete(Unit)
+        job.join()
+
         assertEquals(listOf("save"), database.calls)
     }
 

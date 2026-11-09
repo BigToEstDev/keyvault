@@ -1,6 +1,7 @@
 package ru.kino.dev.vault.sync
 
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -8,13 +9,16 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import ru.kino.dev.core.DatabaseFileException
 import ru.kino.dev.core.expectFailure
 import ru.kino.dev.vault.FakeVaultDatabase
 import ru.kino.dev.vault.lock.DatabaseGuard
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class VaultSyncTest {
 
     private val database = FakeVaultDatabase()
@@ -27,7 +31,7 @@ class VaultSyncTest {
         val summary = sync.synchronize(DB)
 
         assertSame(database.mergeSummary, summary)
-        assertEquals(listOf("merge", "save"), database.calls)
+        assertEquals(listOf("read", "merge", "save"), database.calls)
     }
 
     @Test
@@ -36,7 +40,7 @@ class VaultSyncTest {
 
         expectFailure<MergeFailure.CredentialsChanged> { sync.synchronize(DB) }
 
-        assertEquals(listOf("merge"), database.calls)
+        assertEquals(listOf("read", "merge"), database.calls)
     }
 
     @Test
@@ -72,7 +76,7 @@ class VaultSyncTest {
         assertTrue(database.calls.isEmpty())
         written.complete(Unit)
         syncing.join()
-        assertEquals(listOf("merge", "save"), database.calls)
+        assertEquals(listOf("read", "merge", "save"), database.calls)
     }
 
     @Test
@@ -82,14 +86,68 @@ class VaultSyncTest {
         val summary = sync.check(DB)
 
         assertSame(database.mergeSummary, summary)
-        assertEquals(listOf("hasChangedElsewhere", "merge", "save"), database.calls)
+        assertEquals(listOf("read", "hasChangedElsewhere", "merge", "save"), database.calls)
+    }
+
+    // Step 114: the check is a read and goes with its screen, the merge once begun runs to its write
+    @Test
+    fun `the quiet check whose screen is gone while it reads lets the guard go and changes nothing`() = runTest {
+        val reading = CompletableDeferred<Unit>()
+        database.changedElsewhere = true
+        database.beforeRead = { reading.await() }
+        val job = launch { sync.check(DB) }
+        runCurrent()
+
+        job.cancel()
+        job.join()
+        guard.exclusiveChange { database.calls += "next" }
+
+        assertEquals(listOf("next"), database.calls)
+    }
+
+    @Test
+    fun `a sync whose screen is gone while it reads the file lets the guard go and changes nothing`() = runTest {
+        val reading = CompletableDeferred<Unit>()
+        database.beforeRead = { reading.await() }
+        val job = launch { sync.synchronize(DB) }
+        runCurrent()
+
+        job.cancel()
+        job.join()
+        guard.exclusiveChange { database.calls += "next" }
+
+        assertEquals(listOf("next"), database.calls)
+    }
+
+    @Test
+    fun `the quiet check reads the file once and merges those bytes`() = runTest {
+        database.changedElsewhere = true
+
+        sync.check(DB)
+
+        assertEquals(1, database.calls.count { it == "read" })
+        assertContentEquals(database.fileBytes, database.mergedBytes)
+    }
+
+    @Test
+    fun `a merge whose screen is gone before the write is still saved`() = runTest {
+        val before = CompletableDeferred<Unit>()
+        database.beforeSave = { before.await() }
+        val job = launch { sync.synchronize(DB) }
+        runCurrent()
+
+        job.cancel()
+        before.complete(Unit)
+        job.join()
+
+        assertEquals(listOf("read", "merge", "save"), database.calls)
     }
 
     @Test
     fun `the quiet check leaves a file that is ours`() = runTest {
         assertNull(sync.check(DB))
 
-        assertEquals(listOf("hasChangedElsewhere"), database.calls)
+        assertEquals(listOf("read", "hasChangedElsewhere"), database.calls)
     }
 
     @Test
@@ -114,7 +172,7 @@ class VaultSyncTest {
 
     @Test
     fun `a file that cannot be read now is not a failure of the quiet check`() = runTest {
-        database.checkFailure = DatabaseFileException("offline")
+        database.readFailure = DatabaseFileException("offline")
 
         assertNull(sync.check(DB))
     }

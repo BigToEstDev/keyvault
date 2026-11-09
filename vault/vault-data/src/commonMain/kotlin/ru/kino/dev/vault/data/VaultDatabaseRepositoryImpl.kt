@@ -54,7 +54,7 @@ internal class VaultDatabaseRepositoryImpl(
     // A file that cannot be read now is not taken for written elsewhere: the write is tried as always, and fails
     // as always when the file cannot be reached
     private suspend fun changedElsewhere(dbKey: String): Boolean = try {
-        hasChangedElsewhere(dbKey)
+        hasChangedElsewhere(dbKey, files.read(dbKey))
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {
@@ -84,10 +84,12 @@ internal class VaultDatabaseRepositoryImpl(
 
     // A file broken by our own write is not somebody else's: its checksum is not ours, and a sync with it would
     // only fail - the next save writes it again (pass-docs, Step 112)
-    override suspend fun hasChangedElsewhere(dbKey: String): Boolean {
+    override suspend fun read(dbKey: String): ByteArray = mergeCall { files.read(dbKey) }
+
+    override suspend fun hasChangedElsewhere(dbKey: String, bytes: ByteArray): Boolean {
         if (status.current(dbKey) == SaveState.Damaged) return false
         return try {
-            core.verifyFileChecksum(dbKey, files.read(dbKey))
+            core.verifyFileChecksum(dbKey, bytes)
             false
         } catch (e: CoreException) {
             // The one kind that is an answer rather than a failure: the file is fine, it is just not ours
@@ -96,8 +98,8 @@ internal class VaultDatabaseRepositoryImpl(
         }
     }
 
-    override suspend fun merge(dbKey: String): MergeSummary = mergeCall {
-        core.mergeDatabase(dbKey, files.read(dbKey)).also { changes.changed(dbKey) }
+    override suspend fun merge(dbKey: String, bytes: ByteArray): MergeSummary = mergeCall {
+        core.mergeDatabase(dbKey, bytes).also { changes.changed(dbKey) }
     }
 
     private companion object {

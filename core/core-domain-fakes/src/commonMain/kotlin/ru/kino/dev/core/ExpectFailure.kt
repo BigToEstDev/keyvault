@@ -15,3 +15,15 @@ inline fun <reified T : Throwable> expectFailure(block: () -> Unit): T {
     }
     throw AssertionError("expected ${T::class.simpleName}, nothing was thrown")
 }
+
+/**
+ * Checks that [failure] was caused by [cause] - directly or further down the chain. Not `failure.cause` alone: a
+ * failure that comes out of `withContext` (a change under `DatabaseGuard.exclusiveChange`) is copied by the stack
+ * trace recovery of kotlinx.coroutines when the tests run with assertions on, and the copy holds the original as
+ * its cause (pass-docs, Step 114).
+ */
+fun assertCausedBy(cause: Throwable, failure: Throwable) {
+    if (generateSequence(failure) { it.cause }.none { it === cause }) {
+        throw AssertionError("expected $failure to be caused by $cause", failure)
+    }
+}

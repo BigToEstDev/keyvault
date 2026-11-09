@@ -21,28 +21,28 @@ class TrashEditor(
 ) {
 
     /** Switches the bin on or off and saves. Off, the bin goes with all it holds - the screen asks first. */
-    suspend fun setEnabled(dbKey: String, enabled: Boolean): Unit = guard.exclusive {
-        if (trash.enabled(dbKey) == enabled) return@exclusive
+    suspend fun setEnabled(dbKey: String, enabled: Boolean): Unit = guard.exclusiveChange {
+        if (trash.enabled(dbKey) == enabled) return@exclusiveChange
         trash.setEnabled(dbKey, enabled)
         save(dbKey)
     }
 
     /** Moves [entryIds] out of the bin into [groupId] and saves. */
-    suspend fun restore(dbKey: String, entryIds: List<EntryId>, groupId: GroupId): Unit = guard.exclusive {
-        if (entryIds.isEmpty()) return@exclusive
+    suspend fun restore(dbKey: String, entryIds: List<EntryId>, groupId: GroupId): Unit = guard.exclusiveChange {
+        if (entryIds.isEmpty()) return@exclusiveChange
         trash.restore(dbKey, entryIds, groupId)
         save(dbKey)
     }
 
     /** Removes [entryIds] for good and saves. */
-    suspend fun remove(dbKey: String, entryIds: List<EntryId>): Unit = guard.exclusive {
-        if (entryIds.isEmpty()) return@exclusive
+    suspend fun remove(dbKey: String, entryIds: List<EntryId>): Unit = guard.exclusiveChange {
+        if (entryIds.isEmpty()) return@exclusiveChange
         trash.remove(dbKey, entryIds)
         save(dbKey)
     }
 
     /** Removes everything in the bin for good and saves. */
-    suspend fun empty(dbKey: String): Unit = guard.exclusive {
+    suspend fun empty(dbKey: String): Unit = guard.exclusiveChange {
         trash.empty(dbKey)
         save(dbKey)
     }
