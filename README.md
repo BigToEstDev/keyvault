@@ -8,7 +8,7 @@ An offline password manager for KeePass (KDBX 4) databases, for Android and desk
 ## Features
 
 - Create a database, or open an existing one with a password, a key file, or both.
-- Entries and groups: custom fields, tags, attachments, history, recycle bin.
+- Entries and groups: custom fields, attachments, history, recycle bin.
 - Search, password generator and password strength check.
 - Unlock with biometrics on Android; the database locks after a period of inactivity.
 - Local sync without a network: merge a copy of the database in either direction, import another database,
