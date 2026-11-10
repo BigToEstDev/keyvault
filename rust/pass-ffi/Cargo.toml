@@ -5,7 +5,7 @@ authors = ["BigToEstDev"]
 edition = "2021"
 publish = false
 ## The core is GPL-3.0 and this crate links it statically, so the shared library and the apk that
-## carries it are GPL-3.0 as well. See plan/todo/android/naming-and-license.md in pass-docs.
+## carries it are GPL-3.0 as well. See docs/policy/naming-and-license.md in pass-docs.
 license = "GPL-3.0-only"
 
 [lib]
