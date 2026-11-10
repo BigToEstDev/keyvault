@@ -1,0 +1,9 @@
+# The Rust toolchain of the native bridge (rust/pass-ffi); rustup finds this file from the crate's folder.
+# Kept equal to the core's rust-toolchain.toml; bumped together with rust-version in rust/pass-ffi/Cargo.toml.
+# The targets are the android abis the build produces (arm64-v8a, armeabi-v7a); the desktop build uses the
+# host target, which is always there.
+[toolchain]
+channel = "1.98.1"
+components = ["clippy", "rustfmt"]
+targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
+profile = "minimal"
