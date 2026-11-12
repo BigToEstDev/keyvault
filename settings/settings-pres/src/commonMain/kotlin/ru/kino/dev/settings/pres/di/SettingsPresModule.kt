@@ -33,7 +33,7 @@ val settingsPresModule = module {
     viewModel { (navigator: Navigator) -> PresetsProcessor(get(), get(), get(), navigator, get()) }
     viewModel { (navigator: Navigator) -> PrivacyProcessor(get(), navigator) }
     // What the app tells of itself is the platform's: its module gives it (pass-docs, Step 122)
-    viewModel { (navigator: Navigator) -> AboutProcessor(get(), navigator) }
+    viewModel { (navigator: Navigator) -> AboutProcessor(get(), get(), navigator, get()) }
 
     viewModel { (dbKey: String, navigator: Navigator) -> SettingsProcessor(dbKey, navigator) }
     viewModel { (dbKey: String, navigator: Navigator) -> AppearanceProcessor(dbKey, get(), get(), navigator, get()) }

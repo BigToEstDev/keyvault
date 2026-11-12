@@ -17,6 +17,9 @@ interface NativeCore {
     /** Version of the native bridge and the time it was built, for the log on start. */
     suspend fun buildInfo(): String
 
+    /** The version of the core - SemVer, one for the engine and its api; shown on the screen "About" (Step 123). */
+    suspend fun coreVersion(): String
+
     /**
      * Creates a new database and returns it together with the bytes to write into the chosen file.
      *

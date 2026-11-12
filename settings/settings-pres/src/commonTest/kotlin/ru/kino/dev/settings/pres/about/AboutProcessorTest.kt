@@ -3,12 +3,15 @@ package ru.kino.dev.settings.pres.about
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.settings.about.AppInfo
 import ru.kino.dev.settings.about.BuildType
+import ru.kino.dev.settings.about.FakeCoreVersionRepository
+import ru.kino.dev.settings.pres.testing.RecordingLog
 import ru.kino.dev.settings.pres.testing.recordNavigation
 import ru.kino.dev.settings.pres.testing.runToEnd
 
@@ -81,5 +84,31 @@ class AboutProcessorTest {
         assertTrue(events.isEmpty())
     }
 
-    private fun processor(navigator: Navigator) = AboutProcessor(info, navigator)
+    @Test
+    fun `the version of the core is shown once the core answers`() = runTest {
+        val state = loaded(FakeCoreVersionRepository(version = "1.2.3"))
+
+        assertEquals(CoreVersionShown.Known("1.2.3"), state.coreVersion)
+    }
+
+    @Test
+    fun `the core not answering - the version is unknown and the failure logged`() = runTest {
+        val state = loaded(FakeCoreVersionRepository(fail = true))
+
+        assertEquals(CoreVersionShown.Unknown, state.coreVersion)
+        assertEquals(1, log.logged.size)
+    }
+
+    private val log = RecordingLog()
+
+    private suspend fun TestScope.loaded(versions: FakeCoreVersionRepository): AboutState {
+        lateinit var state: AboutState
+        AboutProcessor(info, versions, recordNavigation().first, log).testWithInternalState(this) {
+            containerHost.onLoad()
+            state = awaitInternalState()
+        }
+        return state
+    }
+
+    private fun processor(navigator: Navigator) = AboutProcessor(info, FakeCoreVersionRepository(), navigator, log)
 }

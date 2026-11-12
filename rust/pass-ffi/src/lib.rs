@@ -46,6 +46,16 @@ pub extern "system" fn Java_ru_kino_dev_ffi_PassFfi_buildInfo<'local>(
     })
 }
 
+/// The version of the core - of its workspace (`pass_api::CORE_VERSION`), shown on the screen "About" of the app
+/// (pass-docs, Step 123).
+#[no_mangle]
+pub extern "system" fn Java_ru_kino_dev_ffi_PassFfi_coreVersion<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+) -> jstring {
+    guarded(&mut env, |_env| Ok(pass_api::CORE_VERSION.to_owned()))
+}
+
 /// Runs one command of the core. `argsJson` is a json object of arguments, the answer is the envelope
 /// described in `errors`.
 #[no_mangle]

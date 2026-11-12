@@ -3,6 +3,9 @@ package ru.kino.dev.settings.pres.about
 /** What the screen "About" is asked to do - done by [AboutProcessor] (pass-docs, `docs/app/mvi-arc.md`). */
 interface AboutActions {
 
+    /** The screen is shown: the version of the core is asked (pass-docs, Step 123). */
+    fun onLoad()
+
     /** "Back" in the top bar. */
     fun onBack()
 

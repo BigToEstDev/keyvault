@@ -362,6 +362,8 @@
     <string name="about_version">Версия %1$s</string>
     <string name="about_build_debug">Отладочная сборка</string>
     <string name="about_build_release">Релизная сборка</string>
+    <string name="about_core_version">Ядро %1$s</string>
+    <string name="about_core_version_unknown">Версия ядра неизвестна</string>
     <string name="about_description">Бесплатный менеджер паролей с открытым исходным кодом, совместимый с KeePass (KDBX). Без рекламы и трекеров — независимый проект, который держится на добровольной разработке.</string>
     <string name="about_free_title">Бесплатно — и так и останется</string>
     <string name="about_license">Распространяется по лицензии GPL-3.0 «как есть», без гарантий. Храните резервную копию базы.</string>

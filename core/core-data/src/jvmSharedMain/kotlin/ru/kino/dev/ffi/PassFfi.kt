@@ -22,6 +22,9 @@ internal object PassFfi {
     /** Version of the crate plus its build timestamp, so a stale .so is visible in the log. */
     external fun buildInfo(): String
 
+    /** The version of the core - of its workspace, SemVer (pass-docs, Step 123). */
+    external fun coreVersion(): String
+
     /**
      * Runs one command of the core.
      *

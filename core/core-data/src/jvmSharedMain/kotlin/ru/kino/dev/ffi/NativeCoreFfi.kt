@@ -53,6 +53,10 @@ internal class NativeCoreFfi : NativeCore {
         PassFfi.buildInfo()
     }
 
+    override suspend fun coreVersion(): String = withContext(dispatcher) {
+        PassFfi.coreVersion()
+    }
+
     override suspend fun createDatabase(database: NewDatabase): CreatedDatabase =
         withContext(dispatcher) {
             val answer = FfiBinaryCall.call(
