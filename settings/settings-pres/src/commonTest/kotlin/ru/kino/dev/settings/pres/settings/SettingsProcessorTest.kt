@@ -51,7 +51,7 @@ class SettingsProcessorTest {
         val (navigator, events) = recordNavigation()
 
         SettingsProcessor(DB, navigator).testWithInternalState(this) {
-            containerHost.runToEnd { onOpenAbout() }
+            containerHost.runToEnd { onOpen(SettingsItem.About) }
         }
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(AboutRoute)), events)

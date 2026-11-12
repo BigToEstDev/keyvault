@@ -3,6 +3,7 @@ package ru.kino.dev.settings.pres.settingscontainer
 import androidx.compose.runtime.Composable
 import ru.kino.dev.pane.PaneHost
 import ru.kino.dev.pane.TabbedContainer
+import ru.kino.dev.settings.pres.about.AboutScreen
 import ru.kino.dev.settings.pres.appearance.AppearanceScreen
 import ru.kino.dev.settings.pres.entries.EntriesScreen
 import ru.kino.dev.settings.pres.file.FileScreen
@@ -58,6 +59,7 @@ private fun SettingsPage(dbKey: String, item: SettingsItem) {
         SettingsItem.Entries -> EntriesScreen(dbKey = dbKey, canGoBack = false)
         SettingsItem.Security -> SecurityScreen(dbKey = dbKey, canGoBack = false)
         SettingsItem.Sync -> MergeScreen(dbKey = dbKey, canGoBack = false)
+        SettingsItem.About -> AboutScreen(canGoBack = false)
         // Their own container, over this one: never a page here
         SettingsItem.Presets -> Unit
     }

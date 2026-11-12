@@ -28,11 +28,16 @@ import ru.kino.dev.ui.res.stringResource
 
 /**
  * About the app (pass-docs, Step 122): the app and its build, free under GPL-3.0 with the support of the project,
- * the privacy, where to write, the source code. Not a landing - a few cards. On a wide window the same column, not
- * stretched.
+ * the privacy, where to write, the source code. Not a landing - a few cards. On a wide window - a page of the container
+ * of the settings; the column is not stretched.
+ *
+ * @param canGoBack false - a page of the container of a wide window: its tab closes it, not "back" (Step 101)
  */
 @Composable
-internal fun AboutScreen(processor: AboutProcessor = koinProcessor()) {
+internal fun AboutScreen(
+    canGoBack: Boolean = true,
+    processor: AboutProcessor = koinProcessor(),
+) {
     val state by processor.collectAsState()
     val openLink = rememberLinkOpener()
     val clipboard = rememberSensitiveClipboard()
@@ -53,6 +58,7 @@ internal fun AboutScreen(processor: AboutProcessor = koinProcessor()) {
                 BackTopBar(
                     title = stringResource(Res.string.settings_about),
                     onBack = processor::onBack,
+                    back = canGoBack,
                 )
             },
         ) { padding ->

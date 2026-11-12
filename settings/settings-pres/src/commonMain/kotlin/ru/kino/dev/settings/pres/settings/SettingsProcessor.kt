@@ -5,7 +5,6 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.Navigator
-import ru.kino.dev.settings.pres.navigation.AboutRoute
 import ru.kino.dev.settings.pres.navigation.route
 
 /**
@@ -25,9 +24,5 @@ class SettingsProcessor(
 
     override fun onOpen(item: SettingsItem) {
         intent { navigator.navigate(MviNavEvent.NavigateTo(item.route(dbKey))) }
-    }
-
-    override fun onOpenAbout() {
-        intent { navigator.navigate(MviNavEvent.NavigateTo(AboutRoute)) }
     }
 }

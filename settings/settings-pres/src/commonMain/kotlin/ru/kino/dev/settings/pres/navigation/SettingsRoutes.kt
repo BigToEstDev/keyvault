@@ -59,4 +59,5 @@ internal fun SettingsItem.route(dbKey: String): Any = when (this) {
     SettingsItem.Entries -> EntriesRoute(dbKey)
     SettingsItem.Security -> SecurityRoute(dbKey)
     SettingsItem.Sync -> MergeRoute(dbKey)
+    SettingsItem.About -> AboutRoute
 }
