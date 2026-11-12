@@ -43,7 +43,7 @@ fun OpenLinkButton(link: String) {
 
 /** Opens a link of [linkOf] in the browser of the system. */
 @Composable
-internal expect fun rememberLinkOpener(): (link: String) -> Unit
+expect fun rememberLinkOpener(): (link: String) -> Unit
 
 private const val SCHEME_END = "://"
 private const val HTTPS = "https"

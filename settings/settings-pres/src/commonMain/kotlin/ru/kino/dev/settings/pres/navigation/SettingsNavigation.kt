@@ -6,6 +6,7 @@ import androidx.navigation.toRoute
 import ru.kino.dev.navigation.PresetEditRoute
 import ru.kino.dev.navigation.SettingsRoute
 import ru.kino.dev.pane.adaptiveComposable
+import ru.kino.dev.settings.pres.about.AboutScreen
 import ru.kino.dev.settings.pres.appearance.AppearanceScreen
 import ru.kino.dev.settings.pres.entries.EntriesScreen
 import ru.kino.dev.settings.pres.file.FileScreen
@@ -41,6 +42,8 @@ fun NavGraphBuilder.settingsGraph() {
     composable<EntriesRoute> { entry -> EntriesScreen(dbKey = entry.toRoute<EntriesRoute>().dbKey) }
     composable<SecurityRoute> { entry -> SecurityScreen(dbKey = entry.toRoute<SecurityRoute>().dbKey) }
     composable<MergeRoute> { entry -> MergeScreen(dbKey = entry.toRoute<MergeRoute>().dbKey) }
+    // On a wide window - a page of the container of the settings, as the others (Step 122)
+    composable<AboutRoute> { AboutScreen() }
     // A preset from outside the presets - "a new preset" from the form of an entry: on a wide window the container,
     // with its tab; leaving it - back to the form
     adaptiveComposable<PresetEditRoute>(

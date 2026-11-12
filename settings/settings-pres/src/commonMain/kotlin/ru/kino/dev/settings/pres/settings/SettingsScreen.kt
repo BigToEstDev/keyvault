@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -25,7 +23,7 @@ import ru.kino.dev.ui.res.stringResource
 
 /**
  * The settings: the cards of the app and of the database under their sections, "About" at the bottom, apart
- * behind a divider. A card opens its screen when the screen is made (pass-docs, Step 55).
+ * behind a divider (its screen - Step 122). A card opens its screen when the screen is made (pass-docs, Step 55).
  *
  * @param selected the card whose screen is open beside the list - a wide window (pass-docs, Step 101); null - none
  */
@@ -66,7 +64,7 @@ internal fun SettingsScreen(
                         SettingsCard(
                             icon = item.icon,
                             title = stringResource(item.title),
-                            text = stringResource(item.text),
+                            text = item.text?.let { stringResource(it) },
                             selected = item == selected,
                             onClick = { processor.onOpen(item) },
                         )
@@ -74,7 +72,13 @@ internal fun SettingsScreen(
                 }
                 item(key = "divider") { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
                 item(key = "about") {
-                    SettingsCard(icon = Icons.Filled.Info, title = stringResource(Res.string.settings_about))
+                    val about = SettingsItem.About
+                    SettingsCard(
+                        icon = about.icon,
+                        title = stringResource(about.title),
+                        selected = about == selected,
+                        onClick = { processor.onOpen(about) },
+                    )
                 }
             }
         }
