@@ -3,7 +3,7 @@ import org.gradle.api.Project
 
 /*
  * The version of the app - one for android and the desktop, kept in `version.json` at the root of the project
- * (pass-docs: Step 123, docs/dev/versions-rules.md). The build reads it here; CI reads the same file with `jq`.
+ * (pass-docs, Step 123). The build reads it here; CI reads the same file with `jq`.
  */
 
 /** What `version.json` names: the [name] of the files of the builds and the [version] of the app. */
