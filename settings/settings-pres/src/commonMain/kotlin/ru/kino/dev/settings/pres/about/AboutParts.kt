@@ -38,14 +38,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.*
-import ru.kino.dev.settings.about.BuildType
 import ru.kino.dev.settings.pres.about.components.AboutRow
 import ru.kino.dev.ui.components.SkeletonText
 import ru.kino.dev.ui.components.appIcon
 import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.ui.res.stringResource
 
-/** The app: its icon on the left; its name, version and build on the right; what it is - under them. */
+/** The app: its icon on the left; its name, version and the version of the core on the right; what it is - under them. */
 @Composable
 internal fun AppCard(state: AboutState) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -63,16 +62,7 @@ internal fun AppCard(state: AboutState) {
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(
-                        text = stringResource(
-                            when (state.buildType) {
-                                BuildType.Debug -> Res.string.about_build_debug
-                                BuildType.Release -> Res.string.about_build_release
-                            },
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                    // The build is told by the version itself - "-debug" (pass-docs, Step 123): no line of its own
                     CoreVersionLine(state.coreVersion)
                 }
             }
