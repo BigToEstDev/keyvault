@@ -1,4 +1,4 @@
-# KDBX Vault
+# KeyVault
 
 An offline password manager for KeePass (KDBX 4) databases, for Android and desktop.
 
@@ -94,5 +94,5 @@ GPL-3.0-only — see `LICENSE`.
 The app links the GPLv3 engine [kdbx-rust-core](https://github.com/BigToEstDev/kdbx-rust-core), so the app
 and every build of it are distributed under the GPLv3.
 
-The licence covers the code, not the name: "KDBX Vault" and its logo are not licensed under the GPLv3. Forks
+The licence covers the code, not the name: "KeyVault" and its logo are not licensed under the GPLv3. Forks
 are welcome under their own name.

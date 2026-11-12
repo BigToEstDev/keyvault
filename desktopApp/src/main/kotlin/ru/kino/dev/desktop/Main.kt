@@ -24,7 +24,10 @@ import ru.kino.dev.desktop.di.appInfoModule
 import ru.kino.dev.di.coreDataModule
 import ru.kino.dev.settings.lock.InactivityTimer
 import ru.kino.dev.vault.sync.AppReturns
+import ru.kino.dev.core.pres.Res
+import ru.kino.dev.core.pres.app_name
 import ru.kino.dev.ui.components.appIcon
+import ru.kino.dev.ui.res.stringResource
 import ru.kino.dev.ui.files.LocalPickerParent
 
 /**
@@ -61,7 +64,7 @@ fun main() {
 
         Window(
             onCloseRequest = ::exitApplication,
-            title = "KeyVault",
+            title = stringResource(Res.string.app_name),
             icon = rememberVectorPainter(remember { appIcon() }),
             state = windowState,
             // Every key the window takes - the person is here; the screens get it as before
