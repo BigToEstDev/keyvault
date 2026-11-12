@@ -10,6 +10,8 @@ import org.koin.test.verify.injectedParameters
 import org.koin.test.verify.verify
 import ru.kino.dev.navigation.Navigator
 import ru.kino.dev.navigation.PresetEditRoute
+import ru.kino.dev.settings.about.BuildType
+import ru.kino.dev.settings.pres.about.AboutProcessor
 import ru.kino.dev.settings.pres.appearance.AppearanceProcessor
 import ru.kino.dev.settings.pres.entries.EntriesProcessor
 import ru.kino.dev.settings.pres.file.FileProcessor
@@ -56,7 +58,7 @@ class AppGraphTest {
     @Test
     fun `every definition finds what its constructor asks for`() {
         // One module with all of them: verifyAll would check each alone, without what the others give
-        module { includes(appModules + coreDataModule) }.verify(
+        module { includes(appModules + coreDataModule + appInfoModule) }.verify(
             extraTypes = listOf(
                 // androidContext() of KeyVaultApp
                 Context::class,
@@ -64,6 +66,8 @@ class AppGraphTest {
                 CoroutineScope::class,
                 Function0::class,
                 Function1::class,
+                // What the app tells of itself is made of BuildConfig inside its definition (pass-docs, Step 122)
+                BuildType::class,
             ),
             injections = injectedParameters(
                 // What each screen gives its processor - parametersOf on the screen, the navigator of the screen last
@@ -94,6 +98,7 @@ class AppGraphTest {
                 definition<SecurityProcessor>(String::class, Navigator::class),
                 definition<PresetsProcessor>(Navigator::class),
                 definition<PrivacyProcessor>(Navigator::class),
+                definition<AboutProcessor>(Navigator::class),
                 definition<PresetEditProcessor>(String::class, Boolean::class, Navigator::class),
                 definition<PresetReadProcessor>(String::class, Navigator::class),
                 definition<PresetsContainerProcessor>(PresetEditRoute::class, Navigator::class),

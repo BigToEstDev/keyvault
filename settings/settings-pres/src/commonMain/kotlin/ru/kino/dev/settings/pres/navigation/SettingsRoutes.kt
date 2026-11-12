@@ -34,6 +34,10 @@ internal data class SecurityRoute(val dbKey: String)
 @Serializable
 internal data class MergeRoute(val dbKey: String)
 
+/** About the app (pass-docs, Step 122) - of the app, not of the database open. */
+@Serializable
+internal data object AboutRoute
+
 /** The presets: whether they are used, the list of those of one's own (pass-docs, Step 62). */
 @Serializable
 internal data object PresetsRoute

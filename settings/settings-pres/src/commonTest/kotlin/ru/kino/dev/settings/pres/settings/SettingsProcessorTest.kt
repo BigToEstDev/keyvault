@@ -9,7 +9,9 @@ import kotlinx.coroutines.test.runTest
 import org.orbitmvi.orbit.test.testWithInternalState
 import ru.kino.dev.navigation.MviNavEvent
 import ru.kino.dev.navigation.AppNavigator
+import ru.kino.dev.settings.pres.navigation.AboutRoute
 import ru.kino.dev.settings.pres.navigation.AppearanceRoute
+import ru.kino.dev.settings.pres.testing.recordNavigation
 import ru.kino.dev.settings.pres.testing.runToEnd
 
 private const val DB = "content://docs/passwords.kdbx"
@@ -42,5 +44,16 @@ class SettingsProcessorTest {
         }
 
         assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(AppearanceRoute(DB))), events)
+    }
+
+    @Test
+    fun `about opens its screen`() = runTest {
+        val (navigator, events) = recordNavigation()
+
+        SettingsProcessor(DB, navigator).testWithInternalState(this) {
+            containerHost.runToEnd { onOpenAbout() }
+        }
+
+        assertEquals(listOf<MviNavEvent>(MviNavEvent.NavigateTo(AboutRoute)), events)
     }
 }

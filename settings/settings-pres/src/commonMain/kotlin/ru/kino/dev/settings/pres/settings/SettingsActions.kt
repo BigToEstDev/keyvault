@@ -8,4 +8,7 @@ interface SettingsActions {
 
     /** A tap on a card: the screen behind it, when it is made (pass-docs, Step 55). */
     fun onOpen(item: SettingsItem)
+
+    /** A tap on "About" - its screen (pass-docs, Step 122). */
+    fun onOpenAbout()
 }

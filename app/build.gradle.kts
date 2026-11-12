@@ -14,6 +14,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // What the app tells of itself on the screen "About" - gradle.properties, one place for both platforms (Step 122)
+        buildConfigField("String", "REPO_URL", "\"${providers.gradleProperty("app.repoUrl").get()}\"")
+        buildConfigField("String", "CONTACT_EMAIL", "\"${providers.gradleProperty("app.contactEmail").get()}\"")
     }
 
     // The language is chosen in the app, not only by the system: every language goes into the base, or a

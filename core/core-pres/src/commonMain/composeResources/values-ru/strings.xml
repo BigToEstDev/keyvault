@@ -358,6 +358,26 @@
     <string name="settings_security_memory">Память</string>
     <string name="settings_security_parallelism">Параллелизм</string>
     <string name="settings_about">О приложении</string>
+    <!-- О приложении (pass-docs, Step 122). Название — бренд, в values, не переводится -->
+    <string name="about_version">Версия %1$s</string>
+    <string name="about_build_debug">Отладочная сборка</string>
+    <string name="about_build_release">Релизная сборка</string>
+    <string name="about_description">Бесплатный менеджер паролей с открытым исходным кодом, совместимый с KeePass (KDBX). Без рекламы и трекеров — независимый проект, который держится на добровольной разработке.</string>
+    <string name="about_free_title">Бесплатно — и так и останется</string>
+    <string name="about_license">Распространяется по лицензии GPL-3.0 «как есть», без гарантий. Храните резервную копию базы.</string>
+    <string name="about_support_text">Поддерживая проект, вы помогаете ему развиваться: донаты идут на подпись приложений и магазины.</string>
+    <string name="about_support">Поддержать проект</string>
+    <string name="about_privacy_title">Ничего не собирает</string>
+    <string name="about_privacy_text">Ни аналитики, ни телеметрии, ни аккаунта. База остаётся на ваших устройствах.</string>
+    <string name="about_privacy_policy">Политика конфиденциальности</string>
+    <string name="about_contacts">Связь</string>
+    <string name="about_email">Почта</string>
+    <string name="about_site">Сайт</string>
+    <string name="about_site_soon">Скоро</string>
+    <string name="about_report_issue">Сообщить об ошибке</string>
+    <string name="about_report_issue_text">Опишите её в Issues на GitHub</string>
+    <string name="about_open_source">Открытый код</string>
+    <string name="about_source_code">Исходный код</string>
     <string name="settings_theme">Тема</string>
     <string name="settings_theme_mode">Тема приложения</string>
     <string name="settings_theme_system">Системная</string>

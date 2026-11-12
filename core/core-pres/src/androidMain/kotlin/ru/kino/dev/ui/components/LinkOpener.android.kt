@@ -12,7 +12,7 @@ import ru.kino.dev.ui.res.stringResource
 
 // No app to open it - a toast says so, as copying speaks for itself below Android 13
 @Composable
-internal actual fun rememberLinkOpener(): (link: String) -> Unit {
+actual fun rememberLinkOpener(): (link: String) -> Unit {
     val context = LocalContext.current
     val noApp = stringResource(Res.string.message_no_app_for_link)
     return remember(context, noApp) {
