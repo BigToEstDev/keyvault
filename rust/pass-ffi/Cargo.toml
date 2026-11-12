@@ -1,7 +1,7 @@
 [package]
 name = "pass-ffi"
 version = "0.1.0"
-description = "The native bridge of the KDBX Vault apps to kdbx-rust-core: JNI on android, a shared library on desktop"
+description = "The native bridge of the KeyVault apps to kdbx-rust-core: JNI on android, a shared library on desktop"
 authors = ["BigToEstDev"]
 edition = "2021"
 ## The oldest Rust the bridge is built with; the exact toolchain is pinned in rust-toolchain.toml at the
