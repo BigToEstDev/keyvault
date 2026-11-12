@@ -5,13 +5,21 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+/** The name and the version of the app - version.json at the root, one for android and the desktop (Step 123). */
+val artifact = appArtifact()
+
+base {
+    // keyvault-1.0.0-rc.1-debug.apk; the release is named in CI as it is published (pass-docs, Step 123)
+    archivesName.set(artifact.fileName)
+}
+
 android {
     namespace = "ru.kino.dev"
 
     defaultConfig {
         applicationId = "ru.kino.dev"
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = artifact.version.code
+        versionName = artifact.version.name
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -25,6 +33,14 @@ android {
     bundle {
         language {
             enableSplit = false
+        }
+    }
+
+    buildTypes {
+        // Installed beside the release, not over it: its own settings and list of databases. CI builds no debug
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
         }
     }
 

@@ -6,8 +6,8 @@ plugins {
     id("rust-bridge-desktop")
 }
 
-/** The version of the desktop app - of its package and of the screen "About". */
-val DESKTOP_VERSION = "0.1.0"
+/** The name and the version of the app - version.json at the root, one for android and the desktop (Step 123). */
+val artifact = appArtifact()
 
 kotlin {
     jvmToolchain(JAVA_VERSION.majorVersion.toInt())
@@ -41,10 +41,10 @@ compose.desktop {
     application {
         mainClass = "ru.kino.dev.desktop.MainKt"
 
-        // What the app tells of itself on the screen "About" (pass-docs, Step 122): the version of the package, the
+        // What the app tells of itself on the screen "About" (pass-docs, Step 122): the version - version.json, the
         // addresses - gradle.properties, one place for both platforms. Read by AppInfoModule
         jvmArgs += listOf(
-            "-Dapp.version=$DESKTOP_VERSION",
+            "-Dapp.version=${artifact.version.name}",
             "-Dapp.repoUrl=${providers.gradleProperty("app.repoUrl").get()}",
             "-Dapp.contactEmail=${providers.gradleProperty("app.contactEmail").get()}",
         )
@@ -52,7 +52,8 @@ compose.desktop {
         // Installers and their settings - the build for a release, not planned yet (pass-docs)
         nativeDistributions {
             packageName = "KeyVault"
-            packageVersion = DESKTOP_VERSION
+            // Digits only - the installers take no "-rc.N"; it is in the name of the file, given in CI
+            packageVersion = artifact.version.packageVersion
         }
     }
 }
