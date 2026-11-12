@@ -356,6 +356,8 @@
     <string name="about_version">Version %1$s</string>
     <string name="about_build_debug">Debug build</string>
     <string name="about_build_release">Release build</string>
+    <string name="about_core_version">Core %1$s</string>
+    <string name="about_core_version_unknown">Core version unknown</string>
     <string name="about_description">A free, open-source password manager compatible with KeePass (KDBX). No ads, no trackers - an independent project kept going by volunteer development.</string>
     <string name="about_free_title">Free - and it stays free</string>
     <string name="about_license">Distributed under the GPL-3.0 license, as is, without warranty. Keep a backup of your database.</string>

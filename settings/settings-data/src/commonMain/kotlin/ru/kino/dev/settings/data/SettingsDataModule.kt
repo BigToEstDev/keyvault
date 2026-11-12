@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.map
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import ru.kino.dev.settings.about.CoreVersionRepository
 import ru.kino.dev.settings.appearance.AppearanceRepository
+import ru.kino.dev.settings.data.about.NativeCoreVersionRepository
 import ru.kino.dev.settings.data.appearance.DataStoreAppearanceRepository
 import ru.kino.dev.settings.data.lock.ClockInactivityTimer
 import ru.kino.dev.settings.data.lock.DataStoreLockSettingsRepository
@@ -34,6 +36,9 @@ val settingsDataModule = module {
 
     // One store per file for the whole process, the five repositories below share it (pass-docs, Step 86)
     single(named(APP_SETTINGS_STORE)) { get<AppDataDir>().preferencesStore(APP_SETTINGS_STORE) }
+
+    // The version of the core for the screen "About" (pass-docs, Step 123)
+    factory<CoreVersionRepository> { NativeCoreVersionRepository(get()) }
 
     factory<AppearanceRepository> { DataStoreAppearanceRepository(get(named(APP_SETTINGS_STORE))) }
 

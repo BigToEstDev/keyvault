@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -39,7 +40,9 @@ import androidx.compose.ui.unit.dp
 import ru.kino.dev.core.pres.*
 import ru.kino.dev.settings.about.BuildType
 import ru.kino.dev.settings.pres.about.components.AboutRow
+import ru.kino.dev.ui.components.SkeletonText
 import ru.kino.dev.ui.components.appIcon
+import ru.kino.dev.ui.components.skeletonBrush
 import ru.kino.dev.ui.res.stringResource
 
 /** The app: its icon on the left; its name, version and build on the right; what it is - under them. */
@@ -70,6 +73,7 @@ internal fun AppCard(state: AboutState) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
+                    CoreVersionLine(state.coreVersion)
                 }
             }
             Text(
@@ -77,6 +81,29 @@ internal fun AppCard(state: AboutState) {
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
+    }
+}
+
+/** The version of the core under the build; a skeleton while it is asked (pass-docs, Step 123). */
+@Composable
+private fun CoreVersionLine(shown: CoreVersionShown) {
+    val style = MaterialTheme.typography.bodySmall
+    when (shown) {
+        CoreVersionShown.Loading -> SkeletonText(
+            brush = skeletonBrush(),
+            style = style,
+            modifier = Modifier.width(CORE_SKELETON_WIDTH),
+        )
+        is CoreVersionShown.Known -> Text(
+            text = stringResource(Res.string.about_core_version, shown.version),
+            style = style,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        CoreVersionShown.Unknown -> Text(
+            text = stringResource(Res.string.about_core_version_unknown),
+            style = style,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -206,3 +233,4 @@ internal fun AboutActions.SourceCodeCard(state: AboutState) {
 
 private val APP_ICON_SIZE = 72.dp
 private val SUPPORT_BADGE_SIZE = 56.dp
+private val CORE_SKELETON_WIDTH = 96.dp

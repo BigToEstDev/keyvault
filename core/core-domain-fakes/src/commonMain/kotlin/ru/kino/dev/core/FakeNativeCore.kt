@@ -94,6 +94,8 @@ class FakeNativeCore(val journal: MutableList<String> = mutableListOf()) : Nativ
 
     override suspend fun buildInfo(): String = "fake"
 
+    override suspend fun coreVersion(): String = "1.0.0"
+
     override suspend fun createDatabase(database: NewDatabase): CreatedDatabase {
         created = database
         passwordReceived = database.password
