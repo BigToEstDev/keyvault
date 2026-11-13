@@ -141,13 +141,15 @@ jobs:
             echo "::warning::No signing key - the APK is unsigned"
             exit 0
           fi
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/keyvault-release.jks"
+          # Whitespace and line ends are dropped: a secret piped from PowerShell ends with a CR LF, which base64 rejects
+          printf '%s' "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 -d > "$RUNNER_TEMP/keyvault-release.jks"
           echo "KEYVAULT_SIGNING_STORE_FILE=$RUNNER_TEMP/keyvault-release.jks" >> "$GITHUB_ENV"
       - name: Release APK
         working-directory: pass-app
         env:
           KEYVAULT_SIGNING_STORE_PASSWORD: ${{ secrets.KEYVAULT_SIGNING_STORE_PASSWORD }}
-          KEYVAULT_SIGNING_KEY_ALIAS: ${{ secrets.KEYVAULT_SIGNING_KEY_ALIAS }}
+          # Not a secret: as a secret its value would be masked as *** everywhere in the logs, file names included
+          KEYVAULT_SIGNING_KEY_ALIAS: keyvault
           KEYVAULT_SIGNING_KEY_PASSWORD: ${{ secrets.KEYVAULT_SIGNING_KEY_PASSWORD }}
         run: ./gradlew :app:assembleRelease
       - name: Files of the release
