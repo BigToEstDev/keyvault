@@ -8,7 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-To be released as 1.0.0-rc.1 - the first release candidate, with the core 1.0.0.
+## [1.0.0-rc.1] - 2026-11-14
+
+The first release candidate, with the core [1.0.0](https://github.com/BigToEstDev/kdbx-rust-core/releases/tag/v1.0.0).
 
 ### Added
 
@@ -19,3 +21,6 @@ To be released as 1.0.0-rc.1 - the first release candidate, with the core 1.0.0.
 - Local sync without a network: merge a copy of the database in either direction, import another database, save or
   share a copy.
 - The screen "About": the version of the app and of the core, the license, contacts and the source code.
+
+[Unreleased]: https://github.com/BigToEstDev/keyvault/compare/v1.0.0-rc.1...HEAD
+[1.0.0-rc.1]: https://github.com/BigToEstDev/keyvault/releases/tag/v1.0.0-rc.1
