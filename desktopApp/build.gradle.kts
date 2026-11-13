@@ -37,6 +37,22 @@ dependencies {
     testImplementation(projects.settings.settingsDomainFakes)
 }
 
+// The icons of the installers drawn from appIcon() - a tool of the build, not shipped in the app (pass-docs, Step 124)
+val iconExport by sourceSets.creating
+
+dependencies {
+    "iconExportImplementation"(projects.core.corePres)
+    "iconExportImplementation"(compose.desktop.currentOs)
+}
+
+tasks.register<JavaExec>("exportAppIcons") {
+    group = "distribution"
+    description = "Draws appIcon() into icons/keyvault.ico, .icns and .png - the icons of the installers"
+    classpath = iconExport.runtimeClasspath
+    mainClass.set("ru.kino.dev.desktop.icons.IconExportKt")
+    args(layout.projectDirectory.dir("icons").asFile.absolutePath)
+}
+
 compose.desktop {
     application {
         mainClass = "ru.kino.dev.desktop.MainKt"
