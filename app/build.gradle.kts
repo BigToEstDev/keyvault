@@ -42,16 +42,14 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
+        // Minify and shrink are switched on by the convention plugin; the rules of the app are read here
+        release {
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
     }
-
-//    buildTypes {
-//        release {
-//            proguardFiles(
-//                getDefaultProguardFile("proguard-android-optimize.txt"),
-//                "proguard-rules.pro"
-//            )
-//        }
-//    }
 }
 
 dependencies {

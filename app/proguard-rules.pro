@@ -1,21 +1,8 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# R8 rules of the android app. Libraries (kotlinx.serialization, Koin, ...) bring their own consumer rules.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
-
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# The JNI bridge to the rust core. The symbols exported by rust/pass-ffi carry the package, the class and the
+# method names (Java_ru_kino_dev_ffi_PassFfi_invoke): renamed by R8, the link to the native library breaks at
+# runtime with UnsatisfiedLinkError - neither compilation nor tests see it.
+-keep,includedescriptorclasses class ru.kino.dev.ffi.PassFfi {
+    native <methods>;
+}
