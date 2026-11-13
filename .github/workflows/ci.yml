@@ -1,0 +1,100 @@
+# Checks of every push to main and every pull request: the tests of every module, Android lint, and the native bridge
+# (format, clippy, tests). The core is checked out beside this repository at the tag of core.ref - the same layout as
+# locally, where rust/pass-ffi takes it by path (../../../pass-rust-core).
+# Actions are pinned by commit SHA (Dependabot keeps them fresh); Rust comes from rust-toolchain.toml.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  bridge:
+    name: bridge (fmt, clippy, tests)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: pass-app
+          persist-credentials: false
+      - name: Tag of the core
+        id: core
+        run: echo "ref=$(tr -d '[:space:]' < pass-app/core.ref)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: BigToEstDev/kdbx-rust-core
+          ref: ${{ steps.core.outputs.ref }}
+          path: pass-rust-core
+          persist-credentials: false
+      - name: Toolchain of rust-toolchain.toml
+        working-directory: pass-app
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: pass-app/rust/pass-ffi
+      - working-directory: pass-app/rust/pass-ffi
+        run: cargo fmt --check
+      - working-directory: pass-app/rust/pass-ffi
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - working-directory: pass-app/rust/pass-ffi
+        run: cargo test --locked
+
+  gradle:
+    name: tests, lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: pass-app
+          persist-credentials: false
+      - name: Tag of the core
+        id: core
+        run: echo "ref=$(tr -d '[:space:]' < pass-app/core.ref)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: BigToEstDev/kdbx-rust-core
+          ref: ${{ steps.core.outputs.ref }}
+          path: pass-rust-core
+          persist-credentials: false
+      # 17 - the toolchain of the modules, 21 - the daemon (gradle-daemon-jvm.properties): installed, not downloaded
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - name: Toolchain of rust-toolchain.toml (with the Android targets)
+        working-directory: pass-app
+        run: rustup toolchain install
+      - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
+        with:
+          tool: cargo-ndk@4.1.2
+      # The NDK the bridge is built with - its version is read from the build, one place
+      - name: Android NDK
+        run: |
+          ndk=$(grep -oP 'val rustNdkVersion = "\K[^"]+' pass-app/build-logic/plugins/src/main/kotlin/ru/kino/rust-bridge-android.gradle.kts)
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$ndk" > /dev/null
+      # allTests does not cover the Koin graph of the app (AppGraphTest) and the tests of the desktop app
+      - name: Tests and lint
+        working-directory: pass-app
+        run: ./gradlew allTests :app:testDebugUnitTest :desktopApp:test :app:lintDebug --continue
+      - name: Reports of a failure
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: reports
+          path: pass-app/**/build/reports/
+          retention-days: 7
