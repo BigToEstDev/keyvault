@@ -8,6 +8,9 @@ plugins {
 /** The name and the version of the app - version.json at the root, one for android and the desktop (Step 123). */
 val artifact = appArtifact()
 
+/** The key of the release - keystore.properties or KEYVAULT_SIGNING_* (pass-docs, docs/dev/apk-signing.md). */
+val signing = releaseSigning()
+
 base {
     // keyvault-1.0.0-rc.1-debug.apk; the release is named in CI as it is published (pass-docs, Step 123)
     archivesName.set(artifact.fileName)
@@ -17,7 +20,7 @@ android {
     namespace = "ru.kino.dev"
 
     defaultConfig {
-        applicationId = "ru.kino.dev"
+        applicationId = "io.github.bigtoestdev.keyvault"
         versionCode = artifact.version.code
         versionName = artifact.version.name
 
@@ -36,22 +39,39 @@ android {
         }
     }
 
+    signingConfigs {
+        if (signing != null) {
+            create("release") {
+                storeFile = signing.storeFile
+                storePassword = signing.storePassword
+                keyAlias = signing.keyAlias
+                keyPassword = signing.keyPassword
+            }
+        }
+    }
+
     buildTypes {
         // Installed beside the release, not over it: its own settings and list of databases. CI builds no debug
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
+        // Minify and shrink are switched on by the convention plugin; the rules of the app are read here
+        release {
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            // No key - the release is built unsigned and cannot be installed; the build goes on
+            signingConfig = signingConfigs.findByName("release")
+        }
     }
+}
 
-//    buildTypes {
-//        release {
-//            proguardFiles(
-//                getDefaultProguardFile("proguard-android-optimize.txt"),
-//                "proguard-rules.pro"
-//            )
-//        }
-//    }
+if (signing == null) {
+    tasks.matching { it.name == "packageRelease" }.configureEach {
+        doFirst { logger.lifecycle("No release signing key (keystore.properties, KEYVAULT_SIGNING_*) - the APK is unsigned") }
+    }
 }
 
 dependencies {

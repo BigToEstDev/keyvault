@@ -21,3 +21,8 @@ local.properties
 
 # Rust bridge (pass-ffi): cargo artifacts. The .so lands in app/build/rustJniLibs, already ignored
 /rust/*/target/
+
+# Release signing key and its passwords - outside git (pass-docs, docs/dev/apk-signing.md)
+keystore.properties
+*.jks
+*.keystore
