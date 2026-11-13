@@ -3,7 +3,7 @@
 An offline password manager for KeePass (KDBX 4) databases, for Android and desktop.
 
 **Status:** in development. Releases are published on the
-[Releases](https://github.com/BigToEstDev/kdbx-vault-android/releases) page of this repository.
+[Releases](https://github.com/BigToEstDev/keyvault/releases) page of this repository.
 
 ## Features
 
@@ -65,6 +65,9 @@ The engine is a path dependency: check out
   pass-rust-core/  kdbx-rust-core
 ```
 
+The version of the engine this repository is built with in CI and in releases is the tag in `core.ref`; check out the
+same tag to build exactly what a release was built from.
+
 Gradle builds the bridge itself, for every Android ABI or for the desktop host:
 
 ```bash
@@ -78,10 +81,21 @@ Gradle builds the bridge itself, for every Android ABI or for the desktop host:
 - Works offline: the Android app has no network permission; nothing is sent anywhere.
 - The database stays a file the user chooses: no account, no cloud, no telemetry.
 
+### Verifying the Android APK
+
+Every release APK is signed with the same key. Its certificate SHA-256 fingerprint:
+
+```
+27:BD:70:DD:2D:0A:3F:EC:0B:DB:75:C8:C9:5A:B7:CF:88:77:2D:7A:50:85:D0:33:3C:22:41:E0:DF:76:3A:89
+```
+
+Check a downloaded APK with `apksigner verify --print-certs <file>.apk` (Android SDK build tools) or an app such as
+AppVerifier; a different fingerprint means the file is not ours — do not install it.
+
 **Reporting a vulnerability:** please use
-[private vulnerability reporting](https://github.com/BigToEstDev/kdbx-vault-android/security/advisories/new) on
+[private vulnerability reporting](https://github.com/BigToEstDev/keyvault/security/advisories/new) on
 GitHub, not a public issue. Other bugs and questions go to
-[issues](https://github.com/BigToEstDev/kdbx-vault-android/issues).
+[issues](https://github.com/BigToEstDev/keyvault/issues).
 
 ## Contributing
 

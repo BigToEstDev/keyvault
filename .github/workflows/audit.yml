@@ -1,0 +1,33 @@
+# RustSec advisories of the lock of the native bridge (rust/pass-ffi/Cargo.lock) - its own lock, the versions of the
+# core's dependencies in it differ from the core's lock, so a clean audit of the core says nothing of what ships in the
+# library (pass-docs, rust-core-tools.md). Weekly - advisories appear for versions already in the lock - and on every
+# change of the dependencies. Warnings (unmaintained, yanked) fail it too: the bridge keeps 0 / 0.
+name: Audit
+
+on:
+  schedule:
+    - cron: "23 5 * * 1"
+  push:
+    branches: [main]
+    paths: ["rust/pass-ffi/Cargo.toml", "rust/pass-ffi/Cargo.lock"]
+  pull_request:
+    paths: ["rust/pass-ffi/Cargo.toml", "rust/pass-ffi/Cargo.lock"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: cargo audit (bridge)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
+        with:
+          tool: cargo-audit@0.23.0
+      # Reads only the lock: the core, a path dependency, is not needed here
+      - working-directory: rust/pass-ffi
+        run: cargo audit --deny warnings
