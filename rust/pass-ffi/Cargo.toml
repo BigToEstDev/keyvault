@@ -7,7 +7,7 @@ edition = "2021"
 ## The oldest Rust the bridge is built with; the exact toolchain is pinned in rust-toolchain.toml at the
 ## root of the repository. Kept equal to the core's.
 rust-version = "1.98"
-repository = "https://github.com/BigToEstDev/kdbx-vault-android"
+repository = "https://github.com/BigToEstDev/keyvault"
 publish = false
 ## The core is GPL-3.0 and this crate links it statically, so the shared library and the apk that
 ## carries it are GPL-3.0 as well. See docs/policy/naming-and-license.md in pass-docs.

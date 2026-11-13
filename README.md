@@ -3,7 +3,7 @@
 An offline password manager for KeePass (KDBX 4) databases, for Android and desktop.
 
 **Status:** in development. Releases are published on the
-[Releases](https://github.com/BigToEstDev/kdbx-vault-android/releases) page of this repository.
+[Releases](https://github.com/BigToEstDev/keyvault/releases) page of this repository.
 
 ## Features
 
@@ -93,9 +93,9 @@ Check a downloaded APK with `apksigner verify --print-certs <file>.apk` (Android
 AppVerifier; a different fingerprint means the file is not ours — do not install it.
 
 **Reporting a vulnerability:** please use
-[private vulnerability reporting](https://github.com/BigToEstDev/kdbx-vault-android/security/advisories/new) on
+[private vulnerability reporting](https://github.com/BigToEstDev/keyvault/security/advisories/new) on
 GitHub, not a public issue. Other bugs and questions go to
-[issues](https://github.com/BigToEstDev/kdbx-vault-android/issues).
+[issues](https://github.com/BigToEstDev/keyvault/issues).
 
 ## Contributing
 
