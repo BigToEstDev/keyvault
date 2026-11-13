@@ -17,7 +17,7 @@ android {
     namespace = "ru.kino.dev"
 
     defaultConfig {
-        applicationId = "ru.kino.dev"
+        applicationId = "io.github.bigtoestdev.keyvault"
         versionCode = artifact.version.code
         versionName = artifact.version.name
 
