@@ -6,3 +6,8 @@
 -keep,includedescriptorclasses class ru.kino.dev.ffi.PassFfi {
     native <methods>;
 }
+
+# Line numbers in the stack traces of the release - with mapping.txt of the release (a file of its GitHub release)
+# a reported crash is retraced to the source. The names of the source files are hidden behind one word.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
