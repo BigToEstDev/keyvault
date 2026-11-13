@@ -1,3 +1,4 @@
+import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -116,3 +117,9 @@ compose.desktop {
         }
     }
 }
+
+// The msi asks which shortcuts to make - on the desktop, in the Start menu (pass-docs, Step 124 p7). The DSL of Compose
+// has no such option, so it is handed to jpackage as is; only to the msi tasks - jpackage of other OSes refuses it
+tasks.withType<AbstractJPackageTask>()
+    .matching { it.name == "packageMsi" || it.name == "packageReleaseMsi" }
+    .configureEach { freeArgs.add("--win-shortcut-prompt") }
